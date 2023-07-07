@@ -1,0 +1,268 @@
+# defaults file for redmine
+---
+redmine_instances: {}
+
+# If not set all instances from redmine_instances are used
+# redmine_instance: redmine
+
+redmine_with_mysql: false
+redmine_with_postgresql: false
+redmine_with_zsh: true
+
+redmine_mysql_packages:
+  - libmysqlclient-dev
+
+redmine_postgresql_packages:
+  - libpq-dev
+
+# Default values for a redmine instance (overwrite it in instance hash)
+
+# use ppa:brightbox/ruby-ng
+# if no, default system ruby is used
+# (only used with ubuntu)
+redmine_use_ppa: false
+
+# @see https://github.com/ankane/the-ultimate-guide-to-ruby-timeouts#postgresql
+# @see https://www.postgresql.org/docs/14/runtime-config-client.html#RUNTIME-CONFIG-CLIENT-STATEMENT
+redmine_db_statement_timeout: 10000
+
+# redmine_system_infos_vars:
+#  - RUBYOPT
+redmine_system_infos_vars: []
+
+redmine_system_infos_bool_vars:
+  - ENABLE_DEBUG
+  - ENABLE_BACKTRACE
+
+# @see https://guides.rubyonrails.org/action_mailer_basics.html
+# redmine 5 has problems with local smtp server without ssl
+redmine_delivery_method: ':sendmail'
+redmine_smtp_address: localhost
+redmine_smtp_port: 25
+redmine_smtp_tls: false
+redmine_smtp_enable_starttls_auto: false
+
+# can be disabled for testing environments (ci)
+redmine_with_nginx: true
+
+redmine_with_hedgedoc: false
+redmine_with_memcache: true
+
+account_migrate_to_new_home: true
+
+redmine_mailcatcher_ip: ''
+redmine_mailcatcher_smtp_port: 1025
+redmine_mailcatcher_http_port: 1080
+redmine_env: production
+
+redmine_proxy_read_timeout: 120
+redmine_proxy_connect_timeout: 120
+
+redmine_proxy_buffers: '16 128k'
+redmine_proxy_buffer_size: '128k'
+redmine_proxy_busy_buffers_size: '256k'
+
+# Used for puma workers and mem_cache_store pool_size
+# leave empty auto calculation with amount of cpu processors
+redmine_puma_workers: ''
+
+redmine_memcache_expires_hours: 6
+
+# @see https://devcenter.heroku.com/articles/deploying-rails-applications-with-the-puma-web-server#workers
+redmine_puma_min_threads: 2
+redmine_puma_max_threads: 5
+
+redmine_puma_worker_timeout: 60
+
+# @see https://github.com/schneems/puma_worker_killer#configure
+# this is false automatically, if redmine_puma_workers < 2
+redmine_puma_worker_killer: true
+ # mb
+redmine_puma_worker_killer_ram: '{{ ansible_memtotal_mb | int }}'
+# 12 hours in seconds
+redmine_rolling_restart_frequency: "12 * 3600"
+# seconds
+redmine_puma_worker_killer_frequency: 60
+redmine_puma_worker_killer_percent_usage: 0.90
+redmine_puma_worker_killer_status_logs: true
+
+# see https://api.rubyonrails.org/v5.1/classes/ActiveRecord/ConnectionAdapters/ConnectionPool.html
+# and https://github.com/boazsegev/plezi/issues/15
+# should calculated automatically: redmine_puma_workers * redmine_puma_max_threads
+# @see https://devcenter.heroku.com/articles/deploying-rails-applications-with-the-puma-web-server#database-connections
+redmine_db_pool: ''
+
+rails_env: production
+
+redmine_vhost_default: false
+redmine_vhost_for_zabbix: false
+
+# security setting
+redmine_content_security_policy: ''
+
+redmine_repo: 'https://github.com/redmine/redmine.git'
+redmine_repo_version: 5.0-stable
+redmine_repo_update: true
+
+# set default vhost name
+redmine_server_name: redmine.local
+
+# for sockets, pids, etc.
+redmine_run_base_path: /run
+
+# adapter: mysql2 or postgresql are supported right now
+redmine_db_adapter: mysql2
+redmine_db_password: '{{ [ansible_machine_id, ansible_hostname, "redmine"] | join | checksum }}'
+
+redmine_mysql_socket: '{{ redmine_run_base_path }}/mysqld/mysqld.sock'
+
+redmine_no_access_for_register: false
+
+redmine_log_level: warn
+
+redmine_user_config_files:
+  - .vimrc
+
+# SAML (see https://github.com/omniauth/omniauth-saml)
+
+# Service provider = redmine
+# Identity provider = external System
+
+# The URL at which the SAML assertion should be received.
+# If not provided, defaults to the OmniAuth callback URL
+redmine_saml_assertion_consumer_service_url: 'http://redmine.example.com/auth/saml/callback'
+# The name of your application.
+# Some identity providers might need this to establish the identity of the service provider requesting the login
+redmine_saml_sp_entity_id: 'http://redmine.example.com/auth/saml/metadata'
+# The SLS (logout) callback URL (required for redmine)
+# redmine_saml_single_logout_service_url: 'http://redmine.example.com/auth/saml/sls'
+# The URL to which the authentication request should be sent.
+# This would be on the identity provider
+redmine_saml_idp_sso_service_url: 'https://sso.desarrollo.unlp.edu.ar/saml2/idp/SSOService.php'
+# The SHA1 fingerprint of the certificate, e.g. "90:CC:16:F0:8D:...".
+# This is provided from the identity provider when setting up the relationship
+# see https://www.samltool.com/fingerprint.php
+# redmine_saml_idp_cert_fingerprint: 'certificate fingerprint'
+# redmine_saml_idp_cert: ''
+# Used during SP-initiated SSO.
+# Describes the format of the username required by this application.
+# If you need the email address, use "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress".
+# See https://docs.oasis-open.org/security/saml/v2.0/saml-core-2.0-os.pdf section 8.3 for other options.
+# Note that the identity provider might not support all options.
+# If not specified, the IdP is free to choose the name identifier format used in the response. Optional.
+redmine_saml_name_identifier_format: 'urn:oasis:names:tc:SAML:2.0:nameid-format:persistent'
+# Optional signout URL, not supported by all identity providers
+# redmine_saml_signout_url: 'https://sso.example.com/saml2/idp/SingleLogoutService.php?ReturnTo='
+# Optional
+# The URL to which the single logout request and response should be sent.
+# This would be on the identity provider
+# redmine_saml_idp_slo_service_url: 'https://sso.example.com/saml2/idp/SingleLogoutService.php'
+# Which redmine field is used as name_identifier_value for SAML logout
+redmine_saml_name_identifier_value: 'mail'
+redmine_saml_allowed_clock_drift: 2
+# Seperator for mapping
+# redmine_saml_attribute_mapping_sep: '.'
+# How will we map attributes from SSO to redmine attributes
+redmine_saml_attribute_mapping:
+  - name: login
+    value: extra.raw_info.username
+  - name: mail
+    value: extra.raw_info.email
+  - name: firstname
+    value: extra.raw_info.firstname
+  - name: lastname
+    value: extra.raw_info.lastname
+  - name: admin
+    value: extra.raw_info.admin
+
+# set it, if you require it
+# e.g. redmine_saml_want_assertions_signed: true
+# redmine_saml_want_assertions_signed: true
+
+# set it, if you require it
+# e.g. redmine_saml_signature_method: XMLSecurity::Document::RSA_SHA256
+# redmine_saml_signature_method:
+
+# not supported, see https://github.com/omniauth/omniauth-saml/blob/master/lib/omniauth/strategies/saml.rb#L68
+# redmine_saml_idp_cert_fingerprint_algorithm
+
+redmine_saml_middleware: RedmineSaml
+
+# without rugged, which is optional used for redmine_devops
+redmine_bundle_exclude_groups: 'development test sqlite xapian rugged'
+
+# log, syslog (default) or journald
+redmine_default_logger: syslog
+
+# if not set, all instances are used
+# redmine_setup_instance: redmine
+
+redmine_packages:
+  - autoconf
+  - automake
+  - bison
+  - build-essential
+  - gawk
+  - ghostscript
+  - gnupg2
+  - graphviz
+  - imagemagick-6.q16
+  - libffi-dev
+  - libgdbm-dev
+  - libgmp-dev
+  - libmagick++-6.q16-dev
+  - libncurses-dev
+  - libreadline-dev
+  - libsqlite3-dev
+  - libssl-dev
+  - libsystemd-dev
+  - libyaml-dev
+  - sqlite3
+  - subversion
+
+# This should be default, if system ruby version < 2.7
+# e.g. Ubuntu 20.04 or Debian 11 can use system ruby
+# ! all maintained ubuntu versions are focal or newer - set true as default
+# ! this also requires Redmine 4.2 or newer (because of ruby 2.7)
+redmine_use_rvm_as_default: false
+
+# see for ubuntu packages: https://packages.ubuntu.com/focal/ruby
+# this is required, if redmine_use_rvm_as_default is true and
+# instance.use_rvm: false (system ruby requires ruby-dev)
+redmine_with_ruby_dev: false
+
+# overwrite it, if you need it.
+# if not set, for system ruby '-W:no-deprecated -W:no-experimental' is used
+redmine_systemd_ruby_opt: ''
+
+# default patches - can be overwritten with instance.patches
+# redmine_patches:
+#  - file: puma
+#  - file: queryredmine_patches
+redmine_patches:
+#  - file: puma
+#    strip: 1
+  - file: allowed_to_condition
+    strip: 1
+
+# set to yes, if git history for ssh is required on deploy
+redmine_full_remote_deploy: false
+
+redmine_write_permission_dirs:
+  # for creating Gemfile.lock
+  - path: ''
+  # for creating secret_token.rb
+  - path: /config/initializers
+  # for creating schema.rb
+  - path: /db
+  - path: /tmp
+  - path: /log
+  - path: /public/plugin_assets
+  # for additional_tags hint file
+  - path: /plugins
+
+# redmine_queue_adapter: async
+
+redmine_async_queue_min_threads: 1
+redmine_async_queue_max_threads: 2
+redmine_async_queue_idletime: 600.seconds

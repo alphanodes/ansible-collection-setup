@@ -1,0 +1,11 @@
+---
+
+git_required_packages:
+ - git
+ - git-man
+
+# see https://packages.debian.org/buster-backports/git
+# use git from backports, if backports is enabled with debian_backports
+git_use_backports: true
+
+git_disable_safe_directory: false

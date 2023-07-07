@@ -1,0 +1,8 @@
+skip_list:
+  - 'yaml'
+  - command-instead-of-module  # Using command rather than module
+  - git-latest  # Git checkouts must contain explicit version
+  - no-changed-when  # Commands should not change things if nothing needs doing
+  - package-latest  # Package installs should not use latest
+  - ignore-errors
+  - var-naming[no-role-prefix]

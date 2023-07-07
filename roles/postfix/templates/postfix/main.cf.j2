@@ -1,0 +1,239 @@
+{{ ansible_managed | comment }}
+
+smtpd_banner = {{ postfix_smtpd_banner }}
+biff = no
+
+# appending .domain is the MUA's job.
+append_dot_mydomain = no
+
+readme_directory = no
+
+# See http://www.postfix.org/COMPATIBILITY_README.html
+compatibility_level = {{ postfix_compatibility_level }}
+
+# TLS parameters
+smtpd_use_tls = yes
+smtpd_tls_session_cache_database = btree:${data_directory}/smtpd_scache
+smtpd_tls_cert_file = {{ postfix_smtp_ssl_cert_file }}
+smtpd_tls_key_file = {{ postfix_smtp_ssl_key_file }}
+
+smtp_tls_CApath = /etc/ssl/certs
+smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
+{% if postfix_smtp_tls_protocols is defined %}
+smtp_tls_protocols = {{ postfix_smtp_tls_protocols }}
+{% endif %}
+
+{% if postfix_sasl_auth_enable %}
+# enable SASL authentication
+smtp_sasl_auth_enable = yes
+smtp_tls_security_level = {{ postfix_smtp_tls_security_level }}
+smtp_tls_wrappermode = {{ 'yes' if postfix_smtp_tls_wrappermode | bool else 'no' }}
+smtp_tls_note_starttls_offer = {{ 'yes' if postfix_smtp_tls_note_starttls_offer | bool else 'no' }}
+smtpd_tls_auth_only = {{ 'yes' if postfix_tls_auth_only | bool else 'no' }}
+{% if postfix_sasl_mechanism_filter != '' %}
+smtp_sasl_mechanism_filter = {{ postfix_sasl_mechanism_filter }}
+{% endif %}
+# disallow methods that allow anonymous authentication.
+smtp_sasl_security_options = {{ postfix_sasl_security_options }}
+# where to find sasl_passwd
+smtp_sasl_password_maps = hash:{{ postfix_sasl_password_file }}
+{% endif %}
+
+myhostname = {{ postfix_myhostname }}
+alias_maps = hash:{{ postfix_aliases_file }}
+alias_database = hash:{{ postfix_aliases_file }}
+mydestination = {{ postfix_mydestination | join(', ') }}
+mailbox_size_limit = {{ postfix_mailbox_size_limit }}
+{% if postfix_virtual_mailbox_limit is defined %}
+virtual_mailbox_limit = {{ postfix_virtual_mailbox_limit }}
+{% endif %}
+message_size_limit = {{ postfix_message_size_limit }}
+recipient_delimiter = +
+inet_interfaces = {{ postfix_inet_interfaces }}
+{% if postfix_inet_protocols != '' %}
+inet_protocols = {{ postfix_inet_protocols }}
+{% endif %}
+mynetworks_style = {{ postfix_mynetworks_style }}
+{% if postfix_mynetworks_style != 'host' %}
+mynetworks = {{ postfix_mynetworks | join(' ') }}
+{% endif %}
+
+{% if postfix_relayhost != '' %}
+relayhost = {{ real_postfix_relayhost }}
+{% endif %}
+{% if postfix_relaytls %}
+smtp_use_tls = yes
+{% endif %}
+
+{% if postfix_redirect_all_mails_to is defined -%}
+canonical_maps = regexp:/etc/postfix/canonical-redirect
+{% endif -%}
+
+{% if postfix_sender_canonicals|length > 0 -%}
+sender_canonical_maps = hash:/etc/postfix/sender-canonical
+{% endif -%}
+smtpd_relay_restrictions = {{ postfix_relay_restrictions }}
+
+# Disable the SMTP VRFY command. This stops some techniques used to harvest email addresses.
+disable_vrfy_command = {{ 'yes' if postfix_disable_vrfy_command | bool else 'no' }}
+
+{% if postfix_with_postscreen %}
+### postscreen configuration block
+postscreen_access_list = permit_mynetworks
+
+# Drop connections from blacklisted servers with a 521 reply
+postscreen_blacklist_action = drop
+
+# Clean Postscreen cache after 24h
+postscreen_cache_cleanup_interval = 24h
+
+postscreen_dnsbl_ttl = 5m
+postscreen_dnsbl_threshold = 8
+postscreen_dnsbl_action = enforce
+postscreen_dnsbl_sites =
+{% for site in postfix_postscreen_dnsbl_sites %}
+  {{ site }}
+{% endfor %}
+postscreen_greet_banner = $smtpd_banner
+postscreen_greet_action = enforce
+postscreen_greet_wait = 3s
+postscreen_greet_ttl = 2d
+postscreen_bare_newline_enable = no
+postscreen_non_smtp_command_enable = no
+postscreen_pipelining_enable = no
+postscreen_cache_map = proxy:btree:$data_directory/postscreen_cache
+{% endif %}
+
+{% if postfix_with_smtps %}
+## Restrictions für MUAs (Mail user agents)
+
+mua_relay_restrictions = reject_non_fqdn_recipient,reject_unknown_recipient_domain,permit_mynetworks,permit_sasl_authenticated,reject
+mua_sender_restrictions = permit_mynetworks,reject_non_fqdn_sender,reject_sender_login_mismatch,permit_sasl_authenticated,reject
+mua_client_restrictions = permit_mynetworks,permit_sasl_authenticated,reject
+{% endif %}
+
+{% if postfix_with_vimbadmin %}
+### vimbadmin configuration block
+
+# Disallow SSLv2 and SSLv3, only accept secure ciphers
+smtpd_tls_mandatory_protocols = !SSLv2, !SSLv3
+smtpd_tls_mandatory_ciphers=high
+
+# A custom list with secure ciphers.
+# tls_high_cipherlist = !aNULL:!eNULL:!CAMELLIA:HIGH:@STRENGTH
+tls_high_cipherlist=EDH+CAMELLIA:EDH+aRSA:EECDH+aRSA+AESGCM:EECDH+aRSA+SHA384:EECDH+aRSA+SHA256:EECDH:+CAMELLIA256:+AES256:+CAMELLIA128:+AES128:+SSLv3:!aNULL:!eNULL:!LOW:!3DES:!MD5:!EXP:!PSK:!DSS:!RC4:!SEED:!ECDSA:CAMELLIA256-SHA:AES256-SHA:CAMELLIA128-SHA:AES128-SHA
+
+# Log TLS handling
+smtpd_tls_loglevel = 1
+smtp_tls_loglevel = 1
+
+# Sender, recipient, client and data restrictions
+# !! non-FQDN HELOs are rejected on Port 25 only, see master.cf
+
+# Auth. Benutzer dürfen auch innerhalb der "mynetworks" nur von den Adressen senden, die ihnen zugehörig sind.
+smtpd_sender_restrictions = reject_authenticated_sender_login_mismatch,
+# Erst jetzt werden "mynetworks" zugelassen
+# Unauth. Benutzer wie der Cron-Dienst können so weiterhin Mails versenden, etwa
+# als cron@fqdn
+   permit_mynetworks,
+# Anderen unauth. Benutzern das Benutzen jeder Adresse verbieten
+# -> wird gebraucht, wenn andere Kundenserver unseren Mailserver verwenden
+#   reject_sender_login_mismatch,
+# Alle auth. jetzt zulassen.
+   permit_sasl_authenticated,
+# Nicht im System vorhandene Absender jetzt ablehnen
+   reject_unlisted_sender,
+# Ablehnen, wenn die Sender-Domäne nicht existiert
+   reject_unknown_sender_domain
+
+# Akzeptiere alle Empfänger, die ein authentifizierter Absender oder ein Absender aus "mynetworks" angibt
+smtpd_recipient_restrictions = permit_sasl_authenticated,
+   permit_mynetworks,
+# Schnittstelle zu Dovecot, um die Quota live zu überprüfen (verhindert Bounces)
+   check_policy_service unix:private/quota-status,
+# Ablehnen, wenn der HELO FQDN nicht aufzulösen ist
+   reject_unknown_helo_hostname,
+# Ablehnen, wenn KEIN PTR zu dieser IP existiert
+# Verhindert nicht, dass ein FALSCHER PTR abgelehnt wird!
+# Hierfür würde "reject_unknown_client_hostname" verwendet.
+   reject_unknown_reverse_client_hostname,
+# Kein offenes Relay
+   reject_unauth_destination
+
+# Unauth. Benutzer dürfen ihre Befehle nicht "pipen"
+smtpd_data_restrictions =
+   reject_unauth_pipelining,
+   permit
+
+# Eine Art Tabelle mit vorhanden Identitäten und ihren Zugehörigkeiten
+smtpd_sender_login_maps = proxy:mysql:/etc/postfix/mysql/virtual_alias_maps.cf
+
+# Please say hello first...
+smtpd_helo_required = yes
+
+# The SASL plug-in type that the Postfix SMTP server should use for authentication.
+smtpd_sasl_type=dovecot
+
+# Where to passthrough our authentication information for the above plug-in
+smtpd_sasl_path=private/auth_dovecot
+
+# Enable SASL authentication in the Postfix SMTP server.
+smtpd_sasl_auth_enable = yes
+
+# Report the SASL authenticated user name in the smtpd Received message header.
+smtpd_sasl_authenticated_header = yes
+
+# Have Postfix advertise AUTH support in a non-standard way.
+broken_sasl_auth_clients = yes
+
+# The lookup tables that the proxymap server is allowed to access for the read-only service.
+proxy_read_maps = $local_recipient_maps $mydestination $virtual_alias_maps $virtual_alias_domains $virtual_mailbox_maps $virtual_mailbox_domains $relay_recipient_maps $relay_domains $canonical_maps $sender_canonical_maps $recipient_canonical_maps $relocated_maps $transport_maps $mynetworks $smtpd_sender_login_maps
+
+## Virtual transport configuration
+# A prefix that the virtual delivery agent prepends to all pathname results from $virtual_mailbox_maps
+virtual_mailbox_base = /
+
+# THIS contains a list of domains we are the final destination for (unlike "mydestination").
+virtual_mailbox_domains = proxy:mysql:/etc/postfix/mysql/virtual_domains_maps.cf
+
+# Alias specific mail addresses or domains to other local or remote address.
+virtual_alias_maps = proxy:mysql:/etc/postfix/mysql/virtual_alias_maps.cf
+
+# Specify a left-hand side of "@domain.tld" to match any user in the specified domain
+virtual_mailbox_maps = proxy:mysql:/etc/postfix/mysql/virtual_mailbox_maps.cf
+
+# The minimum user ID value that the virtual delivery agent accepts
+virtual_minimum_uid = 5000
+
+# We use "vmail" user with UID/GID 5000 to lookup tables
+virtual_uid_maps = static:5000
+virtual_gid_maps = static:5000
+
+# The default mail delivery transport and next-hop destination for final delivery to domains listed with "virtual_mailbox_domains"
+virtual_transport = lmtps:unix:private/dovecot-lmtp
+
+transport_maps = mysql:/etc/postfix/mysql/virtual_transport_maps.cf
+
+## Queue configuration
+# Consider a message as undeliverable, when delivery fails with a temporary error, and the time in the queue has reached this limit.
+maximal_queue_lifetime = 1d
+
+# Consider a bounce message as undeliverable, when delivery fails with a temporary error, and the time in the queue has reached this limit.
+bounce_queue_lifetime = 1d
+
+# The time between deferred queue scans by the queue manager.
+queue_run_delay = 300s
+
+# The maximal/minimal time between attempts to deliver a deferred message.
+maximal_backoff_time = 1800s
+minimal_backoff_time = 300s
+
+# This tarpits a client after 3 erroneous commands for 10s
+smtpd_soft_error_limit = 3
+smtpd_error_sleep_time = 10s
+smtpd_hard_error_limit = ${stress?1}${stress:5}
+{% endif %}
+
+{% for raw_option in postfix_raw_options | default([]) -%}
+{{ raw_option }}
+{% endfor %}

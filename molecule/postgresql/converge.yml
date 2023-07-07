@@ -1,0 +1,7 @@
+---
+- name: Converge
+  hosts: all
+  remote_user: root
+
+  roles:
+    - role: alphanodes.setup.postgresql

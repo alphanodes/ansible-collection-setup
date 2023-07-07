@@ -1,0 +1,33 @@
+---
+
+- name: Remove old working dir
+  ansible.builtin.file:
+    path: '{{ matomo_working_dir }}'
+    state: absent
+
+- name: Create working dir
+  ansible.builtin.file:
+    path: '{{ matomo_working_dir }}'
+    state: directory
+    mode: 0755
+
+- name: Extract matomo archive
+  ansible.builtin.unarchive:
+    src: '{{ matomo_archive_filename }}'
+    dest: '{{ matomo_working_dir }}'
+    owner: '{{ matomo_user }}'
+    group: '{{ matomo_group }}'
+    copy: false
+
+- name: Install new matomo files
+  ansible.builtin.command: mv {{ matomo_working_dir }}/matomo {{ matomo_dir }}
+
+# this file will be overwritten by rsync job
+- name: Install default ini configuration in multi server environment
+  ansible.builtin.template:
+    src: '{{ playbook_dir }}/files/matomo/{{ group_names[0] }}.ini.php.j2'
+    dest: '{{ matomo_config_file }}'
+    owner: '{{ matomo_user }}'
+    group: '{{ matomo_user }}'
+    mode: '{{ matomo_config_file_mode }}'
+  when: matomo_multi_server_environment and not matomo_config_file_exists.stat.exists

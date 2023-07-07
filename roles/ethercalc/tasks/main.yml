@@ -1,0 +1,16 @@
+---
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  when: not ethercalc_remove | bool
+  tags: ethercalc
+
+- name: Include nginx tasks
+  ansible.builtin.include_tasks: nginx.yml
+  when: not ethercalc_remove | bool
+  tags: ethercalc
+
+- name: Include remove tasks
+  ansible.builtin.include_tasks: remove.yml
+  when: ethercalc_remove | bool
+  tags: ethercalc

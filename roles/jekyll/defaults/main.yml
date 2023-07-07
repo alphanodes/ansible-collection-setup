@@ -1,0 +1,24 @@
+---
+# defaults file for jekyll
+
+# all instances are stored there
+jekyll_base_dir: /srv/jekyll
+
+jekyll_packages:
+  - ruby
+  - ruby-dev
+  - rubygems
+  - zlib1g-dev
+
+jekyll_site_prod: _site_prod
+jekyll_run_clean: false
+
+jekyll_instances: []
+
+jekyll_vhost_includes: []
+
+# use rvm_rubies default versions
+# jekyll_rvm_rubies:
+#  - 2.4.10
+
+jekyll_env: development

@@ -1,0 +1,34 @@
+---
+
+- name: Make drupal status happy and provide unused .htaccess for translations - {{ instance.name }}
+  ansible.builtin.copy:
+    src: .htaccess
+    dest: "{{ instance.dir }}{{ instance.vhost_dir | default(drupal_vhost_dir) }}/sites/all/translations/.htaccess"
+    owner: '{{ nginx_owner }}'
+    group: '{{ nginx_group }}'
+    mode: 0644
+
+- name: Check if private files directory exists - {{ instance.name }}
+  ansible.builtin.file:
+    path: '{{ instance.file_private_path }}'
+    state: directory
+    recurse: true
+  when: instance.file_private_path is defined
+
+- name: Set private files permissions - {{ instance.name }}
+  ansible.builtin.file:
+    path: '{{ instance.file_private_path }}'
+    owner: '{{ nginx_owner }}'
+    group: '{{ nginx_group }}'
+    recurse: true
+  when: instance.file_private_path is defined
+
+- name: Update settings.php for Drupal 7 - {{ instance.name }}
+  ansible.builtin.template:
+    src: default.settings7.php.j2
+    dest: "{{ instance.dir }}{{ instance.vhost_dir | default(drupal_vhost_dir) }}/sites/default/settings.php"
+    validate: 'php -l %s'
+    owner: root
+    group: '{{ nginx_group }}'
+    mode: 0640
+  when: ( instance.write_settings_file is not defined or instance.write_settings_file ) and drupal_instances | length

@@ -1,0 +1,165 @@
+---
+
+- name: Set key algorithms
+  ansible.builtin.set_fact:
+    key_algorithm: "{{ user.algorithm if user.algorithm is defined else ssh_key_algorithm }}"
+
+- name: Set if managing_user or not
+  ansible.builtin.set_fact:
+    managing_user: "{{ true if user.name == 'root' or ansible_user | default(ansible_env.USER) == user.name else false }}"
+
+- name: Set/Reset user_home
+  ansible.builtin.set_fact:
+    user_home: "{{ user.home if user.home is defined else '' }}"
+
+- name: Reset user_access
+  ansible.builtin.set_fact:
+    user_access: ''
+
+- name: Set known keys
+  ansible.builtin.set_fact:
+    known_keys: "{{ user.known_keys if user.known_keys is defined else ssh_known_hosts }}"
+
+# these account should be already exist
+- name: Manage user account for non-root and user!=ansible_user
+  when: not managing_user
+  block:
+    # password has to be encrypted, see
+    # https://docs.ansible.com/ansible/faq.html#how-do-i-generate-crypted-passwords-for-the-user-module
+    - name: Ensure user accounts for key exists - {{ user.name }}
+      ansible.builtin.user:
+        state: present
+        name: '{{ user.name }}'
+        password: "{{ user.password | default(lookup('password', '/dev/null encrypt=md5_crypt')) }}"
+        update_password: on_create
+        groups: '{{ user.groups | default(omit) }}'
+        home: '{{ user.home | default(omit) }}'
+        shell: "{{ user.shell | default('/bin/bash') }}"
+        comment: '{{ user.comment | default(omit) }}'
+      no_log: false
+      when: user.active is undefined or user.active
+
+    - name: Disable user accounts - {{ user.name }}
+      ansible.builtin.user:
+        state: absent
+        remove: true
+        name: '{{ user.name }}'
+      when: user.active is defined and not user.active
+
+- name: Active user tasks
+  when: user.active is undefined or user.active
+  block:
+    - name: Set home directory (root) - {{ user.name }}
+      ansible.builtin.set_fact:
+        user_home: '/root'
+      when: user.name == 'root'
+
+    # Update should never be updated here because user already exists,
+    # but we have to specify it because otherwise ansible user reset password to empty string
+    - name: Get user information for non-root - {{ user.name }}
+      ansible.builtin.user:
+        name: '{{ user.name }}'
+        password: "{{ user.password | default(lookup('password', '/dev/null encrypt=md5_crypt')) }}"
+        update_password: on_create
+        state: present
+      register: user_infos
+      no_log: true
+      when: user.name != 'root'
+
+    - name: Set home directory for non-root - {{ user.name }}
+      ansible.builtin.set_fact:
+        user_home: "{{ user_infos.home }}"
+      when: user.name != 'root'
+
+    - name: Set user group - {{ user.name }}
+      ansible.builtin.set_fact:
+        user_group: "{{ 'root' if user.name == 'root' else user_infos.group }}"
+
+    # if managing_user, default for with_management_access is true
+    - name: Set access for authorized_keys with management keys - {{ user.name }}
+      ansible.builtin.set_fact:
+        user_access: "{{ ssh_management_access + user.access | default([]) }}"
+      when: user.with_management_access | default(managing_user)
+
+    - name: Set access for authorized_keys without management keys - {{ user.name }}
+      ansible.builtin.set_fact:
+        user_access: "{{ user.access }}"
+      when: user_access == '' and user.access is defined
+
+    - name: Setup access with .ssh/authorized_keys  - {{ user.name }}
+      ansible.posix.authorized_key:
+        user: '{{ user.name }}'
+        exclusive: '{{ user.ssh_key_management_exclusive | default(ssh_key_management_exclusive) }}'
+        key: |
+            {% for key in user_access %}
+            {{ lookup('file', 'ssh/access/' + key) }}
+            {% endfor %}
+        state: present
+      when: user_access != ''
+
+    - name: Setup .ssh/known_hosts only (if provided) - {{ user.name }}
+      ansible.builtin.known_hosts:
+        key: '{{ item.key }}'
+        name: '{{ item.host }}'
+        hash_host: '{{ ssh_client_hash_known_hosts }}'
+      loop: '{{ known_keys }}'
+      register: known_hosts_rc
+      when: managing_user and item.host is defined and item.key is defined
+
+    - name: Setup .ssh/known_hosts only (all) - {{ user.name }}
+      ansible.builtin.known_hosts:
+        path: '{{ user_home }}/.ssh/known_hosts'
+        key: '{{ item.key }}'
+        name: '{{ item.host }}'
+        hash_host: '{{ ssh_client_hash_known_hosts }}'
+      loop: '{{ ssh_all_known_hosts }}'
+      register: known_hosts_rc
+      when: >
+        item.host is defined
+        and item.key is defined
+        and (user.skip_ssh_all_known_hosts is undefined or not user.skip_ssh_all_known_hosts)
+
+    - name: Check if .ssh/known_hosts exists - {{ user.name }}
+      ansible.builtin.stat:
+        path: '{{ user_home }}/.ssh/known_hosts'
+      register: known_hosts_result
+
+    - name: Check permission of .ssh/known_hosts - {{ user.name }}
+      ansible.builtin.file:
+        path: '{{ user_home }}/.ssh/known_hosts'
+        owner: '{{ user.name }}'
+        group: '{{ user_group }}'
+        mode: 0600
+      when: user.name != 'root' and known_hosts_result.stat.exists
+
+    - name: Manage private ssh keys and config file
+      when: user.private_keys is defined and user.private_keys
+      block:
+        - name: Setup .ssh/config - home {{ user_home }}
+          ansible.builtin.template:
+            src: .ssh/config
+            dest: '{{ user_home }}/.ssh/config'
+            owner: '{{ user.name }}'
+            group: '{{ user_group }}'
+            mode: 0600
+          when: user.skip_config is undefined or not user.skip_config
+
+        - name: Install private keys - {{ user.name }}
+          ansible.builtin.copy:
+            src: 'ssh/private_keys/{{ item.source_dir | default(item.dir) }}/{{ item.user | default(omit) }}_id_{{ item.algorithm | default(key_algorithm) }}'
+            dest: '{{ user_home }}/.ssh/{{ item.dir }}/'
+            owner: '{{ user.name }}'
+            group: '{{ user_group }}'
+            mode: 0600
+          loop: '{{ user.private_keys }}'
+          when: item.dir is defined and item.user is defined and (item.default_key is undefined or not item.default_key)
+
+        - name: Install default private keys - {{ user.name }}
+          ansible.builtin.copy:
+            src: "ssh/private_keys/{{ item.source_dir | default(item.dir) }}/{{ item.user | default(user.name) }}_id_{{ item.algorithm | default(key_algorithm) }}"
+            dest: '{{ user_home }}/.ssh/id_{{ item.algorithm | default(key_algorithm) }}'
+            owner: '{{ user.name }}'
+            group: '{{ user_group }}'
+            mode: 0600
+          loop: '{{ user.private_keys }}'
+          when: item.dir is defined and item.default_key is defined and item.default_key

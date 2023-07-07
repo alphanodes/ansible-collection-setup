@@ -1,0 +1,18 @@
+---
+# file: run matomo archiver
+
+- hosts: {{ ansible_node_playbook_host }}
+  serial: 1
+
+  vars:
+    ansible_python_interpreter: {{ ansible_node_playbook_ansible_python_interpreter }}
+{% if matomo_task_become is defined %}
+    matomo_task_become: {{ matomo_task_become | bool | lower }}
+{% endif %}
+{% if matomo_task_become_user is defined %}
+    matomo_task_become_user: {{ matomo_task_become_user }}
+{% endif %}
+    matomo_console_name: core:archive
+
+  roles:
+    - alphanodes.tasks.matomo_task

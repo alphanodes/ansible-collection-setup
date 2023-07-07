@@ -1,0 +1,25 @@
+---
+
+- name: Ensure configuration directory exists
+  ansible.builtin.file:
+    path: /etc/redmine
+    state: directory
+    mode: 0755
+
+- name: Ensure Redmine packages are installed
+  ansible.builtin.apt:
+    name: '{{ redmine_packages }}'
+    state: present
+
+- name: Install ruby-dev if required
+  ansible.builtin.apt:
+    name: ruby-dev
+    state: present
+  when: redmine_with_ruby_dev or not redmine_use_rvm_as_default
+
+- name: Remove ruby-dev if not required
+  ansible.builtin.apt:
+    name: ruby-dev
+    purge: true
+    state: absent
+  when: not redmine_with_ruby_dev and redmine_use_rvm_as_default

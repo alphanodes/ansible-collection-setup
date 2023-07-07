@@ -1,0 +1,26 @@
+---
+# defaults file for nfs
+
+nfs_packages:
+  - nfs-common
+
+nfs_server_packages:
+  - nfs-kernel-server
+
+# setup as nfs server
+nfs_server: false
+
+nfs_server_start: true
+
+nfs_threads: 8
+nfs_priority: 0
+
+# required for NFS v4 (only)
+nfs_callback_port: 2044
+
+nfs_nlm_port: 2045
+nfs_statd_port: 2046
+nfs_statd_outgoing_port: 2047
+nfs_mountd_port: 2048
+
+nfs_exports: []

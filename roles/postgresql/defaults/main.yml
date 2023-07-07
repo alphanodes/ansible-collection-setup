@@ -1,0 +1,167 @@
+---
+# defaults file for postgresql
+
+# Select postgresql version: 10, 11, 12, 13, 14 or 15
+postgresql_version: '15'
+postgresql_postgis_version: '3'
+
+# libdbd-pg-perl is required for tuning script
+postgresql_packages:
+  - postgresql-{{ postgresql_version }}
+  - libdbd-pg-perl
+
+# nginx is required, if postgresql_with_pgbadger: true
+postgresql_with_pgbadger: false
+postgresql_pgbadger_output_dir: /var/lib/pgbadger
+# nginx base auth user
+postgresql_pgbadger_user: pgbadger
+# nginx base auth passwords (leave empty, if you do not want base auth protection)
+postgresql_pgbadger_password: ''
+# debian packages
+postgresql_pgbadger_packages:
+  - pgbadger
+  - python3-passlib
+
+postgresql_with_postgis: false
+postgresql_postgis_packages:
+  - postgresql-{{ postgresql_version }}-postgis-{{ postgresql_postgis_version }}
+
+# enables zabbix monitoring
+
+# overwrite it from hosts_vars
+
+zabbix_monitoring: false
+zabbix_agent_home: /var/lib/zabbix
+postgresql_password_salt: "{{ common_password_salt | default('') }}"
+postgresql_zabbix_user: zbx_monitor
+postgresql_zabbix_password: '{{ [ansible_machine_id, ansible_hostname, postgresql_password_salt, "zabbix-agent-postgresql"] | join | hash("md5") }}'
+
+# see http://pgtune.leopard.in.ua/ for calculation
+
+# How much memory our PostgreSQL can use for
+# buffers. Default value is insanely small.
+# If PostgreSQL is the only thing we run on
+# the machine, set it to 1/4 of available RAM
+postgresql_shared_buffers: 256MB
+# How much memory in total our PostgreSQL can use.
+# Twice of shared_buffers seems good.
+postgresql_effective_cache_size: 1GB
+# How many connections we should allow from
+# our app, workers, delayed_jobs etc. combined
+postgresql_max_connections: 50
+postgresql_listen_addresses: localhost
+postgresql_port: 5432
+# see https://www.postgresql.org/docs/current/runtime-config-autovacuum.html
+postgresql_autovacuum: true
+postgresql_autovacuum_max_workers: 3
+postgresql_autovacuum_naptime: 1min
+postgresql_autovacuum_analyze_scale_factor: 0.01
+postgresql_autovacuum_analyze_threshold: 50
+postgresql_autovacuum_vacuum_cost_limit: 1000
+postgresql_autovacuum_vacuum_scale_factor: 0.02
+postgresql_autovacuum_vacuum_insert_scale_factor: '{{ postgresql_autovacuum_vacuum_scale_factor }}'
+postgresql_autovacuum_vacuum_threshold: 50
+postgresql_autovacuum_vacuum_insert_threshold: 1000
+postgresql_huge_pages: 'try'
+postgresql_work_mem: 4MB
+# postgresql_hash_mem_multiplier: '2.0'
+postgresql_maintenance_work_mem: 128MB
+postgresql_synchronous_commit: true
+postgresql_deadlock_timeout: 1s
+postgresql_checkpoint_timeout: 15min
+postgresql_max_wal_size: 2GB
+postgresql_min_wal_size: 80MB
+# (checkpoint_timeout - 2min) / checkpoint_timeout)
+# see https://blog.2ndquadrant.com/basics-of-tuning-checkpoints/
+postgresql_checkpoint_completion_target: 0.86
+# with barman replica is required, at least
+postgresql_wal_level: replica
+postgresql_wal_buffers: -1
+
+# e.g. for shared_preload_libraries = 'pg_stat_statements'
+# postgresql_shared_preload_libraries: ''
+# postgresql_compute_query_id: auto
+# postgresql_pg_stat_statements_max:
+# postgresql_pg_stat_statements_track:
+
+# postgresql_seq_page_cost: '1.0'
+# see https://pgtune.leopard.in.ua/#/
+# for HDD:
+#  random_page_cost = 4
+#  effective_io_concurrency = 2
+# for SSD:
+#  random_page_cost = 1.0
+#  effective_io_concurrency = 200
+# postgresql_random_page_cost: 1.0
+postgresql_effective_io_concurrency: '2'
+
+postgresql_ssl_ca_file: ''
+postgresql_ssl_cert_file: '/etc/ssl/certs/ssl-cert-snakeoil.pem'
+postgresql_ssl_crl_file: ''
+postgresql_ssl_key_file: '/etc/ssl/private/ssl-cert-snakeoil.key'
+
+postgresql_log_destination: stderr
+postgresql_log_statement: none
+postgresql_log_line_prefix_syslog: 'user=%u,db=%d,app=%aclient=%h '
+postgresql_log_line_prefix_stderr: '%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '
+# disabled, if -1
+postgresql_log_min_duration_statement: 2000
+postgresql_log_checkpoints: false
+postgresql_log_connections: false
+postgresql_log_disconnections: false
+postgresql_log_lock_waits: false
+postgresql_log_temp_files: -1
+postgresql_log_autovacuum_min_duration: -1
+
+# or Europe/Berlin
+postgresql_log_timezone: localtime
+postgresql_timezone: localtime
+postgresql_datestyle: iso, dmy
+
+postgresql_cluster_name: ''
+
+# lc_messages C or en_US is required for pgbadger
+postgresql_lc_messages: C
+postgresql_lc_monetary: '{{ postgresql_lc_messages }}'
+postgresql_lc_numeric: '{{ postgresql_lc_messages }}'
+postgresql_lc_time: '{{ postgresql_lc_messages }}'
+
+postgresql_default_text_search_config: pg_catalog.english
+
+postgresql_data_dir: '/var/lib/postgresql/{{ postgresql_version }}/main'
+postgresql_bin_path: '/usr/lib/postgresql/{{ postgresql_version }}/bin'
+postgresql_config_path: '/etc/postgresql/{{ postgresql_version }}/main'
+
+postgresql_user: postgres
+postgresql_group: postgres
+
+# Users
+postgresql_users: []
+
+# Privileges
+postgresql_allow_replication_connections: false
+postgresql_privileges: []
+postgresql_access_hosts: []
+
+# Databases
+postgresql_databases: []
+
+postgresql_with_barman: false
+postgresql_barman_name: '{{ inventory_hostname }}'
+postgresql_barman_user: barman
+# ssh host
+postgresql_barman_host: localhost
+# ssh port
+postgresql_barman_port: 22
+# barman home at barman server for rsync (wals)
+postgresql_barman_dir: /var/lib/barman
+
+# you have to set a password
+# postgresql_barman_password:
+
+# ssh public key, which get access to postgres user
+postgresql_barman_ssh_public_key: ''
+postgresql_barman_wals_dir: ''
+
+# can be manually set (otherwise it is calculated)
+# postgresql_barman_archive_command: ''

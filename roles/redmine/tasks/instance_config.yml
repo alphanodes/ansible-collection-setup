@@ -1,0 +1,94 @@
+---
+
+- name: Ensure redmine instance configuration directory exists - {{ instance_name }}
+  ansible.builtin.file:
+    path: '{{ redmine_config_dir }}'
+    owner: '{{ instance_name }}'
+    group: '{{ instance_name }}'
+    mode: 0755
+    state: directory
+
+- name: Configure Gemfile.local - {{ instance_name }}
+  ansible.builtin.template:
+    src: redmine/Gemfile.j2
+    dest: '{{ redmine_app_dir }}/Gemfile.local'
+    owner: '{{ redmine_user }}'
+    group: '{{ redmine_group }}'
+    mode: 0644
+    validate: 'ruby -c %s'
+  notify: Restart puma instance
+
+- name: Setup sudoer for zabbix - {{ instance_name }}
+  ansible.builtin.template:
+    src: etc/sudoers.d/redmine.j2
+    dest: /etc/sudoers.d/{{ instance_name }}
+    mode: 0440
+
+- name: Include redmine configuration file tasks
+  ansible.builtin.include_tasks: instance_config_file.yml
+  loop: "{{ redmine_config_templates }}"
+  loop_control:
+    loop_var: config_file
+
+- name: Merge projects block
+  when: instance.merge_projects_config is defined
+  block:
+    - name: Merge_projects configuration file - {{ instance_name }}
+      ansible.builtin.copy:
+        src: 'merge_projects/{{ instance.merge_projects_config }}'
+        dest: '{{ redmine_config_dir }}/merge_projects.rb'
+        owner: '{{ instance_name }}'
+        group: '{{ instance_name }}'
+        mode: 0640
+      notify: Restart puma instance
+
+    - name: Get link info - {{ instance_name }}
+      ansible.builtin.stat:
+        path: '{{ redmine_app_dir }}/config/merge_projects.rb'
+      register: file_info
+
+    - name: Remove merge_projects file, if not a link - {{ instance_name }}
+      ansible.builtin.file:
+        path: '{{ redmine_app_dir }}/config/merge_projects.rb'
+        state: absent
+      when: file_info.stat.islnk is defined and not file_info.stat.islnk
+
+    - name: Symlinks to merge_projects configuration file - {{ instance_name }}
+      ansible.builtin.file:
+        src: '{{ redmine_config_dir }}/merge_projects.rb'
+        dest: '{{ redmine_app_dir }}/config/merge_projects.rb'
+        state: link
+      become: false
+      become_user: '{{ redmine_user }}'
+
+- name: Database configuration block
+  when: instance.no_db_config_file is undefined or not instance.no_db_config_file
+  block:
+    - name: Update redmine database configuration - {{ instance_name }}
+      ansible.builtin.template:
+        src: redmine/config/database.yml.j2
+        dest: '{{ redmine_config_dir }}/database.yml'
+        owner: '{{ redmine_user }}'
+        group: '{{ redmine_group }}'
+        mode: 0640
+      notify: Restart puma instance
+
+    - name: Get link info - {{ instance_name }}
+      ansible.builtin.stat:
+        path: '{{ redmine_app_dir }}/config/database.yml'
+      register: file_info
+
+    - name: Remove database configuration file, if not a link - {{ instance_name }}
+      ansible.builtin.file:
+        path: '{{ redmine_app_dir }}/config/database.yml'
+        state: absent
+      when: file_info.stat.islnk is defined and not file_info.stat.islnk
+
+    - name: Symlinks to database configuration - {{ instance_name }}
+      ansible.builtin.file:
+        src: '{{ redmine_config_dir }}/database.yml'
+        dest: '{{ redmine_app_dir }}/config/database.yml'
+        state: link
+      become: false
+      become_user: '{{ redmine_user }}'
+      notify: Restart puma instance

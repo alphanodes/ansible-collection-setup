@@ -1,0 +1,90 @@
+---
+
+- name: Set fact plugin_name
+  ansible.builtin.set_fact:
+    plugin_name: '{{ active_plugin.name }}'
+
+- name: Set fact plugin
+  ansible.builtin.set_fact:
+    plugin: "{{ matomo_available_plugins[plugin_name] }}"
+
+- name: Set fact plugin_use_git
+  ansible.builtin.set_fact:
+    plugin_use_git: "{{ active_plugin.use_git | default(plugin.use_git) }}"
+
+- name: Set fact plugin_version
+  ansible.builtin.set_fact:
+    plugin_version: "{{ active_plugin.version | default(plugin.version) }}"
+
+- name: Set fact plugin_dir
+  ansible.builtin.set_fact:
+    plugin_dir: "{{ matomo_plugin_path }}/{{ plugin_name }}"
+
+- name: Set fact tmp_plugin_dir
+  ansible.builtin.set_fact:
+    tmp_plugin_dir: "{{ matomo_plugin_path }}/plugin-{{ plugin_name }}-{{ plugin_version }}"
+
+- name: Remove plugin - {{ plugin_name }}
+  ansible.builtin.file:
+    path: '{{ matomo_plugin_path }}/{{ plugin_name }}'
+    state: absent
+  when: active_plugin.state is defined and active_plugin.state == 'absent'
+
+- name: Download installation of plugin - {{ plugin_name }}
+  when: not plugin_use_git
+  block:
+    - name: Set facts
+      ansible.builtin.set_fact:
+        download_file: "{{ plugin.download | replace('%%version%%', plugin_version) }}"
+        archive_filename: "{{ plugin_name }}_{{ plugin_version }}.tar.gz"
+
+    - name: Stats for archive file
+      ansible.builtin.stat:
+        path: '{{ software_dir }}/{{ archive_filename }}'
+      register: archive_file_exists
+
+    - name: Download plugin archive file - {{ plugin_name }}
+      ansible.builtin.get_url:
+        url: '{{ download_file }}'
+        dest: '{{ software_dir }}/{{ archive_filename }}'
+        mode: 0644
+
+    - name: Stats for plugin directory
+      ansible.builtin.stat:
+        path: '{{ plugin_dir }}'
+      register: plugin_dir_exists
+
+    - name: Only run if required
+      when: >
+        (not archive_file_exists.stat.exists or not plugin_dir_exists.stat.exists)
+        and (active_plugin.state is undefined or active_plugin.state!='absent')
+      block:
+        - name: Remove existing plugin directory - {{ plugin_name }}
+          ansible.builtin.file:
+            path: '{{ item }}'
+            state: absent
+          loop:
+            - '{{ plugin_dir }}'
+            - '{{ tmp_plugin_dir }}'
+
+        - name: Extract plugin archive - {{ plugin_name }}
+          ansible.builtin.unarchive:
+            src: '{{ software_dir }}/{{ archive_filename }}'
+            dest: '{{ matomo_plugin_path }}'
+            owner: '{{ nginx_owner }}'
+            group: '{{ nginx_group }}'
+            copy: false
+
+        - name: Corrent directory name - {{ plugin_name }}
+          ansible.builtin.command: mv {{ tmp_plugin_dir }} {{ plugin_dir }}
+
+- name: Git Installation of plugin - {{ plugin_name }}
+  when: plugin_use_git and (active_plugin.state is undefined or active_plugin.state!='absent')
+  block:
+    - name: Install plugin - {{ plugin_name }}
+      ansible.builtin.git:
+        repo: '{{ plugin.repo }}'
+        dest: '{{ plugin_dir }}'
+        version: '{{ plugin.branch | default(omit) }}'
+        force: true
+        accept_hostkey: true

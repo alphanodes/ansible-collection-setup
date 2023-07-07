@@ -1,0 +1,66 @@
+---
+
+- name: Install/Update Gitaly tasks
+  become_user: "{{ gitlab_user }}"
+  become: true
+  environment:
+    RAILS_ENV: '{{ gitlab_rails_env }}'
+    PATH: '{{ bundler_path }}:$PATH'
+    REDIS_URL: '{{ gitlab_redis_url }}'
+  block:
+    - name: Get required Gitaly version
+      ansible.builtin.command: cat GITALY_SERVER_VERSION
+      args:
+        chdir: '{{ gitlab_path }}'
+      changed_when: false
+      register: gitaly_version
+
+    - name: Ensure Gitaly version v{{ gitaly_version.stdout }}
+      ansible.builtin.git:
+        repo: "{{ gitlab_gitaly_repository }}"
+        dest: "{{ gitlab_gitaly_path }}"
+        version: "v{{ gitaly_version.stdout }}"
+        force: true
+      register: gitaly_changed
+
+    - name: Rebuild tasks
+      when: >
+        gitaly_changed.changed or
+        gitlab_gitaly_force_rebuild or
+        (gitlab_setup_run.query_result[0].id | int) == 0
+      tags:
+        - skip_ansible_lint
+      block:
+        - name: Clean Gitaly
+          ansible.builtin.command: make clean
+          args:
+            chdir: "{{ gitlab_gitaly_path }}"
+
+        - name: Build Gitaly
+          ansible.builtin.command: make all
+          retries: 3
+          delay: 5
+          args:
+            chdir: "{{ gitlab_gitaly_path }}"
+
+        # - name: Install Ruby gems for Gitaly
+        #   ansible.builtin.command: bash -lc "bundle install --jobs={{ ansible_processor_nproc }} --path vendor/bundle"
+        #   args:
+        #     chdir: "{{ gitlab_gitaly_path }}/ruby"
+
+# see https://gitlab.com/gitlab-org/gitaly
+- name: Configure config.toml
+  ansible.builtin.template:
+    src: gitaly/config.toml.j2
+    dest: '{{ gitlab_gitaly_path }}/config.toml'
+    owner: '{{ gitlab_user }}'
+    group: '{{ gitlab_group }}'
+    mode: 0640
+
+- name: Restrict Gitaly socket access
+  ansible.builtin.file:
+    path: '{{ gitaly_socket_dir }}'
+    state: directory
+    owner: '{{ gitlab_user }}'
+    group: '{{ gitlab_group }}'
+    mode: 0700

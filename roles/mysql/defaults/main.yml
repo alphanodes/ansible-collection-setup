@@ -1,0 +1,175 @@
+---
+# defaults file for alphanodes.setup.mysql
+
+# Set this to the user ansible is logging in as - should have root
+# or sudo access
+mysql_user_home: /root
+mysql_user_name: root
+mysql_user_password: root
+
+# The default root user installed by mysql - almost always root
+mysql_root_home: /root
+mysql_root_username: root
+mysql_root_password: root
+
+# Set this to `true` to forcibly update the root password.
+mysql_root_password_update: false
+mysql_user_password_update: false
+
+mysql_enabled_on_startup: true
+
+# Whether my.cnf should be updated on every run.
+overwrite_global_mycnf: true
+
+mysql_packages:
+  - mysql-common
+  - mysql-server
+
+mysql_python_package_debian: python3-mysqldb
+
+# MySQL connection settings.
+mysql_port: "3306"
+mysql_bind_address: '127.0.0.1'
+mysql_skip_name_resolve: false
+mysql_datadir: /var/lib/mysql
+mysql_sql_mode: ~
+mysql_pid_file: /run/mysqld/mysqld.pid
+mysql_socket: /run/mysqld/mysqld.sock
+
+mysql_character_set_server: utf8mb4
+mysql_collation_server: utf8mb4_unicode_ci
+
+mysql_config_include_dir: /etc/mysql/conf.d
+mysql_config_mysql_include_dir: /etc/mysql/mysql.conf.d
+
+mysql_config_file: "{{ mysql_config_mysql_include_dir }}/ansible.cnf"
+
+# do not include includedir conf.d and mysql.conf.d
+mysql_with_includedirs: false
+# if mysql_with_includedirs is false, remove include directories
+mysql_remove_unused_includedirs: false
+
+mysql_daemon: mysql
+
+# Memory settings (default values optimized ~512MB RAM).
+mysql_key_buffer_size: "256M"
+mysql_max_allowed_packet: "64M"
+mysql_table_open_cache: "1024"
+mysql_sort_buffer_size: "1M"
+mysql_read_buffer_size: "1M"
+mysql_read_rnd_buffer_size: "4M"
+mysql_myisam_sort_buffer_size: "64M"
+mysql_thread_cache_size: "16"
+mysql_max_connections: "25"
+mysql_tmp_table_size: "16M"
+mysql_max_heap_table_size: "16M"
+mysql_group_concat_max_len: "1024"
+mysql_join_buffer_size: "262144"
+
+# Other settings.
+mysql_lower_case_table_names: "0"
+mysql_wait_timeout: "28800"
+mysql_event_scheduler_state: "OFF"
+
+# InnoDB settings.
+mysql_innodb_file_per_table: "1"
+# Set .._buffer_pool_size up to 80% of RAM but beware of setting too high.
+mysql_innodb_buffer_pool_size: "256M"
+mysql_innodb_log_buffer_size: "8M"
+mysql_innodb_flush_log_at_trx_commit: "1"
+mysql_innodb_lock_wait_timeout: "50"
+# default is 100M
+mysql_innodb_redo_log_capacity: 256M
+
+# mysqldump settings.
+mysql_mysqldump_max_allowed_packet: "64M"
+
+# Logging settings.
+mysql_log: ""
+mysql_syslog_tag: mysqld
+# TABLE, FILE or NONE
+mysql_log_output: TABLE
+# Log file settings.
+mysql_log_file_group: adm
+
+# use error log
+# note: if not set, mysql uses stderr, which is used for systemd (default)
+# mysql_log_error: /var/log/mysql/error.log
+
+# Slow query log settings.
+mysql_slow_query_log_enabled: true
+mysql_slow_query_time: "2"
+mysql_slow_query_log_file: /var/log/mysql/mysql-slow.log
+
+# Databases.
+mysql_databases: []
+#   - name: example
+#     collation: utf8_general_ci
+#     encoding: utf8
+#     replicate: 1
+
+# Users.
+mysql_users: []
+#   - name: example
+#     host: 127.0.0.1
+#     password: secret
+#     priv: *.*:USAGE
+
+mysql_disable_log_bin: true
+
+# Replication settings (replication is only enabled if master/user have values).
+mysql_server_id: "1"
+mysql_max_binlog_size: "100M"
+mysql_binlog_format: "ROW"
+mysql_expire_logs_days: "5"
+mysql_replication_role: ''
+mysql_replication_master: ''
+mysql_replication_master_inventory_host: "{{ mysql_replication_master }}"
+
+# Same keys as `mysql_users` above.
+mysql_replication_user: []
+
+# overwrite it from hosts_vars
+mysql_server_password_salt: "{{ common_password_salt | default('') }}"
+
+mysql_zabbix_host: localhost
+mysql_zabbix_user: zbx_monitor
+mysql_zabbix_password: '{{ [ansible_machine_id, ansible_hostname, mysql_server_password_salt, "zabbix-agent"] | join | hash("md5") }}'
+
+mysql_replication_with_write: false
+mysql_secure_file_priv: ''
+mysql_server_with_local_infile: false
+
+# use server as multi-source replication slave
+mysql_server_gtid_mode: false
+
+# use ram disk for tmp directoy - leave empty for mysql default
+mysql_server_tmpdir: /run/mysqld
+
+# 400 + (table_open_cache / 2) (this is default with MySQL 5.6)
+# https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_table_definition_cache
+# default: MIN(400 + table_open_cache / 2, 2000)
+# not supported by geerlymysql
+mysql_table_definition_cache: 2048
+
+mysql_server_debian_sys_maint_password: '{{ [ansible_machine_id, ansible_hostname, mysql_server_password_salt, "debian-sys-maint"] | join | hash("md5") }}'
+
+mysql_mysqltuner_url: https://raw.githubusercontent.com/major/MySQLTuner-perl/master/mysqltuner.pl
+mysql_tuning_primer_url: https://raw.githubusercontent.com/RootService/tuning-primer/master/tuning-primer.sh
+
+mysql_with_ssl: false
+mysql_ssl_ca: /etc/ssl/certs/mysql_ca.crt
+mysql_ssl_cert: /etc/ssl/certs/mysql_server.crt
+mysql_ssl_key: /etc/ssl/private/mysql_server.key
+
+mysql_obsoleted_conflicted_files:
+  - "{{ mysql_config_include_dir }}/custom.cnf"
+  - "{{ mysql_config_include_dir }}/dummy.cnf"
+  - "{{ mysql_config_include_dir }}/mysql.cnf"
+  - "{{ mysql_config_include_dir }}/mysqldump.cnf"
+  - "{{ mysql_config_mysql_include_dir }}/mysql.cnf"
+  - "{{ mysql_config_mysql_include_dir }}/mysqld.cnf"
+
+# enable zabbix monitoring
+zabbix_monitoring: false
+zabbix_agent_home: /var/lib/zabbix

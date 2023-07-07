@@ -1,0 +1,12 @@
+[defaults]
+retry_files_enabled = False
+timeout = 15
+host_key_checking = {{ 'True' if ansible_host_key_checking else 'False' }}
+{% if ansible_node_ansible_managed != '' -%}
+
+ansible_managed = {{ ansible_node_ansible_managed }}
+{% endif %}
+
+[ssh_connection]
+pipelining = {{ 'True' if ansible_node_pipelining else 'False' }}
+ssh_args = {{ ansible_node_ssh_args }}

@@ -1,0 +1,52 @@
+---
+
+- name: Be sure redis is installed
+  ansible.builtin.apt:
+    name: '{{ redis_server_packages }}'
+    state: present
+
+- name: Gather the package facts
+  ansible.builtin.package_facts:
+    manager: "auto"
+
+- name: Check if php is installed
+  ansible.builtin.set_fact:
+    php_installed: "{{ true if redis_server_check_php_package in ansible_facts.packages else false }}"
+
+- name: Install PHP package (if required)
+  ansible.builtin.apt:
+    name: '{{ redis_server_php_package }}'
+    state: present
+  when: php_installed
+
+- name: Setup redis configuration
+  ansible.builtin.template:
+    src: redis.conf.j2
+    dest: /etc/redis/redis.conf
+    owner: redis
+    group: redis
+    mode: 0640
+  notify: Restart redis
+
+- name: Include systemd tasks
+  ansible.builtin.import_tasks: systemd.yml
+
+- name: Start the redis-server service
+  ansible.builtin.systemd:
+    name: '{{ redis_server_service_name }}'
+    state: started
+    enabled: true
+
+- name: Test Redis is working on port {{ redis_server_port }}
+  ansible.builtin.command: redis-cli ping
+  register: redis_test
+  failed_when: redis_test.stdout != 'PONG'
+  changed_when: false
+  when: redis_server_port != 0
+
+- name: Test Redis is working on socket
+  ansible.builtin.command: redis-cli -s {{ redis_server_unixsocket }} ping
+  register: redis_test
+  failed_when: redis_test.stdout != 'PONG'
+  changed_when: false
+  when: redis_server_port == 0

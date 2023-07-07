@@ -1,0 +1,55 @@
+---
+
+# SEE https://docs.gitlab.com/ee/administration/pages/source.html#wildcard-domains
+- name: Get required pages version
+  ansible.builtin.command: cat GITLAB_PAGES_VERSION
+  args:
+    chdir: '{{ gitlab_path }}'
+  changed_when: false
+  register: pages_version
+
+- name: Add gitlab user to ssl-cert group
+  ansible.builtin.user:
+    name: "{{ gitlab_user }}"
+    groups: ssl-cert
+    append: true
+
+- name: Install/update pages
+  when: gitlab_update
+  become_user: "{{ gitlab_user }}"
+  become: true
+  block:
+    - name: Ensure gitlab pages version v{{ pages_version.stdout }}
+      ansible.builtin.git:
+        repo: "{{ gitlab_pages_repository }}"
+        dest: "{{ gitlab_pages_path }}"
+        version: "v{{ pages_version.stdout }}"
+        force: true
+      register: gitlab_git_changed
+
+    - name: Build pages with go
+      ansible.builtin.command: make
+      args:
+        chdir: "{{ gitlab_pages_path }}"
+      register: gitlab_pages_go
+
+    - name: Get secret file info
+      ansible.builtin.stat:
+        path: '{{ gitlab_pages_secret_path }}'
+        get_checksum: false
+      register: secret_file
+
+    # see https://docs.gitlab.com/ee/administration/pages/source.html#wildcard-domains
+    - name: Create secret file
+      ansible.builtin.shell: openssl rand -base64 32 > {{ gitlab_pages_secret_path }}
+      when: not secret_file.stat.exists
+
+- name: Configure Gitlab pages
+  ansible.builtin.template:
+    src: gitlab-pages/gitlab-pages.conf.j2
+    dest: '{{ gitlab_pages_path }}/gitlab-pages.conf'
+    owner: '{{ gitlab_user }}'
+    group: '{{ gitlab_group }}'
+    mode: 0640
+  notify:
+    - Restart gitlab pages

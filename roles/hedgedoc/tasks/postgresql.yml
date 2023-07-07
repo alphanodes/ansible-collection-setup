@@ -1,0 +1,19 @@
+---
+
+- name: Create hedgedoc postgresql database user
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_user:
+    name: '{{ hedgedoc_db_user }}'
+    password: '{{ hedgedoc_db_password }}'
+    role_attr_flags: '{{ hedgedoc_db_role_flags | default(omit) }}'
+    state: present
+  no_log: true
+
+- name: Be sure hedgedoc postgresql databases exists
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_db:
+    name: '{{ hedgedoc_db_name }}'
+    owner: '{{ hedgedoc_db_user }}'
+    state: present

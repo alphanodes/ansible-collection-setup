@@ -1,0 +1,78 @@
+---
+- name: Set fact postgresql_barman_archive_command
+  ansible.builtin.set_fact:
+    postgresql_barman_archive_command: 'rsync -a -e "ssh -p {{ postgresql_barman_port }}" %p {{ postgresql_barman_user }}@{{ postgresql_barman_host }}:{{ postgresql_barman_dir }}/{{ postgresql_barman_name | mandatory }}/incoming/%f'
+  when: postgresql_with_barman and postgresql_barman_archive_command is undefined
+
+- name: Be sure PostgreSQL are installed
+  ansible.builtin.apt:
+    name: '{{ postgresql_packages }}'
+    state: present
+
+- name: Be sure psycopg2 is installed
+  ansible.builtin.apt:
+    name: "{{ 'python3-psycopg2' if ansible_python_interpreter is defined and 'python3' in ansible_python_interpreter else 'python-psycopg2' }}"
+    state: present
+
+- name: Include postgis tasks
+  ansible.builtin.include_tasks: postgis.yml
+  when: postgresql_with_postgis
+
+- name: Include pgbadger tasks
+  ansible.builtin.include_tasks: pgbadger.yml
+  when: postgresql_with_pgbadger
+
+- name: Include pgbadger cleanup tasks
+  ansible.builtin.include_tasks: cleanup_pgbadger.yml
+  when: not postgresql_with_pgbadger
+
+- name: Ensure PostgreSQL is started and enabled to start at boot.
+  ansible.builtin.systemd:
+    name: postgresql
+    state: started
+    enabled: true
+
+- name: Update PostgreSQL configuration
+  ansible.builtin.template:
+    src: postgresql.j2
+    dest: '/etc/postgresql/{{ postgresql_version }}/main/postgresql.conf'
+    mode: 0644
+    owner: '{{ postgresql_user }}'
+    group: '{{ postgresql_group }}'
+  notify: Restart postgresql
+
+- name: Update PostgreSQL hba configuration
+  ansible.builtin.template:
+    src: pg_hba.j2
+    dest: '/etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf'
+    owner: '{{ postgresql_user }}'
+    group: '{{ postgresql_group }}'
+    mode: 0640
+  notify: Restart postgresql
+
+- name: Check if PostgreSQL database is initialized.
+  ansible.builtin.stat:
+    path: "{{ postgresql_data_dir }}/PG_VERSION"
+  register: pgdata_dir_version
+
+- name: Ensure PostgreSQL database is initialized.
+  ansible.builtin.command: "{{ postgresql_bin_path }}/initdb -D {{ postgresql_data_dir }}"
+  when: not pgdata_dir_version.stat.exists
+  become: true
+  become_user: "{{ postgresql_user }}"
+  # See: https://github.com/ansible/ansible/issues/16048#issuecomment-229012509
+  vars:
+    ansible_ssh_pipelining: true
+
+# see https://www.postgresql.org/docs/11/kernel-resources.html
+- name: Setup sysctl vm.overcommit_memory for more robust system behavior
+  ansible.posix.sysctl:
+    name: vm.overcommit_memory
+    value: '2'
+    sysctl_set: true
+    state: present
+    reload: true
+  when: ansible_virtualization_type == 'kvm' or ansible_virtualization_type == 'VMware' or ansible_virtualization_type == 'VirtualPC'
+
+- name: Include postgresqltuner tasks
+  ansible.builtin.include_tasks: postgresqltuner.yml

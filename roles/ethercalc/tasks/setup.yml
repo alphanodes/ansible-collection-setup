@@ -1,0 +1,41 @@
+---
+
+- name: Ensure ethercalc user is present
+  ansible.builtin.user:
+    name: "{{ ethercalc_user }}"
+    home: "{{ ethercalc_home }}"
+    shell: "/bin/bash"
+    state: present
+
+- name: Ensure required packages are installed
+  ansible.builtin.apt:
+    pkg: "{{ ethercalc_required_packages }}"
+    state: present
+
+- name: Ensure ethercalc is latest
+  ansible.builtin.git:
+    repo: "{{ ethercalc_repository }}"
+    dest: "{{ ethercalc_path }}"
+    version: "{{ ethercalc_repository_version }}"
+  become_user: "{{ ethercalc_user }}"
+  notify:
+    - Install nodejs dependencies
+
+- name: Flush all handlers at this point
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure ethercalc systemd script is latest
+  ansible.builtin.template:
+    src: ethercalc.service.j2
+    dest: /etc/systemd/system/ethercalc.service
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - Reload systemd daemon
+
+- name: Ensure ethercalc is started and enabled
+  ansible.builtin.systemd:
+    name: ethercalc
+    state: started
+    enabled: true

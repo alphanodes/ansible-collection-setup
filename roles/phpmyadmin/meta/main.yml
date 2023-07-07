@@ -1,0 +1,24 @@
+---
+dependencies:
+  - role: alphanodes.setup.mysql_client
+  - role: alphanodes.setup.php_fpm
+  - role: geerlingguy.composer
+  - role: alphanodes.setup.nodejs
+
+galaxy_info:
+  description: Setup phpmyadmin
+  author: alexandermeindl
+  company: AlphaNodes GmbH
+  license: Apache License 2.0
+  min_ansible_version: '2.14'
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+    - name: Debian
+      versions:
+        - buster
+        - bullseye
+  galaxy_tags:
+    - phpmyadmin

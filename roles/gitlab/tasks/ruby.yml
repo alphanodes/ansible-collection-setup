@@ -1,0 +1,85 @@
+---
+
+- name: Install system ruby packages
+  ansible.builtin.apt:
+    name: '{{ item }}'
+    state: present
+  loop:
+    - ruby-dev
+    - ruby-pg
+  become: true
+  when: not gitlab_rvm_ruby
+
+- name: Install rvm with ppa {{ gitlab_ruby_version }}
+  when: gitlab_rvm_ruby and gitlab_rvm_ruby_ppa
+  block:
+    - name: Add rvm-rael-gc apt key.
+      ansible.builtin.get_url:
+        url: '{{ gitlab_rvm_ruby_ppa_key_url }}'
+        dest: /etc/apt/trusted.gpg.d/rvm-ppa.asc
+        mode: 0644
+        force: true
+
+    - name: Add rvm apt repository
+      ansible.builtin.apt_repository:
+        repo: 'deb https://ppa.launchpadcontent.net/rael-gc/rvm/ubuntu/ {{ ansible_distribution_release | lower }} main'
+        update_cache: true
+        state: present
+
+    - name: Pinning libssl-dev
+      ansible.builtin.template:
+        src: etc/apt/openssl-pinning.j2
+        dest: /etc/apt/preferences.d/openssl
+        mode: 0644
+
+    # see https://github.com/rvm/rvm/issues/5209#issuecomment-1134927685
+    - name: Downgrade libssl-dev
+      ansible.builtin.apt:
+        name: libssl-dev=1.1.1l-1ubuntu1.4
+        # supported with ansible 2.12 or newer
+        # allow_downgrade: true
+        state: present
+
+    - name: PPA packages
+      ansible.builtin.apt:
+        name: '{{ item }}'
+        state: present
+      loop:
+        - software-properties-common
+        - rvm
+
+    - name: Install ruby
+      ansible.builtin.command: bash -lc "rvm install {{ gitlab_ruby_version }} --with-openssl-dir=/usr/share/rvm/usr"
+
+- name: Install rvm without ppa {{ gitlab_ruby_version }}
+  when: gitlab_rvm_ruby and not gitlab_rvm_ruby_ppa
+  block:
+    - name: Remove ppa files
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: absent
+      loop:
+        - /etc/apt/trusted.gpg.d/rvm-ppa.asc
+        - /etc/apt/preferences.d/openssl
+        - /etc/apt/sources.list.d/ppa_launchpadcontent_net_rael_gc_rvm_ubuntu.list
+
+    - name: Remove PPA package
+      ansible.builtin.apt:
+        name: rvm
+        state: absent
+
+    - name: Install ruby with rvm version {{ gitlab_ruby_version }}
+      ansible.builtin.include_role:
+        name: rvm.ruby
+      vars:
+        rvm1_rubies: ['ruby-{{ gitlab_ruby_version }}']
+        rvm1_user: '{{ gitlab_user }}'
+        rvm1_bundler_install: false
+        ansible_become: true
+
+    - name: Install bundler for RVM
+      community.general.gem:
+        name: bundler
+        state: latest
+      become: true
+      become_user: '{{ gitlab_user }}'

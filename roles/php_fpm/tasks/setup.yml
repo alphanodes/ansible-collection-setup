@@ -1,0 +1,39 @@
+---
+
+- name: Ensure php-fpm packages are installed
+  ansible.builtin.apt:
+    name: '{{ php_fpm_packages }}'
+    state: present
+
+- name: Ensure unwanted php-fpm packages are removed
+  ansible.builtin.apt:
+    name: '{{ php_fpm_remove_packages }}'
+    purge: true
+    state: absent
+
+- name: Update php-fpm configuration
+  ansible.builtin.template:
+    src: php-fpm.j2
+    dest: '{{ php_fpm_php_fpm_conf }}'
+    mode: 0644
+    owner: root
+    group: root
+  notify: Restart php-fpm
+
+- name: Update php-fpm ini configuration
+  ansible.builtin.template:
+    src: php_ini_custom.j2
+    dest: '{{ php_fpm_custom_php_ini }}'
+    mode: 0644
+    owner: root
+    group: root
+  notify: Restart php-fpm
+
+- name: Include pools tasks
+  ansible.builtin.include_tasks: pools.yml
+
+- name: Start the php-fpm service
+  ansible.builtin.systemd:
+    name: '{{ php_fpm_service }}'
+    state: started
+    enabled: true

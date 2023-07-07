@@ -1,0 +1,43 @@
+---
+
+- name: Ensure sasl packages are installed
+  ansible.builtin.apt:
+    name: '{{ postfix_sasl_packages }}'
+    state: present
+
+- name: Start the saslauthd service
+  ansible.builtin.systemd:
+    name: saslauthd
+    state: started
+    enabled: true
+
+- name: Add postfix to sasl group
+  ansible.builtin.user:
+    name: postfix
+    groups: sasl
+    append: true
+
+- name: Update sasl password map
+  ansible.builtin.template:
+    src: postfix/sasl_password_map.j2
+    dest: '{{ postfix_sasl_password_file }}'
+    mode: 0600
+  register: saslrc
+
+- name: Stats for sasl_db
+  ansible.builtin.stat:
+    path: '{{ postfix_sasl_password_file_db }}'
+  register: sasl_db_exists
+
+- name: Build sasl password file
+  ansible.builtin.command: postmap '{{ postfix_sasl_password_file }}'
+  when: saslrc.changed or not sasl_db_exists.stat.exists
+  notify:
+    - Restart postfix
+  tags:
+    - skip_ansible_lint
+
+- name: Secure sasl map
+  ansible.builtin.file:
+    path: '{{ postfix_sasl_password_file_db }}'
+    mode: 0600

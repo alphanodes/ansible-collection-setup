@@ -1,0 +1,13 @@
+---
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  tags: jekyll
+
+- name: Include instance tasks
+  ansible.builtin.include_tasks: instance.yml
+  tags: jekyll
+  loop: "{{ jekyll_instances }}"
+  loop_control:
+    loop_var: instance
+  when: instance.state is undefined or instance.state == 'active'

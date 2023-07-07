@@ -1,0 +1,30 @@
+---
+# defaults file for drush
+
+# drush version (github branch)
+drush_version: 8.x
+
+drush_run_as_user: 1
+drush_aliases: []
+
+# set it to false, if you use drush with composer
+drush_install: true
+
+drush_update: true
+
+drush_reset_script: false
+drush_reset_script_name: drupal
+drush_reset_script_source: "@prod"
+drush_reset_script_target: "@test"
+# local db
+drush_reset_script_db: drupal
+# mysql querie commands after sync
+drush_reset_script_db_queries: []
+# absolute path to local files (if empty, files are not synced)
+drush_reset_script_files: ''
+# set owner and group to files
+drush_reset_script_file_owner: ''
+drush_reset_script_file_group: ''
+
+drush_path: /root/.composer/vendor/bin/drush
+drush_profile: ''

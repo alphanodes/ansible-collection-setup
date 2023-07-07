@@ -1,0 +1,35 @@
+{{ ansible_managed | comment }}
+# nginx matomo subdirectory configuration
+
+{% if matomo_location_redirect != '' -%}
+
+location ^~ {{ matomo_location_redirect }} {
+  return 301 $scheme://$host{{ matomo_location_dir }};
+}
+
+{% endif -%}
+
+# see http://nginx.org/en/docs/http/ngx_http_core_module.html#location
+location ^~ {{ matomo_location_dir }} {
+  root /srv;
+
+  add_header Referrer-Policy origin always;
+  add_header X-Content-Type-Options "nosniff" always;
+  add_header X-XSS-Protection "1; mode=block" always;
+
+
+  # deny rule have to defined before php location!
+  location ~ ^{{ matomo_location_dir }}/(config|tmp|core|lang|libs|vendor|node_modules|\.) {
+    deny all;
+    return 403;
+  }
+
+  location ~ ^{{ matomo_location_dir }}/(.+.php) {
+
+    {%- include 'templates/fpm.inc.j2' with context %}
+
+    fastcgi_index  index.php;
+  }
+
+  access_log off;
+}

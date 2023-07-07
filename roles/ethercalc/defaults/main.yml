@@ -1,0 +1,50 @@
+---
+# see https://github.com/systemli/ansible-role-ethercalc
+# or https://www.rosehosting.com/blog/how-to-install-ethercalc-on-centos-8/
+#
+# can be used as alternativ: https://framacalc.org/abc/de/
+
+ethercalc_required_packages:
+  - nodejs
+  - git
+ethercalc_repository: https://github.com/audreyt/ethercalc.git
+ethercalc_repository_version: master
+ethercalc_user: ethercalc
+ethercalc_group: "{{ ethercalc_user }}"
+ethercalc_home: "/srv/{{ ethercalc_user }}"
+ethercalc_path: "{{ ethercalc_home }}/ethercalc"
+ethercalc_ip: 0.0.0.0
+ethercalc_port: 8000
+
+ethercalc_redis_enabled: true
+# if you don't use the default database in Redis
+# (let's say you use the database 1 instead of the default 0
+# ethercalc_redis_db: 1
+
+# All spreadsheets will expire after 30days of inactivity
+# see https://github.com/audreyt/ethercalc#expires-inactive-spreadsheets---expire-86400
+# ethercalc_spread_seconds_to_expire: 2678400
+
+# Enable Cross-Origin Resource Sharing (otherwise, a list of all pads
+# is publically available). For more information, see
+# https://github.com/audreyt/ethercalc#enable-cross-origin-resource-sharing---cors
+ethercalc_cors: true
+
+ethercalc_vhost_server: calc.localhost
+ethercalc_vhost_users: []
+ethercalc_vhost_for_zabbix: false
+
+ethercalc_vhost_letsencrypt: false
+ethercalc_vhost_ssl_cert: '{{ ssl_certs[0].name }}'
+ethercalc_vhost_letsencrypt_cert: '{{ letsencrypt_certs[0] | default(omit) }}'
+ethercalc_vhost_letsencrypt_key: '{{ letsencrypt_keys[0] | default(omit) }}'
+
+# Ethercalc might suffer from OOM crashs on big tables, try to increase:
+# ethercalc_node_max_old_space_size: 2048
+
+ethercalc_node_env: production
+
+ethercalc_enabled: true
+
+# do uninstall ethercalc, set it to true
+ethercalc_remove: false

@@ -1,0 +1,28 @@
+---
+
+- name: Ensure mysql packages are installed
+  ansible.builtin.apt:
+    name: '{{ redmine_mysql_packages }}'
+    state: present
+
+- name: Be sure redmine mysql databases exists - {{ instance_name }}
+  community.mysql.mysql_db:
+    name: '{{ redmine_db_name }}'
+    collation: utf8_general_ci
+    encoding: utf8
+    state: present
+
+- name: Create redmine mysql database users - {{ instance_name }}
+  community.mysql.mysql_user:
+    name: '{{ redmine_db_user }}'
+    password: '{{ instance.db_password | default(redmine_db_password) }}'
+    host: '{{ active_db_host }}'
+    priv: '{{ redmine_db_name }}.*:ALL'
+    state: present
+  when: instance.db_skip_user_setup is undefined or not instance.db_skip_user_setup
+
+- name: Run mysql pre commands - {{ instance_name }}
+  community.mysql.mysql_query:
+    login_db: '{{ redmine_db_name }}'
+    query: '{{ item }}'
+  loop: '{{ instance.pre_db_commands | default([]) }}'

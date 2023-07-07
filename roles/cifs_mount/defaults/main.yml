@@ -1,0 +1,13 @@
+---
+
+cifs_mount_required_packages:
+  - cifs-utils
+
+# example
+#  - name: backup_space
+#    source: //lan.test.eu/bckslredmine01
+#    target: /srv/backups_remote
+#    credential_user: username
+#    credential_password: password
+#    options: noauto
+cifs_mounts: []

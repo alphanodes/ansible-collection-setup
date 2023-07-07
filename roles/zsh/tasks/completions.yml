@@ -1,0 +1,16 @@
+---
+
+- name: Install zsh_with_completions
+  ansible.builtin.git:
+    repo: https://github.com/zsh-users/zsh-completions.git
+    dest: /usr/share/zsh-completions
+    version: master
+    force: true
+    accept_hostkey: true
+  when: zsh_with_completions
+
+- name: Uninstall zsh_with_completions
+  ansible.builtin.file:
+    path: /usr/share/zsh-completions
+    state: absent
+  when: not zsh_with_completions

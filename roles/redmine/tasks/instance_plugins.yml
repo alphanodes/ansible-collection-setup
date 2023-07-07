@@ -1,0 +1,34 @@
+---
+
+- name: Set preferred_git_url
+  ansible.builtin.set_fact:
+    preferred_git_url: "{{ 'write_url' if redmine_plugin_access == 'write' else 'url' }}"
+
+- name: Correct preferred_git_url if required
+  ansible.builtin.set_fact:
+    preferred_git_url: 'https_url'
+  when: preferred_git_url == 'url' and redmine_plugin_access == 'https'
+
+- name: Check if custom available_plugins_list is available
+  ansible.builtin.stat:
+    path: "{{ playbook_dir }}/files/redmine/available_plugins.yml"
+  ignore_errors: true
+  register: custom_available_plugins
+  delegate_to: localhost
+
+- name: Include custom plugins variables.
+  ansible.builtin.include_vars: '{{ custom_available_plugins.stat.path }}'
+  when: custom_available_plugins.stat.exists
+
+- name: Include plugins variables.
+  ansible.builtin.include_vars: available_plugins.yml
+  when: not custom_available_plugins.stat.exists
+
+- name: Include plugin tasks
+  ansible.builtin.include_tasks: instance_plugin.yml
+  tags:
+    - redmine
+    - plugin
+  loop: "{{ instance.plugins | default([]) }}"
+  loop_control:
+    loop_var: plugin_name

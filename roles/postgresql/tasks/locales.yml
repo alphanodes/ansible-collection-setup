@@ -1,0 +1,14 @@
+---
+- name: Ensure all configured locales are present.
+  community.general.locale_gen:
+    name: '{{ item }}'
+    state: present
+  register: locale_gen_result
+  when: item != 'C'
+  loop:
+    - '{{ postgresql_lc_messages }}'
+    - '{{ postgresql_lc_monetary }}'
+    - '{{ postgresql_lc_numeric }}'
+    - '{{ postgresql_lc_time }}'
+  notify:
+    - Restart postgresql

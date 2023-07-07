@@ -1,0 +1,12 @@
+---
+
+- name: Set theme {{ theme_name }}
+  ansible.builtin.set_fact:
+    theme: "{{ redmine_themes_available[theme_name] }}"
+
+- name: Run remote deploy - {{ instance_name }}
+  ansible.builtin.include_tasks: task_remote_deploy.yml
+  vars:
+    repo_url: '{{ theme[preferred_git_url] | default(theme["url"]) }}'
+    repo_dest: '{{ redmine_theme_dir }}/{{ theme["target_dir"] | default(theme_name) }}'
+    repo_version: '{{ theme["version"] | default("main") }}'

@@ -1,0 +1,10 @@
+{{ ansible_managed | comment }}
+
+### Hotlinking protection for images. Include it in any context you
+### want. Adjust the list of allowed referers to your liking.
+
+valid_referers none blocked {{ nginx_hotlinking_valid_referers }};
+
+if ($invalid_referer) {
+    return 200 "No image hotlinking allowed!\n";
+}

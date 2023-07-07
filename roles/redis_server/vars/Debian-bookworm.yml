@@ -1,0 +1,3 @@
+---
+redis_server_check_php_package: php8.2-common
+redis_server_php_package: php-redis

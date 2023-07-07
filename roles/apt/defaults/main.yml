@@ -1,0 +1,28 @@
+---
+
+apt_required_packages:
+  - unattended-upgrades
+
+# see https://unix.stackexchange.com/questions/342663/how-is-unattended-upgrades-started-and-how-can-i-modify-its-schedule
+# apt_periodic_update_package_lists: '1'
+# apt_periodic_unattended_upgrade: '1'
+apt_periodic_update_package_lists: 'always'
+apt_periodic_unattended_upgrade: 'always'
+
+apt_daily_timer_on_calendar: '*-*-* 0,4,8,12,16,20:00'
+apt_daily_timer_randomized_delay_sec: '5m'
+
+apt_daily_upgrade_timer_on_calendar: '*-*-* 0,4,8,12,16,20:20'
+apt_daily_upgrade_timer_randomized_delay_sec: '1m'
+
+apt_automatic_reboot: true
+apt_automatic_reboot_time: '05:45'
+
+unattended_package_blacklist: []
+unattended_autofix_interrupted_dpkg: true
+unattended_upgrade_minimal_steps: true
+unattended_install_on_shutdown: false
+unattended_upgrade_mail: root
+unattended_upgrade_mail_only_on_error: true
+unattended_upgrade_remove_unused_kernel_packages: true
+unattended_upgrade_remove_unused_dependencies: false

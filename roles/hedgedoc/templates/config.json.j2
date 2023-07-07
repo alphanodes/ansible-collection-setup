@@ -1,0 +1,31 @@
+{
+  "{{ hedgedoc_node_env }}": {
+    "domain": "{{ hedgedoc_vhost_server }}",
+    "port": "{{ hedgedoc_http_port }}",
+    "urlPath": "{{ hedgedoc_url_path }}",
+    "allowOrigin": ["{{ hedgedoc_host_name }}", "{{ hedgedoc_vhost_server }}"],
+    "urlAddPort": {{ 'true' if hedgedoc_url_add_port else 'false' }},
+    "useSSL": {{ 'true' if hedgedoc_use_ssl else 'false' }},
+    "protocolUseSSL": {{ 'true' if hedgedoc_protocol_use_ssl else 'false' }},
+    "useCDN": {{ 'true' if hedgedoc_use_cdn else 'false' }},
+    "defaultPermission": "{{ hedgedoc_default_permission }}",
+    "email": {{ 'true' if hedgedoc_email else 'false' }},
+    "allowFreeURL": {{ 'true' if hedgedoc_allow_free_url else 'false' }},
+    "allowAnonymous": {{ 'true' if hedgedoc_allow_anonymous else 'false' }},
+    "allowAnonymousEdits": {{ 'true' if hedgedoc_allow_anonymous_edits else 'false' }},
+    "allowEmailRegister": {{ 'true' if hedgedoc_allow_email_register else 'false' }},
+    "allowGravatar": {{ 'true' if hedgedoc_allow_gravatar else 'false' }},
+    "allowPDFExport": {{ 'true' if hedgedoc_allow_pdf_export else 'false' }},
+    "sessionName": "{{ hedgedoc_session_name }}",
+    "sessionSecret": "{{ hedgedoc_session_secret }}",
+    "imageUploadType": "{{ hedgedoc_image_upload_type }}",
+    "db": {
+      "username": "{{ hedgedoc_db_user }}",
+      "password": "{{ hedgedoc_db_password }}",
+      "database": "{{ hedgedoc_db_name }}",
+      "host": "{{ hedgedoc_db_host }}",
+      "port": "{{ hedgedoc_db_port }}",
+      "dialect": "{{ hedgedoc_db_type }}"
+    }
+  }
+}

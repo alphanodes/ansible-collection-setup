@@ -1,0 +1,62 @@
+---
+
+- name: Set TLS files for letsencrypt
+  ansible.builtin.set_fact:
+    vhost_letsencrypt_cert: "{{ gitlab_vhost_letsencrypt_cert }}"
+    vhost_letsencrypt_key: "{{ gitlab_vhost_letsencrypt_key }}"
+    force_letsencrypt: true
+  when: gitlab_vhost_letsencrypt is defined and gitlab_vhost_letsencrypt
+
+- name: SSL (non-letsencrypt)
+  when: gitlab_vhost_letsencrypt is undefined or not gitlab_vhost_letsencrypt
+  block:
+    - name: Check trusted TLS cert
+      ansible.builtin.stat:
+        path: /etc/ssl/certs/{{ gitlab_vhost_ssl_cert }}_trusted.crt
+      register: trusted_cert
+
+    - name: Set TLS files
+      ansible.builtin.set_fact:
+        vhost_ssl_cert: "{{ gitlab_vhost_ssl_cert }}"
+        vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
+
+- name: Update gitlab vhost configuration
+  ansible.builtin.template:
+    src: etc/nginx/gitlab.j2
+    dest: /etc/nginx/sites-available/gitlab.conf
+    mode: 0644
+  notify: Reload nginx
+
+- name: Ensure gitlab vhost is enabled
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/gitlab.conf
+    dest: /etc/nginx/sites-enabled/gitlab.conf
+    state: link
+  notify: Reload nginx
+
+- name: Configuration gitlab pages for nginx
+  when: gitlab_pages_enabled
+  block:
+    - name: Update gitlab pages vhost configuration
+      ansible.builtin.template:
+        src: etc/nginx/gitlab-pages.j2
+        dest: /etc/nginx/sites-available/gitlab-pages.conf
+        mode: 0644
+      notify: Reload nginx
+
+    - name: Ensure gitlab vhost is enabled
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/gitlab-pages.conf
+        dest: /etc/nginx/sites-enabled/gitlab-pages.conf
+        state: link
+      notify: Restart nginx
+
+- name: Remove gitlab pages nginx configuration
+  when: not gitlab_pages_enabled
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/nginx/sites-enabled/gitlab-pages.conf
+    - /etc/nginx/sites-available/gitlab-pages.conf
+  notify: Restart nginx

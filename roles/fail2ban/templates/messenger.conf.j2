@@ -1,0 +1,22 @@
+[Definition]
+
+actioncheck=
+{% if fail2ban_messenger_with_start_message -%}
+
+actionstart = /bin/bash {{ fail2ban_action_path }}/{{ script_name }} "The jail <name> has been started successfully." > /dev/null 2>&1
+actionstop = /bin/bash {{ fail2ban_action_path }}/{{ script_name }} "The jail <name> has been stopped." > /dev/null 2>&1
+
+{% else %}
+
+actionstart =
+actionstop =
+
+{% endif -%}
+actionban = /bin/bash {{ fail2ban_action_path }}/{{ script_name }} "Banned _country_ <https://www.infobyip.com/traceroute-<ip>-ipv4.html|<ip>> in the jail <name> after <failures> attempts" "<ip>" "<logpath>" > /dev/null 2>&1
+actionunban = /bin/bash {{ fail2ban_action_path }}/{{ script_name }} "Unbanned _country_ <https://www.infobyip.com/traceroute-<ip>-ipv4.html|<ip>> in the jail <name>" "<ip>" > /dev/null 2>&1
+
+[Init]
+
+# Default name of the chain
+#
+name = default

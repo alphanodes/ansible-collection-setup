@@ -1,0 +1,40 @@
+---
+
+- name: Set deploy_with_ssh for {{ repo_url }}
+  ansible.builtin.set_fact:
+    deploy_with_ssh: '{{ False if "://" in repo_url else True }}'
+
+- name: Git ssh update for {{ repo_dest }}
+  ansible.builtin.git:
+    repo: '{{ repo_url }}'
+    dest: '{{ repo_dest }}'
+    version: '{{ repo_version | default(omit) }}'
+    depth: '{{ 0 if redmine_full_remote_deploy else 1 }}'
+    accept_hostkey: true
+    force: true
+  register: repo_info
+  notify: Restart puma instance
+  when: deploy_with_ssh
+
+- name: Git https update for {{ repo_dest }}
+  ansible.builtin.git:
+    repo: '{{ repo_url }}'
+    dest: '{{ repo_dest }}'
+    version: '{{ repo_version | default(omit) }}'
+    accept_hostkey: true
+    force: true
+  # become does not work: permission problems for object - ansible error?
+  # become: true
+  # become_user: '{{ redmine_user }}'
+  when: not deploy_with_ssh
+  register: repo_info
+  notify: Restart puma instance
+
+# - name: Fix permissions for {{ repo_dest }}
+#  file:
+#    path: '{{ repo_dest }}'
+#    owner: '{{ redmine_user }}'
+#    group: '{{ redmine_group }}'
+#    recurse: true
+#    state: directory
+#  when: repo_info.changed

@@ -1,0 +1,6 @@
+---
+
+phpmyadmin_packages:
+  - gettext
+  - ttf-dejavu-core
+  - php7.3-zip

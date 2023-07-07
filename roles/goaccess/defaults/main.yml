@@ -1,0 +1,65 @@
+---
+# defaults file for goaccess
+
+goaccess_packages:
+  - goaccess
+
+goaccess_repo_key_url: https://deb.goaccess.io/gnugpg.key
+goaccess_repo_url: 'deb http://deb.goaccess.io/ {{ ansible_distribution_release }} main'
+
+geoaccess_from_source: true
+geoaccess_source_repo: https://github.com/allinurl/goaccess.git
+geoaccess_source_version: v1.6
+
+goaccess_from_source_packages:
+  - autoconf
+  - autopoint
+  - gettext
+  - libmaxminddb-dev
+  - libncurses-dev
+  - libssl-dev
+  - libtokyocabinet-dev
+
+goaccess_from_source_build_dir: /usr/src/goaccess
+goaccess_force_build: false
+
+# date format of log file
+goaccess_date_format: '%d/%b/%Y'
+# date time format of log file
+goaccess_time_format: '%T'
+# examples:
+# 114.119.147.213 - - [24/Jun/2022:17:13:30 +0200] "GET /de/erste-daily-scrum-meeting HTTP/1.1" 301 162 "http://www.blueberryminds.com/de/einfuehrung-scrum" "Mozilla/5.0 (Linux; Android 7.0;) AppleWebKit/537.36 (KHTML, like Gecko) Mobile Safari/537.36 (compatible; PetalBot;+https://webmaster.petalsearch.com/site/petalbot)" "-"
+# 88.201.163.83 - - [24/Jun/2022:17:13:46 +0200] "GET /redmine-blog/redmine-version-400 HTTP/1.1" 200 6781 "-" "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" "-"
+# log-format %h %^[%d:%t %^] "%r" %s %b "%R" "%u" (COMBINED)
+# see https://goaccess.io/man#custom-log
+goaccess_log_format: COMBINED
+
+goaccess_with_geoip: true
+goaccess_with_data_run: true
+goaccess_geoip_download: true
+goaccess_geoip_dir: /usr/local/share/geoip
+goaccess_geoip_target_file: dbip-city-lite.mmdb
+goaccess_geoip_source_file: dbip-city-lite-{{ ansible_date_time.year }}-{{ ansible_date_time.month }}.mmdb.gz
+goaccess_geoip_url: https://download.db-ip.com/free/{{ goaccess_geoip_source_file }}
+goaccess_geoip_latest_database: "{{ software_dir }}/{{ goaccess_geoip_source_file }}"
+goaccess_geoip_database: "{{ goaccess_geoip_dir }}/{{ goaccess_geoip_target_file }}"
+
+goaccess_tz: Europe/Berlin
+
+goaccess_html_prefs: '{"theme":"bright","perPage":10,"layout":"horizontal","showTables":true,"visitors":{"plot":{"chartType":"bar"}}}'
+
+goaccess_ignore_panels:
+  - REMOTE_USER
+  - KEYPHRASES
+
+goaccess_exclude_ips: []
+
+goaccess_output_dir: /var/www/goaccess
+# nginx base auth user
+goaccess_user: goaccess
+# nginx base auth passwords (leave empty, if you do not want base auth protection)
+goaccess_password: ''
+
+goaccess_index_file: index.html
+goaccess_nginx_log: /var/log/nginx/access.log /var/log/nginx/access.log.1
+goaccess_options: -a

@@ -1,0 +1,18 @@
+---
+
+- name: Be sure drupal databases exists - {{ instance.name }}
+  community.mysql.mysql_db:
+    name: '{{ instance.db_name | default(instance.name) | replace("-", "_") }}'
+    collation: utf8_general_ci
+    encoding: utf8
+    state: present
+  when: instance.db_skip_db_setup is undefined or not instance.db_skip_db_setup
+
+- name: Create drupal database users - {{ instance.name }}
+  community.mysql.mysql_user:
+    name: '{{ instance.db_user | default(instance.name) | replace("-", "_") }}'
+    password: '{{ instance.db_password | default(drupal_db_password) }}'
+    host: '{{ instance.db_host | default(drupal_db_host) }}'
+    priv: '{{ instance.db_name | default(instance.name) | replace("-", "_") }}.*:ALL'
+    state: present
+  when: instance.db_skip_user_setup is undefined or not instance.db_skip_user_setup

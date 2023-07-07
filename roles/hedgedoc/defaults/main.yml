@@ -1,0 +1,55 @@
+---
+## see https://docs.hedgedoc.org/configuration/
+
+hedgedoc_required_packages: []
+hedgedoc_enabled: true
+
+hedgedoc_vhost_server: hedgedoc.local
+hedgedoc_vhost_users: []
+hedgedoc_vhost_for_zabbix: false
+
+hedgedoc_repository: https://github.com/hedgedoc/hedgedoc.git
+hedgedoc_repository_version: '1.9.7'
+
+hedgedoc_user: 'hedgedoc'
+hedgedoc_group: '{{ hedgedoc_user }}'
+hedgedoc_home: '/srv/{{ hedgedoc_user }}'
+hedgedoc_path: '{{ hedgedoc_home }}/hedgedoc'
+hedgedoc_update: true
+
+hedgedoc_content_security_policy: ''
+
+hedgedoc_syslog_identifier: hedgedoc
+hedgedoc_node_env: production
+hedgedoc_host_name: localhost
+hedgedoc_http_port: 50342
+hedgedoc_url_path: ''
+hedgedoc_url_add_port: false
+hedgedoc_protocol_use_ssl: true
+hedgedoc_use_ssl: false
+hedgedoc_use_cdn: false
+hedgedoc_default_permission: limited
+hedgedoc_email: true
+hedgedoc_allow_free_url: true
+hedgedoc_allow_anonymous: true
+hedgedoc_allow_anonymous_edits: false
+hedgedoc_allow_email_register: '{{ hedgedoc_email }}'
+hedgedoc_allow_gravatar: true
+hedgedoc_allow_pdf_export: false
+hedgedoc_session_name: 'hedgedoc_session'
+hedgedoc_session_secret: '{{ [ansible_machine_id, ansible_hostname, "hedgedoc-session"] | join | hash("md5") }}'
+hedgedoc_image_upload_type: 'filesystem'
+
+hedgedoc_db_user: hedgedoc
+hedgedoc_db_password: '{{ [ansible_machine_id, ansible_hostname, "hedgedoc"] | join | hash("md5") }}'
+hedgedoc_db_name: hedgedoc
+hedgedoc_db_host: /run/postgresql
+hedgedoc_db_port: 5432
+hedgedoc_db_type: postgres
+# only used with PostgreSQL
+# hedgedoc_db_role_flags: 'NOSUPERUSER,CREATEDB'
+
+hedgedoc_vhost_letsencrypt: false
+hedgedoc_vhost_ssl_cert: '{{ ssl_certs[0].name }}'
+hedgedoc_vhost_letsencrypt_cert: '{{ letsencrypt_certs[0] | default(omit) }}'
+hedgedoc_vhost_letsencrypt_key: '{{ letsencrypt_keys[0] | default(omit) }}'

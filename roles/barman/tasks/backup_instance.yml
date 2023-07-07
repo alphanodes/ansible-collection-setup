@@ -1,0 +1,21 @@
+---
+- name: Set service name for {{ instance.name }}
+  ansible.builtin.set_fact:
+    service_name: "barman-{{ instance.name }}"
+
+- name: Set facts for barman instance {{ instance.name }}
+  ansible.builtin.set_fact:
+    system_service_file: "/etc/systemd/system/{{ service_name }}.service"
+    system_timer_file: "/etc/systemd/system/{{ service_name }}.timer"
+
+- name: Setup timer for {{ service_name }}
+  ansible.builtin.include_role:
+    name: alphanodes.setup.systemd_timer
+  vars:
+    timers:
+      '{{ service_name }}':
+        on_calendar: '{{ instance.on_calendar | default(barman_default_on_calendar) }}'
+        randomized_delay_sec: '{{ instance.randomized_delay_sec | default(barman_default_randomized_delay_sec) }}'
+        exec_start: "{{ barman_bin }} backup {{ instance.name }}"
+        syslog_identifier: '{{ service_name }}'
+        state: "{{ instance.state | default('present') }}"

@@ -1,0 +1,22 @@
+---
+
+- name: Be sure required zsh powerlevel10k packages are installed
+  ansible.builtin.apt:
+    name: '{{ zsh_powerlevel10k_packages }}'
+    state: present
+
+- name: Remove zsh-theme-powerlevel9k because powerlevel10k is used
+  ansible.builtin.apt:
+    name: zsh-theme-powerlevel9k
+    purge: true
+    state: absent
+
+- name: Install powerlevel10k
+  ansible.builtin.git:
+    repo: https://github.com/romkatv/powerlevel10k.git
+    dest: /usr/share/powerlevel10k
+    version: master
+    force: true
+    accept_hostkey: true
+
+# TODO: provide configution (.zshrc)

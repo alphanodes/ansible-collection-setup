@@ -1,0 +1,21 @@
+---
+# redmine plugin definitions
+
+# overwrite it with file files/redmine/available_plugins.yml
+# with your own plugin list
+redmine_plugins_available:
+  redmine_dmsf:
+    url: https://github.com/danmunn/redmine_dmsf.git
+    version: master
+
+  redmine_reformat:
+    url: https://github.com/orchitech/redmine_reformat.git
+    version: master
+
+  redmine_wysiwyg_editor:
+    url: https://github.com/taqueci/redmine_wysiwyg_editor.git
+    version: master
+
+  redmine_dashboard:
+    url: https://github.com/jgraichen/redmine_dashboard.git
+    version: 'main'

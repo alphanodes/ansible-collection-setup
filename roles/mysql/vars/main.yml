@@ -1,0 +1,7 @@
+---
+# this is used for /etc/alternatives
+mysql_real_config_file: /etc/mysql/my.cnf
+# this is the unchanged configuration file from package,
+# which only set includedir conf.d and mysql.conf.d
+# note: this is used for /etc/alternatives
+mysql_config_include_file: /etc/mysql/mysql.cnf

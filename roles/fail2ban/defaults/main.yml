@@ -1,0 +1,54 @@
+---
+# defaults file for fail2ban
+
+fail2ban_packages:
+  - curl
+  - fail2ban
+  - iptables
+  - python3-systemd
+  - whois
+
+fail2ban_dovecot: false
+fail2ban_drupal_auth: false
+fail2ban_drupal_honeypot: false
+fail2ban_drupal_login: false
+fail2ban_drupal_spam: false
+fail2ban_nextcloud_login: false
+fail2ban_nginx_http_auth: false
+fail2ban_nginx_phpmyadmin: false
+fail2ban_owncloud_login: false
+fail2ban_postfix: false
+fail2ban_proftpd: false
+fail2ban_redmine_login: false
+fail2ban_sshd_ddos: false
+
+fail2ban_roundcube_auth: false
+fail2ban_roundcube_auth_log: /srv/roundcube/logs/errors.log
+
+fail2ban_ignoreip: '127.0.0.1/8 {{ lxc_internal_subnet }} {{ hostvars["s1"].ip_address_v4 }}/32 {{ hostvars["s2"].ip_address_v4 }}/32 {{ hostvars["s5"].ip_address_v4 }}/32 {{ hostvars["s6"].ip_address_v4 }}/32 {{ hostvars["code"].ext_ip_address_v4 }}/32'
+fail2ban_destemail: "{{ alphanodes_support_mail | default('root@localhost') }}"
+fail2ban_action: "%(action_)s"
+fail2ban_backend: systemd
+fail2ban_default_bantime: 600
+fail2ban_default_findtime: 600
+fail2ban_default_maxretry: 6
+
+# fail2ban_sshd_bantime: 2h
+fail2ban_sshd_port: "{{ ssh_server_port | default('ssh') }}"
+
+# for all login filters
+fail2ban_login_action: "%(action_with_rocketchat)s"
+fail2ban_login_maxretry: "{{ fail2ban_default_maxretry }}"
+
+# only for Ubuntu
+fail2ban_nginx_botsearch: false
+
+fail2ban_messenger_icon: 'https://dcah.files.wordpress.com/2013/09/adblock.png'
+fail2ban_messenger_with_start_message: false
+
+fail2ban_rocketchat_hook: '{{ alphanodes_rocketchat_hook | default("") }}'
+fail2ban_rocketchat_user: fail2ban
+fail2ban_rocketchat_channel: '#system'
+
+# do uninstall fail2ban with all data, set it to yes
+fail2ban_remove: false

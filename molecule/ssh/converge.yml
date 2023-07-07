@@ -1,0 +1,21 @@
+---
+- name: Converge
+  hosts: all
+
+  vars:
+    ssh_server_port: 2222
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 600
+      changed_when: false
+
+  roles:
+    - role: alphanodes.setup.ssh
+
+  post_tasks:
+    - name: Test ssh configuration
+      ansible.builtin.command: sshd -T
+      changed_when: false

@@ -1,0 +1,67 @@
+---
+
+# restart required, because file can be not available before
+- name: Protect ethercalc vhost user
+  community.general.htpasswd:
+    path: /etc/nginx/.htpasswd_ethercalc
+    name: '{{ item.user }}'
+    password: '{{ item.password }}'
+    owner: root
+    group: '{{ nginx_group }}'
+    mode: 0640
+  loop: '{{ ethercalc_vhost_users | default([]) }}'
+  when: ethercalc_vhost_users is defined and ethercalc_vhost_users|length > 0
+  notify: Restart nginx
+
+- name: Remove .htpasswd_ethercalc, if no base auth is in use
+  ansible.builtin.file:
+    path: /etc/nginx/.htpasswd_ethercalc
+    state: absent
+  when: ethercalc_vhost_users|length < 1
+  notify: Restart nginx
+
+- name: Enable block
+  when: ethercalc_enabled
+  block:
+    - name: Set TLS files for letsencrypt
+      ansible.builtin.set_fact:
+        vhost_letsencrypt_cert: "{{ ethercalc_vhost_letsencrypt_cert }}"
+        vhost_letsencrypt_key: "{{ ethercalc_vhost_letsencrypt_key }}"
+        force_letsencrypt: true
+      when: ethercalc_vhost_letsencrypt is defined and ethercalc_vhost_letsencrypt
+
+    - name: Check trusted TLS cert
+      ansible.builtin.stat:
+        path: /etc/ssl/certs/{{ ethercalc_vhost_ssl_cert }}_trusted.crt
+      register: trusted_cert
+      when: ethercalc_vhost_letsencrypt is undefined or not ethercalc_vhost_letsencrypt
+
+    - name: Set TLS files
+      ansible.builtin.set_fact:
+        vhost_ssl_cert: "{{ ethercalc_vhost_ssl_cert }}"
+        vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
+      when: ethercalc_vhost_letsencrypt is undefined or not ethercalc_vhost_letsencrypt
+
+    - name: Update ethercalc vhost configuration
+      tags: nginx
+      ansible.builtin.template:
+        src: vhost.j2
+        dest: /etc/nginx/sites-available/ethercalc.conf
+        mode: 0644
+      notify: Reload nginx
+
+    - name: Enable ethercalc vhost
+      tags: nginx
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/ethercalc.conf
+        dest: /etc/nginx/sites-enabled/ethercalc.conf
+        state: link
+      notify: Reload nginx
+
+- name: Disable block
+  when: not ethercalc_enabled
+  block:
+    - name: Ensure ethercalc vhost is disabled
+      ansible.builtin.file:
+        path: /etc/nginx/sites-enabled/ethercalc.conf
+        state: absent

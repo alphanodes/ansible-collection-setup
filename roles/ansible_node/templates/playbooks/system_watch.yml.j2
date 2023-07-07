@@ -1,0 +1,28 @@
+---
+# file: run system-watch (used for server, which are not accessable with ssh)
+
+- hosts: {{ ansible_node_playbook_host }}
+  serial: 1
+
+  vars:
+    ansible_python_interpreter: {{ ansible_node_playbook_ansible_python_interpreter }}
+    system_watch_repo: {{ system_watch_repo }}
+{% if https_user is defined and https_user != '' %}
+    https_user: {{ https_user }}
+{% endif %}
+{% if rails_env is defined and rails_env != 'production' %}
+    rails_env: {{ rails_env }}
+{% endif %}
+{% if system_watch_host is defined %}
+    system_watch_host: {{ system_watch_host }}
+{% endif %}
+{% if redmine_task_instances is defined %}
+    redmine_instances:
+      {{ redmine_task_instances | to_nice_yaml(indent=2) | trim | indent(6) }}
+{% else %}
+    redmine_instances:
+      {{ redmine_task_instance | default('redmine') }}:
+{% endif %}
+
+  roles:
+    - alphanodes.tasks.system_watch

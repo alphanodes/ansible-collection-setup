@@ -1,0 +1,27 @@
+---
+
+- name: Setup fpm pool www (default) configuration
+  ansible.builtin.template:
+    src: pool.j2
+    dest: '{{ php_fpm_pool_dir }}/{{ php_fpm_pool_conf }}'
+    mode: 0644
+    owner: root
+    group: root
+  notify: Restart php-fpm
+
+- name: Create system account for additional fpm pools
+  ansible.builtin.user:
+    name: '{{ item.user | default(item.name) }}'
+    home: '{{ item.home | default(omit) }}'
+    groups: www-data
+    append: true
+    system: true
+  loop: '{{ php_fpm_extra_pools | default([]) }}'
+
+- name: Setup additional fpm user pools
+  ansible.builtin.template:
+    src: pool.j2
+    dest: '{{ php_fpm_pool_dir }}/{{ item.name }}.conf'
+    mode: 0644
+  loop: '{{ php_fpm_extra_pools | default([]) }}'
+  notify: Restart php-fpm

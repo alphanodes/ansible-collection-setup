@@ -1,0 +1,6 @@
+---
+
+- name: Include gitconfig tasks
+  ansible.builtin.include_tasks: gitconfig.yml
+  tags:
+    - git

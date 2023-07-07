@@ -1,0 +1,101 @@
+<?php
+/**
+ * {{ ansible_managed }}
+ */
+
+/**
+ * Database settings
+ */
+$databases = array (
+  'default' =>
+  array (
+    'default' =>
+    array (
+      'database' => '{{ instance.db_name | default(instance.name) | replace('-', '_') }}',
+      'username' => '{{ instance.db_user | default(instance.name) | replace('-', '_') }}',
+      'password' => '{{ instance.db_password | default(drupal_db_password) }}',
+      'host' => '{{ instance.db_host | default(drupal_db_host)}}',
+      'port' => '{{ instance.db_port | default(drupal_db_port) }}',
+      'driver' => '{{ instance.db_driver | default(drupal_db_driver) }}',
+      'prefix' => '{{ instance.db_prefix | default(drupal_db_prefix) }}',
+      'charset' => '{{ instance.db_charset | default(drupal_db_charset) }}',
+      'collation' => '{{ instance.db_collation | default(drupal_db_collation) }}',
+{% if instance.db_mysql8_fix is defined %}
+      'init_commands' => array(
+        'sql_mode' => "SET sql_mode = 'REAL_AS_FLOAT,PIPES_AS_CONCAT,ANSI_QUOTES,IGNORE_SPACE,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO'",
+      ),
+{% endif %}
+    ),
+  ),
+);
+
+$update_free_access = FALSE;
+$drupal_hash_salt = '{{ instance.hash_salt | default(drupal_hash_salt) }}';
+
+{% if instance.base_url is defined and instance.base_url != '' -%}
+
+/**
+ * It is not allowed to have a trailing slash; Drupal will add it
+ * for you.
+ */
+$base_url = '{{ instance.base_url }}';
+
+{% endif -%}
+
+$conf = array();
+
+{% if instance.reverse_proxy_addresses is defined -%}
+
+$conf['reverse_proxy'] = TRUE;
+$conf['reverse_proxy_addresses'] = array(
+{% for proxy_address in instance.reverse_proxy_addresses %}
+  '{{ proxy_address }}',
+{% endfor -%}
+);
+
+{% endif -%}
+
+{% if instance.maintenance_theme is defined and instance.maintenance_theme != '' -%}
+
+$conf['maintenance_theme'] = '{{ instance.maintenance_theme }}';
+
+{% endif -%}
+
+{% if instance.fast_404 is defined and instance.fast_404 -%}
+
+/**
+ * Fast 404 pages:
+ */
+$conf['404_fast_paths_exclude'] = '/\/(?:styles)\//';
+$conf['404_fast_paths'] = '/\.(?:txt|png|gif|jpe?g|css|js|ico|swf|flv|cgi|bat|pl|dll|exe|asp)$/i';
+$conf['404_fast_html'] = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.0//EN" "http://www.w3.org/MarkUp/DTD/xhtml-rdfa-1.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>404 Not Found</title></head><body><h1>Not Found</h1><p>The requested URL "@path" was not found on this server.</p></body></html>';
+drupal_fast_404();
+
+{% endif -%}
+
+{% if instance.with_memcache is defined and instance.with_memcache -%}
+
+// Memcache configuration
+$conf['cache_backends'][] = '{{ instance.memcache_module | default(drupal_memcache_module) }}/memcache.inc';
+$conf['cache_default_class'] = 'MemCacheDrupal';
+// The 'cache_form' bin must be assigned to non-volatile storage.
+$conf['cache_class_cache_form'] = 'DrupalDatabaseCache';
+$conf['memcache_key_prefix'] = '{{ instance.memcache_prefix | default(drupal_memcache_prefix) }}';
+$conf['memcache_servers'] = array(
+  'localhost:11211' => 'default',
+);
+
+$conf['memcache_bins'] = array(
+  'cache' => 'default',
+);
+$conf['lock_inc'] = '{{ instance.memcache_module | default(drupal_memcache_module) }}/memcache-lock.inc';
+
+{% endif -%}
+
+{% if instance.custom_conf is defined -%}
+
+{% for custom_conf in instance.custom_conf %}
+{{ custom_conf }}
+{% endfor %}
+
+{% endif -%}

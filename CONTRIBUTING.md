@@ -1,0 +1,87 @@
+# Contributor Guideline
+
+This document provides an overview of how you can participate in improving this project or extending it. We are grateful for all your help: bug reports and fixes, code contributions, documentation or ideas. Feel free to join, we appreciate your support!!
+
+## Communication
+
+### GitHub repositories
+
+Much of the issues, goals and ideas are tracked in the respective projects in GitHub. Please use this channel to report bugs and post ideas.
+
+## git and GitHub
+
+In order to contribute code please:
+
+1. Fork the project on GitHub
+2. Clone the project
+3. Add changes (and tests)
+4. Commit, sign off and push your changes
+5. Create a merge-request
+
+To have your code merged, see the expectations listed below.
+
+You can find a well-written guide [here](https://help.github.com/articles/fork-a-repo).
+
+Please follow common commit best-practices. Be explicit, have a short summary, a well-written description and references. This is especially important for the merge-request.
+
+Some great guidelines can be found [here](https://wiki.openstack.org/wiki/GitCommitMessages) and [here](http://robots.thoughtbot.com/5-useful-tips-for-a-better-commit-message).
+
+## Expectations
+
+## Sign off Your Work
+
+The Developer Certificate of Origin (DCO) is a lightweight way for contributors to certify that they wrote or otherwise have the right to submit the code they are contributing to the project.
+[Here is the full text of the DCO](http://developercertificate.org/).
+Contributors must sign-off that they adhere to these requirements by adding a `Signed-off-by` line to commit messages.
+
+```text
+This is my commit message
+
+Signed-off-by: Random J Developer <random@developer.example.org>
+```
+
+Git even has a -s command line option to append this automatically to your commit message:
+
+```text
+git commit -s -m 'This is my commit message'
+```
+
+### Don't reinvent the wheel
+
+This hardening project doesn't intend to reinvent the configuration stack for services. Aim to use official configuration projects first and provide hardening as a layer on top. The goal is remove the need for a user to configure all aspects of services and maintain security configuration. This way, the user can still configure a service using the interface provided by the official project.
+
+- For Ansible check the [Ansible Module Index](http://docs.ansible.com/list_of_all_modules.html)
+
+These projects are generally hosted on GitHub as well.
+
+### Be explicit
+
+- Please avoid using nonsensical property and variable names.
+- Use self-describing attribute names for user configuration.
+- In case of failures, communicate what happened and why a failure occurs to the user. Make it easy to track the code or action that produced the error. Try to catch and handle errors if possible to provide improved failure messages.
+
+### Add tests
+
+The security review of this project is done using integration tests.
+
+Whenever you add a new security configuration, please start by writing a test that checks for this configuration. For example: If you want to set a new attribute in a configuration file, write a test that expects the value to be set first. Then implement your change.
+
+You may add a new feature request by creating a test for whatever value you need.
+
+All tests will be reviewed internally for their validity and overall project direction.
+
+### Document your code
+
+As code is more often read than written, please provide documentation in all projects.
+
+### Follow coding styles
+
+We generally include test for coding guidelines:
+
+- Ansible is checked by running the playbook with the syntax-check option, e.g. `ansible-playbook foo.yml --syntax-check`
+
+Remember: Code is generally read much more often than written.
+
+### Use Markdown
+
+Wherever possible, please refrain from any other formats and stick to simple markdown.

@@ -1,0 +1,39 @@
+---
+
+- name: Be sure required zsh packages are installed
+  ansible.builtin.apt:
+    name: '{{ zsh_packages }}'
+    state: present
+
+- name: Include powerlevel10k tasks
+  ansible.builtin.import_tasks: powerlevel10k.yml
+  when: zsh_with_powerlevel10k
+  tags:
+    - zsh
+
+- name: Include zsh_completions tasks
+  ansible.builtin.import_tasks: completions.yml
+  tags:
+    - zsh
+
+- name: Configure /etc/zsh/zshenv
+  ansible.builtin.template:
+    src: zshenv.j2
+    dest: /etc/zsh/zshenv
+    mode: 0644
+
+- name: Ensures required alphanodes zsh directory exists
+  ansible.builtin.file:
+    path: /usr/share/alphanodes/zsh
+    state: directory
+    recurse: true
+
+- name: Set auto-ls plugin file
+  ansible.builtin.set_fact:
+    auto_ls_plugin_file: '/usr/share/alphanodes/zsh/auto-ls.zsh'
+
+- name: Install auto-ls plugin
+  ansible.builtin.copy:
+    src: auto-ls.zsh
+    dest: '{{ auto_ls_plugin_file }}'
+    mode: 0644

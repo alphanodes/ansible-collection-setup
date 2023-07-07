@@ -1,0 +1,11 @@
+---
+# Set java_packages if you would like to use a different version than the
+# default for the OS (see defaults per OS in `vars` directory).
+# java_packages: []
+
+# see https://github.com/geerlingguy/ansible-role-jenkins
+java_home: ""
+
+# JDK version options include:
+java_packages:
+  - openjdk-11-jre-headless

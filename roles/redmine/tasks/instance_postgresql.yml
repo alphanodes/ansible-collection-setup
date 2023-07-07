@@ -1,0 +1,32 @@
+---
+
+- name: Ensure postgresql packages are installed
+  ansible.builtin.apt:
+    name: '{{ redmine_postgresql_packages }}'
+    state: present
+
+- name: Create redmine postgresql database users - {{ instance_name }}
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_user:
+    name: '{{ redmine_db_user }}'
+    password: '{{ instance.db_password | default(redmine_db_password) }}'
+    role_attr_flags: "{{ instance.rb_role_flags | default('NOSUPERUSER,CREATEDB') }}"
+    state: present
+  no_log: true
+  when: instance.db_skip_user_setup is undefined or not instance.db_skip_user_setup
+
+- name: Be sure redmine postgresql databases exists - {{ instance_name }}
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_db:
+    name: '{{ redmine_db_name }}'
+    owner: '{{ redmine_db_user }}'
+    state: present
+
+- name: Run postgresql pre commands - {{ instance_name }}
+  community.postgresql.postgresql_query:
+    db: '{{ redmine_db_name }}'
+    query: '{{ item }}'
+    login_user: postgres
+  loop: '{{ instance.pre_db_commands | default([]) }}'

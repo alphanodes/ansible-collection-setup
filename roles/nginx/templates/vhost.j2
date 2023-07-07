@@ -1,0 +1,127 @@
+{{ ansible_managed | comment }}
+# nginx vhost configuration
+
+server {
+{% if instance.server_port is undefined or instance.server_port == 80 %}
+  listen 80{{ ' default_server' if instance.vhost_default is defined and instance.vhost_default else '' }}{{ ' reuseport' if instance.reuseport is defined and instance.reuseport else '' }};
+{% if nginx_with_ipv6 %}
+  listen [::]:80{{ ' default_server' if instance.vhost_default is defined and instance.vhost_default else '' }}{{ ' reuseport' if instance.reuseport is defined and instance.reuseport else '' }};
+{% endif %}
+{% endif %}
+{% if nginx_with_ssl %}
+{% if instance.server_port is undefined or instance.server_port == 443 %}
+  listen 443 {{ nginx_ssl_listen_option }}{{ ' default_server' if instance.vhost_default is defined and instance.vhost_default else '' }}{{ ' reuseport' if instance.reuseport is defined and instance.reuseport else '' }};
+{% if nginx_with_ipv6 %}
+  listen [::]:443 {{ nginx_ssl_listen_option }}{{ ' default_server' if instance.vhost_default is defined and instance.vhost_default else '' }}{{ ' reuseport' if instance.reuseport is defined and instance.reuseport else '' }};
+{% endif %}
+{% endif %}
+{% endif %}
+{% if instance.server_name is defined %}
+  server_name {{ instance.server_name }}{{ ' ' + instance.server_alias if instance.server_alias is defined else '' }};
+{% endif %}
+{% if not nginx_vhost_with_access_log %}
+  access_log off;
+{% elif instance.access_log is defined %}
+  access_log {{ instance.access_log }};
+{% endif %}
+{% if instance.root is defined %}
+  root {{ instance.root }};
+{% endif %}
+{% if instance.index is defined %}
+  index {{ instance.index }};
+{% endif %}
+
+{% if nginx_with_protection %}
+{% include 'templates/nginx_protection.inc.j2' with context %}
+{% endif %}
+
+{% if instance.vhost_dnt_private_ip is defined and instance.vhost_dnt_private_ip %}
+  set $dnt_header $http_dnt;
+  if ($private_network) {
+    set $dnt_header "";
+  }
+  more_clear_input_headers DNT $dnt_header;
+{% endif %}
+
+  {% if nginx_with_ssl -%}
+  {% include 'templates/nginx_ssl.inc.j2' with context %}
+  {% endif %}
+
+  {% if nginx_fastcgi_microcache_zone != '' and instance.microcache_zone is defined -%}
+
+  # microcache settings for zone {{ nginx_fastcgi_microcache_zone }}
+  fastcgi_cache {{ nginx_fastcgi_microcache_zone }};
+  fastcgi_cache_key $scheme$host$request_uri$request_method;
+  fastcgi_cache_valid 200 301 302 {{ nginx_fastcgi_microcache_valid }};
+  fastcgi_cache_use_stale updating error timeout invalid_header http_500;
+  fastcgi_pass_header Set-Cookie;
+  fastcgi_pass_header Cookie;
+  fastcgi_ignore_headers Cache-Control Expires Set-Cookie;
+  {% endif -%}
+
+  {% if instance.fastcgi_params is defined -%}
+  {% for fastcgi_param in instance.fastcgi_params -%}
+  fastcgi_param {{ fastcgi_param }};
+  {% endfor -%}
+  {% endif -%}
+
+  {% if instance.fastcgi_buffers is defined -%}
+
+  fastcgi_buffer_size {{ instance.fastcgi_buffer_size | default('4k') }};
+  fastcgi_busy_buffers_size {{ instance.fastcgi_busy_buffers_size | default('8k') }};
+  fastcgi_buffers {{ instance.fastcgi_buffers }};
+  fastcgi_max_temp_file_size 0;
+
+  {% endif -%}
+
+  {% if instance.with_fpm is defined -%}
+  {% include 'templates/nginx_fpm.inc.j2' with context %}
+  {% endif %}
+
+  {% if instance.vhost_includes is defined -%}
+  {% for vhost_include in instance.vhost_includes -%}
+  include {{ vhost_include }}.conf;
+  {% endfor %}
+  {% endif %}
+
+  {% if instance.vhost_redirect_to is defined -%}
+  return 301 {{ instance.vhost_redirect_to }}$request_uri;
+  {% endif %}
+
+  {% if instance.vhost_redirect_to_static is defined -%}
+  return 301 {{ instance.vhost_redirect_to_static }};
+  {% endif %}
+
+  {% include 'templates/nginx_location.inc.j2' with context %}
+
+  {% include 'templates/nginx_rewrite_lines.inc.j2' with context %}
+
+  {% include 'templates/nginx_error_handler.inc.j2' with context %}
+
+  {% if instance.vhost_users is defined -%}
+  # access protection
+  auth_basic "Restricted access only";
+  auth_basic_user_file /etc/nginx/.htpasswd_nginx_{{ instance.name }};
+  {% endif %}
+
+}
+
+{% if nginx_with_ssl and instance.server_port is defined -%}
+{% include 'templates/nginx_port_redirect.inc.j2' with context %}
+{% endif %}
+
+{% if instance.mappings is defined -%}
+{% include 'mappings.inc.j2' with context %}
+{% endif -%}
+
+{% if instance.redirects is defined -%}
+{% include 'templates/nginx_redirects.inc.j2' with context %}
+{% endif %}
+
+{% if instance.external_redirects is defined -%}
+{% include 'templates/nginx_external_redirects.inc.j2' with context %}
+{% endif %}
+
+{% if instance.vhost_for_zabbix is defined and instance.vhost_for_zabbix -%}
+{% include 'templates/nginx_monitoring.inc.j2' with context %}
+{% endif -%}

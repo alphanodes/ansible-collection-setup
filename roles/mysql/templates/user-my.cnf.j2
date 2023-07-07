@@ -1,0 +1,8 @@
+{{ ansible_managed | comment }}
+
+[client]
+{% if client_host is defined and client_host != '' %}
+host={{ client_host }}
+{% endif %}
+user="{{ client_user }}"
+password="{{ client_password }}"

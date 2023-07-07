@@ -1,0 +1,46 @@
+---
+{{ ansible_managed | comment }}
+
+default:
+  email_delivery:
+    delivery_method: {{ instance.delivery_method | default(redmine_delivery_method) }}
+    {% if instance.delivery_method is undefined or instance.delivery_method == ':smtp' -%}
+
+    smtp_settings:
+      address: "{{ instance.smtp_address | default(redmine_smtp_address) }}"
+      port: {{ instance.smtp_port | default(redmine_smtp_port) }}
+      tls: {{ 'true' if instance.smtp_tls | default(redmine_smtp_tls) else 'false' }}
+      enable_starttls_auto: {{ 'true' if instance.smtp_enable_starttls_auto | default(redmine_smtp_enable_starttls_auto) else 'false' }}
+    {% endif %}
+
+  attachments_storage_path: {{ redmine_files_dir }}
+{% if instance.sudo_mode is defined and instance.sudo_mode %}
+  sudo_mode: true
+  sudo_mode_timeout: {{ instance.sudo_mode_timeout | default(15) }}
+{% endif %}
+{% if instance.database_cipher_key is defined and instance.database_cipher_key != '' %}
+  database_cipher_key: "{{ instance.database_cipher_key }}"
+{% endif %}
+{% if instance.helpdesk_debug is defined and instance.helpdesk_debug != '' %}
+  helpdesk_debug: {{ instance.helpdesk_debug | bool | lower }}
+{% endif %}
+{% if instance.default_cc_addresses_with_to is defined and instance.default_cc_addresses_with_to != '' %}
+  default_cc_addresses_with_to: {{ instance.default_cc_addresses_with_to | bool | lower }}
+{% endif %}
+{% if instance.select2_init_entries is defined and instance.select2_init_entries != '' %}
+  select2_init_entries: {{ instance.select2_init_entries | int }}
+{% endif %}
+
+{% if active_system_infos_vars | length %}
+  system_infos_vars:
+{% for info_var in active_system_infos_vars %}
+    - {{ info_var }}
+{% endfor %}
+{% endif %}
+
+{% if active_system_infos_bool_vars | length %}
+  system_infos_bool_vars:
+{% for info_bool_var in active_system_infos_bool_vars %}
+    - {{ info_bool_var }}
+{% endfor %}
+{% endif %}

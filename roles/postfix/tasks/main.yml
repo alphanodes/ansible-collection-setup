@@ -1,0 +1,19 @@
+---
+
+- name: Import setup tasks
+  ansible.builtin.import_tasks: setup.yml
+  tags:
+    - postfix
+
+- name: Import SASL tasks
+  ansible.builtin.import_tasks: sasl.yml
+  when: postfix_sasl_auth_enable
+  tags:
+    - postfix
+    - sasl
+
+- name: Import vimbadmin tasks
+  ansible.builtin.import_tasks: vimbadmin.yml
+  when: postfix_with_vimbadmin
+  tags:
+    - postfix

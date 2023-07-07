@@ -1,0 +1,44 @@
+---
+
+- name: Include setup tasks
+  ansible.builtin.import_tasks: setup.yml
+  when: not ansible_node_remove
+  tags:
+    - ansible
+
+- name: Include host tasks
+  ansible.builtin.import_tasks: hosts.yml
+  when: not ansible_node_remove and ansible_node_identifier != ''
+  tags:
+    - ansible
+
+- name: Playbook env for proxy
+  ansible.builtin.set_fact:
+    playbook_env:
+      http_proxy: "{{ http_proxy | default('') }}"
+      https_proxy: "{{ https_proxy | default('') }}"
+  when: http_proxy is defined and http_proxy != '' or https_proxy is defined and https_proxy != ''
+
+- name: Include playbook tasks
+  ansible.builtin.include_tasks: instance.yml
+  loop: "{{ ansible_node_available_playbooks | dict2items }}"
+  loop_control:
+    loop_var: r_playbook
+  when: >
+    not ansible_node_remove and
+    ansible_node_identifier != '' and
+    ansible_node_playbooks is defined and
+    ansible_node_playbooks is iterable
+
+- name: Include custom timer tasks
+  ansible.builtin.import_tasks: custom_timers.yml
+  when: not ansible_node_remove
+  tags:
+    - ansible
+    - systemd
+
+- name: Include remove tasks
+  ansible.builtin.import_tasks: remove.yml
+  when: ansible_node_remove
+  tags:
+    - ansible

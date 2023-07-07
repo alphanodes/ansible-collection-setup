@@ -1,0 +1,4 @@
+---
+# var file for phpmyadmin (not overwritable)
+
+phpmyadmin_location: /phpmyadmin

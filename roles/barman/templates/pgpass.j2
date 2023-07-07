@@ -1,0 +1,3 @@
+{% for server in barman_db_servers %}
+{{ server.conninfo_host }}:{{ server.conninfo_port | default(barman_default_conninfo_port) }}:{{ server.conninfo_dbname | default(barman_default_conninfo_dbname) }}:{{ barman_postgresql_user }}:{{ barman_postgresql_password }}
+{% endfor %}

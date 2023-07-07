@@ -1,0 +1,28 @@
+---
+# file: automation for redmine
+
+- hosts: {{ ansible_node_playbook_host }}
+  serial: 1
+
+  vars:
+    ansible_python_interpreter: {{ ansible_node_playbook_ansible_python_interpreter }}
+    redmine_task_name: automation
+{% if rails_env is defined and rails_env != 'production' %}
+    rails_env: {{ rails_env }}
+{% endif %}
+{% if redmine_task_multi_instance_default is defined %}
+    redmine_task_multi_instance_default: {{ redmine_task_multi_instance_default }}
+{% endif %}
+{% if redmine_automation_task is defined %}
+    redmine_automation_task: {{ redmine_automation_task }}
+{% endif %}
+{% if redmine_automation_instances is defined or redmine_task_instances is defined %}
+    redmine_instances:
+      {{ redmine_automation_instances | default(redmine_task_instances) | to_nice_yaml(indent=2) | trim | indent(6) }}
+{% else %}
+    redmine_instances:
+      {{ redmine_task_instance | default('redmine') }}:
+{% endif %}
+
+  roles:
+    - alphanodes.tasks.redmine_task

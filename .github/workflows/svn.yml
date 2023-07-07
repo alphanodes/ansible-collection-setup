@@ -1,0 +1,48 @@
+---
+name: "alphanodes.setup.svn"
+'on':
+  pull_request:
+  push:
+    branches:
+      - main
+    paths:
+      - 'roles/svn/**'
+      - 'molecule/svn/**'
+      - '.github/workflows/svn.yml'
+
+defaults:
+  run:
+    working-directory: 'alphanodes.svn'
+
+jobs:
+  molecule:
+    name: Molecule
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        distro:
+          - ubuntu2204
+          - debian11
+
+    steps:
+      - name: Check out the codebase.
+        uses: actions/checkout@v3
+        with:
+          path: 'alphanodes.svn'
+
+      - name: Set up Python 3.
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install test dependencies.
+        run: pip3 install ansible molecule molecule-plugins[docker] docker
+
+      - name: Run Molecule tests.
+        run: |
+          molecule --version
+          molecule test -s svn
+        env:
+          PY_COLORS: '1'
+          ANSIBLE_FORCE_COLOR: '1'
+          MOLECULE_DISTRO: ${{ matrix.distro }}

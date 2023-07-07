@@ -1,0 +1,47 @@
+; {{ ansible_managed }}
+; customized php configuration
+
+[PHP]
+always_populate_raw_post_data = -1
+disable_functions = {{ php_disable_functions }}
+error_log = {{ php_error_log }}
+error_reporting = {{ php_error_reporting }}
+expose_php = Off
+max_execution_time = {{ php_max_execution_time }}
+max_file_uploads = {{ php_max_file_uploads }}
+max_input_time = {{ php_max_input_time }}
+max_input_vars = {{ php_max_input_vars }}
+memory_limit = {{ php_memory_limit }}
+output_buffering = Off
+post_max_size = {{ php_post_max_size }}
+realpath_cache_size = {{ php_realpath_cache_size }}
+realpath_cache_ttl = {{ php_realpath_cache_ttl }}
+serialize_precision = {{ php_serialize_precision }}
+short_open_tag = {{ php_short_open_tag }}
+upload_max_filesize = {{ php_upload_max_filesize }}
+
+[Date]
+date.timezone = {{ php_date_timezone }}
+
+[mail function]
+mail.log = {{ php_mail_log }}
+
+[Session]
+session.save_handler = {{ php_session_save_handler }}
+session.save_path = "{{ php_session_save_path }}"
+session.name = {{ php_session_name }}
+session.cache_expire = {{ php_session_cache_expire }}
+session.gc_divisor = {{ php_session_gc_divisor }}
+session.gc_maxlifetime = {{ php_session_gc_maxlifetime }}
+
+[opcache]
+opcache.enable = {{ php_opcache_enable }}
+opcache_enable_cli = {{ php_opcache_enable_cli }}
+opcache.memory_consumption = {{ php_opcache_memory_consumption }}
+opcache.interned_strings_buffer = {{ php_opcache_interned_strings_buffer }}
+opcache.max_accelerated_files = {{ php_opcache_max_accelerated_files }}
+opcache.validate_timestamps = {{ php_opcache_validate_timestamps }}
+opcache.revalidate_freq = {{ php_opcache_revalidate_freq }}
+opcache.fast_shutdown = {{ php_opcache_fast_shutdown }}
+opcache.enable_file_override = {{ php_opcache_enable_file_override }}
+opcache.optimization_level = {{ php_opcache_optimization_level }}

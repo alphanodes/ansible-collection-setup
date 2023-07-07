@@ -1,0 +1,57 @@
+---
+
+- name: Stats for zabbix configuration
+  ansible.builtin.stat:
+    path: /etc/zabbix
+  register: zabbix_config_exists
+
+- name: Zabbix monitoring
+  when: zabbix_config_exists.stat.exists
+  block:
+    - name: Enabled monitoring
+      when: zabbix_monitoring and (zabbix_agent_remove is undefined or not zabbix_agent_remove)
+      block:
+        - name: Create zabbix monitoring mysql user
+          community.mysql.mysql_user:
+            name: '{{ mysql_zabbix_user }}'
+            password: '{{ mysql_zabbix_password }}'
+            host: '{{ mysql_zabbix_host }}'
+            # USAGE,REPLICATION CLIENT,PROCESS,SHOW DATABASES,SHOW VIEW
+            priv: '*.*:SUPER,PROCESS,RELOAD,SELECT'
+            update_password: always
+            state: present
+          no_log: true
+
+        # @TODO: this task should be remove, if was run on all hosts
+        - name: Remove obsolete stat user for monitoring
+          community.mysql.mysql_user:
+            name: stat
+            state: absent
+
+        - name: MySQL client configuration for zabbix agent
+          ansible.builtin.template:
+            src: user-my.cnf.j2
+            dest: '{{ zabbix_agent_home }}/.my.cnf'
+            mode: 0640
+            owner: zabbix
+            group: zabbix
+          vars:
+            client_host: '{{ mysql_zabbix_host }}'
+            client_user: '{{ mysql_zabbix_user }}'
+            client_password: '{{ mysql_zabbix_password }}'
+
+    - name: Disabled monitoring
+      when: not zabbix_monitoring
+      block:
+        - name: Remove mysql user
+          community.mysql.mysql_user:
+            name: '{{ mysql_zabbix_user }}'
+            state: absent
+
+        - name: Remove zabbix configuration
+          ansible.builtin.file:
+            path: '{{ item }}'
+            state: absent
+          loop:
+            - '{{ zabbix_addons_dir }}/conf/my.cnf'
+          notify: Restart zabbix-agent

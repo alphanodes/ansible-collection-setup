@@ -1,0 +1,7 @@
+---
+- name: Include vars
+  ansible.builtin.import_tasks: include-vars.yml
+
+- name: Include setup tasks
+  ansible.builtin.import_tasks: setup.yml
+  tags: redis

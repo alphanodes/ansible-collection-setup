@@ -1,0 +1,20 @@
+---
+
+dependencies: []
+
+galaxy_info:
+  description: Create and configure a swap file.
+  author: alexandermeindl
+  company: AlphaNodes GmbH
+  license: Apache License 2.0
+  min_ansible_version: '2.14'
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+    - name: Debian
+      versions:
+        - buster
+        - bullseye
+        - bookworm

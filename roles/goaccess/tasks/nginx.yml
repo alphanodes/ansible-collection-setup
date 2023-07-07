@@ -1,0 +1,23 @@
+---
+- name: Be sure goaccess output directory exists
+  ansible.builtin.file:
+    path: '{{ goaccess_output_dir }}'
+    state: directory
+    recurse: true
+    mode: 0755
+
+- name: Update goaccess user access
+  community.general.htpasswd:
+    path: /etc/nginx/.htpasswd_goaccess
+    name: '{{ goaccess_user }}'
+    password: '{{ goaccess_password }}'
+    owner: root
+    group: "{{ nginx_group | default('www-data') }}"
+    mode: 0640
+
+- name: Provide goaccess nginx configuration
+  ansible.builtin.template:
+    src: nginx/goaccess.j2
+    dest: /etc/nginx/goaccess.conf
+    mode: 0644
+  notify: Reload nginx

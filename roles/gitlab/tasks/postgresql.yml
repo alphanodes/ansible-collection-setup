@@ -1,0 +1,41 @@
+---
+
+- name: Create gitlab postgresql database user
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_user:
+    name: '{{ gitlab_db_user }}'
+    password: '{{ gitlab_db_password }}'
+    role_attr_flags: "{{ gitlab_db_role_flags | default('CREATEDB') }}"
+    state: present
+  no_log: true
+
+- name: Be sure pg_trgm extension exists
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_ext:
+    name: pg_trgm
+    db: template1
+
+- name: Be sure btree_gist extension exists
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_ext:
+    name: btree_gist
+    db: template1
+
+- name: Be sure plpgsql extension exists
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_ext:
+    name: plpgsql
+    db: template1
+
+- name: Be sure gitlab postgresql databases exists
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_db:
+    name: '{{ gitlab_db_name }}'
+    owner: '{{ gitlab_db_user }}'
+    template: template1
+    state: present

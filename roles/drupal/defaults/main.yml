@@ -1,0 +1,59 @@
+---
+# defaults file for drupal
+
+drupal_instances: []
+  # name of instance (is used as drush profile name)
+  # - name: demo
+
+# Default values for a drupal instance (overwrite it in instance hash)
+drupal_server_name: drupal.local
+drupal_vhost_dir: '/htdocs'
+drupal_vhost_for_zabbix: false
+drupal_vhost_default: false
+
+drupal_major_version: 7
+
+# drupal_db_name: item.name
+# drupal_db_user: item.name
+drupal_db_password: '{{ [ansible_machine_id, ansible_hostname, "drupal"] | join | hash("md5") }}'
+drupal_db_host: localhost
+drupal_db_port: 3306
+drupal_db_driver: mysql
+drupal_db_prefix: ''
+drupal_db_charset: 'utf8mb4'
+drupal_db_collation: 'utf8mb4_general_ci'
+
+drupal_write_settings_file: true
+drupal_hash_salt: ''
+drupal_base_url: ''
+drupal_maintenance_theme: ''
+drupal_fast_404: false
+
+drupal_with_memcache: false
+drupal_memcache_module: sites/all/modules/contrib/memcache
+drupal_memcache_prefix: drupal
+drupal_vhost_includes: []
+
+# if defined, only these users can access vhost
+# if no directory (location) is defined and vhost_users are defined, whole vhost is protected
+drupal_vhost_users: []
+#  - user: 'user name'
+#    password: 'password'
+#    location: ''
+
+drupal_composer_params: update -n
+
+# default drush path (overwrite it with instance.drush_path)
+drupal_drush_path: /root/.composer/vendor/bin/drush
+
+# this is not working at the moment
+# no default value possible for with_subelements
+drupal_write_permissions:
+  - /htdocs/sites/default/files
+  - /htdocs/sites/all/translations
+
+# nginx
+drupal_with_hotlink_protection: false
+
+# instance wide usage (for /etc/nginx/drupal.conf)
+drupal_multilanguage: []

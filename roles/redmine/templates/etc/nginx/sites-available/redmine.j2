@@ -1,0 +1,189 @@
+{{ ansible_managed | comment }}
+# nginx redmine configuration
+
+server {
+{% if nginx_with_ssl %}
+  listen {{ instance.server_port | default('443') }} {{ nginx_ssl_listen_option }};
+{% if nginx_with_ipv6 %}
+  listen [::]:{{ instance.server_port | default('443') }} {{ nginx_ssl_listen_option }};
+{% endif %}
+{% else %}
+  listen 80;
+{% if nginx_with_ipv6 %}
+  listen [::]:80;
+{% endif %}
+{% endif %}
+  server_name {{ instance.server_name | default(redmine_server_name) }}{{ ' ' + instance.server_alias if instance.server_alias is defined else '' }};
+{% if instance.prefix is defined %}
+  root /var/www;
+{% if instance.prefix_redirect is defined and instance.prefix_redirect %}
+
+  location = / {
+    return 301 $scheme://$host{{ instance.prefix }};
+  }
+
+{% endif %}
+{% else %}
+  root {{ redmine_app_dir }}/public;
+{% endif %}
+  index index.html;
+
+  {% if nginx_with_ssl %}
+  {% include 'templates/nginx_ssl.inc.j2' with context %}
+  {% endif %}
+
+  {% if instance.with_mailcatcher_proxy is defined and instance.with_mailcatcher_proxy -%}
+
+  # mailcatcher, assets and messages are used with mailcatcher and cannot be used with redmine!
+
+  location /mailcatcher {
+    try_files $uri @mailcatcher;
+  }
+
+  location ~ ^/assets {
+    proxy_pass http://redmine_dev_mailcatcher;
+  }
+
+  location ~ ^/messages {
+    # WebSocket support
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
+    proxy_pass_header X-XSRF-TOKEN;
+
+    proxy_pass http://redmine_dev_mailcatcher;
+  }
+
+  location @mailcatcher {
+    rewrite /mailcatcher(.*) /$1 break;
+    {% if nginx_with_ssl %}
+    # proxy_set_header X-Forwarded-Proto https;
+    {% endif %}
+    proxy_http_version 1.1;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+    proxy_pass http://{{ instance_name | replace('-', '_')}}_mailcatcher;
+    proxy_redirect off;
+  }
+
+  {% endif -%}
+
+  location {{ instance.prefix if instance.prefix is defined else '/' }} {
+{% if instance.nginx_api_limit_req is defined and instance.nginx_api_limit_req != '' %}
+    limit_req {{ instance.nginx_api_limit_req }};
+{% endif %}
+{% if instance.nginx_form_limit_req is defined and instance.nginx_form_limit_req != '' %}
+    limit_req {{ instance.nginx_form_limit_req }};
+{% endif %}
+{% if (instance.nginx_api_limit_req is defined and instance.nginx_api_limit_req != '') or (instance.nginx_form_limit_req is defined and instance.nginx_form_limit_req != '') %}
+    limit_req_status 422;
+{% endif %}
+
+{% if nginx_with_protection %}
+    {% include 'templates/nginx_protection.inc.j2' with context %}
+
+
+    ## Block unwanted url requests for Redmine
+    if ($bad_redmine_locations) {
+      return 404;
+    }
+{% endif %}
+
+{% if instance.no_access_for_register is defined and instance.no_access_for_register %}
+    location ~* "^/account/register" {
+      deny all;
+    }
+{% endif %}
+
+{% if instance.prefix is defined %}
+    alias {{ redmine_app_dir }}/public;
+{% endif %}
+    proxy_read_timeout {{ redmine_proxy_read_timeout }};
+    proxy_connect_timeout {{ redmine_proxy_connect_timeout }};
+
+    proxy_buffers {{ redmine_proxy_buffers }};
+    proxy_buffer_size {{ redmine_proxy_buffer_size }};
+    proxy_busy_buffers_size {{ redmine_proxy_busy_buffers_size }};
+
+    try_files $uri @puma;
+  }
+
+  location @puma {
+{% if redmine_content_security_policy != '' and (instance.content_security_policy is defined and instance.content_security_policy or instance.content_security_policy is undefined) %}
+    ## see https://wiki.mozilla.org/Security/Guidelines/Web_Security#Content_Security_Policy
+    ## and  see http://cspisawesome.com/content_security_policies
+    add_header Content-Security-Policy "{{ redmine_content_security_policy }}";
+{% endif %}
+ {% if nginx_with_ssl %}
+    proxy_set_header X-Forwarded-Proto https;
+{% if nginx_force_ssl %}
+    ## see https://gist.github.com/plentz/6737338 (1 year caching)
+    ## check: https://hstspreload.appspot.com/
+    add_header Strict-Transport-Security 'max-age=31536000; includeSubDomains; preload';
+ {% endif %}
+ {% endif %}
+    proxy_http_version 1.1;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+{% if nginx_with_proxy_forwarded_hosts | length>0 %}
+    proxy_set_header X-Forwarded-Host $forwarded_host;
+{% endif %}
+{% if nginx_with_proxy_forwarded_for %}
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+{% endif %}
+    proxy_pass http://{{ instance_name | replace('-', '_')}};
+    proxy_redirect off;
+  }
+
+  {% if instance.vhost_includes is defined -%}
+  {% for include in instance.vhost_includes -%}
+  include {{ include }}.conf;
+  {% endfor %}
+  {% endif %}
+
+  {% include 'templates/nginx_location.inc.j2' with context %}
+
+  {% include 'templates/nginx_rewrite_lines.inc.j2' with context %}
+
+  {% include 'templates/nginx_error_handler.inc.j2' with context %}
+
+{% if instance.vhost_users is defined %}
+  # access protection
+  auth_basic "Restricted access only";
+  auth_basic_user_file /etc/nginx/.htpasswd_redmine_{{ instance_name }};
+{% endif %}
+}
+
+### upstream for puma
+upstream {{ instance_name | replace('-', '_') }} {
+  server unix:{{ redmine_run_base_path + "/" + instance_name }}/redmine.sock;
+}
+
+{% if instance.with_mailcatcher_proxy is defined and instance.with_mailcatcher_proxy %}
+### upstream for mailcatcher
+upstream {{ instance_name | replace('-', '_') }}_mailcatcher {
+  server {{ redmine_mailcatcher_ip if redmine_mailcatcher_ip != '' else '127.0.0.1' }}:{{ instance.mailcatcher_http_port | default(redmine_mailcatcher_http_port) }};
+}
+{% endif %}
+
+{% if instance.vhost_default is defined and instance.vhost_default %}
+{% include 'templates/nginx_default_host_redirect.inc.j2' with context %}
+{% endif %}
+
+{% if nginx_with_ssl and instance.server_port is defined -%}
+{% include 'templates/nginx_port_redirect.inc.j2' with context %}
+{% endif %}
+
+{% if instance.redirects is defined -%}
+{% include 'templates/nginx_redirects.inc.j2' with context %}
+{% endif %}
+
+{% if instance.external_redirects is defined -%}
+{% include 'templates/nginx_external_redirects.inc.j2' with context %}
+{% endif %}
+
+{% if instance.vhost_for_zabbix is defined and instance.vhost_for_zabbix -%}
+{% include 'templates/nginx_monitoring.inc.j2' with context %}
+{% endif -%}

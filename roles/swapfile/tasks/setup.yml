@@ -1,0 +1,92 @@
+---
+
+- name: Be sure swapfile required packages are installed
+  ansible.builtin.apt:
+    name: '{{ swapfile_packages }}'
+    state: present
+
+- name: Set variable for existing swap file size
+  ansible.builtin.set_fact:
+    swapfile_existing_size_mb: "{{ (swapfile_check.stat.size / 1024 / 1024) | int }}"
+  when: swapfile_check.stat.exists
+
+- name: Check if swap is on
+  ansible.builtin.shell: |
+    set -o pipefail
+    swapon --show | grep {{ swapfile_path }}
+  args:
+    executable: /usr/bin/bash
+  register: swap_is_enabled
+  changed_when: false
+  failed_when: false
+
+- name: Disable swap
+  ansible.builtin.command: swapoff {{ swapfile_path }}
+  register: swap_disabled
+  when: >
+    swapfile_check.stat.exists
+    and 'rc' in swap_is_enabled and swap_is_enabled.rc == 0
+    and (swapfile_existing_size_mb | int != swapfile_size_mb | int)
+
+- name: Create or change the size of swap file
+  ansible.builtin.command: dd if=/dev/zero of={{ swapfile_path }} count={{ swapfile_size_mb }} bs=1MiB
+  register: swapfile_created
+  when: >
+    not swapfile_check.stat.exists
+    or (swapfile_existing_size_mb | int != swapfile_size_mb | int)
+
+- name: Change swap file permissions
+  ansible.builtin.file:
+    path: "{{ swapfile_path }}"
+    mode: 0600
+    owner: root
+    group: root
+
+- name: Check if swap is formatted
+  ansible.builtin.shell: |
+    set -o pipefail
+    file {{ swapfile_path }} | grep 'swap file'
+  args:
+    executable: /usr/bin/bash
+  register: swapfile_is_formatted
+  changed_when: false
+  failed_when: false
+
+- name: Format swap file if it's not formatted
+  ansible.builtin.command: mkswap {{ swapfile_path }}
+  when: >
+    ('rc' in swapfile_is_formatted and swapfile_is_formatted.rc > 0)
+    or swapfile_created.changed
+
+- name: Add swap entry to fstab
+  ansible.posix.mount:
+    name: none
+    src: "{{ swapfile_path }}"
+    fstype: swap
+    opts: sw
+    passno: '0'
+    dump: '0'
+    state: present
+
+- name: Turn on swap
+  ansible.builtin.command: swapon -a
+  when: >
+    ('rc' in swap_is_enabled and swap_is_enabled.rc != 0)
+    or swap_disabled.changed
+
+- name: Configure swap file swappiness
+  ansible.posix.sysctl:
+    name: vm.swappiness
+    value: "{{ swapfile_swappiness | string }}"
+    state: present
+
+- name: Get swap information
+  ansible.builtin.command: swapon --show
+  changed_when: false
+  register: swapon_info
+
+- name: Output swap information
+  ansible.builtin.debug:
+    var: swapon_info.stdout_lines
+  when: swapon_info.stdout_lines | length
+  changed_when: false

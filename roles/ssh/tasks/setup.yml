@@ -1,0 +1,57 @@
+---
+
+- name: Be sure ssh is installed
+  ansible.builtin.apt:
+    name: '{{ ssh_server_packages }}'
+    state: present
+
+- name: Get openssh-version
+  ansible.builtin.command: ssh -V
+  register: sshd_version_raw
+  changed_when: false
+  check_mode: false
+
+- name: Parse openssh-version
+  ansible.builtin.set_fact:
+    sshd_version: "{{ sshd_version_raw.stderr | regex_replace('.*_([0-9]*.[0-9]).*', '\\1') }}"
+
+- name: Start ssh service
+  ansible.builtin.systemd:
+    name: ssh
+    state: started
+    enabled: true
+
+- name: Set kex according to openssh-version if openssh >= 8.5
+  ansible.builtin.set_fact:
+    ssh_kex: '{{ ssh_kex_85 }}'
+  when: sshd_version is version('8.5', '>=')
+
+- name: Set kex according to openssh-version if openssh < 8.5
+  ansible.builtin.set_fact:
+    ssh_kex: '{{ ssh_kex_80 }}'
+  when: sshd_version is version('8.5', '<')
+
+
+- name: Update ssh server configuration
+  ansible.builtin.template:
+    src: sshd_config.j2
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: 0600
+    validate: 'sshd -T -f %s -C user=root'
+  notify: Restart ssh
+
+- name: Remove debian dist files, if available
+  ansible.builtin.file:
+    path: /etc/ssh/{{ item }}
+    state: absent
+  loop:
+    - sshd_config.ucf-dist
+    - ssh_config.dpkg-dist
+
+- name: Update ssh client configuration
+  ansible.builtin.template:
+    src: ssh_config.j2
+    dest: /etc/ssh/ssh_config
+    mode: 0644

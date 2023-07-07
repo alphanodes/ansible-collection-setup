@@ -1,0 +1,13 @@
+---
+
+- name: Restart hedgedoc
+  ansible.builtin.systemd:
+    name: hedgedoc
+    state: restarted
+
+- name: Run yarn build
+  ansible.builtin.command: /usr/local/lib/npm/bin/yarn run build
+  args:
+    chdir: "{{ hedgedoc_path }}"
+  become: true
+  become_user: '{{ hedgedoc_user }}'

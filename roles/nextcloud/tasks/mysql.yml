@@ -1,0 +1,18 @@
+---
+
+- name: Include MySQL role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.mysql
+
+- name: Be sure nextcloud database exists
+  community.mysql.mysql_db:
+    name: '{{ nextcloud_db_name }}'
+    state: present
+
+- name: Create nextcloud user
+  community.mysql.mysql_user:
+    name: '{{ nextcloud_db_user }}'
+    password: '{{ nextcloud_db_password }}'
+    host: '{{ nextcloud_db_host }}'
+    priv: '{{ nextcloud_db_name }}.*:ALL'
+    state: present

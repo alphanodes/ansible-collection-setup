@@ -1,0 +1,23 @@
+<?php
+/* {{ ansible_managed }} */
+
+$CONFIG = array(
+  'default_language' => '{{ nextcloud_default_language }}',
+  'memcache.local' => '\OC\Memcache\Redis',
+  'memcache.locking' => '\OC\Memcache\Redis',
+  'redis' => [
+    'host' => 'localhost', // can also be a unix domain socket: '/tmp/redis.sock'
+    'port' => 6379,
+    'timeout' => 0.0,
+    'password' => '', // Optional, if not defined no password will be used.
+    'dbindex' => 0, // Optional, if undefined SELECT will not run and will use Redis Server's default DB Index.
+  ],
+  'asset-pipeline.enabled' => true,
+  'log_type' => 'syslog',
+  'default_phone_region' => 'DE',
+  'loglevel' => {{ nextcloud_loglevel }},
+  'mail_domain' => '{{ nextcloud_mail_domain }}',
+  'mail_from_address' => '{{ nextcloud_mail_from_address }}',
+  'logtimezone' => '{{ nextcloud_logtimezone }}',
+  'session_keepalive' => true,
+);

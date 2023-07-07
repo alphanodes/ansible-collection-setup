@@ -1,0 +1,5 @@
+---
+
+- name: Import setup tasks
+  ansible.builtin.import_tasks: setup.yml
+  tags: sudo

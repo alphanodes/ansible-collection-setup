@@ -1,0 +1,12 @@
+---
+
+- name: Ensure required packages are present
+  ansible.builtin.apt:
+    name: '{{ cifs_mount_required_packages }}'
+    state: present
+
+- name: Include cifs mount instance tasks
+  ansible.builtin.include_tasks: setup_instance.yml
+  loop: "{{ cifs_mounts }}"
+  loop_control:
+    loop_var: cifs_mount

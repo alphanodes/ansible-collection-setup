@@ -1,0 +1,13 @@
+diff --git a/app/models/issue_custom_field.rb b/app/models/issue_custom_field.rb
+index de5c9ceb2..18ec6bb43 100644
+--- a/app/models/issue_custom_field.rb
++++ b/app/models/issue_custom_field.rb
+@@ -39,7 +39,7 @@ class IssueCustomField < CustomField
+     project_condition = "EXISTS (SELECT 1 FROM #{CustomField.table_name} ifa WHERE ifa.is_for_all = #{self.class.connection.quoted_true} AND ifa.id = #{id_column})" +
+       " OR #{Issue.table_name}.project_id IN (SELECT project_id FROM #{table_name_prefix}custom_fields_projects#{table_name_suffix} WHERE custom_field_id = #{id_column})"
+
+-    "((#{sql}) AND (#{tracker_condition}) AND (#{project_condition}) AND (#{Issue.visible_condition(user)}))"
++    "((#{sql}) AND (#{tracker_condition}) AND (#{project_condition}))"
+   end
+
+   def validate_custom_field

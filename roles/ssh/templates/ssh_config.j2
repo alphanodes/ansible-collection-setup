@@ -1,0 +1,33 @@
+{{ ansible_managed | comment }}
+
+# This is the ssh client system-wide configuration file.  See
+# ssh_config(5) for more information.  This file provides defaults for
+# users, and the values can be changed in per-user configuration files
+# or on the command line.
+
+# Configuration data is parsed as follows:
+#  1. command line options
+#  2. user-specific file
+#  3. system-wide file
+# Any configuration value is only changed the first time it is set.
+# Thus, host-specific definitions should be at the beginning of the
+# configuration file, and defaults at the end.
+
+# Site-wide defaults for some commonly used options.  For a comprehensive
+# list of available options, their meanings and defaults, please see the
+# ssh_config(5) man page.
+
+Host *
+    SendEnv LANG LC_*
+    HashKnownHosts {{ 'yes' if ssh_client_hash_known_hosts | bool else 'no' }}
+    GSSAPIAuthentication yes
+{% if ssh_max_secure %}
+    # see https://infosec.mozilla.org/guidelines/openssh#modern
+
+    # Host keys the client accepts - order here is honored by OpenSSH
+    {{ "HostKeyAlgorithms " ~ ssh_client_host_key_algorithms|join(',') if ssh_client_host_key_algorithms else "HostKeyAlgorithms"|comment }}
+
+    {{ 'Ciphers ' ~ ssh_ciphers|join(',') }}
+    {{ 'MACs ' ~ ssh_macs|join(',') }}
+    {{ 'KexAlgorithms ' ~ ssh_kex|join(',') }}
+{% endif %}

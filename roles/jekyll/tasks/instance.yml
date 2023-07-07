@@ -1,0 +1,83 @@
+---
+
+- name: Set facts
+  ansible.builtin.set_fact:
+    jekyll_dir: "{{ instance.dir | default(jekyll_base_dir + '/' + instance.name) }}"
+    jekyll_env: "{{ instance.jekyll_env | default(jekyll_env) }}"
+
+- name: Install jekyll - {{ instance.name }}
+  ansible.builtin.git:
+    repo: '{{ instance.repo }}'
+    dest: '{{ jekyll_dir }}'
+    version: '{{ instance.repo_version | default(omit) }}'
+    accept_hostkey: true
+  notify: Run bundle update for jekyll
+  register: git_result
+
+- name: Install bundler - {{ instance.name }}
+  community.general.gem:
+    name: bundler
+    state: present
+
+- name: Run build on env {{ jekyll_env }}
+  when: jekyll_run_clean or git_result.changed
+  tags:
+    - skip_ansible_lint
+  block:
+    - name: Run Jekyll clean - {{ instance.name }}
+      ansible.builtin.command: bundle exec jekyll clean
+      args:
+        chdir: '{{ jekyll_dir }}'
+      environment:
+        JEKYLL_ENV: '{{ jekyll_env }}'
+
+    - name: Run Jekyll build - {{ instance.name }}
+      ansible.builtin.command: bundle exec jekyll build
+      args:
+        chdir: '{{ jekyll_dir }}'
+      environment:
+        JEKYLL_ENV: '{{ jekyll_env }}'
+
+    - name: Run Jekyll remove old release dir - {{ instance.name }}
+      ansible.builtin.file:
+        path: '{{ jekyll_dir }}/{{ jekyll_site_prod }}'
+        state: absent
+
+    - name: Run Jekyll release dir - {{ instance.name }}
+      ansible.builtin.command: mv {{ jekyll_dir }}/_site {{ jekyll_dir }}/{{ jekyll_site_prod }}
+
+- name: Update jekyll vhost configuration - {{ instance.name }}
+  tags: nginx
+  ansible.builtin.template:
+    src: vhost.j2
+    dest: /etc/nginx/sites-available/{{ instance.name }}.conf
+    mode: 0644
+  notify: Reload nginx
+
+- name: Ensure jekyll vhost is enabled - {{ instance.name }}
+  tags: nginx
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/{{ instance.name }}.conf
+    dest: /etc/nginx/sites-enabled/{{ instance.name }}.conf
+    state: link
+  notify: Reload nginx
+
+# restart required, because file can be not available before
+- name: Jekyll vhost user protection - {{ instance.name }}
+  community.general.htpasswd:
+    path: /etc/nginx/.htpasswd_jekyll_{{ instance.name }}
+    name: '{{ item.user }}'
+    password: '{{ item.password }}'
+    owner: root
+    group: '{{ nginx_group }}'
+    mode: 0640
+  loop: '{{ instance.vhost_users | default([]) }}'
+  when: instance.vhost_users is defined
+  notify: Restart nginx
+
+- name: Jekyll htpasswd file, if no base auth is in use - {{ instance.name }}
+  ansible.builtin.file:
+    path: /etc/nginx/.htpasswd_jekyll_{{ instance.name }}
+    state: absent
+  when: instance.vhost_users is undefined
+  notify: Restart nginx

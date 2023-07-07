@@ -1,0 +1,48 @@
+---
+# defaults file for redis-server
+
+# iproute2 is required for ss (zabbix-monitoring)
+redis_server_packages:
+  - redis-server
+  - iproute2
+
+redis_server_bind: '127.0.0.1 ::1'
+
+# socket is not working on all systems!
+# port 0 for socket only
+redis_server_port: 6379
+redis_server_unixsocket: /run/redis/redis.sock
+redis_server_unixsocketperm: 770
+
+redis_server_timeout: 0
+redis_server_databases: 16
+redis_server_requirepass: ''
+
+# use false for systemd
+redis_server_daemonize: false
+# use systemd for systemd (quotes are required here)
+redis_server_supervised: 'systemd'
+
+# redis_server_pidfile: /run/redis/redis-server.pid
+# for system no pid file is used
+redis_server_pidfile: ''
+
+# Disable certain Redis commands for security reasons.
+redis_server_disabled_commands: []
+#  - FLUSHDB
+#  - FLUSHALL
+#  - KEYS
+#  - PEXPIRE
+#  - DEL
+#  - CONFIG
+#  - SHUTDOWN
+#  - BGREWRITEAOF
+#  - BGSAVE
+#  - SAVE
+#  - SPOP
+#  - SREM
+#  - RENAME
+#  - DEBUG
+
+# zabbix template: https://github.com/cuimingkun/zbx_tem_redis
+zabbix_monitoring: false

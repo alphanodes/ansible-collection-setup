@@ -1,0 +1,14 @@
+---
+
+- name: Add distribution-specific variables
+  ansible.builtin.include_vars: "{{ ansible_distribution }}.yml"
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  tags:
+    - apt
+
+- name: Include unattended tasks
+  ansible.builtin.include_tasks: unattended.yml
+  tags:
+    - apt

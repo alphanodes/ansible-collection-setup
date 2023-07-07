@@ -1,0 +1,89 @@
+# defaults file for ssh server and ssh key management
+---
+
+ssh_server_packages:
+  - openssh-server
+
+ssh_server_include_sshd_config_d: false
+
+ssh_server_port: 22
+ssh_server_password_authentication: false
+ssh_server_challenge_response_authentication: false
+ssh_server_use_pam: true
+
+ssh_server_allow_tcp_forwarding: false
+ssh_server_allow_stream_local_forwarding: false
+
+ssh_server_permit_root_login: without-password
+ssh_server_recreate_host_keys: false
+
+ssh_server_hostkeys:
+  - /etc/ssh/ssh_host_ed25519_key
+  - /etc/ssh/ssh_host_rsa_key
+  - /etc/ssh/ssh_host_ecdsa_key
+
+ssh_server_match_group: false
+ssh_server_match_user: false
+
+# this set keys and macs to sshd. Do not use it, if old ssh clients should work
+# Jenkins uses an old library, which requires:
+# diffie-hellman-group14-sha1 and hmac-sha1 are required for jenkins connections
+# see https://issues.jenkins-ci.org/browse/JENKINS-33021
+# (dont use it, if you use jenkins with ssh connections)
+ssh_max_secure: true
+
+# Specifies the maximum number of authentication attempts permitted per connection.
+# Once the number of failures reaches half this value, additional failures are logged.
+ssh_max_auth_retries: 4
+
+# see https://www.ssh.com/ssh/keygen/
+# chose between: rsa, dsa, ecdsa and ed25519 as default for user
+ssh_key_algorithm: rsa
+
+# default settings for user, if keys are managned exclusive
+ssh_key_management_exclusive: true
+
+# see https://www.ssh.com/ssh/config/
+# see https://security.stackexchange.com/questions/56268/ssh-benefits-of-using-hashed-known-hosts
+ssh_client_hash_known_hosts: true
+
+# Specifies the host key algorithms that the server offers (sshd)
+ssh_host_key_algorithms: []         # sshd
+
+# Specifies the host key algorithms order the client will try (ssh)
+ssh_client_host_key_algorithms:
+  - ssh-ed25519-cert-v01@openssh.com
+  - ssh-rsa-cert-v01@openssh.com
+  - ssh-ed25519
+  - ssh-rsa
+  - ecdsa-sha2-nistp521-cert-v01@openssh.com
+  - ecdsa-sha2-nistp384-cert-v01@openssh.com
+  - ecdsa-sha2-nistp256-cert-v01@openssh.com
+  - ecdsa-sha2-nistp521
+  - ecdsa-sha2-nistp384
+  - ecdsa-sha2-nistp256
+
+# true to enable sftp configuration (required for ansible sftp usage)
+ssh_server_sftp_enabled: true
+ssh_server_sftp_umask: '0027'
+ssh_server_sftp_chroot_dir: /home/%u
+# original debian subsystem for sftp:
+# ssh_server_subsystem_sftp: /usr/lib/openssh/sftp-server -f AUTHPRIV -l INFO
+ssh_server_subsystem_sftp: internal-sftp -l INFO -f LOCAL6 -u {{ ssh_server_sftp_umask }}
+
+ssh_deny_users: ''
+ssh_deny_groups: ''
+
+# e.g.
+# ssh_groups:
+#   - name: foo
+#     system: false
+#
+ssh_groups: []
+
+ssh_users:
+  - name: root
+
+ssh_management_access: []
+ssh_known_hosts: []
+ssh_all_known_hosts: []

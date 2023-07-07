@@ -1,0 +1,34 @@
+---
+
+- name: Setup Gitlab workhorse
+  ansible.builtin.command: bash -lc "bundle exec rake gitlab:workhorse:install[{{ gitlab_workhorse_path }}]"
+  args:
+    chdir: '{{ gitlab_path }}'
+  become_user: "{{ gitlab_user }}"
+  become: true
+  environment:
+    RAILS_ENV: '{{ gitlab_rails_env }}'
+    REDIS_URL: '{{ gitlab_redis_url }}'
+
+- name: Configure Gitlab workhorse
+  ansible.builtin.template:
+    src: gitlab-workhorse/config.toml.j2
+    dest: '{{ gitlab_workhorse_path }}/config.toml'
+    owner: '{{ gitlab_user }}'
+    group: '{{ gitlab_group }}'
+    mode: 0640
+  notify:
+    - Restart gitlab workhorse
+
+# NOTE: this fixes object storage problem
+# NOTE2: why to we need config.toml in both directory?
+# Which directory is correct?
+- name: Configure Gitlab workhorse (GitLab directory)
+  ansible.builtin.template:
+    src: gitlab-workhorse/config.toml.j2
+    dest: '{{ gitlab_path }}/workhorse/config.toml'
+    owner: '{{ gitlab_user }}'
+    group: '{{ gitlab_group }}'
+    mode: 0640
+  notify:
+    - Restart gitlab workhorse

@@ -1,0 +1,4 @@
+{{ ansible_managed | comment }}
+
+options lockd nlm_udpport={{ nfs_nlm_port }} nlm_tcpport={{ nfs_nlm_port }}
+options nfs callback_tcpport={{ nfs_callback_port }}

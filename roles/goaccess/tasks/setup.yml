@@ -1,0 +1,27 @@
+---
+
+- name: Include binary setup tasks
+  ansible.builtin.include_tasks: setup_binary.yml
+
+- name: Include source setup tasks
+  ansible.builtin.include_tasks: setup_source.yml
+
+# see https://github.com/allinurl/goaccess/blob/master/config/goaccess.conf
+- name: Setup configuration
+  ansible.builtin.template:
+    src: goaccess.conf.j2
+    dest: /etc/goaccess/goaccess.conf
+    owner: root
+    group: www-data
+    mode: 0640
+
+- name: Include nginx tasks
+  ansible.builtin.include_tasks: nginx.yml
+  tags:
+    - nginx
+
+- name: Include geoip tasks
+  ansible.builtin.include_tasks: geoip.yml
+  when: goaccess_with_geoip and goaccess_geoip_download
+  tags:
+    - geoip

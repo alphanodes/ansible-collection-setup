@@ -1,0 +1,14 @@
+<?php
+/* {{ ansible_managed }} */
+
+$AUTOCONFIG = array(
+  'directory' => '{{ nextcloud_data }}',
+  'dbtype' => '{{ nextcloud_db_type }}',
+  'dbname' => '{{ nextcloud_db_name }}',
+  'dbuser' => '{{ nextcloud_db_user }}',
+  'dbpass' => '{{ nextcloud_db_password }}',
+  'dbhost' => '{{ nextcloud_db_host }}',
+  'dbtableprefix' => '',
+  'adminlogin' => '{{ nextcloud_default_admin_name }}',
+  'adminpass' => '{{ nextcloud_default_admin_password }}',
+);

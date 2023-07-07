@@ -1,0 +1,18 @@
+---
+
+- name: Calc file name for download cache - {{ ansible_tmp }}
+  ansible.builtin.set_fact:
+    tmp_file: "/tmp/mysqltuner-{{ ansible_date_time.date }}.pl"
+
+- name: Download mysqltuner.pl on local to cache
+  ansible.builtin.get_url:
+    url: '{{ mysql_mysqltuner_url }}'
+    dest: '{{ tmp_file }}'
+    mode: 0755
+  delegate_to: localhost
+
+- name: Install latest mysqltuner.pl
+  ansible.builtin.copy:
+    src: '{{ tmp_file }}'
+    dest: /usr/local/bin/mysqltuner.pl
+    mode: 0755

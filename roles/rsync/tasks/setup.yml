@@ -1,0 +1,30 @@
+---
+
+- name: Be sure rsyncpackages are installed
+  ansible.builtin.apt:
+    name: '{{ rsync_packages }}'
+    state: present
+
+- name: Configure rsync service
+  ansible.builtin.systemd:
+    name: rsync
+    state: "{{ 'started' if rsync_service else 'stopped' }}"
+    enabled: "{{ rsync_service }}"
+
+# TODO: not implemented - missing module configiuration in rsyncd.conf
+# NOTE: All transferred data including user authentication are not encrypted.
+# - name: Setup rsyncd configuration if rsync_service is used
+#   ansible.builtin.template:
+#     src: rsyncd.conf.j2
+#     dest: /etc/rsyncd.conf
+#     owner: root
+#     group: root
+#     mode: 0640
+#   notify: restart rsyncd
+#   when: rsync_service
+
+# - name: Remove rsyncd.conf if rsync_service is not used
+#   file:
+#     path: /etc/rsyncd.conf
+#     state: absent
+#   when: not rsync_service

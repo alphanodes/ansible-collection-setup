@@ -1,0 +1,1 @@
+zabbix ALL = (postgres) NOPASSWD: ALL

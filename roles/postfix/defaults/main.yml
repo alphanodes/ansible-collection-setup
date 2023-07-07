@@ -1,0 +1,105 @@
+---
+# defaults file for postfix
+
+# create alias for root if defined
+# postfix_root_alias: 'your@mail.com'
+
+postfix_packages:
+  - postfix
+
+postfix_sasl_packages:
+  - libsasl2-modules
+  - libsasl2-2
+  - sasl2-bin
+
+# Set it to ipv4 for problems with ipv6
+postfix_inet_protocols: "{{ 'ipv4' if server_disable_ipv6 is defined and server_disable_ipv6 else '' }}"
+
+postfix_inet_interfaces: all
+
+postfix_smtpd_banner: '$myhostname ESMTP $mail_name'
+postfix_disable_vrfy_command: true
+postfix_header_cleanup: false
+
+# port 465 (TLS, NOT STARTSSL)
+postfix_with_smtps: false
+
+postfix_message_size_limit: 20480000
+
+# The maximal size of any -local- individual mailbox
+postfix_mailbox_size_limit: 0
+# The maximal size of any -virtual- individual mailbox
+# postfix_virtual_mailbox_limit: 0
+
+# see http://www.postfix.org/SASL_README.html#server_sasl_authc
+postfix_sasl_auth_enable: false
+# see http://www.postfix.org/postconf.5.html#postfix_smtp_tls_security_level
+postfix_smtp_tls_security_level: may
+postfix_smtp_tls_wrappermode: false
+postfix_smtp_tls_note_starttls_offer: true
+postfix_sasl_security_options: noanonymous
+postfix_sasl_password_file: /etc/postfix/sasl_passwd
+postfix_sasl_password_file_db: '{{ postfix_sasl_password_file }}.db'
+postfix_sasl_password_maps: []
+postfix_sasl_mechanism_filter: ''
+
+# cert file should be with root certificate
+postfix_smtp_ssl_cert_file: /etc/ssl/certs/ssl-cert-snakeoil.pem
+postfix_smtp_ssl_key_file: /etc/ssl/private/ssl-cert-snakeoil.key
+
+# force tls for clients (to protect passwords on authentification)
+postfix_tls_auth_only: false
+
+# use this on host configuration to redirect all outgoing mails
+# e.g. staging environment
+# postfix_redirect_all_mails_to: 'root@localhost'
+
+postfix_with_vimbadmin: false
+
+postfix_vimbadmin_packages:
+  - postfix-mysql
+  - postfix-pcre
+
+postfix_sender_canonicals: []
+
+postfix_myhostname: '{{ mail_hostname | default(hostname) | default(ansible_host) }}'
+postfix_myorigin: '{{ postfix_myhostname }}'
+
+postfix_mydestination:
+  - localhost.$mydomain
+  - localhost
+  - $myhostname
+
+# see http://www.postfix.org/postconf.5.html#postfix_mynetworks_style
+postfix_mynetworks_style: host
+
+# not used, if postfix_mynetworks_style = host
+postfix_mynetworks:
+  - 127.0.0.0/8
+  - '[::ffff:127.0.0.0]/104'
+  - '[::1]/128'
+
+postfix_relayhost: ''
+postfix_relayhost_mxlookup: false
+# default port is 25, see http://www.postfix.org/postconf.5.html#relayhost
+# postfix_relayhost_port: 25
+postfix_relaytls: false
+
+postfix_relay_restrictions: permit_mynetworks permit_sasl_authenticated reject_unauth_destination
+postfix_compatibility_level: 2
+
+postfix_raw_options: []
+postfix_aliases: []
+
+postfix_with_postscreen: false
+# see https://www.linuxbabe.com/mail-server/configure-postscreen-in-postfix-to-block-spambots
+postfix_postscreen_dnsbl_sites:
+  - zen.spamhaus.org*3
+  - b.barracudacentral.org=127.0.0.[2..11]*2
+  - bl.spameatingmonkey.net*2
+  - bl.spamcop.net
+  - dnsbl.sorbs.net
+  - swl.spamhaus.org*-4,
+  - list.dnswl.org=127.[0..255].[0..255].0*-2,
+  - list.dnswl.org=127.[0..255].[0..255].1*-4,
+  - list.dnswl.org=127.[0..255].[0..255].[2..3]*-6

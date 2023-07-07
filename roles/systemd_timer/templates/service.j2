@@ -1,0 +1,49 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description={{ timer_name }} service
+{% if timer.requires_service is defined %}
+Requires={{ timer.requires_service }}
+{% endif %}
+{% if timer.wants_service is defined %}
+Wants={{ timer.wants_service }}
+{% endif %}
+{% if timer.before_service is defined %}
+Before={{ timer.before_service }}
+{% endif %}
+{% if timer.after_service is defined %}
+After={{ timer.after_service }}
+{% endif %}
+
+[Service]
+Type=oneshot
+{% if timer.user is defined %}
+User={{ timer.user }}
+{% endif %}
+{% if timer.group is defined %}
+Group={{ timer.group }}
+{% endif %}
+{% if timer.env is defined %}
+{% for var_key, var_value in timer.env.items() %}
+Environment="{{ var_key }}={{ var_value }}"
+{% endfor %}
+{% endif %}
+{% if timer.working_directory is defined %}
+WorkingDirectory={{ timer.working_directory }}
+{% endif %}
+{% if timer.exec_start_pre is defined %}
+ExecStartPre={{ timer.exec_start_pre }}
+{% endif %}
+ExecStart={{ timer.exec_start }}
+{% if timer.exec_start_post is defined %}
+ExecStartPost={{ timer.exec_start_post }}
+{% endif %}
+{% if timer.syslog_identifier is defined %}
+SyslogIdentifier={{ timer.syslog_identifier }}
+{% endif %}
+{% if timer.restart is defined %}
+Restart={{ timer.restart }}
+{% endif %}
+{% if timer.restart_sec is defined %}
+RestartSec={{ timer.restart_sec }}
+{% endif %}

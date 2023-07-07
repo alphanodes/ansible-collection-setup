@@ -1,0 +1,41 @@
+---
+# defaults file for ssl
+
+ssl_packages:
+  - ssl-cert
+
+ssl_forward_secrecy_key_path: /etc/ssl/private/dhparams.pem
+ssl_forward_secrecy_key_length: 4096
+# always generate new key
+ssl_forward_secrecy_key_force: false
+
+ssl_certs: []
+
+# CA files has to use .crt extention!
+ssl_cas: []
+
+# ssl certs, which are used from system (in most cases with own ca)
+ssl_system_certs: []
+
+letsencrypt_certs: []
+letsencrypt_keys: []
+
+# Self Signed OpenSSL certificate to create
+# https://docs.ansible.com/ansible/2.9/modules/openssl_certificate_module.html
+ssl_self_signed_certificates: []
+
+# name of ca directory in files/cas/key
+# see https://www.thomas-krenn.com/de/wiki/MySQL_Verbindungen_mit_SSL_verschl%C3%BCsseln
+# for create a key
+
+# openssl genrsa 2048 > ca.key
+# openssl req -new -x509 -nodes -days 3650 -key ca.key > ca.crt
+# ssl_ca: key
+ssl_mysql_ca: ''
+
+# server or client. If '', no mysql ssl certs are installed
+ssl_mysql_mode: ''
+ssl_mysql_force_overwrite: false
+ssl_mysql_server_cert_days: 3560
+# see http://stackoverflow.com/questions/8075274/is-it-possible-making-openssl-skipping-the-country-common-name-prompts
+ssl_mysql_server_cert_subj: '/C=DE/ST=Bavaria/L=Munich/CN=server.alphanodes.com'

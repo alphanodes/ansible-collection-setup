@@ -1,0 +1,21 @@
+---
+
+- name: Set matomo location directory
+  ansible.builtin.set_fact:
+    matomo_location_dir: "/{{ matomo_dir | basename }}"
+
+- name: Update matomo subdirectory configuration
+  ansible.builtin.template:
+    src: nginx/matomo.j2
+    dest: /etc/nginx/matomo.conf
+    mode: 0644
+  notify: Reload nginx
+
+- name: Remove vhost configuration files
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  notify: Restart nginx
+  loop:
+    - /etc/nginx/sites-available/matomo.conf
+    - /etc/nginx/sites-enabled/matomo.conf

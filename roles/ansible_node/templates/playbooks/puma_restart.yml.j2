@@ -1,0 +1,13 @@
+---
+# file: reboot puma as a workaround for memory leak
+
+- hosts: {{ ansible_node_playbook_host }}
+  serial: 1
+
+  vars:
+    ansible_python_interpreter: {{ ansible_node_playbook_ansible_python_interpreter }}
+    system_task_name: service_restart
+    system_task_service_name: {{ puma_restart_service_name | default('puma-redmine') }}
+
+  roles:
+    - alphanodes.tasks.system_task

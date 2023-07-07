@@ -1,0 +1,29 @@
+---
+
+- name: Ensure vimbadmin packages are installed
+  ansible.builtin.apt:
+    name: '{{ postfix_vimbadmin_packages }}'
+    state: present
+  notify: Restart postfix
+
+- name: Ensure postfix mysql directory exist
+  ansible.builtin.file:
+    path: /etc/postfix/mysql
+    state: directory
+    mode: 0750
+    owner: root
+    group: postfix
+
+- name: Update postfix mysql configuration
+  ansible.builtin.template:
+    src: 'postfix/vimbadmin/{{ item }}.j2'
+    dest: '/etc/postfix/mysql/{{ item }}'
+    owner: root
+    group: postfix
+    mode: 0640
+  loop:
+    - virtual_alias_maps.cf
+    - virtual_domains_maps.cf
+    - virtual_mailbox_maps.cf
+    - virtual_transport_maps.cf
+  notify: Restart postfix

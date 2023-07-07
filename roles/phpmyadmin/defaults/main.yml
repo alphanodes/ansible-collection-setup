@@ -1,0 +1,47 @@
+---
+# defaults file for phpmyadmin
+
+# Has to be a Git branch or tag
+phpmyadmin_git_version: RELEASE_5_2_1
+phpmyadmin_git_url: https://github.com/phpmyadmin/phpmyadmin
+phpmyadmin_db_host: localhost
+phpmyadmin_db_name: phpmyadmin
+phpmyadmin_db_user: pma
+phpmyadmin_db_password: '{{ [ansible_machine_id, ansible_hostname, "pma"] | join | hash("md5") }}'
+phpmyadmin_db_ssl: false
+phpmyadmin_db_ssl_key: /etc/ssl/private/mysql_client.key
+phpmyadmin_db_ssl_cert: /etc/ssl/certs/mysql_client.crt
+phpmyadmin_db_ssl_ca: /etc/ssl/certs/mysql_ca.crt
+
+phpmyadmin_owner: "{{ nginx_owner | default('www-data') }}"
+phpmyadmin_group: "{{ nginx_group | default('www-data') }}"
+
+phpmyadmin_ssl_only: true
+
+# set this to yes, if phpmyadmin is not on the
+# same server as to database for pma
+phpmyadmin_no_dbserver: false
+
+# Installation of phpmyadmin (source files) is only running, if
+# old version is found. If you set phpmyadmin_force_installation: true, Installation
+# will run always. You can use it, if you got an error (e.g. missing dependencies)
+phpmyadmin_force_installation: false
+
+phpmyadmin_unwanted_files:
+  - build.xml
+  - CONTRIBUTING.md
+  - DCO
+  - examples
+  - LICENSE
+  - phpunit.xml.dist
+  - phpunit.xml.hhvm
+  - phpunit.xml.nocoverage
+  - po
+  - README
+  - README.rst
+  - scripts
+  - setup
+  - test
+
+phpmyadmin_unwandted_packages:
+  - phpmyadmin

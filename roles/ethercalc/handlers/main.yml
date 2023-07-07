@@ -1,0 +1,12 @@
+---
+
+- name: Restart ethercalc
+  ansible.builtin.systemd:
+    name: ethercalc
+    state: restarted
+
+- name: Install nodejs dependencies
+  ansible.builtin.command: npm clean-install
+  args:
+    chdir: "{{ ethercalc_path }}"
+  become_user: "{{ ethercalc_user }}"

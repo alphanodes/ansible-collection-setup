@@ -1,0 +1,20 @@
+---
+
+# defaults file for svnserve
+# see https://stackoverflow.com/questions/38197727/how-to-start-svnserve-with-systemctl-systemd
+# svnserve runs at port 3690
+svn_server_packages:
+  - subversion
+
+svn_server_user: svn
+svn_server_group: svn
+
+# If you want to login with svn user you can set a password
+# svn_server_user_password:
+
+svn_server_home: /srv/{{ svn_server_user }}
+svn_server_repositories: '{{ svn_server_home }}/repositories'
+
+# do uninstall svn with all data, set it to yes
+svn_server_remove: false
+svn_server_remove_packages: false

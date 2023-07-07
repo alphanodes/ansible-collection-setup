@@ -1,0 +1,21 @@
+---
+# file: run matomo queuedtracking
+
+- hosts: {{ ansible_node_playbook_host }}
+  serial: 1
+
+  vars:
+    ansible_python_interpreter: {{ ansible_node_playbook_ansible_python_interpreter }}
+{% if matomo_task_become is defined %}
+    matomo_task_become: {{ matomo_task_become | bool | lower }}
+{% endif %}
+{% if matomo_task_become_user is defined %}
+    matomo_task_become_user: {{ matomo_task_become_user }}
+{% endif %}
+{% if matomo_domain is defined %}
+    matomo_domain: {{ matomo_domain }}
+{% endif %}
+    matomo_console_name: queuedtracking:process
+
+  roles:
+    - alphanodes.tasks.matomo_task

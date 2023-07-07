@@ -1,0 +1,189 @@
+---
+# Install process:
+# all files are extracted from tar.bz2
+#
+# Update process:
+# see https://docs.nextcloud.org/server/9.0/admin_manual/maintenance/manual_upgrade.html
+#
+# (0. maintenance mode on is set automatically with run upgrade)
+# 1. rename htdocs to htdocs-old
+# 2. extract new nextcloud version to htdocs/
+# 3. copy htdocs-old/config/*config.php to copy htdocs/config/
+# 4. run upgrade
+# 5. maintenance mode off
+
+- name: Stats for nextcloud directory
+  ansible.builtin.stat:
+    path: '{{ nextcloud_dir }}'
+  register: nextcloud_exists
+
+- name: Set nextcloud_source_file_path
+  ansible.builtin.set_fact:
+    nextcloud_source_file_path: "{{ software_dir }}/{{ nextcloud_source_file }}"
+
+- name: Stats for nexcloud source file
+  ansible.builtin.stat:
+    path: '{{ nextcloud_source_file_path }}'
+  register: nextcloud_source_file_exists
+
+- name: Be sure nextcloud packages are installed
+  tags:
+    - php-fpm
+  ansible.builtin.apt:
+    name: '{{ nextcloud_packages }}'
+    state: present
+  notify: restart php
+
+- name: Set TLS files for letsencrypt
+  ansible.builtin.set_fact:
+    vhost_letsencrypt_cert: "{{ nextcloud_vhost_letsencrypt_cert }}"
+    vhost_letsencrypt_key: "{{ nextcloud_vhost_letsencrypt_key }}"
+  when: nextcloud_vhost_letsencrypt is defined and nextcloud_vhost_letsencrypt
+
+- name: Check trusted TLS cert
+  ansible.builtin.stat:
+    path: /etc/ssl/certs/{{ nextcloud_vhost_ssl_cert }}_trusted.crt
+  register: trusted_cert
+
+- name: Set TLS files
+  ansible.builtin.set_fact:
+    vhost_ssl_cert: "{{ nextcloud_vhost_ssl_cert }}"
+    vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
+  when: nextcloud_vhost_letsencrypt is undefined or not nextcloud_vhost_letsencrypt
+
+- name: Update nextcloud vhost configuration
+  tags:
+    - nginx
+  ansible.builtin.template:
+    src: vhost.j2
+    dest: /etc/nginx/sites-available/nextcloud.conf
+    mode: 0644
+    owner: root
+    group: root
+  notify: Reload nginx
+
+- name: Ensures nextcloud base directory exist
+  ansible.builtin.file:
+    path: '{{ nextcloud_dir }}'
+    state: directory
+    recurse: true
+  when: not nextcloud_exists.stat.exists
+
+- name: Set permission for data directory
+  ansible.builtin.file:
+    path: '{{ nextcloud_data }}'
+    state: directory
+    recurse: true
+    owner: '{{ nginx_owner }}'
+    group: '{{ nginx_group }}'
+  when: nextcloud_with_data_permission
+
+- name: Ensure nextcloud vhost is enabled
+  tags:
+    - nginx
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/nextcloud.conf
+    dest: /etc/nginx/sites-enabled/nextcloud.conf
+    state: link
+  notify: Reload nginx
+
+- name: Download nextcloud archive {{ nextcloud_source_file }}
+  ansible.builtin.get_url:
+    url: '{{ nextcloud_source_url }}/{{ nextcloud_source_file }}'
+    dest: '{{ nextcloud_source_file_path }}'
+    mode: 0644
+  when: not nextcloud_source_file_exists.stat.exists
+
+# update: prepare (remove existing directory of previous update)
+- name: _update prepare_ Delete existing {{ nextcloud_old_htdocs }}
+  ansible.builtin.file:
+    path: '{{ nextcloud_old_htdocs }}'
+    state: absent
+  when: not nextcloud_source_file_exists.stat.exists and nextcloud_exists.stat.exists
+
+- name: Stats for nextcloud configuration
+  ansible.builtin.stat:
+    path: '{{ nextcloud_htdocs }}/config/config.php'
+  register: nextcloud_config_exists
+
+# update: step 1
+- name: _update step1_ Rename existing htdocs to {{ nextcloud_old_htdocs }}
+  ansible.builtin.command: mv {{ nextcloud_htdocs }} {{ nextcloud_old_htdocs }}
+  when: not nextcloud_source_file_exists.stat.exists and nextcloud_exists.stat.exists
+
+- name: Stats for nextcloud htdocs directory
+  ansible.builtin.stat:
+    path: '{{ nextcloud_htdocs }}'
+  register: nextcloud_htdocs_exists
+
+- name: Extract nextcloud archive
+  ansible.builtin.unarchive:
+    src: '{{ nextcloud_source_file_path }}'
+    dest: '{{ nextcloud_dir }}'
+    owner: '{{ nginx_owner }}'
+    group: '{{ nginx_group }}'
+    copy: false
+  # workaround for ansible 2.1.0.0 bug
+  environment:
+    LANG: C
+    LC_ALL: C
+    LC_MESSAGES: C
+  when: not nextcloud_htdocs_exists.stat.exists
+
+- name: Rename nextcloud directory
+  ansible.builtin.command: mv {{ nextcloud_dir }}/nextcloud {{ nextcloud_htdocs }}
+  when: not nextcloud_htdocs_exists.stat.exists
+
+- name: Step 3 to 5
+  when: nextcloud_config_exists.stat.exists and not nextcloud_source_file_exists.stat.exists
+  block:
+    - name: _update step3_ restore configuration files for update
+      ansible.builtin.command: mv {{ item }} {{ nextcloud_htdocs }}/config
+      loop:
+        - '{{ nextcloud_old_htdocs }}/config/config.php'
+        - '{{ nextcloud_old_htdocs }}/config/custom.config.php'
+
+    - name: _update step4_ Run nextcloud update
+      become: true
+      become_user: '{{ nginx_owner }}'
+      ansible.builtin.command: php occ upgrade
+      args:
+        chdir: '{{ nextcloud_htdocs }}'
+
+    - name: _update step5_ Enable plugins
+      become: true
+      become_user: '{{ nginx_owner }}'
+      ansible.builtin.command: php occ app:install {{ item.name }}
+      register: plugin_rc
+      failed_when: plugin_rc.rc > 1
+      args:
+        chdir: '{{ nextcloud_htdocs }}'
+      loop: '{{ nextcloud_plugins }}'
+
+- name: _update step6_ Disable maintenance mode
+  become: true
+  become_user: '{{ nginx_owner }}'
+  ansible.builtin.command: php occ maintenance:mode --off
+  args:
+    chdir: '{{ nextcloud_htdocs }}'
+  when: nextcloud_config_exists.stat.exists and not nextcloud_source_file_exists.stat.exists
+
+- name: Install nextcloud custom config file
+  ansible.builtin.template:
+    src: custom.config.php.j2
+    dest: '{{ nextcloud_htdocs }}/config/custom.config.php'
+    validate: 'php -l %s'
+    owner: '{{ nginx_owner }}'
+    group: '{{ nginx_group }}'
+    mode: 0640
+  when: nextcloud_config_exists.stat.exists
+
+- name: Install nextcloud autoconfig file
+  ansible.builtin.template:
+    src: autoconfig.php.j2
+    dest: '{{ nextcloud_htdocs }}/config/autoconfig.php'
+    validate: 'php -l %s'
+    owner: '{{ nginx_owner }}'
+    group: '{{ nginx_group }}'
+    mode: 0660
+  when: not nextcloud_exists.stat.exists and not nextcloud_config_exists.stat.exists

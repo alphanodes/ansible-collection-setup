@@ -1,0 +1,86 @@
+---
+# defaults file for netfilter
+
+# iptables or nftables
+netfilter_engine: iptables
+
+# possible states:
+# - active = active firewall
+# - setup = same as active, but rules are not activate (only written to /etc/iptables) - only with iptables
+# - reset = reset all rules (flush), disabled firewall
+# - disabled = installed, disabled firewall
+# - remove = firewall will be uninstalled
+netfilter_state: disabled
+
+netfilter_iptables_packages:
+  - iptables-persistent
+
+netfilter_iptables_remove_packages: []
+
+netfilter_nftables_packages:
+  - nftables
+
+netfilter_nftables_remove_packages:
+  - iptables
+  - iptables-persistent
+
+netfilter_allowed_nameservers: '{{ hetzner_nameserver_v4 | default([]) }}'
+netfilter_allowed_nameservers_v6: '{{ hetzner_nameserver_v6 | default([]) }}'
+
+netfilter_blocked_addresses: []
+netfilter_blocked_addresses_v6: []
+
+netfilter_allowed_tcp_ports: []
+netfilter_allowed_udp_ports: []
+netfilter_allowed_tcp_ports_with_saddr: []
+netfilter_allowed_udp_ports_with_saddr: []
+
+netfilter_allowed_tcp_ports_with_saddr_v6: []
+netfilter_allowed_udp_ports_with_saddr_v6: []
+
+netfilter_allowed_networks: []
+netfilter_allowed_networks_v6: []
+
+netfilter_allowed_networks_output: []
+netfilter_allowed_networks_output_v6: []
+
+netfilter_allow_zabbix_server: true
+netfilter_zabbix_server_address: "{{ zabbix_server_ip | default('') }}"
+netfilter_zabbix_server_address_v6: "{{ zabbix_server_ip_v6 | default('') }}"
+netfilter_zabbix_server_port: 10050
+netfilter_allowed_active_zabbix_addresses: []
+netfilter_allowed_active_zabbix_addresses_v6: []
+# if yes, all ipv6 addresses are allowed as source (netfilter_allowed_active_zabbix_addresses_v6 is not used)
+netfilter_allowed_active_zabbix_addresses_v6_all: false
+
+netfilter_postrouting: []
+netfilter_forward: []
+netfilter_prerouting: []
+
+# if not specified, all sources are allowed
+netfilter_ssh_sources: []
+netfilter_ssh_sources_v6: []
+
+netfilter_log_dropped_packets: true
+
+netfilter_filter_input_policy: DROP
+netfilter_filter_forward_policy: DROP
+netfilter_filter_output_policy: ACCEPT
+
+netfilter_nftables_filter_output: []
+
+netfilter_nftables_nat_prerouting: []
+netfilter_nftables_nat_input: []
+netfilter_nftables_nat_output: []
+
+netfilter_nat_prerouting_policy: ACCEPT
+netfilter_nat_input_policy: ACCEPT
+netfilter_nat_output_policy: ACCEPT
+netfilter_nat_postrouting_policy: ACCEPT
+
+netfilter_honeypot_tcp_ports:
+  - 139
+  - 445
+netfilter_honeypot_udp_ports:
+  - 137
+  - 138

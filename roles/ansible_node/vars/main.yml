@@ -1,0 +1,131 @@
+---
+# used as prefix of systemd service and time files
+ansible_node_timer_prefix: ''
+
+ansible_node_available_playbooks:
+  backup:
+    playbook: backup.yml
+    timer_comment: every day at 00:00
+    on_calendar: '00:00'
+    randomized_delay_sec: 20min
+    fixed_random_delay: true
+  drupal_cron:
+    playbook: drupal_cron.yml
+    timer_comment: every hour
+    on_calendar: '00/1:00'
+    randomized_delay_sec: 5min
+  drupal_scheduler:
+    playbook: drupal_scheduler.yml
+    timer_comment: every 2 minutes
+    # TODO: we should not run this in maintaines hours between 5:00 and 6:00
+    on_calendar: '*:0/02'
+    randomized_delay_sec: 1min
+  git_mirror:
+    playbook: git_mirror.yml
+    timer_comment: every 10 minutes
+    on_calendar: '*:0/10'
+    randomized_delay_sec: 2min
+  matomo_cron:
+    playbook: matomo_cron.yml
+    timer_comment: every hour
+    on_calendar: '00/1:00'
+    randomized_delay_sec: 10min
+  matomo_geoip_update:
+    playbook: matomo_geoip.yml
+    timer_comment: every week
+    on_calendar: 'Sun 3:00'
+    randomized_delay_sec: 2hours
+  matomo_queuedtracking:
+    playbook: matomo_queuedtracking.yml
+    timer_comment: every 2 minutes
+    # TODO: we should not run this in maintaines hours between 5:00 and 6:00
+    on_calendar: '*:0/02'
+    randomized_delay_sec: 1min
+  matomo_config_sync:
+    playbook: matomo_config_sync.yml
+    # TODO: we should not run this in maintaines hours between 5:00 and 6:00
+    timer_comment: every 5 minutes
+    on_calendar: '*:0/05'
+    randomized_delay_sec: 2min
+  nextcloud_cron:
+    playbook: nextcloud_cron.yml
+    timer_comment: every 10 minutes
+    on_calendar: '*:0/10'
+    randomized_delay_sec: 5min
+    requires_service: postgresql.service
+    after_service: postgresql.service
+  goaccess:
+    playbook: goaccess.yml
+    timer_comment: every 2 hours
+    on_calendar: '00/2:00'
+    accuracy_sec: 10min
+    randomized_delay_sec: 20min
+    requires_service: goaccess.service
+  postgres_pgbadger:
+    playbook: postgres_pgbadger.yml
+    timer_comment: every 2 hours
+    on_calendar: '00/2:00'
+    accuracy_sec: 10min
+    randomized_delay_sec: 20min
+    requires_service: postgresql.service
+    after_service: postgresql.service
+  postgres_vacuum:
+    playbook: postgres_vacuum.yml
+    timer_comment: every week on sunday
+    on_calendar: 'Sun 23:10'
+    randomized_delay_sec: 20min
+    requires_service: postgresql.service
+    after_service: postgresql.service
+  puma_restart:
+    playbook: puma_restart.yml
+    timer_comment: every day
+    on_calendar: '04:30'
+    randomized_delay_sec: 10min
+  redmine_automation:
+    playbook: redmine_automation.yml
+    timer_comment: every 5 minutes
+    on_calendar: '*:0/5'
+    randomized_delay_sec: 1min
+    requires_service: '{{ ansible_node_redmine_timer_service }}'
+    after_service: '{{ ansible_node_redmine_timer_service }}'
+    restart: on-failure
+    restart_sec: '30'
+  redmine_helpdesk:
+    playbook: redmine_helpdesk_mailer.yml
+    timer_comment: every 10 minutes
+    on_calendar: '*:0/10'
+    randomized_delay_sec: 1min
+    requires_service: '{{ ansible_node_redmine_timer_service }}'
+    after_service: '{{ ansible_node_redmine_timer_service }}'
+  redmine_maintenance:
+    playbook: redmine_maintenance.yml
+    timer_comment: every weekday
+    on_calendar: 'Mon..Fri 03:00'
+    randomized_delay_sec: 20min
+    requires_service: '{{ ansible_node_redmine_timer_service }}'
+    after_service: '{{ ansible_node_redmine_timer_service }}'
+  redmine_receive_mails:
+    playbook: redmine_receive_mails.yml
+    timer_comment: every 5 minutes
+    on_calendar: '*:0/5'
+    randomized_delay_sec: 1min
+    wants_service: postgresql.service mysql.service
+  redmine_reminder:
+    playbook: redmine_reminder.yml
+    timer_comment: every weekday
+    on_calendar: 'Mon..Fri 07:00'
+    randomized_delay_sec: 20min
+    fixed_random_delay: true
+    requires_service: '{{ ansible_node_redmine_timer_service }}'
+    after_service: '{{ ansible_node_redmine_timer_service }}'
+  project_sync:
+    playbook: project_sync.yml
+    timer_comment: every day at 2:00
+    on_calendar: '02:00'
+    randomized_delay_sec: 30min
+  system_watch:
+    playbook: system_watch.yml
+    timer_comment: every day
+    on_calendar: '00:30'
+    accuracy_sec: 10min
+    randomized_delay_sec: 10min

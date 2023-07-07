@@ -1,0 +1,14 @@
+---
+
+- name: Remove system gitlab-pages service
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/systemd/system/multi-user.target.wants/gitlab-pages.service
+    - /etc/systemd/system/gitlab-pages.service
+
+- name: Remove gitlab-pages source
+  ansible.builtin.file:
+    path: "{{ gitlab_pages_path }}"
+    state: absent

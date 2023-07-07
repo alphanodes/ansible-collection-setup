@@ -1,0 +1,13 @@
+---
+
+- name: Include setup tasks
+  ansible.builtin.import_tasks: setup.yml
+  tags:
+    - svn
+  when: not svn_server_remove
+
+- name: Include remove tasks
+  ansible.builtin.import_tasks: remove.yml
+  tags:
+    - svn
+  when: svn_server_remove

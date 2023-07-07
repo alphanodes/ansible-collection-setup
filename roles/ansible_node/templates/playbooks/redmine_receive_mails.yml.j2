@@ -1,0 +1,44 @@
+---
+# file: receive mails for redmine to import
+
+- hosts: {{ ansible_node_playbook_host }}
+  serial: 1
+
+  vars:
+    ansible_python_interpreter: {{ ansible_node_playbook_ansible_python_interpreter }}
+    redmine_task_name: receive
+{% if rails_env is defined and rails_env != 'production' %}
+    rails_env: {{ rails_env }}
+{% endif %}
+{% if redmine_task_multi_instance_default is defined %}
+    redmine_task_multi_instance_default: {{ redmine_task_multi_instance_default }}
+{% endif %}
+{% if redmine_receive_mails_protocol is defined %}
+    redmine_receive_mails_protocol: {{ redmine_receive_mails_protocol }}
+{% endif %}
+{% if redmine_receive_mails_port is defined %}
+    redmine_receive_mails_port: {{ redmine_receive_mails_port }}
+{% endif %}
+{% if redmine_receive_mails_ssl is defined %}
+    redmine_receive_mails_ssl: {{ redmine_receive_mails_ssl }}
+{% endif %}
+{% if redmine_receive_mails_allow_override is defined %}
+    redmine_receive_mails_allow_override: {{ redmine_receive_mails_allow_override }}
+{% endif %}
+{% if redmine_receive_mails_options is defined %}
+    redmine_receive_mails_options: {{ redmine_receive_mails_options }}
+{% endif %}
+{% if redmine_receive_mails is defined %}
+    redmine_receive_mails:
+      {{ redmine_receive_mails | to_nice_yaml(indent=2) | trim | indent(6) }}
+{% endif %}
+{% if redmine_mails_instances is defined or redmine_task_instances is defined %}
+    redmine_instances:
+      {{ redmine_mails_instances | default(redmine_task_instances) | to_nice_yaml(indent=2) | trim | indent(6) }}
+{% else %}
+    redmine_instances:
+      {{ redmine_task_instance | default('redmine') }}:
+{% endif %}
+
+  roles:
+    - alphanodes.tasks.redmine_task

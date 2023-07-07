@@ -1,0 +1,5 @@
+; configuration for php geoip module
+; {{ ansible_managed }}
+; priority=20
+extension=geoip.so
+geoip.custom_directory={{ matomo_geoip_custom_directory }}

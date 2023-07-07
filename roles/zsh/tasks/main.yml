@@ -1,0 +1,14 @@
+---
+
+- name: Include setup tasks
+  ansible.builtin.import_tasks: setup.yml
+  tags:
+    - zsh
+    - setup
+  when: zsh_with_setup
+
+- name: Include .zshrc tasks
+  ansible.builtin.include_tasks: zshrc.yml
+  tags:
+    - zsh
+  when: zsh_with_zshrc

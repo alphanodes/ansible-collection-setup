@@ -1,0 +1,30 @@
+---
+
+dependencies:
+  - role: alphanodes.setup.ssl
+    when: matomo_with_nginx
+  - role: alphanodes.setup.mysql_client
+    # we always want mysql client on fronend
+    when: matomo_with_nginx
+  - role: alphanodes.setup.php_fpm
+    when: matomo_with_nginx
+  - role: alphanodes.setup.php_cli
+    when: not matomo_with_nginx
+  - role: alphanodes.setup.nginx
+    when: matomo_with_nginx
+
+galaxy_info:
+  description: Setup matomo
+  author: alexandermeindl
+  company: AlphaNodes GmbH
+  license: Apache License 2.0
+  min_ansible_version: '2.14'
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+    - name: Debian
+      versions:
+        - buster
+        - bullseye

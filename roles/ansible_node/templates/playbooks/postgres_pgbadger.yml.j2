@@ -1,0 +1,21 @@
+---
+# file: run pgbadger query for data collecting
+
+- hosts: {{ ansible_node_playbook_host }}
+  serial: 1
+
+  vars:
+    ansible_python_interpreter: {{ ansible_node_playbook_ansible_python_interpreter }}
+    system_task_name: pgbadger_query
+{% if system_task_pgbadger_query_log is defined %}
+    system_task_pgbadger_query_log: {{ system_task_pgbadger_query_log }}
+{% endif %}
+{% if system_task_pgbadger_query_outdir is defined %}
+    system_task_pgbadger_query_outdir: {{ system_task_pgbadger_query_outdir }}
+{% endif %}
+{% if system_task_pgbadger_query_options is defined %}
+    system_task_pgbadger_query_options: {{ system_task_pgbadger_query_options }}
+{% endif %}
+
+  roles:
+    - alphanodes.tasks.system_task

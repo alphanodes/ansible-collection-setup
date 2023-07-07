@@ -1,0 +1,38 @@
+---
+
+zsh_packages:
+  - zsh
+  - zsh-autosuggestions
+  - zsh-syntax-highlighting
+
+zsh_with_setup: true
+zsh_with_zshrc: true
+
+# show ruby prompt with user info
+zsh_with_ruby: false
+# with active rvm
+zsh_with_rvm: false
+zsh_with_completions: true
+zsh_with_powerlevel10k: true
+zsh_powerlevel10k_packages:
+  - fonts-powerline
+
+zsh_user: root
+
+# used in .zshrc
+zsh_local_exports: []
+
+zsh_global_env:
+  - alias df='df -h'
+  - alias lsn='ls --color=no'
+  - alias ls='ls --color'
+  - alias l='ls -lhA'
+  - alias lk='apt list --installed "linux*"'
+  - alias ll='ls -lah'
+  - alias lss='ls -oaShr'
+  - alias lst='ls -oathr'
+  - alias ch='rm -f ~/.zsh_history && rm -f ~/.bash_history'
+
+zsh_histsize: 1000
+
+zsh_virtualization_type: "{{ virtualization_type if virtualization_type is defined else ansible_virtualization_type }}"

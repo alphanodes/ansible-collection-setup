@@ -1,0 +1,65 @@
+---
+# defaults file for Matomo
+
+matomo_version: 4.15.0
+matomo_source_url: https://builds.matomo.org/
+
+matomo_dir: /srv/matomo
+
+# if matomo_vhost is no, subdirectory is used
+matomo_vhost: true
+
+matomo_user: "{{ nginx_owner | default('www-data') }}"
+matomo_group: "{{ nginx_group | default('www-data') }}"
+
+matomo_config_file: "{{ matomo_dir }}/config/config.ini.php"
+matomo_config_file_mode: "0660"
+
+# you can turn of access log (e.g. for tracking server)
+matomo_with_access_log: true
+
+matomo_plugin_path: "{{ matomo_dir }}/plugins"
+
+matomo_vhost_server: matomo.local
+matomo_vhost_for_zabbix: false
+matomo_vhost_default: false
+matomo_vhost_includes: []
+
+matomo_vhost_letsencrypt: false
+matomo_vhost_ssl_cert: '{{ ssl_certs[0].name | default(omit) }}'
+matomo_vhost_letsencrypt_cert: '{{ letsencrypt_certs[0] | default(omit) }}'
+matomo_vhost_letsencrypt_key: '{{ letsencrypt_keys[0] | default(omit) }}'
+
+matomo_vhost_ssl_only: true
+
+matomo_location_redirect: /piwik
+
+matomo_db_host: localhost
+matomo_db_name: matomo
+matomo_db_user: matomo
+matomo_db_password: '{{ [ansible_machine_id, ansible_hostname, "matomo"] | join | hash("md5") }}'
+matomo_db_tables_prefix: piwik_
+
+matomo_geoip_url: 'http://geolite.maxmind.com/download/geoip/database'
+matomo_geoip_file: 'GeoLiteCity.dat.gz'
+matomo_geoip_dest: 'GeoIPCity.dat'
+matomo_geoip_custom_directory: '{{ matomo_dir }}/misc'
+
+# for cluster you can customize installation
+matomo_with_mysql: true
+# if with nginx, php_fpm will be installed, too. If wihout nginx, php-cli will be installed, only.
+matomo_with_nginx: true
+
+# see https://matomo.org/faq/new-to-piwik/faq_134/
+# if yes, plugins cannot be enabled by gui
+matomo_multi_server_environment: false
+
+matomo_plugins: []
+#  - name: SecurityInfo
+
+matomo_cleanup_files:
+  - /etc/nginx/piwik.conf
+  - /etc/nginx/sites-available/piwik.conf
+  - /etc/nginx/sites-enabled/piwik.conf
+
+matomo_with_robots_txt: false

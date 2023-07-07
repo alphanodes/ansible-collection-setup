@@ -1,0 +1,34 @@
+---
+# file: receive mails for redmine_contacts_helpdesk
+
+- hosts: {{ ansible_node_playbook_host }}
+  serial: 1
+
+  vars:
+    ansible_python_interpreter: {{ ansible_node_playbook_ansible_python_interpreter }}
+    redmine_task_name: helpdesk
+{% if rails_env is defined and rails_env != 'production' %}
+    rails_env: {{ rails_env }}
+{% endif %}
+{% if redmine_task_multi_instance_default is defined %}
+    redmine_task_multi_instance_default: {{ redmine_task_multi_instance_default }}
+{% endif %}
+{% if redmine_helpdesk_mailer_url is defined %}
+    redmine_helpdesk_mailer_url: {{ redmine_helpdesk_mailer_url }}
+{% endif %}
+{% if redmine_helpdesk_mailer_key is defined %}
+    redmine_helpdesk_mailer_key: {{ redmine_helpdesk_mailer_key }}
+{% endif %}
+{% if redmine_helpdesk_type is defined %}
+    redmine_helpdesk_type: {{ redmine_helpdesk_type }}
+{% endif %}
+{% if redmine_helpdesk_instances is defined or redmine_task_instances is defined %}
+    redmine_instances:
+      {{ redmine_helpdesk_instances | default(redmine_task_instances) | to_nice_yaml(indent=2) | trim | indent(6) }}
+{% else %}
+    redmine_instances:
+      {{ redmine_task_instance | default('redmine') }}:
+{% endif %}
+
+  roles:
+    - alphanodes.tasks.redmine_task

@@ -1,0 +1,86 @@
+---
+
+- name: Ensure required packages are installed
+  ansible.builtin.apt:
+    name: "{{ hedgedoc_required_packages }}"
+    state: present
+
+- name: Ensure hedgedoc user is present
+  ansible.builtin.user:
+    name: "{{ hedgedoc_user }}"
+    home: "{{ hedgedoc_home }}"
+    shell: /bin/bash
+    state: present
+
+- name: Include git_config
+  ansible.builtin.include_role:
+    name: alphanodes.setup.git_config
+  vars:
+    git_config_user: "{{ hedgedoc_user }}"
+    git_config_settings:
+      - name: user.name
+        value: "{{ hedgedoc_user }} job"
+
+- name: Ensure hedgedoc is latest
+  ansible.builtin.git:
+    repo: "{{ hedgedoc_repository }}"
+    dest: "{{ hedgedoc_path }}"
+    version: "{{ hedgedoc_repository_version }}"
+  become_user: "{{ hedgedoc_user }}"
+  become: true
+  when: hedgedoc_update
+  notify:
+    - Run yarn build
+
+- name: Ensure hedgedoc configuration is latest
+  ansible.builtin.template:
+    src: config.json.j2
+    dest: "{{ hedgedoc_path }}/config.json"
+    owner: "{{ hedgedoc_user }}"
+    group: "{{ hedgedoc_group }}"
+    mode: 0600
+  notify: Restart hedgedoc
+
+- name: Ensure hedgedoc sequelizerc is latest
+  ansible.builtin.template:
+    src: sequelizerc.j2
+    dest: "{{ hedgedoc_path }}/.sequelizerc"
+    owner: "{{ hedgedoc_user }}"
+    group: "{{ hedgedoc_group }}"
+    mode: 0600
+  notify: Restart hedgedoc
+
+- name: Run systemd block
+  when: hedgedoc_enabled
+  block:
+    - name: Ensure hedgedoc systemd script is latest
+      ansible.builtin.template:
+        src: hedgedoc.service.j2
+        dest: /etc/systemd/system/hedgedoc.service
+        owner: root
+        group: root
+        mode: 0644
+      notify:
+        - Reload systemd daemon
+        - Restart hedgedoc
+
+    - name: Flush all handlers at this point
+      ansible.builtin.meta: flush_handlers
+
+    - name: Ensure hedgedoc service is running and start after reboot
+      ansible.builtin.systemd:
+        name: hedgedoc
+        state: started
+        enabled: true
+
+- name: Enable systemd
+  when: not hedgedoc_enabled
+  block:
+    - name: Flush all handlers at this point
+      ansible.builtin.meta: flush_handlers
+
+    - name: Ensure hedgedoc service is stopped and disable
+      ansible.builtin.systemd:
+        name: hedgedoc
+        state: stopped
+        enabled: false

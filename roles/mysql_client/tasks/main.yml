@@ -1,0 +1,14 @@
+---
+- name: Include vars
+  ansible.builtin.import_tasks: include-vars.yml
+
+- name: Include repo tasks
+  ansible.builtin.include_tasks: repo.yml
+  tags:
+    - mysql
+    - repo
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  tags:
+    - mysql

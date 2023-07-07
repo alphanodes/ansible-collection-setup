@@ -1,0 +1,71 @@
+#!/bin/bash
+# {{ ansible_managed }}
+
+# message first command argument
+MESSAGE=$1
+HOST=$(hostname)
+LOG_PATH="$3"
+COLOR="#ff2a00"
+LOG_LINES=""
+
+# ip second command argument
+if [ "$#" -ge 2 ]; then
+    IP=$2
+    # lets find out from what country we have our hacker
+    COUNTRY=$(curl ipinfo.io/${IP}/country)
+    # converting country to lover case. I love you bash script =\
+    COUNTRY=$(echo "$COUNTRY" | tr -s  '[:upper:]'  '[:lower:]')
+    # slack emoji
+    # COUNTRY=":flag-$COUNTRY:"
+    COUNTRY=":flag-$COUNTRY:"
+
+    # replace _country_ template to the country emoji
+    MESSAGE="${MESSAGE/_country_/$COUNTRY}"
+fi
+
+if [ ! -z "$LOG_PATH" ]; then
+  # find lines with ip address
+  # convert | to space
+  # convert line breaks to literal \n @see https://stackoverflow.com/questions/38672680/replace-newlines-with-literal-n
+  LOG_LINES=$(grep "[^0-9]${IP}[^0-9]" ${LOG_PATH} | sed "s/|/\ /g" | sed 's/$/\\n/' | tr -d '\n' )
+fi
+
+# Build our JSON payload and send it as a POST request to the incoming web-hook URL
+generate_payload_data()
+{
+  cat <<EOF
+{
+  "text": "[*${HOST}*] ${MESSAGE}",
+  "link_names": "1",
+  "icon_url": "{{ fail2ban_messenger_icon }}",
+  "channel": "{{ messenger_channel }}",
+  "username": "{{ messenger_user }}"
+}
+EOF
+}
+
+generate_payload_data_with_log()
+{
+  cat <<EOF
+{
+  "text": "[*${HOST}*] ${MESSAGE}",
+  "link_names": "1",
+  "icon_url": "{{ fail2ban_messenger_icon }}",
+  "channel": "{{ messenger_channel }}",
+  "username": "{{ messenger_user }}",
+  "attachments": [{
+     "color": "${COLOR}",
+     "text": "${LOG_LINES}" }]
+}
+EOF
+}
+
+if [ -z "$LOG_LINES" ]; then
+  # echo "payload=$(generate_payload_data)" >>/tmp/fail2ban_debug.txt
+  curl -i -X POST --data-urlencode "payload=$(generate_payload_data)" {{ messenger_hook }}
+else
+  # echo "with_log: payload=$(generate_payload_data_with_log)" >>/tmp/fail2ban_debug.txt
+  curl -i -X POST --data-urlencode "payload=$(generate_payload_data_with_log)" {{ messenger_hook }}
+fi
+
+exit 0

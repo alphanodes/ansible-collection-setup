@@ -1,0 +1,34 @@
+---
+
+- name: Check if privacy.md is provided for {{ ansible_hostname }}
+  ansible.builtin.stat:
+    path: "{{ playbook_dir }}/files/hedgedoc/{{ inventory_hostname }}/privacy.md"
+  ignore_errors: true
+  register: privacy_file
+  delegate_to: localhost
+
+- name: Check if privacy.md is provided by group for {{ ansible_hostname }}
+  ansible.builtin.stat:
+    path: "{{ playbook_dir }}/files/hedgedoc/{{ group_names[0] }}/privacy.md"
+  ignore_errors: true
+  register: privacy_group_file
+  when: not privacy_file.stat.exists
+  delegate_to: localhost
+
+- name: Setup privacy.md (by host)
+  ansible.builtin.copy:
+    src: '{{ privacy_file.stat.path }}'
+    dest: '{{ hedgedoc_path }}/public/docs/privacy.md'
+    mode: 0644
+  when: privacy_file.stat.exists
+  notify:
+    - Restart hedgedoc
+
+- name: Setup privacy.md (by group)
+  ansible.builtin.copy:
+    src: '{{ privacy_group_file.stat.path }}'
+    dest: '{{ hedgedoc_path }}/public/docs/privacy.md'
+    mode: 0644
+  when: not privacy_file.stat.exists and privacy_group_file.stat.exists
+  notify:
+    - Restart hedgedoc

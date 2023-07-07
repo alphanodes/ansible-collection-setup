@@ -1,0 +1,46 @@
+---
+# defaults file for barman
+
+# specifiy task
+# setup: setup barman
+# backup: run backup with barman (and skips setup). setup should be run before
+barman_task: backup
+
+barman_packages:
+  - barman
+
+barman_user: barman
+barman_group: '{{ barman_user }}'
+barman_home: /var/lib/barman
+barman_bin: /usr/bin/barman
+
+barman_log_level: 'INFO'
+
+barman_private_key: barman_id_rsa
+
+barman_postgresql_user: '{{ barman_user }}'
+
+# password for barman postgresql user on database servers
+# change it, it is required!
+barman_postgresql_password: "{{ postgresql_barman_password | default('') }}"
+
+# name is also used as identifier for ssh public keys
+barman_db_servers: []
+
+barman_default_on_calendar: '00/4:00'
+barman_default_randomized_delay_sec: '10min'
+
+barman_default_conninfo_port: 5432
+barman_default_conninfo_dbname: postgres
+
+barman_retention_policy: 'REDUNDANCY 2'
+
+barman_backup_options: concurrent_backup
+
+# checks for debug
+# - barman check <servername>
+# - barman status <servername>
+# - barman diagnose
+
+barman_job_full_backup: true
+barman_job_server_name: ''

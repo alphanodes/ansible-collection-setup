@@ -1,0 +1,67 @@
+---
+
+- name: Install ssl packages
+  ansible.builtin.apt:
+    name: '{{ ssl_packages }}'
+    state: present
+
+- name: Install python3-openssl if ssl_certs avaiable
+  ansible.builtin.apt:
+    name: python3-openssl
+    state: present
+  when: ssl_certs | length
+
+- name: Include certs and keys tasks
+  ansible.builtin.include_tasks: setup_certs_and_key.yml
+  loop: '{{ ssl_certs }}'
+  loop_control:
+    loop_var: ssl_cert
+  tags: nginx
+  when: ssl_certs | length
+
+- name: Install custom CA certificates
+  tags: nginx
+  ansible.builtin.copy:
+    src: "ssl/cas/{{ item }}.crt"
+    dest: '/usr/local/share/ca-certificates/{{ item }}.crt'
+    owner: root
+    group: root
+    mode: 0644
+  loop: '{{ ssl_cas }}'
+  notify: Update ca certificates
+
+- name: Install system certificates
+  tags: nginx
+  ansible.builtin.copy:
+    src: "ssl/system_certs/{{ item }}.crt"
+    dest: '/usr/local/share/ca-certificates/{{ item }}.crt'
+    owner: root
+    group: root
+    mode: 0644
+  loop: '{{ ssl_system_certs }}'
+  notify: Update ca certificates
+
+- name: Generate dhparam key
+  tags: nginx
+  ansible.builtin.command: 'openssl dhparam -out {{ ssl_forward_secrecy_key_path }} {{ ssl_forward_secrecy_key_length }}'
+  args:
+    creates: '{{ ssl_forward_secrecy_key_path }}'
+  notify: Reload nginx
+  when: nginx_with_ssl is defined and nginx_with_ssl and not ssl_forward_secrecy_key_force
+
+- name: Regenerate dhparam key
+  tags: nginx
+  ansible.builtin.command: 'openssl dhparam -out {{ ssl_forward_secrecy_key_path }} {{ ssl_forward_secrecy_key_length }}'
+  notify: Reload nginx
+  changed_when: false
+  when: nginx_with_ssl is defined and nginx_with_ssl and ssl_forward_secrecy_key_force
+
+- name: Check ssl forward secret key permission
+  tags: nginx
+  ansible.builtin.file:
+    path: '{{ ssl_forward_secrecy_key_path }}'
+    owner: root
+    group: ssl-cert
+    mode: 0640
+  notify: Reload nginx
+  when: nginx_with_ssl is defined and nginx_with_ssl

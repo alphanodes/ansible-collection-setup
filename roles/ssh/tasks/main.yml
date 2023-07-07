@@ -1,0 +1,27 @@
+---
+
+- name: Import setup tasks
+  ansible.builtin.import_tasks: setup.yml
+  tags:
+    - ssh
+
+- name: Import group tasks
+  ansible.builtin.import_tasks: groups.yml
+  tags:
+    - ssh
+    - keys
+
+- name: Import user tasks
+  ansible.builtin.include_tasks: user.yml
+  loop: "{{ ssh_users }}"
+  loop_control:
+    loop_var: user
+  tags:
+    - ssh
+    - keys
+
+- name: Import host key tasks
+  ansible.builtin.include_tasks: host_keys.yml
+  when: ssh_server_recreate_host_keys
+  tags:
+    - ssh

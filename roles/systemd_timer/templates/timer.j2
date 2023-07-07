@@ -1,0 +1,44 @@
+{{ ansible_managed | comment }}
+# @see https://wiki.archlinux.de/title/Systemd/Timers
+# @see https://www.freedesktop.org/software/systemd/man/systemd.timer.html
+# @see https://www.freedesktop.org/software/systemd/man/systemd.time.html
+
+[Unit]
+Description={{ timer_name }} timer{{ ' ' + timer.timer_comment if timer.timer_comment is defined else '' }}
+
+[Timer]
+{% if timer.OnActiveSec is defined %}
+OnActiveSec={{ timer.OnActiveSec }}
+{% endif %}
+{% if timer.on_boot_sec is defined %}
+OnBootSec={{ timer.on_boot_sec }}
+{% endif %}
+{% if timer.on_startup_sec is defined %}
+OnStartupSec={{ timer.on_startup_sec }}
+{% endif %}
+{% if timer.on_unit_active_sec is defined %}
+OnUnitActiveSec={{ timer.on_unit_active_sec }}
+{% endif %}
+{% if timer.on_unit_inactive_sec is defined %}
+OnUnitInactiveSec={{ timer.on_unit_inactive_sec }}
+{% endif %}
+{% if timer.on_calendar is defined %}
+OnCalendar={{ timer.on_calendar }}
+{% if timer.persistent is defined %}
+Persistent={{ 'yes' if timer.persistent | bool else 'no' }}
+{% endif %}
+{% endif %}
+{% if timer.accuracy_sec is defined %}
+AccuracySec={{ timer.accuracy_sec }}
+{% endif %}
+{% if timer.randomized_delay_sec is defined %}
+RandomizedDelaySec={{ timer.randomized_delay_sec }}
+{% endif %}
+{% if timer.fixed_random_delay is defined %}
+# Support with systemd 247 (ubuntu 20.04 uses older version)
+# older versions ignore this setting
+FixedRandomDelay={{ 'yes' if timer.fixed_random_delay | bool else 'no' }}
+{% endif %}
+
+[Install]
+WantedBy=timers.target

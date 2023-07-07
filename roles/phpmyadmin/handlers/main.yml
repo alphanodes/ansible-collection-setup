@@ -1,0 +1,17 @@
+---
+# Handler to handle common notifications. Handlers are called by other plays.
+# See http://docs.ansible.com/playbooks_intro.html for more information about handlers.
+
+- name: Upload phpmyadmin structure
+  ansible.builtin.copy:
+    src: phpmyadmin.sql
+    dest: /tmp
+    mode: 0644
+    owner: root
+    group: root
+
+- name: Restore phpmyadmin db
+  community.mysql.mysql_db:
+    name: '{{ phpmyadmin_db_name }}'
+    state: import
+    target: /tmp/phpmyadmin.sql

@@ -1,0 +1,10 @@
+
+location ^~ /pgbadger {
+  alias {{ postgresql_pgbadger_output_dir }};
+  index index.html;
+{% if postgresql_pgbadger_password != '' %}
+  # access protection
+  auth_basic "Restricted access only";
+  auth_basic_user_file /etc/nginx/.htpasswd_pgbadger;
+{% endif %}
+}

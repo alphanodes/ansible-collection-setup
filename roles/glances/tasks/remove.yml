@@ -1,0 +1,13 @@
+---
+
+- name: Remove glances pip module
+  ansible.builtin.pip:
+    name: '{{ glances_pip_modules }}'
+    state: absent
+  ignore_errors: true
+
+- name: Remove glance package
+  ansible.builtin.apt:
+    name: '{{ glances_packages }}'
+    state: absent
+  become: true

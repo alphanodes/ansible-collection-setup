@@ -1,0 +1,124 @@
+{{ ansible_managed | comment }}
+
+{% if ssh_server_include_sshd_config_d %}
+Include /etc/ssh/sshd_config.d/*.conf
+
+{% endif %}
+# What ports, IPs and protocols we listen for
+Port {{ ssh_server_port }}
+# Use these options to restrict which interfaces/protocols sshd will bind to
+#ListenAddress ::
+#ListenAddress 0.0.0.0
+Protocol 2
+
+# HostKeys for protocol version 2
+{% for key in ssh_server_hostkeys -%}
+HostKey {{key}}
+{% endfor %}
+
+{% if ssh_max_secure %}
+# see https://morknet.de/smork/entry/sichere-konfiguration-fuer-openssh/
+# and https://infosec.mozilla.org/guidelines/openssh#modern-openssh-67
+# check https://tls.imirhil.fr/ssh
+
+# Host key algorithms that the server offers.
+{{ "HostKeyAlgorithms " ~ ssh_host_key_algorithms|join(',') if ssh_host_key_algorithms else "HostKeyAlgorithms"|comment }}
+
+{{ 'Ciphers ' ~ ssh_ciphers|join(',') }}
+{{ 'MACs ' ~ ssh_macs|join(',') }}
+{{ 'KexAlgorithms ' ~ ssh_kex|join(',') }}
+{% endif %}
+
+# Logging
+SyslogFacility AUTH
+
+# LogLevel VERBOSE logs user's key fingerprint on login. Needed to have a clear audit track of which key was using to log in.
+LogLevel VERBOSE
+
+MaxAuthTries {{ ssh_max_auth_retries }}
+
+# Authentication:
+LoginGraceTime 120
+PermitRootLogin {{ ssh_server_permit_root_login }}
+{% if ssh_deny_users != '' %}
+DenyUsers {{ ssh_deny_users }}
+{% endif %}
+{% if ssh_deny_groups != '' %}
+DenyGroups {{ ssh_deny_groups }}
+{% endif %}
+StrictModes yes
+
+PubkeyAuthentication yes
+AuthorizedKeysFile %h/.ssh/authorized_keys
+
+DebianBanner no
+
+# Don't read the user's ~/.rhosts and ~/.shosts files
+IgnoreRhosts yes
+# similar for protocol version 2
+HostbasedAuthentication no
+# Uncomment if you don't trust ~/.ssh/known_hosts for RhostsRSAAuthentication
+#IgnoreUserKnownHosts yes
+
+# To enable empty passwords, change to yes (NOT RECOMMENDED)
+PermitEmptyPasswords no
+
+# Change to yes to enable challenge-response passwords (beware issues with
+# some PAM modules and threads)
+ChallengeResponseAuthentication {{ 'yes' if ssh_server_challenge_response_authentication else 'no' }}
+
+# Change to no to disable tunnelled clear text passwords
+PasswordAuthentication {{ 'yes' if ssh_server_password_authentication | bool else 'no' }}
+
+# Kerberos options
+#KerberosAuthentication no
+#KerberosGetAFSToken no
+#KerberosOrLocalPasswd yes
+#KerberosTicketCleanup yes
+
+# GSSAPI options
+#GSSAPIAuthentication no
+#GSSAPICleanupCredentials yes
+
+AllowTcpForwarding {{ 'yes' if ssh_server_allow_tcp_forwarding | bool else 'no' }}
+AllowStreamLocalForwarding {{ 'yes' if ssh_server_allow_stream_local_forwarding | bool else 'no' }}
+
+# Disable X11 forwarding, since local X11 display could be accessed through forwarded connection.
+X11Forwarding no
+X11DisplayOffset 10
+PrintMotd no
+PrintLastLog yes
+TCPKeepAlive yes
+#UseLogin no
+
+# no default banner path
+#Banner none
+
+# Allow client to pass locale environment variables
+AcceptEnv LANG LC_*
+
+# If you just want the PAM account and session checks to run without
+# PAM authentication, then enable this but set PasswordAuthentication
+# and ChallengeResponseAuthentication to 'no'.
+UsePAM {{ 'yes' if ssh_server_use_pam | bool else 'no' }}
+{% if ssh_server_sftp_enabled %}
+
+# Log sftp level file access (read/write/etc.) that would not be easily logged otherwise.
+Subsystem sftp {{ ssh_server_subsystem_sftp }}
+{% endif %}
+{% if ssh_server_match_user %}
+
+# User matching configuration
+{% for item in ssh_server_match_user %}
+Match User {{ item.user }}
+    {{ item.rules | indent(4) }}
+{% endfor %}
+{% endif %}
+{% if ssh_server_match_group %}
+
+# Group matching configuration
+{% for item in ssh_server_match_group %}
+Match Group {{ item.group }}
+    {{ item.rules | indent(4) }}
+{% endfor %}
+{% endif %}

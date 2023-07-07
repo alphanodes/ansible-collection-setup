@@ -1,0 +1,23 @@
+[Unit]
+Description=Rocket.Chat Server
+After=syslog.target
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+SyslogIdentifier=RocketChat
+User={{ rocketchat_service_user }}
+Group={{ rocketchat_service_group }}
+Environment=MONGO_URL=mongodb://{{ rocketchat_mongodb_uri }}
+Environment=MONGO_OPLOG_URL=mongodb://{{ rocketchat_mongodb_server }}:{{ rocketchat_mongodb_port }}/local
+Environment=ROOT_URL=https://{{ rocketchat_vhost_server }}
+Environment=PORT={{ rocketchat_internal_port }}
+{% for variable, value in rocketchat_service_environment.items() %}
+Environment={{ variable }}={{ value }}
+{% endfor -%}
+WorkingDirectory={{ rocketchat_application_path }}
+ExecStart=/usr/bin/node {{ rocketchat_application_path }}/main.js
+
+[Install]
+WantedBy=multi-user.target

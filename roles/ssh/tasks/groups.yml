@@ -1,0 +1,8 @@
+---
+
+- name: Ensure user system groups exists
+  ansible.builtin.group:
+    name: '{{ item.name }}'
+    system: "{{ item.system | default('false') }}"
+    state: "{{ item.state | default('present') }}"
+  loop: '{{ ssh_groups }}'

@@ -1,0 +1,2 @@
+---
+nginx_ssl_listen_option: 'ssl http2'

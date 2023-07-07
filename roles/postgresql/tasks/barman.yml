@@ -1,0 +1,72 @@
+---
+# barman ssh key should get access to postgres account
+
+- name: Install Barman CLI
+  ansible.builtin.apt:
+    name: 'barman-cli'
+    state: present
+
+- name: Check if postgresql_barman_password is defined
+  ansible.builtin.fail:
+    msg: 'postgresql_barman_password is not defined, but required'
+  when: postgresql_barman_password is undefined
+
+- name: Configure barman ssh access for postgres user
+  ansible.posix.authorized_key:
+    user: postgres
+    key: '{{ postgresql_barman_ssh_public_key }}'
+    state: present
+  when: postgresql_barman_ssh_public_key != ''
+
+- name: Check if ssh private key for barman server is provided by host
+  ansible.builtin.stat:
+    path: "{{ playbook_dir }}/files/barman_access/{{ inventory_hostname }}_id_rsa"
+  ignore_errors: true
+  register: key_by_host
+  delegate_to: localhost
+
+- name: Check if ssh private key for barman server is provided by group
+  ansible.builtin.stat:
+    path: "{{ playbook_dir }}/files/barman_access/{{ group_names[0] }}_id_rsa"
+  ignore_errors: true
+  register: key_by_group
+  delegate_to: localhost
+
+- name: Install ssh private key for barman server by host (if provided)
+  ansible.builtin.copy:
+    src: barman_access/{{ inventory_hostname }}_id_rsa
+    dest: /var/lib/postgresql/.ssh/id_rsa
+    owner: postgres
+    group: postgres
+    force: false
+    mode: 0600
+  when: key_by_host.stat.exists
+
+- name: Install ssh private key for barman server by group (if provided)
+  ansible.builtin.copy:
+    src: barman_access/{{ group_names[0] }}_id_rsa
+    dest: /var/lib/postgresql/.ssh/id_rsa
+    owner: postgres
+    group: postgres
+    force: false
+    mode: 0600
+  when: not key_by_host.stat.exists and key_by_group.stat.exists
+
+- name: Create barman postgresql user
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_user:
+    name: "{{ postgresql_barman_user }}"
+    password: "{{ postgresql_barman_password }}"
+    role_attr_flags: 'SUPERUSER,CREATEDB'
+    state: present
+  no_log: true
+
+- name: Connection check (ssh) to barman Server
+  tags:
+    - connection_check
+    - ssh_check
+  become_user: postgres
+  become: true
+  ansible.builtin.command: 'ssh -p {{ postgresql_barman_port }} {{ postgresql_barman_user }}@{{ postgresql_barman_host }} -C true'
+  changed_when: false

@@ -1,0 +1,6 @@
+---
+
+svn_server_systemd_service_file: /etc/systemd/system/svnserve.service
+svn_server_pid_file: /run/svnserve/svnserve.pid
+svn_server_environment_file: /etc/default/svnserve
+svn_server_log_dir: /var/log/svnserve

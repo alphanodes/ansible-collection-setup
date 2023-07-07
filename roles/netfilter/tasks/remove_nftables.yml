@@ -1,0 +1,18 @@
+---
+
+- name: Flush iptables rules
+  ansible.builtin.command: /etc/init.d/netfilter-persistent flush
+  ignore_errors: true
+
+- name: Stop nftables, if started
+  ansible.builtin.systemd:
+    name: nftables
+    state: stopped
+    enabled: false
+  ignore_errors: true
+
+- name: Ensure nftables packages are removed
+  ansible.builtin.apt:
+    name: '{{ netfilter_nftables_packages }}'
+    state: absent
+    purge: true

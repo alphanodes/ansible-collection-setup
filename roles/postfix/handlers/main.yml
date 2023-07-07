@@ -1,0 +1,16 @@
+---
+# Handler to handle common notifications. Handlers are called by other plays.
+# See http://docs.ansible.com/playbooks_intro.html for more information about handlers.
+
+- name: Restart postfix
+  ansible.builtin.command: /usr/sbin/postfix -c /etc/postfix check
+  notify:
+    - Real restart postfix
+
+- name: Real restart postfix
+  ansible.builtin.systemd:
+    name: postfix
+    state: restarted
+
+- name: Build new aliases
+  ansible.builtin.command: /usr/bin/newaliases

@@ -1,0 +1,13 @@
+---
+- name: Converge
+  hosts: all
+
+  vars:
+    backup_sets:
+      - name: etc
+        src: /etc
+      - name: root
+        src: /root
+
+  roles:
+    - role: alphanodes.setup.barman

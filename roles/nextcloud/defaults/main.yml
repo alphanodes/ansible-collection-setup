@@ -1,0 +1,48 @@
+---
+# defaults file for nextcloud
+
+nextcloud_dir: /srv/nextcloud
+nextcloud_data: '{{ nextcloud_dir }}/data'
+nextcloud_htdocs: '{{ nextcloud_dir }}/htdocs'
+
+nextcloud_version: 26.0.3
+nextcloud_source_url: https://download.nextcloud.com/server/releases
+nextcloud_source_file: nextcloud-{{ nextcloud_version }}.tar.bz2
+
+# for update procedure
+nextcloud_old_htdocs: '{{ nextcloud_dir }}/nextcloud.old'
+
+# set to proxy server, if any is used
+nextcloud_proxy_server: ''
+
+nextcloud_vhost_server: "{{ ansible_fqdn }}"
+nextcloud_vhost_for_zabbix: false
+nextcloud_db_host: /run/postgresql
+nextcloud_db_type: pgsql
+nextcloud_db_name: nextcloud
+nextcloud_db_user: nextcloud
+nextcloud_db_password: '{{ [ansible_machine_id, ansible_hostname, "nextcloud"] | join | hash("md5") }}'
+# only used with PostgreSQL
+nextcloud_db_role_flags: 'NOSUPERUSER,CREATEDB'
+
+nextcloud_mail_domain: '{{ ansible_domain }}'
+nextcloud_mail_from_address: webmaster
+nextcloud_logtimezone: '{{ ntp_timezone }}'
+nextcloud_default_language: de
+nextcloud_loglevel: 2
+
+# this can take a long time, depends on existing files
+nextcloud_with_data_permission: true
+
+nextcloud_default_admin_name: admin
+nextcloud_default_admin_password: change_this_password
+
+nextcloud_vhost_letsencrypt: false
+nextcloud_vhost_ssl_cert: '{{ ssl_certs[0].name }}'
+nextcloud_vhost_letsencrypt_cert: '{{ letsencrypt_certs[0] | default(omit) }}'
+nextcloud_vhost_letsencrypt_key: '{{ letsencrypt_keys[0] | default(omit) }}'
+
+# managed plugins (with updates)
+nextcloud_plugins:
+  - name: twofactor_u2f
+  - name: twofactor_totp

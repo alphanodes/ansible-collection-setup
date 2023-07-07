@@ -1,0 +1,126 @@
+#!/usr/sbin/nft -f
+{{ ansible_managed | comment }}
+
+flush ruleset
+
+table inet filter {
+	chain input {
+		type filter hook input priority 0; policy {{ netfilter_filter_input_policy | lower }};
+
+    # established/related connections
+		ct state established,related accept
+
+		# invalid connections
+		ct state invalid drop
+
+		# loopback interface
+		iif lo accept
+
+		# ICMP & IGMP
+		ip6 nexthdr icmpv6 icmpv6 type { destination-unreachable, packet-too-big, time-exceeded, parameter-problem, mld-listener-query, mld-listener-report, mld-listener-reduction, nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert, ind-neighbor-solicit, ind-neighbor-advert, mld2-listener-report } accept
+		ip protocol icmp icmp type { destination-unreachable, router-solicitation, router-advertisement, time-exceeded, parameter-problem } accept
+		ip protocol igmp accept
+
+    udp saddr 127.0.0.1 dport 123 accept
+
+    {% for allowed_network in netfilter_allowed_networks %}
+    ip saddr {{ allowed_network }} accept
+    {% endfor %}
+
+    # SSH
+    {% if netfilter_ssh_sources | length > 0 %}
+    {% for ssh_source in netfilter_ssh_sources %}
+    tcp saddr {{ ssh_source }} dport {{ ssh_server_port | default('22') }} accept
+    {% endfor %}
+    {% else %}
+    tcp dport {{ ssh_server_port | default('22') }} accept
+    {% endif %}
+
+    {% if netfilter_allow_zabbix_server and netfilter_zabbix_server_address != '' %}
+    tcp saddr {{ netfilter_zabbix_server_address }} dport {{ netfilter_zabbix_server_port }} accept
+    {% endif %}
+    {% for active_zabbix_address in netfilter_allowed_active_zabbix_addresses %}
+    tcp saddr {{ active_zabbix_address }} dport 10051 accept
+    {% endfor %}
+
+    {% for allowed_nameserver in netfilter_allowed_nameservers %}
+    ip saddr {{ allowed_nameserver }}/32 udp sport 53 udp dport 1024-65535 counter packets 0 bytes 0 accept
+    {% endfor %}
+
+    {% if '25' not in netfilter_allowed_tcp_ports or 25 not in netfilter_allowed_tcp_ports %}
+    tcp saddr 127.0.0.0/8 dport 25 accept
+    {% endif %}
+
+    {% for allowed_tcp_port in netfilter_allowed_tcp_ports %}
+    tcp dport {{ allowed_tcp_port }} accept
+    {% endfor %}
+    {% for allowed_udp_port in netfilter_allowed_udp_ports %}
+    udp dport {{ allowed_tcp_port }} accept
+    {% endfor %}
+
+    {% for allowed_tcp in netfilter_allowed_tcp_ports_with_saddr %}
+    tcp saddr {{ allowed_tcp.saddr }} dport {{ allowed_tcp.port }} accept
+    {% endfor %}
+    {% for allowed_udp in netfilter_allowed_udp_ports_with_saddr %}
+    udp saddr {{ allowed_udp.saddr }} dport {{ allowed_udp.port }} accept
+    {% endfor %}
+
+    counter packets 0 bytes 0 jump LOGGING
+	}
+
+	chain forward {
+		type filter hook forward priority 0; policy {{ netfilter_filter_forward_policy | lower }};
+    {% for forward in netfilter_forward %}
+    ip{{ ' saddr ' + forward.saddr if forward.saddr is defined else '' }} ip daddr {{ forward.daddr }} {{ forward.prot | default('tcp') }} dport {{ forward.dport }} ct state new counter packets 0 bytes 0 accept'
+    {% endfor %}
+	}
+
+	chain output {
+		type filter hook output priority 0; policy {{ netfilter_filter_output_policy | lower }};
+    {% for output in netfilter_nftables_filter_output %}
+    {{ output }}
+    {% endfor %}
+	}
+
+  chain LOGGING {
+    limit rate 2/minute burst 5 packets counter packets 0 bytes 0 log prefix "nftables-Dropped: "
+    counter packets 0 bytes 0 drop
+  }
+}
+
+{% if nftables_nat_prerouting | length > 0 %}
+table ip nat {
+	chain PREROUTING {
+		type nat hook prerouting priority 0; policy {{ netfilter_nat_prerouting_policy | lower }};
+    {% for prerouting in netfilter_prerouting %}
+    {% if prerouting.prot is defined and prerouting.prot == 'icmp' %}
+    ip daddr {{ prerouting.daddr }} counter packets 0 bytes 0 dnat to {{ prerouting.dest }}
+    {% else %}
+    ip{{ 'saddr' + prerouting.saddr if prerouting.saddr is defined else '' }} daddr {{ prerouting.daddr }} {{ prerouting.prot | default('tcp') }} dport {{ prerouting.dport }} counter packets 0 bytes 0 dnat to {{ prerouting.dest }}
+    {% endif %}
+    {% endfor %}
+	}
+
+	chain INPUT {
+		type nat hook input priority 0; policy {{ netfilter_nat_postrouting_policy | lower }};
+    {% for input in netfilter_nftables_nat_input %}
+    {{ input }}
+    {% endfor %}
+	}
+
+	chain OUTPUT {
+		type nat hook output priority 0; policy {{ netfilter_nat_input_policy | lower }};
+    {% for output in netfilter_nftables_nat_output %}
+    {{ output }}
+    {% endfor %}
+	}
+
+	chain POSTROUTING {
+		type nat hook postrouting priority 0; policy {{ netfilter_nat_output_policy | lower }};
+    {% for postrouting in netfilter_postrouting %}
+    oifname "{{ postrouting.oifname }}" ip saddr {{ postrouting.saddr }} counter packets 0 bytes 0 snat to {{ postrouting.snat_to }}
+    {% endfor %}
+    # ip saddr {{ lxc_internal_subnet }} ip daddr != {{ lxc_internal_subnet }}4 counter packets 0 bytes 0 masquerade'
+	}
+}
+{% endif %}

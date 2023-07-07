@@ -1,0 +1,20 @@
+{{ ansible_managed | comment }}
+
+# ssl configuration
+ssl_protocols {{ nginx_ssl_protocols }};
+ssl_ciphers {{ nginx_ssl_ciphers }};
+ssl_prefer_server_ciphers {{ 'on' if nginx_ssl_prefer_server_ciphers else 'off' }};
+ssl_session_tickets off;
+ssl_dhparam /etc/ssl/private/dhparams.pem;
+ssl_session_cache {{ nginx_ssl_session_cache }};
+ssl_session_timeout {{ nginx_ssl_session_timeout }};
+
+{% if nginx_with_ssl_stapling -%}
+
+## OSCP Stapling
+ssl_stapling on;
+ssl_stapling_verify on;
+resolver {{ ' '.join(nginx_resolver) }};
+resolver_timeout 5s;
+
+{% endif -%}

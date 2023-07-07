@@ -1,0 +1,124 @@
+---
+
+- name: Set files
+  ansible.builtin.set_fact:
+    cert_path: /etc/ssl/certs/{{ ssl_cert.name }}.crt
+    key_path: /etc/ssl/private/{{ ssl_cert.name }}.key
+    csr_path: /etc/ssl/certs/{{ ssl_cert.name }}.csr
+    ssl_cert_owner: '{{ ssl_cert.owner | default("root") }}'
+    ssl_cert_group: '{{ ssl_cert.group | default("ssl-cert") }}'
+
+- name: Generate self-signed cert, if wanted and required
+  when: ssl_cert.provider is defined and (ssl_cert.provider == 'selfsigned' or ssl_cert.provider == 'ownca')
+  block:
+    # see https://docs.ansible.com/ansible/latest/collections/community/crypto/openssl_privatekey_module.html
+    - name: Generate an OpenSSL private key
+      community.crypto.openssl_privatekey:
+        path: '{{ key_path }}'
+        owner: '{{ ssl_cert_owner }}'
+        group: '{{ ssl_cert_group }}'
+        type: '{{ ssl_cert.type | default(omit) }}'
+        size: '{{ ssl_cert.size | default(omit) }}'
+        mode: 0640
+
+    # see https://docs.ansible.com/ansible/latest/collections/community/crypto/openssl_csr_module.html
+    - name: Generate an OpenSSL CSR
+      community.crypto.openssl_csr_pipe:
+        privatekey_path: '{{ key_path }}'
+        common_name: '{{ ssl_cert.subject_common_name }}'
+        country_name: '{{ ssl_cert.country_name | default(omit) }}'
+        locality_name: '{{ ssl_cert.locality_name | default(omit) }}'
+        state_or_province_name: '{{ ssl_cert.state_or_province_name | default(omit) }}'
+        organization_name: '{{ ssl_cert.organization_name | default(omit) }}'
+        organizational_unit_name: '{{ ssl_cert.organizational_unit_name | default(omit) }}'
+        subject_alt_name: '{{ ssl_cert.subject_alt_name | default(omit) }}'
+        email_address: '{{ ssl_cert.email_address | default(omit) }}'
+      register: ssl_csr
+
+    - name: Check whether certificate exists
+      ansible.builtin.stat:
+        path: '{{ cert_path }}'
+      register: ssl_certificate_exists
+
+    - name: Read existing certificate if exists
+      ansible.builtin.slurp:
+        src: '{{ cert_path }}'
+      when: ssl_certificate_exists.stat.exists
+      register: existing_ssl_certificate
+
+    # see https://docs.ansible.com/ansible/latest/collections/community/crypto/x509_certificate_pipe_module.html#ansible-collections-community-crypto-x509-certificate-pipe-module
+    - name: Generate selfsigned certificate
+      community.crypto.x509_certificate_pipe:
+        content: "{{ (existing_ssl_certificate.content | b64decode) if ssl_certificate_exists.stat.exists else omit }}"
+        csr_content: "{{ ssl_csr.csr }}"
+        privatekey_path: '{{ key_path }}'
+        selfsigned_not_after: "{{ ssl_cert.days | default('+850d') }}"
+        provider: selfsigned
+      when: ssl_cert.provider == 'selfsigned'
+      register: ssl_certificate
+
+    # see https://docs.ansible.com/ansible/latest/collections/community/crypto/x509_certificate_pipe_module.html#ansible-collections-community-crypto-x509-certificate-pipe-module
+    - name: Generate certificate signed by ca
+      community.crypto.x509_certificate_pipe:
+        content: "{{ (existing_ssl_certificate.content | b64decode) if ssl_certificate_exists.stat.exists else omit }}"
+        csr_content: "{{ ssl_csr.csr }}"
+        # this path is valid on remote host, not localhost
+        # privatekey_path: '{{ key_path }}'
+        ownca_path: files/ssl/cas/{{ ssl_cert.ca_name }}_ca.crt
+        ownca_privatekey_path: files/ssl/cas_private/{{ ssl_cert.ca_name }}_ca.key
+        ownca_not_after: "{{ ssl_cert.days | default('+850d') }}"
+        provider: ownca
+      when: ssl_cert.provider == 'ownca'
+      register: ssl_certificate
+      delegate_to: localhost
+
+    - name: Write certificate file
+      ansible.builtin.copy:
+        dest: '{{ cert_path }}'
+        content: "{{ ssl_certificate.certificate }}"
+        owner: '{{ ssl_cert_owner }}'
+        group: '{{ ssl_cert_group }}'
+        mode: 0644
+      when: not ssl_certificate_exists.stat.exists or ssl_certificate is changed
+
+- name: Install ssl certificates - {{ ssl_cert.name }}
+  ansible.builtin.copy:
+    src: ssl/certs/{{ ssl_cert.name }}.crt
+    dest: '{{ cert_path }}'
+    owner: '{{ ssl_cert_owner }}'
+    group: '{{ ssl_cert_group }}'
+    mode: 0644
+  notify: Check for Reload nginx
+  when: ssl_cert.provider is undefined
+
+- name: Check trusted TLS cert - {{ ssl_cert.name }}
+  ansible.builtin.stat:
+    path: '{{ playbook_dir }}/files/ssl/certs/{{ ssl_cert.name }}_trusted.crt'
+  delegate_to: localhost
+  register: trusted_cert
+
+- name: Install trusted ssl certificates - {{ ssl_cert.name }}
+  ansible.builtin.copy:
+    src: ssl/certs/{{ ssl_cert.name }}_trusted.crt
+    dest: /etc/ssl/certs/{{ ssl_cert.name }}_trusted.crt
+    owner: '{{ ssl_cert_owner }}'
+    group: '{{ ssl_cert_group }}'
+    mode: 0644
+  when: ssl_cert.provider is undefined and trusted_cert.stat.exists
+  notify: Check for Reload nginx
+
+- name: Remove obsolete trusted ssl certificates - {{ ssl_cert.name }}
+  ansible.builtin.file:
+    path: /etc/ssl/certs/{{ ssl_cert.name }}_trusted.crt
+    state: absent
+  when: ssl_cert.provider is undefined and not trusted_cert.stat.exists
+
+- name: Install ssl keys - {{ ssl_cert.name }}
+  ansible.builtin.copy:
+    src: ssl/private/{{ ssl_cert.name }}.key
+    dest: '{{ key_path }}'
+    owner: '{{ ssl_cert_owner }}'
+    group: '{{ ssl_cert_group }}'
+    mode: 0640
+  notify: Check for Reload nginx
+  when: ssl_cert.provider is undefined

@@ -1,0 +1,10 @@
+*~
+.DS_Store
+.venv
+.vscode
+/*.retry
+/*.tar.gz
+.ruby-lsp
+Gemfile.lock
+hosts
+tmp/

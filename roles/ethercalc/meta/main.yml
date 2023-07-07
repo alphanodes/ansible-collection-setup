@@ -1,0 +1,27 @@
+---
+dependencies:
+  - role: alphanodes.setup.common
+  - role: alphanodes.setup.ssl
+  - role: alphanodes.setup.redis_server
+  - role: alphanodes.setup.nginx
+  - role: alphanodes.setup.nodejs
+
+galaxy_info:
+  description: Setup ethercalc
+  author: alexandermeindl
+  company: AlphaNodes GmbH
+  license: Apache License 2.0
+  min_ansible_version: '2.14'
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+    - name: Debian
+      versions:
+        - buster
+        - bullseye
+        - bookworm
+  galaxy_tags:
+    - ethercalc
+    - spreadsheet

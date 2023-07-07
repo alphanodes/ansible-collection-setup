@@ -1,0 +1,170 @@
+---
+- name: Get MySQL version.
+  ansible.builtin.command: 'mysql --version'
+  register: mysql_cli_version
+  changed_when: false
+  check_mode: false
+
+- name: Verify mysql include directories exist.
+  when: mysql_with_includedirs and not mysql_remove_unused_includedirs
+  loop:
+    - "{{ mysql_config_include_dir }}"
+    - "{{ mysql_config_mysql_include_dir }}"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Copy my.cnf global MySQL configuration.
+  ansible.builtin.template:
+    src: my.cnf.j2
+    dest: "{{ mysql_config_file }}"
+    owner: root
+    group: root
+    mode: 0644
+    force: "{{ overwrite_global_mycnf }}"
+  notify: Restart mysql
+
+- name: Remove obsolete and conflicted configuration files
+  loop: '{{ mysql_obsoleted_conflicted_files }}'
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+
+- name: Remove mysql include directory conf.d, if no include files defined.
+  when: not mysql_with_includedirs and mysql_remove_unused_includedirs
+  loop:
+    - "{{ mysql_config_include_dir }}"
+    - "{{ mysql_config_mysql_include_dir }}"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+
+- name: Use /etc/alternatives/my.cnf
+  when: mysql_config_file != mysql_real_config_file
+  block:
+    # this fails, if includedir is missing
+    # note: check_mode is used because file should be never changed
+    - name: Check if includedir is in mysql.cnf
+      ansible.builtin.lineinfile:
+        path: '{{ mysql_config_include_file }}'
+        line: "!includedir {{ mysql_config_mysql_include_dir }}/"
+        state: present
+      register: includedir_search
+      check_mode: yes
+      failed_when: includedir_search.changed
+
+    - name: Correct my.cnf selected
+      community.general.alternatives:
+        name: my.cnf
+        path: '{{ mysql_config_include_file }}'
+        link: '{{ mysql_real_config_file }}'
+
+    - name: Set /etc/alternatives/my.cnf to /etc/mysql/my.cnf
+      ansible.builtin.file:
+        src: /etc/alternatives/my.cnf
+        dest: '{{ mysql_real_config_file }}'
+        owner: root
+        group: root
+        state: link
+        force: true
+
+- name: Verify mysql log directory
+  when: mysql_log_output == 'FILE'
+  ansible.builtin.file:
+    path: /var/log/mysql
+    state: directory
+    owner: mysql
+    group: '{{ mysql_log_file_group }}'
+    mode: 0750
+
+- name: Remove log files, if not activated
+  when: mysql_log_output != 'FILE'
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - /var/log/mysql
+    - /var/log/mysql.log
+
+- name: Create slow query log file (if configured).
+  ansible.builtin.command: "touch {{ mysql_slow_query_log_file }}"
+  args:
+    creates: "{{ mysql_slow_query_log_file }}"
+  when: mysql_log_output == 'FILE' and mysql_slow_query_log_enabled
+
+- name: Create datadir if it does not exist
+  ansible.builtin.file:
+    path: "{{ mysql_datadir }}"
+    state: directory
+    owner: mysql
+    group: mysql
+    mode: 0755
+    setype: mysqld_db_t
+
+- name: Set ownership on slow query log file (if configured).
+  ansible.builtin.file:
+    path: "{{ mysql_slow_query_log_file }}"
+    state: file
+    owner: mysql
+    group: "{{ mysql_log_file_group }}"
+    mode: 0640
+  when: mysql_log_output == 'FILE' and mysql_slow_query_log_enabled
+
+- name: Create error log file (if required)
+  when: >
+    mysql_log_output == 'FILE'
+    and mysql_log_error is defined
+    and mysql_log_error != 'syslog'
+  block:
+    - name: Create error log file
+      ansible.builtin.command: "touch {{ mysql_log_error }}"
+      args:
+        creates: "{{ mysql_log_error }}"
+
+    - name: Set ownership on error log file
+      ansible.builtin.file:
+        path: "{{ mysql_log_error }}"
+        state: file
+        owner: mysql
+        group: "{{ mysql_log_file_group }}"
+        mode: 0640
+
+- name: Ensure MySQL is started and enabled on boot.
+  ansible.builtin.service:
+    name: "{{ mysql_daemon }}"
+    state: started
+    enabled: "{{ mysql_enabled_on_startup }}"
+  register: mysql_service_configuration
+
+- name: Ensure MySQL databases are present.
+  community.mysql.mysql_db:
+    name: "{{ item.name }}"
+    collation: "{{ item.collation | default('utf8_general_ci') }}"
+    encoding: "{{ item.encoding | default('utf8') }}"
+    state: "{{ item.state | default('present') }}"
+    target: "{{ item.target | default(omit) }}"
+  with_items: "{{ mysql_databases }}"
+
+- name: Update debian-sys-maint mysql account for debian maintenance
+  community.mysql.mysql_user:
+    name: debian-sys-maint
+    password: "{{ mysql_server_debian_sys_maint_password }}"
+    host: localhost
+    priv: '*.*:ALL,GRANT'
+    state: present
+  no_log: true
+
+- name: Ensure MySQL users are present.
+  community.mysql.mysql_user:
+    name: "{{ item.name }}"
+    host: "{{ item.host | default('localhost') }}"
+    password: "{{ item.password }}"
+    priv: "{{ item.priv | default('*.*:USAGE') }}"
+    state: "{{ item.state | default('present') }}"
+    append_privs: "{{ item.append_privs | default('no') }}"
+    encrypted: "{{ item.encrypted | default('no') }}"
+  with_items: "{{ mysql_users }}"
+  no_log: true

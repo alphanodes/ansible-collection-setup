@@ -1,0 +1,11 @@
+{{ ansible_managed | comment }}
+[client]
+host     = localhost
+user     = debian-sys-maint
+password = {{ mysql_server_debian_sys_maint_password }}
+socket   = {{ mysql_socket }}
+[mysql_upgrade]
+host     = localhost
+user     = debian-sys-maint
+password = {{ mysql_server_debian_sys_maint_password }}
+socket   = {{ mysql_socket }}

@@ -1,0 +1,28 @@
+---
+
+- name: Remove additional pip modules
+  ansible.builtin.pip:
+    name: '{{ ansible_node_pip_packages }}'
+    state: absent
+
+- name: Remove ansible
+  ansible.builtin.pip:
+    name: ansible
+    state: absent
+
+- name: Remove ansible configuration
+  ansible.builtin.file:
+    path: /etc/ansible
+    state: absent
+
+- name: Remove obsolete cronjobs
+  ansible.builtin.file:
+    path: /etc/cron.d/{{ item }}
+    state: absent
+  loop:
+    - system-watch
+    - redmine_reminder
+    - redmine_maintenance
+    - postgres_vacuum
+    - backup
+    - ansible_jobs

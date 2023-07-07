@@ -1,0 +1,7 @@
+---
+# handlers file for unbound
+
+- name: Restart unbound
+  ansible.builtin.systemd:
+    name: unbound
+    state: restarted

@@ -1,0 +1,16 @@
+*nat
+:PREROUTING {{ netfilter_nat_prerouting_policy }} [0:0]
+:INPUT {{ netfilter_nat_input_policy }} [0:0]
+:OUTPUT {{ netfilter_nat_output_policy }} [0:0]
+:POSTROUTING {{ netfilter_nat_postrouting_policy }} [0:0]
+{% for prerouting in netfilter_prerouting %}
+{% if prerouting.prot is defined and prerouting.prot == 'icmp' %}
+-A PREROUTING -d {{ prerouting.daddr }}/32 -p icmp --icmp-type any -j DNAT --to-destination {{ prerouting.dest }}
+{% else %}
+-A PREROUTING{{ ' --source ' + prerouting.saddr + '/32' if prerouting.saddr is defined else '' }} -d {{ prerouting.daddr }}/32 -p {{ prerouting.prot | default('tcp') }} -m {{ prerouting.prot | default('tcp') }} --dport {{ prerouting.dport }} -j DNAT --to-destination {{ prerouting.dest }}
+{% endif %}
+{% endfor %}
+{% for postrouting in netfilter_postrouting %}
+-A POSTROUTING -s {{ postrouting.saddr }}/32 -o {{ postrouting.oifname }} -j SNAT --to-source {{ postrouting.snat_to }}
+{% endfor %}
+COMMIT

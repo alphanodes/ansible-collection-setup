@@ -1,0 +1,39 @@
+---
+
+- name: Set TLS files for letsencrypt - {{ matomo_vhost_letsencrypt_cert }}
+  ansible.builtin.set_fact:
+    vhost_letsencrypt_cert: "{{ matomo_vhost_letsencrypt_cert }}"
+    vhost_letsencrypt_key: "{{ matomo_vhost_letsencrypt_key }}"
+    force_letsencrypt: true
+  when: matomo_vhost_letsencrypt is defined and matomo_vhost_letsencrypt
+
+- name: Check trusted TLS cert - {{ matomo_vhost_ssl_cert }}
+  ansible.builtin.stat:
+    path: /etc/ssl/certs/{{ matomo_vhost_ssl_cert }}_trusted.crt
+  register: trusted_cert
+  when: matomo_vhost_ssl_cert is defined and matomo_vhost_ssl_cert != ''
+
+- name: Set TLS files
+  ansible.builtin.set_fact:
+    vhost_ssl_cert: "{{ matomo_vhost_ssl_cert }}"
+    vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
+  when: matomo_vhost_letsencrypt is undefined or not matomo_vhost_letsencrypt
+
+- name: Update matomo vhost configuration
+  ansible.builtin.template:
+    src: nginx/sites-available/matomo.j2
+    dest: /etc/nginx/sites-available/matomo.conf
+    mode: 0644
+  notify: Reload nginx
+
+- name: Ensure matomo vhost is enabled
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/matomo.conf
+    dest: /etc/nginx/sites-enabled/matomo.conf
+    state: link
+  notify: Reload nginx
+
+- name: Remove subdiretory configuration file
+  ansible.builtin.file:
+    path: /etc/nginx/matomo.conf
+    state: absent

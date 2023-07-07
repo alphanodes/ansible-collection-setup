@@ -1,0 +1,98 @@
+---
+# defaults file for ansible_node
+
+ansible_node_etc_dir: /etc/ansible
+ansible_node_playbook_dir: '{{ ansible_node_etc_dir }}/playbooks'
+ansible_node_playbook_script: /usr/local/bin/ansible-playbook
+
+# If specified, files/hosts/IDENTIFIER is used as /etc/ansible/hosts
+# and all playbooks in files/playbooks/IDENTIFIER/ are copied to /etc/ansible/playbooks.
+# The host file and the playbooks directory has to be exist, if identifier is specified.
+# Default identifier is 'inventory_hostname'
+# Set it to '', if you do not want it (like on pm)
+ansible_node_identifier: '{{ inventory_hostname }}'
+
+# Roles to install (only done, if ansible_node_identifier != '')
+ansible_node_roles: []
+
+ansible_node_collections:
+  - name: 'git+https://github.com/alphanodes/ansible-collection-tasks.git,main'
+    action: install -U
+
+ansible_host_key_checking: false
+ansible_node_ansible_managed: 'This file is managed with Ansible, all changes will be lost.'
+
+# ? https://docs.ansible.com/ansible/2.9/reference_appendices/config.html
+ansible_node_pipelining: false
+ansible_node_ssh_args: -o ControlMaster=no
+
+# required packages for dependencies
+ansible_node_packages:
+  - autoconf
+  - build-essential
+  - libffi-dev
+  - libssl-dev
+  - libxml2-dev
+  - libxslt1-dev
+  - python3-cffi
+  - python3-dev
+
+# these packages are installed with pip
+ansible_node_disallowed_packages:
+  - ansible
+  - python-pip
+  - python3-pip
+
+# fixed version or latest
+# use 7.2 or 7.2.1 for minor fixed version
+ansible_node_ansible_version: 8.1
+
+# required switching from 2.9 to newer version
+ansible_node_remove_before_install: false
+
+# this is only used, if ansible_node_remove_before_install is true
+# NOTE: all supported distributions uses python 3.9 or newer
+# TODO: this should be moved to pip role
+ansible_node_old_files:
+  - /usr/local/bin/easy_install
+  - /usr/local/bin/easy_install-2.7
+  - /usr/local/bin/easy_install-3.5
+  - /usr/local/bin/easy_install-3.6
+  - /usr/local/bin/easy_install-3.7
+  - /usr/local/bin/easy_install-3.8
+  - /usr/local/bin/echo_supervisord_conf
+  - /usr/local/bin/pidproxy
+  - /usr/local/bin/pip2
+  - /usr/local/bin/pip2.7
+  - /usr/local/bin/pip3.5
+  - /usr/local/bin/pip3.6
+  - /usr/local/bin/pip3.7
+  - /usr/local/bin/pip3.8
+  - /usr/local/lib/python2.7
+  - /usr/local/lib/python3.5
+  - /usr/local/lib/python3.6
+  - /usr/local/lib/python3.7
+  - /usr/local/lib/python3.8
+
+ansible_node_pip_packages:
+  - passlib
+
+# Remove ansible node with all data on server
+ansible_node_remove: false
+
+ansible_node_timers: {}
+
+# set a list of prepared timers, which are defined in vars/main.yml
+# e.g.
+#
+# ansible_node_playbooks:
+# - backup
+# - postgres_vacuum
+#
+# BE AWARE: if defined, all services from vars/main.yml will be removed, which are not listet here
+# ansible_node_playbooks: []
+
+ansible_node_redmine_timer_service: puma-{{ redmine_task_instance | default('redmine') }}.service
+
+ansible_node_playbook_host: 127.0.0.1
+ansible_node_playbook_ansible_python_interpreter: python3

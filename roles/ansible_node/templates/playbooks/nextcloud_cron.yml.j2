@@ -1,0 +1,12 @@
+---
+# file: run nextcloud cron
+
+- hosts: {{ ansible_node_playbook_host }}
+  serial: 1
+
+  vars:
+    ansible_python_interpreter: {{ ansible_node_playbook_ansible_python_interpreter }}
+    nextcloud_task_name: 'cron'
+
+  roles:
+    - alphanodes.tasks.nextcloud_task

@@ -1,0 +1,36 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=GitLab Sidekiq
+ReloadPropagatedFrom=gitlab.target
+PartOf=gitlab.target
+JoinsNamespaceOf=gitlab-puma.service
+Wants=redis.service postgresql.service
+After=redis.service postgresql.service
+StartLimitIntervalSec={{ gitlab_systemd_start_limit_interval_sec }}
+StartLimitBurst={{ gitlab_systemd_start_limit_burst }}
+
+[Service]
+Type=notify
+User={{ gitlab_user }}
+WorkingDirectory={{ gitlab_path }}
+Environment=MALLOC_ARENA_MAX=2
+Environment=RAILS_ENV={{ gitlab_rails_env }}
+Environment=USER={{ gitlab_user }}
+Environment=GITLAB_LOG_LEVEL={{ gitlab_log_level }}
+Environment=SIDEKIQ_QUEUES=*
+{% if gitlab_rvm_ruby %}
+Environment="PATH={{ gitlab_rvm_ruby_path }}:/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
+{% else %}
+Environment="PATH={{ gitlab_gem_home }}/bin:/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
+{% endif %}
+ExecStart={{ gitlab_path }}/bin/sidekiq-cluster $SIDEKIQ_QUEUES -P {{ gitlab_sidekiq_pidfile }}
+PIDFile={{ gitlab_sidekiq_pidfile }}
+NotifyAccess=all
+Restart=on-failure
+RestartSec={{ gitlab_systemd_restart_sec }}
+SyslogIdentifier=gitlab-sidekiq
+Slice=gitlab.slice
+
+[Install]
+WantedBy=gitlab.target

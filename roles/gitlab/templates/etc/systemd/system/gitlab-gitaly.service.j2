@@ -1,0 +1,24 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=Gitaly is a Git RPC service for handling all the git calls made by GitLab.
+ReloadPropagatedFrom=gitlab.target
+PartOf=gitlab.target
+After=network.target
+StartLimitIntervalSec={{ gitlab_systemd_start_limit_interval_sec }}
+StartLimitBurst={{ gitlab_systemd_start_limit_burst }}
+
+[Service]
+Type=simple
+User={{ gitlab_user }}
+WorkingDirectory={{ gitlab_path }}
+Environment=USER={{ gitlab_user }}
+Environment=GITLAB_LOG_LEVEL={{ gitlab_log_level }}
+ExecStart={{ gitlab_gitaly_bin_path }}/gitaly {{ gitlab_gitaly_path }}/config.toml
+Restart=on-failure
+RestartSec={{ gitlab_systemd_restart_sec }}
+SyslogIdentifier=gitlab-gitaly
+Slice=gitlab.slice
+
+[Install]
+WantedBy=gitlab.target

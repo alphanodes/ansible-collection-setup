@@ -1,0 +1,28 @@
+# {{ ansible_managed }}
+{% if instance.use_logger is undefined %}
+gem 'journald-logger'
+{% else %}
+{% if instance.use_logger != 'log' %}
+gem '{{ instance.use_logger }}'
+{% endif %}
+{% endif %}
+{% if instance.rails_env is undefined or (instance.rails_env != 'test') %}
+gem 'puma'
+{% endif %}
+{% if instance.with_memcache is defined and instance.with_memcache %}
+{% if instance.without_dalli is undefined or not instance.without_dalli %}
+gem 'dalli'
+{% endif %}
+gem 'connection_pool'
+{% endif %}
+{% if instance.with_mysql2postgres is defined and instance.with_mysql2postgres %}
+gem 'mysql2postgres'
+{% endif %}
+{% if instance.gemfile_extras is defined %}
+{% for extra_line in instance.gemfile_extras %}
+{{ extra_line }}
+{% endfor %}
+{% endif %}
+{% if active_puma_worker_killer|bool %}
+gem 'puma_worker_killer'
+{% endif %}

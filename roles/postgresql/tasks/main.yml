@@ -1,0 +1,33 @@
+---
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  tags: postgresql
+
+- name: Include locales tasks
+  ansible.builtin.include_tasks: locales.yml
+  tags: postgresql
+
+- name: Include users tasks
+  ansible.builtin.include_tasks: users.yml
+  tags: postgresql
+
+- name: Include privileges tasks
+  ansible.builtin.include_tasks: privileges.yml
+  tags: postgresql
+
+- name: Include database tasks
+  ansible.builtin.include_tasks: databases.yml
+  tags: postgresql
+
+- name: Include barman tasks
+  ansible.builtin.include_tasks: barman.yml
+  tags:
+    - postgresql
+    - barman
+  when: postgresql_with_barman
+
+- name: Include zabbix tasks
+  ansible.builtin.include_tasks: zabbix.yml
+  tags:
+    - zabbix
+    - zabbix-agent

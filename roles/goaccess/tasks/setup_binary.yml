@@ -1,0 +1,19 @@
+---
+
+- name: Add goaccess GPG key
+  ansible.builtin.get_url:
+    url: '{{ goaccess_repo_key_url }}'
+    dest: /etc/apt/trusted.gpg.d/goaccess.asc
+    mode: 0644
+    force: true
+
+- name: Add goaccess debian repository
+  ansible.builtin.apt_repository:
+    repo: '{{ goaccess_repo_url }}'
+    update_cache: true
+    state: "{{ 'absent' if geoaccess_from_source else 'present' }}"
+
+- name: Be sure goaccess packages are installed
+  ansible.builtin.apt:
+    name: '{{ goaccess_packages }}'
+    state: "{{ 'absent' if geoaccess_from_source else 'present' }}"

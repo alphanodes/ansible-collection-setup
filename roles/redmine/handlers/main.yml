@@ -1,0 +1,8 @@
+---
+
+- name: Restart puma instance
+  ansible.builtin.debug:
+    msg: "this does not work at the moment {{ item }}"
+  loop:
+    - 1
+    - 2

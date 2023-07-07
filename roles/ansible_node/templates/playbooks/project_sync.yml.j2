@@ -1,0 +1,16 @@
+---
+# file: project-sync for files and databases
+
+- hosts: {{ ansible_node_playbook_host }}
+  serial: 1
+
+  vars:
+    ansible_python_interpreter: {{ ansible_node_playbook_ansible_python_interpreter }}
+{% if project_sync_instance_name is defined %}
+    project_sync_instance_name: {{ project_sync_instance_name }}
+{% endif %}
+    project_sync_instances:
+      {{ project_sync_instances | to_nice_yaml(indent=2) | trim | indent(6) }}
+
+  roles:
+    - alphanodes.tasks.project_sync

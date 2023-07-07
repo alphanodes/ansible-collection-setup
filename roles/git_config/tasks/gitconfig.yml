@@ -1,0 +1,43 @@
+---
+
+# ? https://docs.ansible.com/ansible/2.9/modules/git_config_module.html
+- name: Set git configuration
+  become_user: "{{ git_config_user }}"
+  become: "{{ true if git_config_user else false }}"
+  block:
+    - name: Set settings
+      community.general.git_config:
+        name: '{{ item.name }}'
+        value: '{{ item.value }}'
+        repo: '{{ item.repo | default(omit) }}'
+        scope: '{{ item.scope | default("global") }}'
+      loop: '{{ git_config_settings }}'
+
+    - name: Set default settings
+      when: git_config_with_defaults
+      block:
+        - name: Set default setting
+          community.general.git_config:
+            name: '{{ item.name }}'
+            scope: global
+            value: '{{ item.default }}'
+          when: git_config_settings | selectattr('name', 'eq', item.name) | list | count == 0
+          loop:
+            - name: user.name
+              default: '{{ ansible_hostname }} job'
+            - name: user.email
+              default: "{{ alphanodes_support_mail | default('root@localhost') }}"
+            - name: push.default
+              default: simple
+            - name: pull.rebase
+              default: 'false'
+            - name: http.sslverify
+              default: 'false'
+
+        - name: Set default setting for http.proxy
+          community.general.git_config:
+            name: http.proxy
+            scope: global
+            value: "{{ http_proxy | default('') }}"
+            state: "{{ 'present' if http_proxy is defined and http_proxy != '' else 'absent' }}"
+          when: git_config_settings | selectattr('name', 'ne', 'http.proxy') | list | count > 0

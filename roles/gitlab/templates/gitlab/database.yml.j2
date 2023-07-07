@@ -1,0 +1,19 @@
+{{ ansible_managed | comment }}
+
+{{ gitlab_rails_env }}:
+  main:
+    adapter: postgresql
+    encoding: unicode
+    database: {{ gitlab_db_name }}
+    pool: 10
+    username: {{ gitlab_db_user }}
+    password: "{{ gitlab_db_password }}"
+    host: {{ gitlab_db_host }}
+  ci:
+    adapter: postgresql
+    encoding: unicode
+    database: {{ gitlab_db_name }}
+    database_tasks: false
+    username: {{ gitlab_db_user }}
+    password: "{{ gitlab_db_password }}"
+    host: {{ gitlab_db_host }}

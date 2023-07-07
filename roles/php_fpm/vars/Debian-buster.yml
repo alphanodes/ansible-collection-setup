@@ -1,0 +1,35 @@
+---
+php_fpm_listen_base: /run/php/php7.3-fpm
+php_fpm_listen: '{{ php_fpm_listen_base }}.sock'
+php_fpm_php_fpm_conf: /etc/php/7.3/fpm/php-fpm.conf
+php_fpm_custom_php_ini: /etc/php/7.3/fpm/conf.d/custom.ini
+php_fpm_pool_dir: /etc/php/7.3/fpm/pool.d
+php_fpm_pool_conf: www.conf
+php_fpm_service: php7.3-fpm
+php_fpm_pid: /run/php/{{ php_fpm_service }}.pid
+__php_session_save_path: /var/lib/php/sessions
+
+php_fpm_packages:
+  - php7.3-fpm
+  - php7.3-gd
+  - php7.3-json
+  - php7.3-readline
+  - php7.3-mbstring
+  - php7.3-xml
+
+php_fpm_remove_packages:
+  - php-fpm
+  - php7.0-fpm
+  - php7.0-gd
+  - php7.0-json
+  - php7.0-mcrypt
+  - php7.0-readline
+  - php7.0-mbstring
+  - php7.0-xml
+  # and pa packages
+  - php7.2-fpm
+  - php7.2-gd
+  - php7.2-json
+  - php7.2-readline
+  - php7.2-mbstring
+  - php7.2-xml

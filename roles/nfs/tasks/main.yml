@@ -1,0 +1,5 @@
+---
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  tags: nfs

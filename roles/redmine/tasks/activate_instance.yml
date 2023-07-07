@@ -1,0 +1,40 @@
+---
+
+- name: Include instance vars
+  ansible.builtin.include_tasks: set_instance_vars.yml
+
+- name: Ensure redmine vhost is enabled - {{ instance_name }}
+  tags:
+    - nginx
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/{{ instance_name }}.conf
+    dest: /etc/nginx/sites-enabled/{{ instance_name }}.conf
+    state: link
+  when:
+    - redmine_with_nginx
+    - instance.state is undefined or instance.state == 'active'
+  notify: Reload nginx
+
+- name: Ensure redmine vhost is disabled - {{ instance_name }}
+  tags:
+    - nginx
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/{{ instance_name }}.conf
+    state: absent
+  when: not redmine_with_nginx or instance.state is defined and instance.state != 'active'
+  notify: Reload nginx
+
+# TODO: should be not restart every ansible run
+- name: Start/Restart puma via systemd - {{ instance_name }}
+  ansible.builtin.systemd:
+    name: puma-{{ instance_name }}
+    state: restarted
+  when: instance.state is undefined or instance.state=='active'
+
+- name: Shutdown puma via systemd - {{ instance_name }}
+  ansible.builtin.systemd:
+    name: puma-{{ instance_name }}
+    state: stopped
+    enabled: false
+  when: instance.state is defined and instance.state =='inactive'
+  ignore_errors: true

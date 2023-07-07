@@ -1,0 +1,21 @@
+{{ ansible_managed | comment }}
+
+# GitLab logrotate settings
+
+{{ gitlab_path }}/log/*.log {
+    daily
+    missingok
+    rotate 90
+    compress
+    notifempty
+    copytruncate
+}
+
+{{ gitlab_home }}/gitlab-shell/gitlab-shell.log {
+    daily
+    missingok
+    rotate 90
+    compress
+    notifempty
+    copytruncate
+}

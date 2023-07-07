@@ -1,0 +1,36 @@
+---
+- name: Converge
+  hosts: all
+  remote_user: root
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 600
+      changed_when: false
+
+  vars:
+    postfix_relayhost: smtp.gmail.com
+    postfix_relayhost_port: 587
+    postfix_sasl_auth_enable: true
+    postfix_sasl_password_maps:
+      - 'smtp.gmail.com me@gmail.com:my_top_secret_password'
+
+  roles:
+    - role: alphanodes.setup.postfix
+
+  post_tasks:
+    - name: Run postfix check
+      ansible.builtin.command: postfix check
+      changed_when: false
+
+    - name: Get current postfix configuration
+      ansible.builtin.command: postconf
+      changed_when: false
+      register: postconf_info
+
+    - name: Show current postfix configuration
+      ansible.builtin.debug:
+        var: postconf_info.stdout_lines
+      changed_when: false

@@ -1,0 +1,7 @@
+---
+# handlers/main.yml: Handlers for RocketChat.Ansible
+
+- name: Restart rocketchat
+  ansible.builtin.systemd:
+    name: rocketchat
+    state: restarted

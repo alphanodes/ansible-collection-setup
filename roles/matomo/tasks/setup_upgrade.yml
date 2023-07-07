@@ -1,0 +1,41 @@
+---
+
+- name: Remove old working dir
+  ansible.builtin.file:
+    path: '{{ matomo_working_dir }}'
+    state: absent
+
+- name: Create working dir
+  ansible.builtin.file:
+    path: '{{ matomo_working_dir }}'
+    state: directory
+    mode: 0755
+
+- name: Extract matomo archive
+  ansible.builtin.unarchive:
+    src: '{{ matomo_archive_filename }}'
+    dest: '{{ matomo_working_dir }}'
+    owner: '{{ matomo_user }}'
+    group: '{{ matomo_group }}'
+    copy: false
+
+- name: Make sure config.ini.php will not be overwritten
+  ansible.builtin.file:
+    path: '{{ matomo_working_dir }}/matomo/config/config.ini.php'
+    state: absent
+
+- name: Latest Matomo rsynced over last version
+  ansible.builtin.shell: "rsync -aq {{ matomo_working_dir }}/matomo/ {{ matomo_dir }}/"
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: "{{ matomo_user }}"
+
+- name: Run matomo console core:update
+  ansible.builtin.shell: "php console --no-ansi -n core:update --yes"
+  args:
+    executable: /bin/bash
+    chdir: "{{ matomo_dir }}"
+  become: "{{ true if matomo_user is defined else false }}"
+  become_user: '{{ matomo_user | default(omit) }}'
+  when: (mysql_replication_role is undefined or mysql_replication_role == 'master') and (sync_master is undefined)

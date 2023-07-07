@@ -1,0 +1,44 @@
+#!/usr/bin/env puma
+{{ ansible_managed | comment }}
+
+environment '{{ redmine_rails_env }}'
+
+pidfile '{{ redmine_run_base_path + "/" + instance_name }}/redmine.pid'
+state_path '{{ redmine_run_base_path + "/" + instance_name }}/redmine.state'
+bind 'unix://{{ redmine_run_base_path + "/" + instance_name }}/redmine.sock'
+
+workers {{ real_redmine_puma_workers | int }}
+threads {{ instance.puma_min_threads | default(redmine_puma_min_threads) }}, {{ instance.puma_max_threads | default(redmine_puma_max_threads) }}
+
+{% if real_redmine_puma_workers | int > 3 %}
+wait_for_less_busy_worker
+{% endif %}
+
+# @see https://www.rubydoc.info/gems/puma/Puma%2FDSL:worker_timeout
+worker_timeout {{ redmine_puma_worker_timeout }}
+
+{% if active_puma_worker_killer|bool %}
+before_fork do
+  require 'puma_worker_killer'
+
+  PumaWorkerKiller.config do |config|
+    config.ram           = {{ redmine_puma_worker_killer_ram }}
+    config.frequency     = {{ redmine_puma_worker_killer_frequency }}
+    config.percent_usage = {{ redmine_puma_worker_killer_percent_usage }}
+    config.rolling_restart_frequency = {{ instance.rolling_restart_frequency | default(redmine_rolling_restart_frequency) }}
+    config.reaper_status_logs = {{ 'true' if redmine_puma_worker_killer_status_logs else 'false' }}
+  end
+  PumaWorkerKiller.start
+end
+{% endif %}
+
+{% if real_redmine_puma_workers | int > 1 %}
+on_worker_boot do
+  ActiveRecord::Base.establish_connection
+end
+
+preload_app!
+{% endif %}
+
+# === Puma control rack application ===
+activate_control_app 'unix://{{ redmine_run_base_path + "/" + instance_name }}/redmine-pumactl.sock', { no_token: true }

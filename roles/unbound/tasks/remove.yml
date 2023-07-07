@@ -1,0 +1,13 @@
+---
+
+- name: Stop unbound, if started
+  ansible.builtin.systemd:
+    name: unbound
+    state: stopped
+    enabled: false
+
+- name: Remove unbound package
+  ansible.builtin.apt:
+    name: unbound
+    purge: true
+    state: absent

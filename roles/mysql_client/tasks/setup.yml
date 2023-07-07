@@ -1,0 +1,25 @@
+---
+
+- name: Be sure MySQL client packages are installed
+  ansible.builtin.apt:
+    name: '{{ mysql_client_packages }}'
+    state: present
+
+- name: Be sure mysqldb is installed
+  ansible.builtin.apt:
+    name: "{{ 'python3-mysqldb' if ansible_python_interpreter is defined and 'python3' in ansible_python_interpreter else 'python-mysqldb' }}"
+    state: present
+
+- name: Gather the package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Check if php is installed
+  ansible.builtin.set_fact:
+    php_installed: "{{ true if mysql_client_check_php_package in ansible_facts.packages else false }}"
+
+- name: Install PHP package (if required)
+  ansible.builtin.apt:
+    name: '{{ mysql_client_php_package }}'
+    state: present
+  when: php_installed

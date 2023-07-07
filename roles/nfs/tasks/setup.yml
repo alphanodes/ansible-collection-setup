@@ -1,0 +1,60 @@
+---
+
+- name: Install NFS packages
+  ansible.builtin.apt:
+    name: '{{ nfs_packages }}'
+    state: present
+
+- name: Install NFS server
+  ansible.builtin.apt:
+    name: '{{ nfs_server_packages }}'
+    state: present
+  when: nfs_server
+
+- name: Configure nfs
+  ansible.builtin.template:
+    src: '{{ item }}.j2'
+    dest: '/{{ item }}'
+    owner: 'root'
+    group: 'root'
+    mode: 0644
+  loop:
+    - etc/default/nfs-common
+    - etc/modprobe.d/nfs-server.conf
+  notify:
+    - Restart nfs-common
+
+- name: Configure nfs server
+  ansible.builtin.template:
+    src: etc/default/nfs-kernel-server.j2
+    dest: /etc/default/nfs-kernel-server
+    owner: root
+    group: root
+    mode: 0644
+  when: nfs_server
+  notify:
+    - Restart nfs-kernel-server
+
+- name: Configure nfs exports
+  ansible.builtin.template:
+    src: etc/exports.j2
+    dest: /etc/exports
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - Reload nfs exports
+
+- name: Start the nfs-kernel-server service
+  ansible.builtin.systemd:
+    name: nfs-kernel-server
+    state: started
+    enabled: true
+  when: nfs_server and nfs_server_start
+
+- name: Stop the nfs-kernel-server service
+  ansible.builtin.systemd:
+    name: nfs-kernel-server
+    state: stopped
+    enabled: false
+  when: nfs_server and not nfs_server_start

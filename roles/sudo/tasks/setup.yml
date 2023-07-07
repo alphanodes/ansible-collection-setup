@@ -1,0 +1,16 @@
+---
+
+- name: Be sure base sudo packages are installed
+  ansible.builtin.apt:
+    name: '{{ sudo_packages }}'
+    state: present
+
+- name: Manage sudoers configuration
+  ansible.builtin.template:
+    src: etc/sudoers.d/ansible_managed.j2
+    dest: /etc/sudoers.d/ansible_managed
+    validate: "visudo -cf %s"
+    owner: root
+    group: root
+    mode: 0440
+  when: sudo_manange_sudoers_config

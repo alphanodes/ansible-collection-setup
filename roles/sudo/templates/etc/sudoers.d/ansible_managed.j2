@@ -1,0 +1,14 @@
+{{ ansible_managed | comment }}
+{% for sudo_default in sudo_defaults %}
+Defaults{{ sudo_default }}
+{% endfor %}
+{% if sudo_group_sudo_without_password %}
+%sudo	ALL=(ALL:ALL) NOPASSWD: ALL
+{% endif %}
+{% if sudo_group_wheel_active %}
+# Allow members of group wheel to execute any command
+%wheel ALL=(ALL:ALL) {{ 'NOPASSWD: ALL' if sudo_group_wheel_without_password else 'ALL' }}
+{% endif %}
+{% for sudoer_line in sudo_sudoers %}
+{{ sudoer_line }}
+{% endfor %}

@@ -1,0 +1,61 @@
+---
+# see https://goaccess.io/download#installation
+
+- name: Clear from source, because binary installation is used
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - '{{ goaccess_from_source_build_dir }}'
+  when: not geoaccess_from_source
+
+- name: Run from source tasks
+  when: geoaccess_from_source
+  block:
+    # do not remove packages, if not from source, because these packages could be used by other roles
+    - name: Be sure goaccess source packages are installed
+      ansible.builtin.apt:
+        name: '{{ goaccess_from_source_packages }}'
+        state: present
+
+    - name: Get source code to compile
+      ansible.builtin.git:
+        repo: "{{ geoaccess_source_repo }}"
+        dest: "{{ goaccess_from_source_build_dir }}"
+        version: "{{ geoaccess_source_version | default('master') }}"
+        force: true
+      become: true
+      register: goaccess_git_changed
+
+    - name: Compile if source code changed or forced
+      when: goaccess_force_build or goaccess_git_changed.changed
+      tags:
+        - skip_ansible_lint
+      block:
+        - name: Run autoreconf
+          ansible.builtin.command: autoreconf -fiv
+          args:
+            chdir: "{{ goaccess_from_source_build_dir }}"
+
+        - name: Run configure
+          ansible.builtin.command: >
+            ./configure
+            --prefix=/usr
+            --sysconfdir=/etc
+            --enable-geoip=mmdb
+            --enable-utf8
+            --enable-tcb=btree
+            --disable-bzip
+            --with-openssl
+          args:
+            chdir: "{{ goaccess_from_source_build_dir }}"
+
+        - name: Run make
+          ansible.builtin.command: make
+          args:
+            chdir: "{{ goaccess_from_source_build_dir }}"
+
+        - name: Run make install
+          ansible.builtin.command: make install
+          args:
+            chdir: "{{ goaccess_from_source_build_dir }}"

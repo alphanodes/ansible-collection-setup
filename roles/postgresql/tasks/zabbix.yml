@@ -1,0 +1,65 @@
+---
+- name: Stats for zabbix config
+  ansible.builtin.stat:
+    path: /etc/zabbix
+  register: zabbix_config_exists
+
+- name: Add zabbix PostgreSQL user
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_user:
+    name: '{{ postgresql_zabbix_user }}'
+    password: '{{ postgresql_zabbix_password }}'
+    state: present
+  no_log: true
+  when: zabbix_monitoring
+
+- name: Set zabbix PostgreSQL grant
+  community.postgresql.postgresql_membership:
+    group: pg_monitor
+    target_roles: "{{ postgresql_zabbix_user }}"
+    state: present
+  become_user: postgres
+  become: true
+
+- name: Install sudoer access for zabbix
+  ansible.builtin.copy:
+    src: sudoers.d/postgresql
+    dest: /etc/sudoers.d/postgresql
+    mode: 0440
+  when: zabbix_monitoring
+
+- name: Install zabbix sql PostgreSQL files
+  ansible.posix.synchronize:
+    src: zabbix/postgresql
+    dest: '{{ zabbix_agent_home }}'
+    # NOTE: workaroud for string problem
+    # @SEE https://github.com/ansible-collections/ansible.posix/issues/376#issuecomment-1222046195
+    dest_port: "{{ lookup('ansible.builtin.vars', 'ansible_port', default=22) }}"
+    group: false
+    owner: false
+  when: zabbix_monitoring
+
+# @TODO: this does not work with synchronize at the moment
+- name: Set owner for sql PostgreSQL files
+  ansible.builtin.file:
+    path: '{{ zabbix_agent_home }}/postgresql'
+    state: directory
+    recurse: true
+    owner: zabbix
+    group: zabbix
+  when: zabbix_monitoring
+
+- name: Remove zabbix PostgreSQL user
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_user:
+    name: '{{ postgresql_zabbix_user }}'
+    state: absent
+  when: not zabbix_monitoring
+
+- name: Remove zabbix sql postgresql files
+  ansible.builtin.file:
+    path: '{{ zabbix_agent_home }}/postgresql'
+    state: absent
+  when: not zabbix_monitoring

@@ -1,0 +1,10 @@
+---
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  tags:
+    - git
+
+- name: Include git_config
+  ansible.builtin.include_role:
+    name: alphanodes.setup.git_config

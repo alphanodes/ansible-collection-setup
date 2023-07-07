@@ -1,0 +1,124 @@
+---
+
+nginx_packages:
+  - python3-passlib
+  - nginx-extras
+
+nginx_worker_connections: 1024
+
+# leave empty, ansible_processor_nproc is used  with lxc containers)
+nginx_worker_processes: ''
+
+nginx_owner: www-data
+nginx_group: www-data
+
+# use it, if e.g. www-data needs access to ssl certs
+nginx_ssl_web_users: []
+
+# nginx_error_log: '/var/log/nginx/error.log warn'
+nginx_error_log: 'stderr warn'
+nginx_access_log: '/var/log/nginx/access.log main buffer=16k flush=1m'
+
+nginx_types_hash_max_size: 2048
+nginx_map_hash_bucket_size: 128
+nginx_keepalive_timeout: 20
+nginx_keepalive_requests: 10000
+nginx_variables_hash_max_size: 2048
+nginx_proxy_headers_hash_bucket_size: 64
+nginx_server_names_hash_bucket_size: 64
+nginx_client_max_body_size: 52M
+nginx_fastcgi_read_timeout: 60
+nginx_fastcgi_send_timeout: 60
+nginx_remove_default_vhost: false
+
+nginx_vhost_with_access_log: true
+
+# e.g. required for mysql ssl connections
+nginx_in_ssl_group: false
+
+nginx_with_ssl: true
+nginx_force_ssl: true
+nginx_with_ssl_stapling: true
+
+# protect dot files and block spammers
+nginx_with_protection: true
+# some external reverse proxies require this disable
+# because of wrong configuration (e.g. srtechnik)
+nginx_with_proxy_forwarded_for: true
+# some external reverse proxy set wrong server name. This can
+# be fixed with manual mapping
+# e.g.
+# nginx_with_proxy_forwarded_hosts:
+#  - source: int.ssl.projekte.sakd.de
+#    target: projekte.sakd.de
+nginx_with_proxy_forwarded_hosts: []
+
+nginx_with_ipv6: false
+
+# if empty google or hetzner is used
+nginx_resolver: []
+
+# @see https://ssl-config.mozilla.org
+# @see https://cipherli.st/
+# @see https://www.sherbers.de/howto/nginx/
+nginx_ssl_protocols: 'TLSv1.2 TLSv1.3'
+nginx_ssl_ciphers: ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
+nginx_ssl_prefer_server_ciphers: false
+nginx_ssl_session_cache: 'shared:SSL:10m'
+nginx_ssl_session_timeout: '1d'
+
+nginx_hotlinking_valid_referers: '*.google.de *.google.com alphanodes.com *.alphanodes.com'
+nginx_custom_vhosts: []
+nginx_custom_vhosts_disabled: []
+
+
+# set it to some value to activate it
+nginx_fastcgi_microcache_zone: ''
+nginx_fastcgi_microcache_time: 10m
+nginx_fastcgi_microcache_max_size: 128m
+nginx_fastcgi_microcache_inactive: 1h
+nginx_fastcgi_microcache_valid: 10s
+nginx_fastcgi_microcache_base_dir: /run/microcache
+
+nginx_fastcgi_microcaches: []
+
+# use if, if you use nginx as reverse proxy
+# nginx_proxy_buffer_size: 16k
+# nginx_proxy_buffers: 8 32k
+# nginx_proxy_busy_buffers_size: 32k
+
+nginx_error_pages_path: /etc/nginx/error_pages
+
+nginx_vcbackups_users: []
+nginx_vcbackups_pwd_file: /etc/nginx/.htpasswd_backups
+
+nginx_software_users: []
+nginx_software_pwd_file: /etc/nginx/.htpasswd_software
+
+nginx_vhosts: []
+
+# reuseport
+# see https://www.nginx.com/blog/socket-sharding-nginx-release-1-9-1/
+# use it with:
+# - more the one core
+# - only once address:port
+
+vhost_letsencrypt: false
+vhost_letsencrypt_cert: '{{ letsencrypt_certs[0] | default(omit) }}'
+vhost_letsencrypt_key: '{{ letsencrypt_keys[0] | default(omit) }}'
+
+vhost_ssl_cert: '{{ ssl_certs[0].name | default(omit) }}'
+
+nginx_with_websocket: false
+
+nginx_disable_modules: []
+
+# example:
+# '$redmine_api_limit zone=redmine_api:10m rate=50r/m'
+# - zone name: redmine_api
+# - 10mb shared memory for storing ip adresses
+#   (State information for about 16,000 IP addresses takes 1 ;megabyte,
+#    so our zone can store about 160,000 addresses.)
+# - 50 request per minute
+# ? https://www.nginx.com/blog/rate-limiting-nginx/
+nginx_limit_req_zones: []

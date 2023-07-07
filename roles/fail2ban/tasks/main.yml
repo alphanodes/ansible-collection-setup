@@ -1,0 +1,18 @@
+---
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  tags: fail2ban
+  when: not fail2ban_remove
+
+- name: Include messenger tasks
+  ansible.builtin.include_tasks: messenger.yml
+  tags:
+    - fail2ban
+    - rocketchat
+  when: not fail2ban_remove
+
+- name: Include remove tasks
+  ansible.builtin.import_tasks: remove.yml
+  tags: fail2ban
+  when: fail2ban_remove

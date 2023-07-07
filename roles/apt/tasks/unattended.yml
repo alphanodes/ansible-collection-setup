@@ -1,0 +1,50 @@
+---
+
+# manuell check with: unattended-upgrade -v -d for test if it works
+- name: Unattended-Upgrade configuration
+  ansible.builtin.template:
+    src: apt/apt.conf.d/{{ item }}.j2
+    dest: /etc/apt/apt.conf.d/{{ item }}
+    mode: 0644
+  loop:
+    - 20auto-upgrades
+    - 50unattended-upgrades
+
+- name: Remove obsolete/unwanted files
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/apt/apt.conf.d/50unattended-upgrades.ucf-dist
+    - /etc/systemd/apt-daily.timer.d
+
+- name: Make sure conf override dirs exists
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  loop:
+    - /etc/systemd/system/apt-daily.timer.d
+    - /etc/systemd/system/apt-daily-upgrade.timer.d
+
+# to update the package lists (apt-get update)
+- name: Configure apt-daily.timer
+  ansible.builtin.template:
+    src: systemd/apt-daily.timer.d/override.conf.j2
+    dest: /etc/systemd/system/apt-daily.timer.d/override.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart apt-daily.timer
+
+# to install the upgrades (unattended-upgrade)
+- name: Configure apt-daily-upgrade.timer
+  ansible.builtin.template:
+    src: systemd/apt-daily-upgrade.timer.d/override.conf.j2
+    dest: /etc/systemd/system/apt-daily-upgrade.timer.d/override.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart apt-daily-upgrade.timer

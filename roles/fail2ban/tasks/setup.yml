@@ -1,0 +1,60 @@
+---
+
+- name: Set facts
+  ansible.builtin.set_fact:
+    login_action: "{{ fail2ban_action if fail2ban_login_action == '' else fail2ban_login_action }}"
+    named_ssh_server_port: "{{ 'ssh' if fail2ban_sshd_port == '22' else fail2ban_sshd_port }}"
+
+- name: Get error log file info
+  ansible.builtin.stat:
+    path: /var/log/nginx/error.log
+    get_checksum: false
+  register: nginx_error_log_file
+
+- name: Be sure fail2ban is installed
+  ansible.builtin.apt:
+    name: '{{ fail2ban_packages }}'
+    state: present
+
+- name: Update fail2ban configuration
+  ansible.builtin.template:
+    src: jail.local.j2
+    dest: /etc/fail2ban/jail.local
+    mode: 0644
+  notify: Restart fail2ban
+
+- name: Install actions
+  ansible.builtin.copy:
+    src: action.d/
+    dest: '{{ fail2ban_action_path }}'
+    mode: 0644
+  notify: Restart fail2ban
+
+- name: Remove obsolete actions
+  ansible.builtin.file:
+    path: '{{ fail2ban_action_path }}/iptables-http.conf'
+    state: absent
+
+- name: Install filters
+  ansible.builtin.copy:
+    src: filter.d/
+    dest: '{{ fail2ban_filter_path }}'
+    mode: 0644
+  notify: Restart fail2ban
+
+- name: Remove obsolete filters
+  ansible.builtin.file:
+    path: '{{ fail2ban_filter_path }}/owncloud-login.conf'
+    state: absent
+
+- name: Install sudoer access for zabbix
+  ansible.builtin.copy:
+    src: sudoers.d/fail2ban
+    dest: /etc/sudoers.d/fail2ban
+    mode: 0440
+
+- name: Start the fail2ban service
+  ansible.builtin.systemd:
+    name: fail2ban
+    state: started
+    enabled: true

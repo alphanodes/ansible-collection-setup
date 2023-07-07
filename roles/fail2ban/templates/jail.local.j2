@@ -1,0 +1,268 @@
+# {{ ansible_managed }}
+# Fail2Ban configuration file.
+
+[INCLUDES]
+
+before = paths-debian.conf
+
+# The DEFAULT allows a global definition of the options. They can be overridden
+# in each jail afterwards.
+
+[DEFAULT]
+
+#
+# MISCELLANEOUS OPTIONS
+#
+
+# "ignoreip" can be an IP address, a CIDR mask or a DNS host. Fail2ban will not
+# ban a host which matches an address in this list. Several addresses can be
+# defined using space separator.
+ignoreip = {{ fail2ban_ignoreip }}
+
+# External command that will take an tagged arguments to ignore, e.g. <ip>,
+# and return true if the IP is to be ignored. False otherwise.
+#
+# ignorecommand = /path/to/command <ip>
+ignorecommand =
+
+# "bantime" is the number of seconds that a host is banned.
+bantime  = {{ fail2ban_default_bantime }}
+
+# A host is banned if it has generated "maxretry" during the last "findtime"
+# seconds.
+findtime = {{ fail2ban_default_findtime }}
+
+# "maxretry" is the number of failures before a host get banned.
+maxretry = {{ fail2ban_default_maxretry }}
+
+# "backend" specifies the backend used to get files modification.
+# Available options are "pyinotify", "gamin", "polling", "systemd" and "auto".
+# This option can be overridden in each jail as well.
+#
+# pyinotify: requires pyinotify (a file alteration monitor) to be installed.
+#              If pyinotify is not installed, Fail2ban will use auto.
+# gamin:     requires Gamin (a file alteration monitor) to be installed.
+#              If Gamin is not installed, Fail2ban will use auto.
+# polling:   uses a polling algorithm which does not require external libraries.
+# systemd:   uses systemd python library to access the systemd journal.
+#              Specifying "logpath" is not valid for this backend.
+#              See "journalmatch" in the jails associated filter config
+# auto:      will try to use the following backends, in order:
+#              pyinotify, gamin, polling.
+#
+# Note: if systemd backend is chosen as the default but you enable a jail
+#       for which logs are present only in its own log files, specify some other
+#       backend for that jail (e.g. polling) and provide empty value for
+#       journalmatch. See https://github.com/fail2ban/fail2ban/issues/959#issuecomment-74901200
+backend = {{ fail2ban_backend }}
+
+# "usedns" specifies if jails should trust hostnames in logs,
+#   warn when DNS lookups are performed, or ignore all hostnames in logs
+#
+# yes:   if a hostname is encountered, a DNS lookup will be performed.
+# warn:  if a hostname is encountered, a DNS lookup will be performed,
+#        but it will be logged as a warning.
+# no:    if a hostname is encountered, will not be used for banning,
+#        but it will be logged as info.
+usedns = warn
+
+# "logencoding" specifies the encoding of the log files handled by the jail
+#   This is used to decode the lines from the log file.
+#   Typical examples:  "ascii", "utf-8"
+#
+#   auto:   will use the system locale setting
+logencoding = auto
+
+# "enabled" enables the jails.
+#  By default all jails are disabled, and it should stay this way.
+#  Enable only relevant to your setup jails in your .local or jail.d/*.conf
+#
+# true:  jail will be enabled and log files will get monitored for changes
+# false: jail is not enabled
+enabled = false
+
+
+# "filter" defines the filter to use by the jail.
+#  By default jails have names matching their filter name
+#
+filter = %(__name__)s
+
+
+#
+# ACTIONS
+#
+
+# Some options used for actions
+
+# Destination email address used solely for the interpolations in
+# jail.{conf,local,d/*} configuration files.
+destemail = {{ fail2ban_destemail }}
+
+# Sender email address used solely for some actions
+sender = root@localhost
+
+# E-mail action. Since 0.8.1 Fail2Ban uses sendmail MTA for the
+# mailing. Change mta configuration parameter to mail if you want to
+# revert to conventional 'mail'.
+mta = sendmail
+
+# Default protocol
+protocol = tcp
+
+# Specify chain where jumps would need to be added in iptables-* actions
+chain = INPUT
+
+# Ports to be banned
+# Usually should be overridden in a particular jail
+port = 0:65535
+
+#
+# Action shortcuts. To be used to define action parameter
+
+# Default banning action (e.g. iptables, iptables-new,
+# iptables-multiport, shorewall, etc) It is used to define
+# action_* variables. Can be overridden globally or per
+# section within jail.local file
+banaction = iptables-multiport
+banaction_allports = iptables-allports
+
+# The simplest action to take: ban only
+action_ = %(banaction)s[name=%(__name__)s, bantime="%(bantime)s", port="%(port)s", protocol="%(protocol)s", chain="%(chain)s"]
+
+# ban & send an e-mail with whois report to the destemail.
+action_mw = %(banaction)s[name=%(__name__)s, bantime="%(bantime)s", port="%(port)s", protocol="%(protocol)s", chain="%(chain)s"]
+            %(mta)s-whois[name=%(__name__)s, dest="%(destemail)s", protocol="%(protocol)s", chain="%(chain)s"]
+
+# ban & send an e-mail with whois report and relevant log lines
+# to the destemail.
+action_mwl = %(banaction)s[name=%(__name__)s, bantime="%(bantime)s", port="%(port)s", protocol="%(protocol)s", chain="%(chain)s"]
+             %(mta)s-whois-lines[name=%(__name__)s, dest="%(destemail)s", logpath=%(logpath)s, chain="%(chain)s"]
+
+{% if fail2ban_rocketchat_hook != '' %}
+action_with_rocketchat = %(banaction)s[name=%(__name__)s, bantime="%(bantime)s", port="%(port)s", protocol="%(protocol)s", chain="%(chain)s"]
+                         rocketchat[name=%(__name__)s, dest="%(destemail)s", chain="%(chain)s"]
+
+action_with_rocketchat_proxy = iptables-proxy[name=%(__name__)s, port="%(port)s",protocol="%(protocol)s"]
+                               rocketchat[name=%(__name__)s, dest="%(destemail)s", chain="%(chain)s"]
+
+action_with_rocketchat_http = iptables-proxy[name=%(__name__)s, port="80",protocol="%(protocol)s"]
+                              rocketchat[name=%(__name__)s, dest="%(destemail)s", chain="%(chain)s"]
+{% endif %}
+
+# Report block via blocklist.de fail2ban reporting service API
+#
+# See the IMPORTANT note in action.d/blocklist_de.conf for when to
+# use this action. Create a file jail.d/blocklist_de.local containing
+# [Init]
+# blocklist_de_apikey = {api key from registration]
+#
+action_blocklist_de  = blocklist_de[email="%(sender)s", service=%(filter)s, apikey="%(blocklist_de_apikey)s"]
+
+# Report ban via badips.com, and use as blacklist
+#
+# See BadIPsAction docstring in config/action.d/badips.py for
+# documentation for this action.
+#
+# NOTE: This action relies on banaction being present on start and therefore
+# should be last action defined for a jail.
+#
+action_badips = badips.py[category="%(name)s", banaction="%(banaction)s"]
+
+# Choose default action.  To change, just override value of 'action' with the
+# interpolation to the chosen action shortcut (e.g.  action_mw, action_mwl, etc) in jail.local
+# globally (section [DEFAULT]) or per specific section
+action = {{ fail2ban_action }}
+
+#
+# JAILS
+#
+
+[sshd]
+enabled = true
+port = {{ named_ssh_server_port }}
+banaction = iptables-allports
+bantime = {{ fail2ban_sshd_bantime | default(fail2ban_default_bantime) }}
+
+[sshd-ddos]
+enabled = {{ 'true' if fail2ban_sshd_ddos else 'false' }}
+port    = {{ named_ssh_server_port }}
+bantime = {{ fail2ban_sshd_ddos_bantime | default(fail2ban_default_bantime) }}
+
+[nginx-http-auth]
+enabled = {{ 'true' if fail2ban_nginx_http_auth and nginx_error_log_file.stat.exists else 'false' }}
+port    = http,https
+backend = auto
+logpath = %(nginx_error_log)s
+bantime = {{ fail2ban_nginx_http_auth_bantime | default(fail2ban_default_bantime) }}
+
+[nginx-botsearch]
+enabled = {{ 'true' if fail2ban_nginx_botsearch and nginx_error_log_file.stat.exists else 'false' }}
+port     = http,https
+backend = auto
+logpath  = %(nginx_error_log)s
+maxretry = 2
+bantime  = {{ fail2ban_nginx_botsearch_bantime | default(fail2ban_default_bantime) }}
+
+[roundcube-auth]
+enabled = {{ 'true' if fail2ban_roundcube_auth else 'false' }}
+port     = http,https
+backend = auto
+logpath  = {{ fail2ban_roundcube_auth_log }}
+bantime  = {{ fail2ban_roundcube_auth_bantime | default(fail2ban_default_bantime) }}
+
+[postfix]
+enabled = {{ 'true' if fail2ban_postfix else 'false' }}
+mode    = more
+port    = smtp,465,submission
+bantime = {{ fail2ban_postfix_bantime | default(fail2ban_default_bantime) }}
+
+[dovecot]
+enabled = {{ 'true' if fail2ban_dovecot else 'false' }}
+port    = smtp,ssmtp,submission,imap2,imap3,imaps,pop3,pop3s
+bantime = {{ fail2ban_dovecot_bantime | default(fail2ban_default_bantime) }}
+
+[redmine-login]
+enabled = {{ 'true' if fail2ban_redmine_login else 'false' }}
+port    = http,https
+backend = auto
+action  = {{ fail2ban_redmine_action | default(login_action) }}
+maxretry = {{ fail2ban_redmine_maxretry | default(fail2ban_login_maxretry) }}
+bantime  = {{ fail2ban_redmine_login_bantime | default(fail2ban_default_bantime) }}
+
+[drupal-auth]
+enabled = {{ 'true' if fail2ban_drupal_auth else 'false' }}
+port     = http,https
+backend = auto
+bantime  = {{ fail2ban_drupal_auth_bantime | default(fail2ban_default_bantime) }}
+action  = {{ fail2ban_drupal_action | default(login_action) }}
+
+[drupal-login]
+enabled = {{ 'true' if fail2ban_drupal_login else 'false' }}
+port    = http,https
+backend = auto
+action  = {{ fail2ban_drupal_action | default(login_action) }}
+maxretry = {{ fail2ban_drupal_maxretry | default(fail2ban_login_maxretry) }}
+bantime  = {{ fail2ban_drupal_login_bantime | default(fail2ban_default_bantime) }}
+
+[drupal-honeypot]
+enabled = {{ 'true' if fail2ban_drupal_honeypot else 'false' }}
+port    = http,https
+backend = auto
+action  = {{ fail2ban_drupal_action | default(login_action) }}
+bantime  = {{ fail2ban_drupal_honeypot_bantime | default(fail2ban_default_bantime) }}
+
+[nextcloud-login]
+enabled = {{ 'true' if fail2ban_nextcloud_login else 'false' }}
+port    = http,https
+backend = auto
+action  = {{ fail2ban_nextcloud_action | default(login_action) }}
+maxretry = {{ fail2ban_login_maxretry }}
+bantime  = {{ fail2ban_nextcloud_login_bantime | default(fail2ban_default_bantime) }}
+
+[nginx-phpmyadmin]
+enabled = {{ 'true' if fail2ban_nginx_phpmyadmin else 'false' }}
+port    = http,https
+backend = auto
+logpath = %(nginx_error_log)s
+action  = {{ fail2ban_phpmyadmin_action | default(login_action) }}
+bantime  = {{ fail2ban_nginx_phpmyadmin_bantime | default(fail2ban_default_bantime) }}

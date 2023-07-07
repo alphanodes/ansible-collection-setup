@@ -1,0 +1,25 @@
+---
+# LXC container do not have
+# @see: https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/System_Administrators_Guide/sect-Managing_Services_with_systemd-Unit_Files.html
+# @see: https://help.directadmin.com/item.php?id=614
+
+- name: Set fact redis_server_service_dir
+  ansible.builtin.set_fact:
+    redis_server_service_dir: /etc/systemd/system/redis.service.d
+
+- name: Make sure conf override dir exists
+  ansible.builtin.file:
+    path: '{{ redis_server_service_dir }}'
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Overwrite redis-server configuration
+  ansible.builtin.template:
+    src: systemd/redis.conf.j2
+    dest: '{{ redis_server_service_dir }}/ansible.conf'
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart redis

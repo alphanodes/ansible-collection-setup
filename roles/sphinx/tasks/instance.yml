@@ -1,0 +1,61 @@
+---
+
+- name: Set sphinx_dir
+  ansible.builtin.set_fact:
+    sphinx_dir: "{{ instance.dir | default(sphinx_base_dir + '/' + instance.name) }}"
+
+- name: Install sphinx - {{ instance.name }}
+  ansible.builtin.git:
+    repo: '{{ instance.repo }}'
+    dest: '{{ sphinx_dir }}'
+    version: '{{ instance.repo_version | default(omit) }}'
+    accept_hostkey: true
+  register: git_result
+
+- name: Build
+  when: (git_result is defined and git_result.changed) or sphinx_always_build
+  block:
+    - name: Run sphinx clean - {{ instance.name }}
+      ansible.builtin.command: make clean
+      args:
+        chdir: '{{ sphinx_dir }}/{{ item.name }}'
+      loop: '{{ instance.dirs | default([]) }}'
+
+    - name: Run sphinx build html - {{ instance.name }}
+      ansible.builtin.command: make html
+      args:
+        chdir: '{{ sphinx_dir }}/{{ item.name }}'
+      loop: '{{ instance.dirs | default([]) }}'
+
+    - name: Run sphinx build pdf - {{ instance.name }}
+      ansible.builtin.command: make latexpdf
+      args:
+        chdir: '{{ sphinx_dir }}/{{ item.name }}'
+      loop: '{{ instance.dirs | default([]) }}'
+
+    - name: Create pdf link for download - {{ instance.name }}
+      ansible.builtin.file:
+        src: '{{ sphinx_dir }}/{{ item.name }}/_build/latex/{{ item.ref_to | default(item.name) }}.pdf'
+        dest: '{{ sphinx_dir }}/{{ item.name }}/_build/html/{{ item.name }}.pdf'
+        state: link
+      loop: '{{ instance.dirs | default([]) }}'
+
+# restart required, because file can be not available before
+- name: Update htpassword protection file - {{ instance.name }}
+  community.general.htpasswd:
+    path: /etc/nginx/.htpasswd_sphinx_{{ instance.name }}
+    name: '{{ item.user }}'
+    password: '{{ item.password }}'
+    owner: root
+    group: '{{ nginx_group }}'
+    mode: 0640
+  loop: '{{ instance.vhost_users | default([]) }}'
+  when: instance.vhost_users is defined
+  notify: Restart nginx
+
+- name: Remove sphinx htpasswd file, if no base auth is in use - {{ instance.name }}
+  ansible.builtin.file:
+    path: /etc/nginx/.htpasswd_sphinx_{{ instance.name }}
+    state: absent
+  when: instance.vhost_users is undefined
+  notify: Restart nginx

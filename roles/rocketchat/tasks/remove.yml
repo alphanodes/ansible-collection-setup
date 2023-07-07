@@ -1,0 +1,35 @@
+---
+
+- name: Stop Rocket.Chat, if started
+  ansible.builtin.systemd:
+    name: rocketchat
+    state: stopped
+    enabled: false
+
+- name: Remove Rocket.Chat user
+  ansible.builtin.user:
+    name: '{{ rocketchat_service_user }}'
+    state: absent
+    remove: true
+
+- name: Remove Rocket.Chat group
+  ansible.builtin.group:
+    name: '{{ rocketchat_service_group }}'
+    state: absent
+
+- name: Remove configuration files
+  ansible.builtin.file:
+    name: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/nginx/sites-available/rocketchat.conf
+    - /etc/nginx/sites-enabled/rocketchat.conf
+    - /etc/systemd/system/rocketchat.service
+    - /etc/systemd/system/multi-user.target.wants/rocketchat.service
+  notify:
+    - Restart nginx
+
+- name: Remove rocketchat files
+  ansible.builtin.file:
+    path: '{{ rocketchat_dir }}'
+    state: absent

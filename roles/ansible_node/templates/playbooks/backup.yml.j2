@@ -1,0 +1,80 @@
+---
+# file: backup
+
+- hosts: {{ ansible_node_playbook_host }}
+  serial: 1
+
+  vars:
+    ansible_python_interpreter: {{ ansible_node_playbook_ansible_python_interpreter }}
+{% if backup_max_days is defined %}
+    backup_max_days: {{ backup_max_days }}
+{% endif %}
+{% if backup_max_weeks is defined %}
+    backup_max_weeks: {{ backup_max_weeks }}
+{% endif %}
+{% if backup_max_months is defined %}
+    backup_max_months: {{ backup_max_months }}
+{% endif %}
+{% if backup_with_postgresql is defined and backup_with_postgresql | bool %}
+    backup_with_postgresql: true
+{% endif %}
+{% if backup_with_mongodb is defined and backup_with_mongodb | bool %}
+    backup_with_mongodb: true
+{% endif %}
+{% if backup_with_mysql is defined and backup_with_mysql | bool %}
+    backup_with_mysql: true
+{% endif %}
+{% if backup_mysql_defaults_extra_file is defined %}
+    backup_mysql_defaults_extra_file: {{ backup_mysql_defaults_extra_file }}
+{% endif %}
+{% if backup_dir is defined %}
+    backup_dir: {{ backup_dir }}
+{% endif %}
+{% if backup_dir_mode is defined %}
+    backup_dir_mode: {{ backup_dir_mode }}
+{% endif %}
+{% if backup_dir_group is defined %}
+    backup_dir_group: {{ backup_dir_group }}
+{% endif %}
+{% if backup_sets is defined and backup_sets | length > 0 %}
+    backup_sets:
+      {{ backup_sets | to_nice_yaml(indent=2) | trim | indent(6) }}
+{% endif %}
+{% if backup_post_commands is defined and backup_post_commands | length > 0 %}
+    backup_post_commands:
+      {{ backup_post_commands | to_nice_yaml(indent=2) | trim | indent(6) }}
+{% endif %}
+{% if backup_with_borg is defined %}
+    backup_with_borg: {{ backup_with_borg | bool | lower }}
+{% endif %}
+{% if backup_borg_passphrase is defined %}
+    backup_borg_passphrase: {{ backup_borg_passphrase }}
+{% endif %}
+{% if backup_borg_repo is defined %}
+    backup_borg_repo: {{ backup_borg_repo }}
+{% endif %}
+{% if backup_borg_directories is defined and backup_borg_directories | length > 0 %}
+    backup_borg_directories:
+      {{ backup_borg_directories | to_nice_yaml(indent=2) | trim | indent(6) }}
+{% endif %}
+{% if backup_remote_transfer is defined %}
+    backup_remote_transfer: {{ backup_remote_transfer }}
+{% endif %}
+{% if backup_lftp_mirror_options is defined %}
+    backup_lftp_mirror_options: {{ backup_lftp_mirror_options }}
+{% endif %}
+{% if backup_remote_host is defined %}
+    backup_remote_host: {{ backup_remote_host }}
+{% endif %}
+{% if backup_remote_user is defined %}
+    backup_remote_user: {{ backup_remote_user }}
+{% endif %}
+{% if backup_remote_password is defined %}
+    backup_remote_password: {{ backup_remote_password }}
+{% endif %}
+{% if backup_remote_dir is defined %}
+    backup_remote_dir: {{ backup_remote_dir }}
+{% endif %}
+
+  roles:
+    - alphanodes.tasks.backup

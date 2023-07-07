@@ -1,0 +1,86 @@
+---
+
+- name: Check ssl_mysql_mode for correct setting
+  ansible.builtin.fail:
+    msg: "Invalid ssl_mysql_mode setting found: use server or client."
+  when: not (ssl_mysql_mode == 'server' or ssl_mysql_mode == 'client')
+
+- name: Check if ssl_mysql_ca is set
+  ansible.builtin.fail:
+    msg: "With mysql_with_ssl: true, you have to set ssl_mysql_ca."
+  when: ssl_mysql_ca == ''
+
+- name: Set facts
+  ansible.builtin.set_fact:
+    ca_cert: "ssl/mysql/{{ ssl_mysql_ca }}/ca.crt"
+    ca_key: "ssl/mysql/{{ ssl_mysql_ca }}/ca..key"
+    file_req: "{{ lookup('env', 'HOME') }}/tmp_ssl.req"
+    file_key: "{{ lookup('env', 'HOME') }}/tmp_ssl.key"
+    file_crt: "{{ lookup('env', 'HOME') }}/tmp_ssl.crt"
+    target_ssl_key: '/etc/ssl/private/mysql_{{ ssl_mysql_mode }}.key'
+    target_ssl_crt: '/etc/ssl/certs/mysql_{{ ssl_mysql_mode }}.crt'
+
+- name: Install CA certificate
+  ansible.builtin.copy:
+    src: '{{ ca_cert }}'
+    dest: '/etc/ssl/certs/mysql_ca.crt'
+    owner: root
+    group: ssl-cert
+    mode: 0644
+
+- name: Stats for target_key
+  ansible.builtin.stat:
+    path: '{{ target_ssl_key }}'
+  register: target_key_result
+
+- name: Stats for target_crt
+  ansible.builtin.stat:
+    path: '{{ target_ssl_crt }}'
+  register: target_crt_result
+
+- name: Generate keys
+  when: ssl_mysql_force_overwrite or not target_key_result.stat.exists or not target_crt_result.stat.exists
+  block:
+    - name: Generate ssl key
+      ansible.builtin.shell: >
+        openssl req -newkey rsa:2048
+        -days {{ ssl_mysql_server_cert_days }}
+        -subj '{{ ssl_mysql_server_cert_subj }}'
+        -nodes
+        -keyout {{ file_key }} > {{ file_req }}
+      delegate_to: localhost
+
+    - name: Generate ssl rsa key
+      ansible.builtin.command: openssl rsa -in {{ file_key }} -out {{ file_key }}
+      delegate_to: localhost
+
+    - name: Generate ssl certificate
+      ansible.builtin.shell: >
+        openssl x509 -req -in {{ file_req }}
+        -days {{ ssl_mysql_server_cert_days }}
+        -CA {{ ca_cert }}
+        -CAkey {{ ca_key }}
+        -set_serial 01 > {{ file_crt }}
+      delegate_to: localhost
+
+    - name: Install target key on server > {{ target_ssl_key }}
+      ansible.builtin.copy:
+        src: '{{ file_key }}'
+        dest: '{{ target_ssl_key }}'
+        owner: root
+        group: ssl-cert
+        mode: 0640
+
+    - name: Install target certifiate on server > {{ target_ssl_crt }}
+      ansible.builtin.copy:
+        src: '{{ file_crt }}'
+        dest: '{{ target_ssl_crt }}'
+        owner: root
+        group: ssl-cert
+        mode: 0644
+
+    - name: Restart mysql server with server mode
+      ansible.builtin.debug:
+        msg: "Restart check"
+      notify: Restart mysql
+      changed_when: ssl_mysql_mode == 'server'

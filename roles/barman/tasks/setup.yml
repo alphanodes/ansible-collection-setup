@@ -1,0 +1,94 @@
+---
+
+- name: Check if barman_postgresql_password is set
+  ansible.builtin.fail:
+    msg: 'barman_postgresql_password is not set, please provide it!'
+  when: barman_postgresql_password == ''
+
+- name: Include PostgreSQL client
+  ansible.builtin.include_role:
+    name: alphanodes.setup.postgresql_client
+
+- name: Be sure Barman are installed
+  ansible.builtin.apt:
+    name: '{{ barman_packages }}'
+    state: present
+
+- name: Update barman configuration
+  ansible.builtin.template:
+    src: 'barman.conf.j2'
+    dest: '/etc/barman.conf'
+    mode: 0644
+
+- name: Make sure .ssh directory exists
+  ansible.builtin.file:
+    path: '{{ barman_home }}/.ssh'
+    state: directory
+    owner: '{{ barman_user }}'
+    group: '{{ barman_group }}'
+    mode: 0700
+
+- name: Configure postgres ssh server access
+  ansible.posix.authorized_key:
+    user: barman
+    exclusive: true
+    key: |
+        {% for server in barman_db_servers %}
+        {{ lookup('file', 'barman_access/' + server.name + '_id_rsa.pub') }}
+        {% endfor %}
+    state: present
+  when: barman_db_servers | length
+
+- name: Install private ssh key for barman
+  ansible.builtin.copy:
+    src: '{{ barman_private_key }}'
+    dest: '{{ barman_home }}/.ssh/id_rsa'
+    owner: '{{ barman_user }}'
+    group: '{{ barman_group }}'
+    mode: 0600
+
+- name: Install .pgpass for barman
+  ansible.builtin.template:
+    src: pgpass.j2
+    dest: '{{ barman_home }}/.pgpass'
+    owner: '{{ barman_user }}'
+    group: '{{ barman_group }}'
+    mode: 0600
+  when: barman_db_servers | length
+
+- name: SSH server configurations
+  ansible.builtin.template:
+    src: server.conf.j2
+    dest: '/etc/barman.d/{{ item.name }}.conf'
+    mode: 0644
+  loop: '{{ barman_db_servers }}'
+
+- name: Connection check (ssh) to DB Server
+  tags:
+    - connection_check
+    - ssh_check
+  become_user: barman
+  become: true
+  ansible.builtin.command: '{{ item.ssh_command }} -C true'
+  loop: '{{ barman_db_servers }}'
+  changed_when: false
+
+- name: Connection check (postgresql) to DB Server
+  community.postgresql.postgresql_query:
+    db: '{{ item.conninfo_dbname | default(barman_default_conninfo_dbname) }}'
+    query: SELECT version()
+    login_host: '{{ item.conninfo_host }}'
+    login_user: '{{ item.conninfo_user | default(barman_postgresql_user) }}'
+    port: "{{ item.conninfo_port | default('5432') }}"
+  loop: '{{ barman_db_servers }}'
+  become_user: barman
+  become: true
+  tags:
+    - connection_check
+    - psql_check
+
+- name: Include backup tasks
+  ansible.builtin.include_tasks: backup_instance.yml
+  loop: "{{ barman_db_servers | default([]) }}"
+  loop_control:
+    loop_var: instance

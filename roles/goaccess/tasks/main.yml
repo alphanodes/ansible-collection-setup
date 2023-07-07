@@ -1,0 +1,12 @@
+---
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  tags:
+    - goaccess
+
+- name: Include data tasks
+  ansible.builtin.include_tasks: data.yml
+  when: goaccess_with_data_run
+  tags:
+    - goaccess

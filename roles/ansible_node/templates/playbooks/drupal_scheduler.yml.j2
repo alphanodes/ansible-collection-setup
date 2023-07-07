@@ -1,0 +1,18 @@
+---
+# file: run drupal scheduler light cron (with drush)
+
+- hosts: {{ ansible_node_playbook_host }}
+  serial: 1
+
+  vars:
+    ansible_python_interpreter: {{ ansible_node_playbook_ansible_python_interpreter }}
+    drupal_task_name: scheduler
+    drush_path: {{ drush_path }}
+{% if drush_user is defined %}
+    drush_user: {{ drush_user }}
+{% endif %}
+    drupal_instances:
+      {{ drupal_cron_instances | to_nice_yaml(indent=2) | trim | indent(6) }}
+
+  roles:
+    - alphanodes.tasks.drupal_task

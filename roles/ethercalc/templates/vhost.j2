@@ -1,0 +1,73 @@
+{{ ansible_managed | comment }}
+# nginx ethercalc configuration
+
+server {
+  listen 443 {{ nginx_ssl_listen_option }};
+{% if nginx_with_ipv6 %}
+  listen [::]:443 {{ nginx_ssl_listen_option }};
+{% endif %}
+  server_name {{ ethercalc_vhost_server }};
+  root {{ ethercalc_path }};
+  index index.html;
+
+  {% include 'templates/nginx_ssl.inc.j2' with context %}
+
+  location / {
+
+    proxy_pass http://{{ ethercalc_ip }}:{{ ethercalc_port }};
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    # WebSocket support
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
+  }
+
+  {% if ethercalc_vhost_users|length > 0 -%}
+  # access protection
+  auth_basic "Restricted access only";
+  auth_basic_user_file /etc/nginx/.htpasswd_codipad;
+  {% endif %}
+
+  {% include 'templates/nginx_error_handler_static.inc.j2' with context %}
+
+  {% if ethercalc_vhost_includes is defined -%}
+  {% for include in ethercalc_vhost_includes -%}
+  include {{ include }}.conf;
+  {% endfor %}
+  {% endif %}
+
+}
+
+server {
+  listen 80;
+{% if nginx_with_ipv6 %}
+  listen [::]:80;
+{% endif %}
+  server_name {{ ethercalc_vhost_server }};
+
+  return 301 https://{{ ethercalc_vhost_server }}$request_uri;
+}
+
+{% if ethercalc_redirects is defined -%}
+server {
+  server_name {{ ethercalc_redirects | join(' ') }};
+  listen 80;
+  listen 443 {{ nginx_ssl_listen_option }};
+{% if nginx_with_ipv6 %}
+  listen [::]:80;
+  listen [::]:443 {{ nginx_ssl_listen_option }};
+{% endif %}
+
+  {% include 'templates/nginx_ssl.inc.j2' with context %}
+
+  return 301 https://{{ ethercalc_vhost_server }}$request_uri;
+}
+{% endif %}
+
+{% if ethercalc_vhost_for_zabbix %}
+{% include 'templates/nginx_monitoring.inc.j2' with context %}
+{% endif %}

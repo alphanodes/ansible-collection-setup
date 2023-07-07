@@ -1,0 +1,12 @@
+---
+
+# see https://www.linuxbabe.com/linux-server/create-swap-file-linux-cloud-server
+# and https://wiki.debian.org/Swap
+swapfile_enable: true
+swapfile_path: /swapfile
+
+swapfile_size_mb: 4096
+swapfile_swappiness: 5
+
+swapfile_packages:
+  - file

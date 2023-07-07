@@ -1,0 +1,9 @@
+---
+- name: Ensure PostgreSQL databases are present.
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_db:
+    name: "{{ item.name }}"
+    owner: "{{ item.owner }}"
+    state: present
+  loop: "{{ postgresql_databases }}"

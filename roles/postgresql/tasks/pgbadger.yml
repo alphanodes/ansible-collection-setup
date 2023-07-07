@@ -1,0 +1,30 @@
+---
+- name: Be sure pgBadger packages are installed
+  ansible.builtin.apt:
+    name: '{{ postgresql_pgbadger_packages }}'
+    state: present
+
+- name: Be sure pgBadger output directory exists
+  ansible.builtin.file:
+    path: '{{ postgresql_pgbadger_output_dir }}'
+    state: directory
+    recurse: true
+    mode: 0755
+
+- name: Update pgBadger user access
+  community.general.htpasswd:
+    path: /etc/nginx/.htpasswd_pgbadger
+    name: '{{ postgresql_pgbadger_user }}'
+    password: '{{ postgresql_pgbadger_password }}'
+    owner: root
+    group: "{{ nginx_group | default('www-data') }}"
+    mode: 0640
+
+- name: Provide pgBadger nginx configuration
+  tags: nginx
+  ansible.builtin.template:
+    src: nginx/pgbadger.j2
+    dest: /etc/nginx/pgbadger.conf
+    mode: 0644
+    owner: root
+  notify: Reload nginx

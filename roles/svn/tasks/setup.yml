@@ -1,0 +1,87 @@
+---
+
+- name: Ensure SVN packages are installed
+  ansible.builtin.apt:
+    name: '{{ svn_server_packages }}'
+    state: present
+
+- name: SVN group exists
+  ansible.builtin.group:
+    name: '{{ svn_server_group }}'
+    state: present
+    system: true
+
+- name: SVN user exists
+  ansible.builtin.user:
+    name: '{{ svn_server_user }}'
+    group: '{{ svn_server_group }}'
+    groups: adm
+    home: '{{ svn_server_home }}'
+    password: '{{ svn_server_user_password | default(omit) }}'
+    update_password: on_create
+    shell: /bin/bash
+    state: present
+    system: true
+
+- name: Configure SVN ssh keys (if provided)
+  ansible.posix.authorized_key:
+    user: '{{ svn_server_user }}'
+    key: "{{ lookup('file', 'ssh/svn/' + item + '.pub') }}"
+    state: present
+  loop: '{{ svn_server_ssh_keys | default([]) }}'
+
+- name: Ensure directory for repositories exists
+  ansible.builtin.file:
+    path: '{{ svn_server_repositories }}'
+    mode: 0755
+    owner: '{{ svn_server_user }}'
+    group: '{{ svn_server_group }}'
+    state: directory
+
+- name: Ensure log directory exists
+  ansible.builtin.file:
+    path: '{{ svn_server_log_dir }}'
+    mode: 0755
+    owner: '{{ svn_server_user }}'
+    group: adm
+    state: directory
+
+- name: Install logrotate configuration
+  ansible.builtin.template:
+    src: logrotate.d/svnserve.j2
+    dest: /etc/logrotate.d/svnserve
+    mode: 0644
+
+- name: Install environment configuration
+  ansible.builtin.template:
+    src: default/svnserve.j2
+    dest: /etc/default/svnserve
+    mode: 0644
+
+- name: Get stat of svnserve.service
+  ansible.builtin.stat:
+    path: '{{ svn_server_systemd_service_file }}'
+  register: sym
+
+- name: Delete symlink, if exists
+  ansible.builtin.file:
+    path: '{{ svn_server_systemd_service_file }}'
+    state: absent
+  when: sym.stat.islnk is defined and sym.stat.islnk
+
+- name: Setup systemd unit configuration
+  ansible.builtin.template:
+    src: svnserve.service.j2
+    dest: '{{ svn_server_systemd_service_file }}'
+    mode: 0644
+  notify:
+    - Reload systemd daemon
+
+- name: Flush all handlers at this point
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure SVN is started
+  ansible.builtin.systemd:
+    name: svnserve
+    state: started
+    enabled: true

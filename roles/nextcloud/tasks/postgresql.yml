@@ -1,0 +1,22 @@
+---
+- name: Include PostgreSQL role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.postgresql
+
+- name: Create nextcloud postgresql database user
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_user:
+    name: '{{ nextcloud_db_user }}'
+    password: '{{ nextcloud_db_password }}'
+    role_attr_flags: '{{ nextcloud_db_role_flags }}'
+    state: present
+  no_log: true
+
+- name: Be sure nextcloud postgresql databases exists
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_db:
+    name: '{{ nextcloud_db_name }}'
+    owner: '{{ nextcloud_db_user }}'
+    state: present

@@ -1,0 +1,9 @@
+---
+- name: Include vars
+  ansible.builtin.import_tasks: include-vars.yml
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  tags:
+    - php-fpm
+    - php

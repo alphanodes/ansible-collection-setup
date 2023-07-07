@@ -1,0 +1,176 @@
+---
+
+- name: Stats for matomo config file
+  ansible.builtin.stat:
+    path: '{{ matomo_config_file }}'
+  register: matomo_config_file_exists
+
+- name: Install matomo php extensions
+  ansible.builtin.apt:
+    name: '{{ matomo_packages }}'
+    state: present
+  notify: restart php
+
+- name: Cleanup obsolete files
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop: '{{ matomo_cleanup_files }}'
+
+- name: Update php geoip configuration
+  ansible.builtin.template:
+    src: mods-available/geoip.j2
+    dest: '{{ matomo_php_mods_available }}/geoip.ini'
+    mode: 0644
+    owner: root
+    group: root
+  notify: restart php
+
+- name: Check if matomo already exists
+  ansible.builtin.stat:
+    path: '{{ matomo_dir }}'
+  register: matomo_exists
+
+- name: Set matomo_archive_filename
+  ansible.builtin.set_fact:
+    matomo_archive_filename: '{{ software_dir }}/matomo-{{ matomo_version }}.tar.gz'
+
+- name: Stats for matomo archice file
+  ansible.builtin.stat:
+    path: '{{ matomo_archive_filename }}'
+  register: matomo_archive_file_exists
+
+- name: Download matomo archive
+  ansible.builtin.get_url:
+    url: '{{ matomo_source_url }}/matomo-{{ matomo_version }}.tar.gz'
+    dest: '{{ software_dir }}/matomo-{{ matomo_version }}.tar.gz'
+    mode: 0644
+    owner: root
+    group: root
+  when: not matomo_archive_file_exists.stat.exists
+
+- name: Include install tasks
+  ansible.builtin.include_tasks: setup_install.yml
+  when: not matomo_exists.stat.exists
+
+- name: Include upgrade tasks
+  ansible.builtin.include_tasks: setup_upgrade.yml
+  when: matomo_exists.stat.exists and not matomo_archive_file_exists.stat.exists
+
+# required for matomo_console jobs
+- name: Make sure ansible working directory for matomo_user is existing
+  when: matomo_user != 'root'
+  block:
+    # Update should never be updated here because user already exists,
+    # but we have to specify it because otherwise ansible user reset password to empty string
+    - name: Get user information for non-root - {{ matomo_user }}
+      ansible.builtin.user:
+        name: '{{ matomo_user }}'
+        password: "*"
+        update_password: on_create
+        state: present
+      register: user_infos
+
+    - name: Create ansible working directory in {{ user_infos.home }}
+      ansible.builtin.file:
+        path: '{{ user_infos.home }}/.ansible'
+        owner: '{{ matomo_user }}'
+        group: "{{ matomo_group }}"
+        mode: 0755
+        state: directory
+
+# required for mysql mysql_secure_file_priv
+- name: Secure matomo directory
+  ansible.builtin.file:
+    path: '{{ matomo_dir }}'
+    owner: '{{ matomo_user }}'
+    group: "{{ 'mysql' if matomo_with_mysql else matomo_group }}"
+    mode: 0750
+
+- name: Install robots.txt
+  ansible.builtin.copy:
+    src: robots.txt
+    dest: '{{ matomo_dir }}/'
+    owner: '{{ matomo_user }}'
+    group: '{{ matomo_user }}'
+    mode: 0644
+  when: matomo_with_robots_txt
+
+- name: Matomo with nginx
+  when: matomo_with_nginx
+  block:
+    - name: Include set vhost tasks
+      ansible.builtin.include_tasks: setup_vhost.yml
+      tags: nginx
+      when: matomo_vhost
+
+    - name: Include subdirectory tasks
+      ansible.builtin.include_tasks: setup_subdirectory.yml
+      tags: nginx
+      when: not matomo_vhost
+
+- name: Set force_ssl = 1
+  ansible.builtin.lineinfile:
+    path: '{{ matomo_config_file }}'
+    insertbefore: '^salt ='
+    regexp: 'force_ssl ='
+    line: 'force_ssl = 1'
+  when: matomo_config_file_exists.stat.exists
+
+- name: Show update notification to superusers only
+  ansible.builtin.lineinfile:
+    path: '{{ matomo_config_file }}'
+    insertafter: "^[database]"
+    regexp: 'show_update_notification_to_superusers_only ='
+    line: 'show_update_notification_to_superusers_only = 1'
+
+- name: Set multi_server_environment
+  ansible.builtin.lineinfile:
+    path: '{{ matomo_config_file }}'
+    insertbefore: '^salt ='
+    regexp: 'multi_server_environment ='
+    line: 'multi_server_environment = 1'
+  when: matomo_multi_server_environment and matomo_config_file_exists.stat.exists
+
+- name: Remove multi_server_environment, if not used
+  ansible.builtin.lineinfile:
+    path: '{{ matomo_config_file }}'
+    state: absent
+    regexp: 'multi_server_environment ='
+  when: not matomo_multi_server_environment and matomo_config_file_exists.stat.exists
+
+- name: Apply database settings
+  ansible.builtin.lineinfile:
+    path: '{{ matomo_config_file }}'
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    insertafter: "^[database]"
+    firstmatch: true
+    state: present
+  loop:
+    - regexp: '^host ='
+      line: 'host = "{{ matomo_db_host }}"'
+    - regexp: '^username ='
+      line: 'username = "{{ matomo_db_user }}"'
+    - regexp: '^dbname ='
+      line: 'dbname = "{{ matomo_db_name }}"'
+    - regexp: '^password ='
+      line: 'password = "{{ matomo_db_password }}"'
+    # TODO: uc... regex does not work for table_prefix, @see https://github.com/ansible/ansible/issues/38655
+    # - regexp: '^tables_'
+    #  line: 'tables_prefix = "{{ matomo_db_tables_prefix }}"'
+  when: matomo_config_file_exists.stat.exists
+
+- name: Set permission for config.ini.php
+  ansible.builtin.file:
+    path: '{{ matomo_config_file }}'
+    owner: '{{ matomo_user }}'
+    group: '{{ matomo_user }}'
+    mode: '{{ matomo_config_file_mode }}'
+  when: matomo_config_file_exists.stat.exists
+
+- name: Include plugin tasks
+  ansible.builtin.include_tasks: setup_plugin.yml
+  loop_control:
+    loop_var: active_plugin
+  loop: '{{ matomo_plugins }}'

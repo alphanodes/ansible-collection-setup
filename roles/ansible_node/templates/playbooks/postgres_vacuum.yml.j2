@@ -1,0 +1,21 @@
+---
+# file: run PostgreSQL vacuum
+
+- hosts: {{ ansible_node_playbook_host }}
+  serial: 1
+
+  vars:
+    ansible_python_interpreter: {{ ansible_node_playbook_ansible_python_interpreter }}
+    system_task_name: postgres_vacuum
+    system_task_postgres_quiet: {{ system_task_postgres_quiet | bool | lower if system_task_postgres_quiet is defined else true }}
+{% if system_task_postgres_vacuum_options is defined %}
+    system_task_postgres_vacuum_options: {{ system_task_postgres_vacuum_options }}
+{% endif %}
+
+{% if system_task_postgres_database_stats is defined and system_task_postgres_database_stats | length > 0 %}
+    system_task_postgres_database_stats:
+      {{ system_task_postgres_database_stats | to_nice_yaml(indent=2) | trim | indent(6) }}
+{% endif %}
+
+  roles:
+    - alphanodes.tasks.system_task

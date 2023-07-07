@@ -1,0 +1,86 @@
+---
+
+- name: Include pip role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.pip
+
+- name: Be sure pip and ansible not installed with debian packages
+  ansible.builtin.apt:
+    name: '{{ ansible_node_disallowed_packages }}'
+    state: absent
+
+- name: Be sure ansible and pip requirements are installed
+  ansible.builtin.apt:
+    name: '{{ ansible_node_packages }}'
+    state: present
+
+- name: Remove ansible (required to switch from 2.9)
+  ansible.builtin.pip:
+    name: '{{ item }}'
+    state: absent
+  when: ansible_node_remove_before_install
+  loop:
+    - ansible
+    - ansible-core
+
+- name: Remove old files (used by remove_before_install
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop: '{{ ansible_node_old_files }}'
+
+- name: Install ansible
+  ansible.builtin.pip:
+    name: ansible
+    version: "{{ ansible_node_ansible_version if ansible_node_ansible_version != 'latest' }}"
+    state: "{{ ansible_node_ansible_version if ansible_node_ansible_version == 'latest' else 'present' }}"
+
+- name: Install additional pip modules
+  ansible.builtin.pip:
+    name: '{{ ansible_node_pip_packages }}'
+    state: present
+
+- name: Check if ansible configuration directory exist
+  ansible.builtin.file:
+    path: '{{ ansible_node_etc_dir }}'
+    state: directory
+    mode: 0755
+
+- name: Check if ansible playbooks directory exist
+  ansible.builtin.file:
+    path: '{{ ansible_node_playbook_dir }}'
+    state: directory
+    mode: 0755
+
+- name: Ansible configuration
+  ansible.builtin.template:
+    src: ansible.j2
+    dest: /etc/ansible/ansible.cfg
+    mode: 0644
+
+- name: Install ansible roles
+  ansible.builtin.command: ansible-galaxy role {{ item.action | default('install') }} {{ item.name }}
+  loop: '{{ ansible_node_roles | default([]) }}'
+  when: ansible_node_identifier != ''
+
+- name: Install ansible collections
+  ansible.builtin.command: ansible-galaxy collection {{ item.action | default('install') }} {{ item.name }}
+  loop: '{{ ansible_node_collections | default([]) }}'
+  when: ansible_node_identifier != ''
+
+- name: Remove obsolete ansible roles
+  ansible.builtin.file:
+    path: "{{ ansible_node_etc_dir }}/roles"
+    state: absent
+
+- name: Remove obsolete ansible cronjobs
+  ansible.builtin.file:
+    path: /etc/cron.d/{{ item }}
+    state: absent
+  loop:
+    - system-watch
+    - redmine_reminder
+    - redmine_maintenance
+    - postgres_vacuum
+    - backup
+    - ansible_jobs

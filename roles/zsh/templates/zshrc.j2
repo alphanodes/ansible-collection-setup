@@ -1,0 +1,110 @@
+{{ ansible_managed | comment }}
+# see https://github.com/romkatv/powerlevel10k/blob/master/config/p10k-rainbow.zsh
+export CLICOLOR=1
+{% if zsh_with_powerlevel10k %}
+function prompt_virtualization() {
+  p10k segment -f 6 -t '{{ zsh_virtualization_type }}'
+}
+
+function prompt_kvm() {
+  p10k segment -b 1 -f 3 -t 'kvm'
+}
+
+function prompt_customhost() {
+  p10k segment -f 3 -t '{{ prompt_hostname | default('unknown') }}'
+}
+
+function prompt_customathost() {
+  p10k segment -f 3 -t '@ {{ prompt_hostname | default('unknown') }}'
+}
+
+ZSH_THEME="powerlevel10k/powerlevel10k"
+# Load Nerd Fonts with Powerlevel10k theme for Zsh
+POWERLEVEL9K_MODE='nerdfont-complete'
+source /usr/share/powerlevel10k/powerlevel10k.zsh-theme
+
+# Customise the Powerlevel9k prompts
+POWERLEVEL9K_PROMPT_ON_NEWLINE=true
+{% if zsh_with_ruby %}
+POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(rvm user {{ 'customathost' if prompt_hostname is defined else 'host' }} dir_writable dir vcs)
+# Don't show ruby- at the front.
+typeset -g POWERLEVEL9K_RVM_FOREGROUND=0
+typeset -g POWERLEVEL9K_RVM_BACKGROUND=250
+typeset -g POWERLEVEL9K_RVM_SHOW_PREFIX=true
+{% else %}
+POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(os_icon {{ 'kvm' if zsh_virtualization_type == 'kvm' else 'virtualization' }} {{ 'customhost' if prompt_hostname is defined else 'host' }} dir_writable dir vcs)
+{% endif %}
+POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status command_execution_time background_jobs)
+#POWERLEVEL9K_MULTILINE_LAST_PROMPT_PREFIX="%(?:%{$fg_bold[green]%}➜ :%{$fg_bold[red]%}➜ )"
+#POWERLEVEL9K_MULTILINE_FIRST_PROMPT_PREFIX=""
+#POWERLEVEL9K_USER_ICON="\uF415"
+POWERLEVEL9K_ROOT_ICON="\uF09C"
+#POWERLEVEL9K_SUDO_ICON=$'\uF09C'
+{% raw %}
+POWERLEVEL9K_TIME_FORMAT="%D{%H:%M}"
+{% endraw %}
+#POWERLEVEL9K_VCS_GIT_ICON='\uF408 '
+#POWERLEVEL9K_VCS_GIT_GITHUB_ICON='\uF408 '
+
+# no surrounding whitespace
+typeset -g POWERLEVEL9K_{LEFT,RIGHT}_{LEFT,RIGHT}_WHITESPACE=
+# separate segments with a space
+typeset -g POWERLEVEL9K_{LEFT,RIGHT}_SUBSEGMENT_SEPARATOR=' '
+
+POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
+{% endif %}
+
+setopt histignorealldups sharehistory
+
+HISTSIZE={{ zsh_histsize }}
+SAVEHIST={{ zsh_histsize }}
+HISTFILE=~/.zsh_history
+
+# Use modern completion system
+autoload -Uz compinit
+compinit
+
+zstyle ':completion:*' auto-description 'specify: %d'
+zstyle ':completion:*' completer _expand _complete _correct _approximate
+zstyle ':completion:*' format 'Completing %d'
+zstyle ':completion:*' group-name ''
+zstyle ':completion:*' menu select=2
+eval "$(dircolors -b)"
+zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
+zstyle ':completion:*' list-colors ''
+zstyle ':completion:*' list-prompt %SAt %p: Hit TAB for more, or the character to insert%s
+zstyle ':completion:*' matcher-list '' 'm:{a-z}={A-Z}' 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=* l:|=*'
+zstyle ':completion:*' menu select=long
+zstyle ':completion:*' select-prompt %SScrolling active: current selection at %p%s
+zstyle ':completion:*' use-compctl false
+zstyle ':completion:*' verbose true
+
+zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#)*=0=01;31'
+zstyle ':completion:*:kill:*' command 'ps -u $USER -o pid,%cpu,tty,cputime,cmd'
+
+eval `dircolors /etc/DIR_COLORS`
+
+{% if zsh_user == 'root' %}
+alias u="apt update && apt upgrade"
+{% endif %}
+
+{% if zsh_with_rvm %}
+# Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
+export PATH="$PATH:$HOME/.rvm/bin"
+{% endif %}
+{% for export_info in zsh_local_exports %}
+export {{ export_info.name }}={{ export_info.value }}
+{% endfor %}
+
+# activate ls after cd
+source {{ auto_ls_plugin_file }}
+
+# activate ls after cd - alternative
+# autoload -U add-zsh-hook
+# add-zsh-hook -Uz chpwd (){ ls; }
+
+# activate autosuggestions
+source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+
+# activate autosuggestions
+source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh

@@ -1,0 +1,24 @@
+<?php
+// {{ ansible_managed }}
+
+{% for instance in drupal_instances %}
+$aliases['{{ instance.name }}'] = array(
+  'uri' => '{{ instance.server_name }}',
+  {% if instance.dir is defined -%}
+  'root' => '{{ instance.dir }}{{ instance.vhost_dir | default(drupal_vhost_dir) }}',
+  {% endif %}
+  {% if instance.db_url is defined -%}
+  'db-url' => '{{ instance.db_url }}',
+  {% endif %}
+  {% if instance.remote_host is defined -%}
+  'remote-host' => '{{ instance.remote_host }}',
+  {% endif %}
+  {% if instance.remote_user is defined -%}
+  'remote-user' => '{{ instance.remote_user }}',
+  {% endif -%}
+  {% if instance.path_aliases is defined -%}
+  'path-aliases' => {{ instance.path_aliases }},
+  {% endif -%}
+
+);
+{% endfor %}

@@ -1,0 +1,9 @@
+---
+
+nextcloud_packages:
+  - php-imagick
+  - php-redis
+  - php8.2-intl
+  - php8.2-mbstring
+  - php8.2-zip
+  - libmagickcore-6.q16-3-extra

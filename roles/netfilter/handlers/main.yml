@@ -1,0 +1,15 @@
+---
+# handlers file for iptables
+
+- name: Flush iptables
+  ansible.builtin.command: /etc/init.d/netfilter-persistent flush
+
+- name: Restart iptables-persistent
+  ansible.builtin.systemd:
+    name: netfilter-persistent
+    state: restarted
+
+- name: Reloaded nftables
+  ansible.builtin.systemd:
+    name: nftables
+    state: reloaded

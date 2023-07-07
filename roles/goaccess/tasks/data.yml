@@ -1,0 +1,16 @@
+---
+
+# see https://github.com/allinurl/goaccess
+- name: Generate data
+  ansible.builtin.shell: goaccess {{ goaccess_nginx_log }} {{ goaccess_options }} > {{ goaccess_output_dir }}/{{ goaccess_index_file }}
+  register: result
+
+- name: Script output
+  ansible.builtin.debug:
+    var: result.stdout_lines
+  when: result is defined and result.stdout_lines | length
+
+- name: Script errors
+  ansible.builtin.debug:
+    var: result.stderr_lines
+  when: result is defined and result.stderr_lines | length

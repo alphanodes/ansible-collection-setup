@@ -1,0 +1,282 @@
+---
+# install documentation
+# https://docs.gitlab.com/ee/install/installation.html
+
+gitlab_update: true
+
+gitlab_user: git
+gitlab_group: '{{ gitlab_user }}'
+gitlab_home: /home/{{ gitlab_user }}
+
+gitlab_root_email: your@email.com
+gitlab_root_password: init_password_you_should_change
+
+gitlab_with_zsh: true
+
+gitlab_omniauth_enabled: false
+gitlab_omniauth_providers: []
+
+gitlab_repository_version: '16-1-stable'
+gitlab_ce_version: '{{ gitlab_repository_version }}'
+gitlab_ee_version: '{{ gitlab_repository_version }}-ee'
+gitlab_path: "{{ gitlab_home }}/gitlab"
+
+gitlab_type: ce
+gitlab_ce_repository: https://gitlab.com/gitlab-org/gitlab-foss.git
+gitlab_ee_repository: https://gitlab.com/gitlab-org/gitlab.git
+
+gitlab_socket_path: '{{ gitlab_path }}/tmp/sockets'
+gitlab_pid_path: '{{ gitlab_path }}/tmp/pids'
+
+gitlab_auth_socket: '{{ gitlab_socket_path }}/gitlab.socket'
+gitlab_repositories_path: "{{ gitlab_home }}/repositories"
+
+gitlab_workhorse_path: "{{ gitlab_home }}/gitlab-workhorse"
+gitlab_workhorse_socket: '{{ gitlab_socket_path }}/gitlab-workhorse.socket'
+
+gitlab_sidekiq_pidfile: '{{ gitlab_pid_path }}/sidekiq.pid'
+# PID file is not used with systemd
+gitlab_sidekiq_logfile: '{{ gitlab_path }}/log/sidekiq.log'
+gitlab_sidekiq_threads: 5
+
+gitlab_redis_url: 'unix:/run/redis/redis.sock'
+gitlab_authbackend_port: 8080
+
+gitlab_git_prefix: /usr/local
+gitlab_git_bin: '{{ gitlab_git_prefix }}/bin/git'
+gitlab_rails_env: production
+
+gitlab_node_env: production
+# see https://stackoverflow.com/questions/48387040/how-do-i-determine-the-correct-max-old-space-size-for-node-js/48392705#48392705
+# official doc: https://nodejs.org/api/cli.html#cli_max_old_space_size_size_in_megabytes
+gitlab_node_options: '--max-old-space-size=6144'
+gitlab_node_prefix: "{{ npm_config_prefix | default('/usr/local/lib/npm') }}"
+
+gitlab_nodejs_version: '18.x'
+gitlab_nodejs_install_npm_user: git
+gitlab_nodejs_npm_global_packages:
+  - name: yarn
+
+gitlab_log_level: warn
+
+gitlab_puma_workers: 3
+gitlab_puma_threads_min: 1
+gitlab_puma_threads_max: 16
+
+gitlab_rvm_ruby: true
+gitlab_rvm_ruby_ppa: false
+gitlab_rvm_ruby_ppa_key_url: https://keyserver.ubuntu.com/pks/lookup?op=get&fingerprint=on&search=0x8094BB14F4E3FBBE
+gitlab_rvm_ruby_path: '{{ gitlab_home }}/.rvm/wrappers/default'
+# This Version is fixed in .ruby_version
+# gitaly ruby should be rerun (on version change, manually is required - see gitlab_gitaly.yml)
+# ruby 3.2 or newer uses openssl 3, which comes with ubuntu 22.04
+gitlab_ruby_version: 3.1.4
+
+gitlab_mail_room_enabled: true
+
+gitlab_gitaly_enabled: true
+gitlab_gitaly_repository: https://gitlab.com/gitlab-org/gitaly.git
+gitlab_gitaly_path: '{{ gitlab_home }}/gitaly'
+gitlab_gitaly_bin_path: '{{ gitlab_gitaly_path }}/_build/bin'
+gitlab_gitaly_force_rebuild: false
+# # One of, in order: debug, info, warn, errror, fatal, panic
+# # Defaults to "info"
+gitlab_gitaly_logging_level: warn
+
+# used by gitaly and gitlab shell
+gitlab_http_unix_url: "http+unix://{{ gitlab_workhorse_socket | urlencode | replace('/', '%2F') }}"
+
+gitlab_shell_repository: https://gitlab.com/gitlab-org/gitlab-shell.git
+gitlab_shell_path: '{{ gitlab_home }}/gitlab-shell'
+
+# socket is used as default.
+gitlab_shell_gitlab_url: '{{ gitlab_http_unix_url }}'
+# is required, if gitlab_shell_gitlab_url is used with https instead of socket
+gitlab_shell_ca_file: ''
+# default is INFO
+gitlab_shell_log_level: WARN
+
+gitlab_vhost_server: '{{ hostname | default(ansible_host) }}'
+gitlab_vhost_aliases: ''
+gitlab_vhost_port: 443
+gitlab_vhost_ssl: true
+gitlab_vhost_for_zabbix: false
+
+gitlab_vhost_letsencrypt: false
+gitlab_vhost_ssl_cert: '{{ ssl_certs[0].name }}'
+gitlab_vhost_letsencrypt_cert: '{{ letsencrypt_certs[0] | default(omit) }}'
+gitlab_vhost_letsencrypt_key: '{{ letsencrypt_keys[0] | default(omit) }}'
+
+gitlab_email_display_name: Gitlab
+gitlab_email_from: '{{ gitlab_user }}@{{ gitlab_vhost_server }}'
+gitlab_email_reply_to: 'noreply@{{ gitlab_vhost_server }}'
+gitlab_default_theme: 2
+
+gitlab_default_projects_features:
+  issues: false
+  merge_requests: true
+  wiki: false
+  snippets: false
+  builds: true
+  container_registry: false
+
+gitlab_trusted_proxies: []
+
+gitlab_redmine_url: 'https://pm.alphanodes.com'
+
+google_analytics_id: ''
+gitlab_matomo_url: ''
+gitlab_matomo_site_id: '0'
+
+gitlab_mattermost_enabled: false
+gitlab_mattermost_host: 'https://mattermost.example.com'
+
+# https://dev.gnupg.org/T5561
+# https://gitlab.com/gitlab-org/gitlab-development-kit/-/blob/main/doc/troubleshooting/ruby.md
+# problems with gpgme:
+# gem install gpgme -- --use-system-libraries
+gitlab_packages:
+  - build-essential
+  - checkinstall
+  - cmake
+  - curl
+  - gettext
+  - graphicsmagick
+  - libcurl4-openssl-dev
+  - libexpat1-dev
+  - libffi-dev
+  - libgdbm-dev
+  - libgpgme-dev
+  - libicu-dev
+  - libimage-exiftool-perl
+  - libkrb5-dev
+  - libncurses-dev
+  - libpcre2-dev
+  - libpq-dev
+  - libre2-dev
+  - libreadline-dev
+  - libsqlite3-dev
+  - libssl-dev
+  - libxml2-dev
+  - libxslt-dev
+  - libyaml-dev
+  - libz-dev
+  - logrotate
+  - pkg-config
+  - python3-docutils
+  - zlib1g-dev
+
+# see https://docs.gitlab.com/ee/install/installation.html#3-go
+# NOTE: version should be tests in gitlab pipeline
+# SEE https://gitlab.com/gitlab-org/gitlab/-/blob/master/.gitlab/ci/workhorse.gitlab-ci.yml#L30
+gitlab_go_version: '1.19.10'
+
+gitlab_nginx_auth_realm: 'Code access is restricted'
+gitlab_nginx_client_max_body_size: '0'
+
+gitlab_db_name: gitlabhq_production
+gitlab_db_user: git
+gitlab_db_password: '{{ [ansible_machine_id, ansible_hostname, "gitlab_ci"] | join | hash("md5") }}'
+gitlab_db_role_flags: CREATEDB
+gitlab_db_host: /run/postgresql
+
+# do uninstall gitlab with all data, set it to yes
+gitlab_remove: false
+gitlab_remove_packages: false
+
+gitlab_ldap_enabled: false
+gitlab_ldap_prevent_ldap_sign_in: false
+gitlab_ldap_server:
+  label: 'LDAP'
+
+gitlab_artifacts_enabled: true
+gitlab_artifacts_storage_path: shared/artifacts
+gitlab_artifacts_object_store: false
+gitlab_artifacts_object_store_bucket: gl-artifacts
+
+gitlab_external_diffs_enabled: false
+gitlab_external_diffs_object_store: false
+gitlab_external_diffs_object_store_bucket: gl-diffs
+
+gitlab_lfs_enabled: true
+gitlab_lfs_storage_path: shared/lfs-objects
+gitlab_lfs_object_store: false
+gitlab_lfs_object_store_bucket: gl-lfs
+
+gitlab_uploads_storage_path: public/
+gitlab_uploads_object_store: false
+gitlab_uploads_object_store_bucket: gl-uploads
+
+gitlab_packages_enabled: false
+gitlab_packages_storage_path: shared/packages
+gitlab_packages_object_store: false
+gitlab_packages_object_store_bucket: gl-packages
+
+gitlab_ci_secure_files_enabled: true
+gitlab_ci_secure_files_storage_path: shared/ci_secure_files
+gitlab_ci_secure_files_object_store: false
+gitlab_ci_secure_files_object_store_bucket: gl-ci-secure-files
+
+gitlab_dependency_proxy_object_store: false
+gitlab_dependency_proxy_object_store_bucket: gl-proxy
+
+gitlab_terraform_object_store: false
+gitlab_terraform_object_store_bucket: gl-terraform
+
+gitlab_pages_enabled: false
+gitlab_pages_storage_path: shared/pages
+gitlab_pages_repository: https://gitlab.com/gitlab-org/gitlab-pages.git
+gitlab_pages_path: "{{ gitlab_home }}/gitlab-pages"
+gitlab_pages_secret_path: "{{ gitlab_path }}/.gitlab_pages_secret"
+gitlab_pages_domain: ''
+gitlab_pages_domain_ssl_cert: '{{ ssl_certs[1].name | default(ssl_certs[0].name) }}'
+# this is the internal port, not the nginx port!
+gitlab_pages_port: 8090
+gitlab_pages_port_public: 443
+gitlab_pages_ssl: true
+gitlab_pages_log_verbose: false
+gitlab_pages_access_control: false
+
+# see # see https://docs.gitlab.com/ee/administration/pages/source.html#access-control
+gitlab_pages_auth_client_id: ''
+# gitlab_pages_auth_client_secret: <OAuth code generated by GitLab>
+# gitlab_pages_auth_redirect_uri: 'http://projects.example.io/auth'
+# gitlab_pages_auth_secret: <40 random hex characters>
+# gitlab_pages_auth_server: <URL of the GitLab instance>
+
+gitlab_pages_artifacts_server: true
+gitlab_pages_object_store: false
+gitlab_pages_object_store_bucket: gl-pages
+
+# globally enable object_store
+# ? https://docs.gitlab.com/ee/administration/object_storage.html#consolidated-object-storage-configuration
+gitlab_object_store_consolidated: true
+
+gitlab_object_store_connection:
+  provider: AWS
+
+# Passthrough all downloads via GitLab instead of using Redirects to Object Storage.
+# ? https://docs.gitlab.com/ee/administration/object_storage.html#proxy-download
+gitlab_object_store_proxy_download: true
+
+gitlab_systemd_start_limit_interval_sec: 600
+gitlab_systemd_start_limit_burst: 5
+gitlab_systemd_restart_sec: 60
+
+gitlab_stop_puma_for_update: false
+
+# Relative paths are relative to Rails.root (default: tmp/backups/)
+gitlab_backup_path: /srv/backups/gitlab
+gitlab_backup_path_mode: '0750'
+# every day at 2:30 (see systemd timer)
+gitlab_backup_on_calendar: '02:30'
+# Permissions for the resulting backup.tar file (default: 0600)
+gitlab_backup_archive_permissions: 0640
+# default: 0 (forever) (in seconds) - 7 days
+gitlab_backup_keep_time: 604800
+# default: nil, it means that all schemas will be backed up
+gitlab_backup_pg_schema: public
+
+gitlab_monitoring_ip_whitelist:
+  - 127.0.0.0/8
+  - '{{ lxc_internal_subnet }}'

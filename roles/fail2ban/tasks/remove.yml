@@ -1,0 +1,16 @@
+---
+
+- name: Remove fail2ban package
+  ansible.builtin.apt:
+    name: fail2ban
+    purge: true
+    state: absent
+
+- name: Remove log and config files
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/default/fail2ban
+    - /etc/fail2ban
+    - /etc/sudoers.d/fail2ban

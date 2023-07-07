@@ -1,0 +1,15 @@
+---
+
+- name: Set real_redmine_puma_workers
+  ansible.builtin.set_fact:
+    real_redmine_puma_workers: "{{ ansible_processor_nproc if redmine_puma_workers == '' else redmine_puma_workers }}"
+
+- name: Set real_redmine_db_pool (cluster mode)
+  ansible.builtin.set_fact:
+    real_redmine_db_pool: "{{ real_redmine_puma_workers | int * redmine_puma_max_threads | int if redmine_db_pool == '' else redmine_db_pool }}"
+  when: redmine_puma_workers != 0
+
+- name: Set real_redmine_db_pool (single mode)
+  ansible.builtin.set_fact:
+    real_redmine_db_pool: "{{ redmine_puma_max_threads | int }}"
+  when: redmine_puma_workers == 0

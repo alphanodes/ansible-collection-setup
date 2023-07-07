@@ -1,0 +1,11 @@
+---
+
+- name: Include timer tasks
+  ansible.builtin.include_tasks: timer.yml
+  tags:
+    - systemd
+    - timer
+  loop: "{{ timers | dict2items }}"
+  loop_control:
+    loop_var: timer_raw
+  when: timers is defined

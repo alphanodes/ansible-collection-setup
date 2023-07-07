@@ -1,0 +1,21 @@
+---
+rocketchat_packages:
+  - graphicsmagick
+  - make
+  - python3-pymongo
+
+rocketchat_mongodb_uri: "\
+  {% set temp_out =
+      rocketchat_mongodb_server ~ ':' ~ rocketchat_mongodb_port -%}
+  {% if rocketchat_mongodb_user and rocketchat_mongodb_password -%}
+      {% set temp_out =
+          rocketchat_mongodb_user
+              ~ ':' ~ rocketchat_mongodb_password
+              ~ '@' ~ temp_out -%}
+  {% endif -%}
+  {% set temp_out =
+      temp_out ~ '/' ~ rocketchat_mongodb_database -%}
+  {% if (rocketchat_mongodb_use_tls | bool) == true -%}
+      {% set temp_out = temp_out ~ '?ssl=true' -%}
+  {% endif -%}
+  {{ temp_out }}"

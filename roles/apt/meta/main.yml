@@ -1,0 +1,20 @@
+---
+dependencies: []
+
+galaxy_info:
+  description: Setup apt
+  author: alexandermeindl
+  company: AlphaNodes GmbH
+  license: Apache License 2.0
+  min_ansible_version: '2.14'
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+    - name: Debian
+      versions:
+        - buster
+        - bullseye
+  galaxy_tags:
+    - apt

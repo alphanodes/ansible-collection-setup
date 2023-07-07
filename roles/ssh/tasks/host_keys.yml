@@ -1,0 +1,48 @@
+---
+
+- name: Recreate host keys - collect old host keys
+  ansible.builtin.shell: ls /etc/ssh/ssh_host_*
+  register: ssh_host_keys
+  ignore_errors: true
+
+- name: Recreate host keys - delete old keys
+  ansible.builtin.file:
+    name: '{{ item }}'
+    state: absent
+  loop: '{{ ssh_host_keys.stdout_lines | default([]) }}'
+
+- name: Recreate host keys - create new keys 1/3
+  ansible.builtin.command: dpkg-reconfigure openssh-server
+
+- name: Recreate host keys - create new keys 2/3
+  ansible.builtin.file:
+    name: /etc/ssh/ssh_host_rsa_key
+    state: absent
+
+- name: Recreate host keys - create new keys 3/3
+  ansible.builtin.command: ssh-keygen -t rsa -b 4096 -N '' -f /etc/ssh/ssh_host_rsa_key
+  notify: Restart ssh
+
+- name: Remove old host key from known_hosts file
+  ansible.builtin.known_hosts:
+    name: '{{ item }}'
+    state: absent
+  loop:
+    - '{{ inventory_hostname }}'
+    - "`dig +short {{ inventory_hostname }}`"
+  delegate_to: localhost
+
+# ip address with custom ssh port is not supported at the moment
+- name: Collect new host entries for known_hosts file
+  ansible.builtin.shell: "ssh-keyscan -t ed25519,rsa {{ inventory_hostname }},`dig +short {{ inventory_hostname }}`"
+  register: ssh_known_host_results
+  ignore_errors: true
+  delegate_to: localhost
+
+- name: Add new host key to known_hosts file
+  ansible.builtin.known_hosts:
+    name: '{{ inventory_hostname }}'
+    key: '{{ ssh_known_host_results.stdout }}'
+    state: present
+  delegate_to: localhost
+  when: ssh_known_host_results.stdout != ""

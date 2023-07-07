@@ -1,0 +1,75 @@
+---
+
+- name: Stop gitlab services, if started
+  ansible.builtin.systemd:
+    name: '{{ item }}'
+    state: stopped
+    enabled: false
+  loop: '{{ gitlab_systemd_services }}'
+  ignore_errors: true
+
+- name: Remove postgresql database
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_db:
+    name: '{{ gitlab_db_name }}'
+    state: absent
+
+- name: Remove postgresql user
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_user:
+    name: '{{ gitlab_db_user }}'
+    state: absent
+
+- name: Remove systemd services
+  ansible.builtin.file:
+    path: '/etc/systemd/system/{{ item }}'
+    state: absent
+  loop: '{{ gitlab_systemd_services }}'
+  notify:
+    - Reload systemd daemon
+
+- name: Flush all handlers at this point
+  ansible.builtin.meta: flush_handlers
+
+- name: Remove gitlab configuration
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - '{{ gitlab_log_dir }}'
+    - '{{ gitlab_environment_file }}'
+    - /etc/logrotate.d/gitlab
+    - /etc/nginx/sites-enabled/gitlab.conf
+    - /etc/nginx/sites-available/gitlab.conf
+    - /var/log/nginx/gitlab_access.log
+    - /var/log/nginx/gitlab_error.log
+
+- name: Remove Go language
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - /usr/local/bin/go
+    - /usr/local/bin/godoc
+    - /usr/local/bin/gofmt
+    - /usr/local/go
+
+- name: Remove gitlab user
+  ansible.builtin.user:
+    name: '{{ gitlab_user }}'
+    state: absent
+    remove: true
+
+- name: Remove gitlab group
+  ansible.builtin.group:
+    name: '{{ gitlab_group }}'
+    state: absent
+
+- name: Ensure gitlab packages are removed
+  ansible.builtin.apt:
+    name: '{{ gitlab_packages }}'
+    purge: true
+    state: absent
+  when: gitlab_remove_packages

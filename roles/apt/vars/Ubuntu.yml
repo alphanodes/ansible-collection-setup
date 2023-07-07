@@ -1,0 +1,6 @@
+---
+__unattended_origins_patterns:
+  - 'origin=Ubuntu,archive=${distro_codename}-security,label=Ubuntu'
+  - 'origin=Ubuntu,archive=${distro_codename}-updates'
+  - 'origin=Zabbix,archive=${distro_codename},label=zabbix'
+  - 'origin=apt.postgresql.org,archive=${distro_codename}-pgdg,label=PostgreSQL for Debian/Ubuntu repository'

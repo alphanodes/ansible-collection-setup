@@ -1,0 +1,21 @@
+---
+# do not remove postgresql_pgbadger_packages (because it is used by other programs)
+- name: Remove pgBadger package
+  ansible.builtin.apt:
+    name: pgbadger
+    state: absent
+
+- name: Remove pgBadger output directory
+  ansible.builtin.file:
+    path: '{{ postgresql_pgbadger_output_dir }}'
+    state: absent
+
+- name: Remove pgBadger user access file
+  ansible.builtin.file:
+    path: /etc/nginx/.htpasswd_pgbadger
+    state: absent
+
+- name: Remove pgBadger nginx configuration
+  ansible.builtin.file:
+    path: /etc/nginx/pgbadger.conf
+    state: absent

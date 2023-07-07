@@ -1,0 +1,17 @@
+[Unit]
+Description=ethercalc (real-time collaborative spreadsheet editing)
+After=syslog.target network.target
+
+[Service]
+Type=simple
+User={{ ethercalc_user }}
+Group={{ ethercalc_group }}
+Environment=NODE_ENV={{ ethercalc_node_env }}
+{% if ethercalc_redis_db is defined %}
+Environment="REDIS_DB={{ ethercalc_redis_db }}"
+{% endif %}
+ExecStart=node{{ ' --max-old-space-size=' + ethercalc_node_max_old_space_size|string if ethercalc_node_max_old_space_size is defined else '' }} {{ ethercalc_path }}/bin/ethercalc {{ ethercalc_cors|ternary('--cors', '') }} --host {{ ethercalc_ip }} --port {{ ethercalc_port }} {% if ethercalc_redis_enabled and ethercalc_spread_seconds_to_expire is defined %}--expire {{ ethercalc_spread_seconds_to_expire }}{% endif %}
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

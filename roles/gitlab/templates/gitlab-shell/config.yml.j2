@@ -1,0 +1,83 @@
+#
+# If you change this file in a Merge Request, please also create
+# a Merge Request on https://gitlab.com/gitlab-org/omnibus-gitlab/merge_requests
+#
+
+# GitLab user. git by default
+user: git
+
+# URL to GitLab instance, used for API calls. Default: http://localhost:8080.
+# For relative URL support read http://doc.gitlab.com/ce/install/relative_url.html
+# You only have to change the default if you have configured Unicorn
+# to listen on a custom port, or if you have configured Unicorn to
+# only listen on a Unix domain socket. For Unix domain sockets use
+# "http+unix://<urlquoted-path-to-socket>", e.g.
+# "http+unix://%2Fpath%2Fto%2Fsocket"
+gitlab_url: "{{ gitlab_shell_gitlab_url }}"
+
+# When a http+unix:// is used in gitlab_url, this is the relative URL root to GitLab.
+# Not used if gitlab_url is http:// or https://.
+# gitlab_relative_url_root: "/"
+
+# See installation.md#using-https for additional HTTPS configuration details.
+http_settings:
+#  read_timeout: 300
+#  user: someone
+#  password: somepass
+#  ca_file: /etc/ssl/cert.pem
+#  ca_path: /etc/pki/tls/certs
+{% if gitlab_shell_ca_file != '' %}
+  ca_file: {{ gitlab_shell_ca_file }}
+{% endif %}
+  self_signed_cert: false
+
+# File used as authorized_keys for gitlab user
+auth_file: "{{ gitlab_home }}/.ssh/authorized_keys"
+
+# SSL certificate dir where custom certificates can be placed
+# https://golang.org/pkg/crypto/x509/
+# ssl_cert_dir: /opt/gitlab/embedded/ssl/certs/
+
+# File that contains the secret key for verifying access to GitLab.
+# Default is .gitlab_shell_secret in the gitlab-shell directory.
+# secret_file: "/home/git/gitlab-shell/.gitlab_shell_secret"
+#
+# The secret field supersedes the secret_file, and if set that
+# file will not be read.
+# secret: "supersecret"
+
+# Log file.
+# Default is gitlab-shell.log in the root directory.
+# log_file: "/home/git/gitlab-shell/gitlab-shell.log"
+
+# Log level. INFO by default
+log_level: {{ gitlab_shell_log_level }}
+
+# Log format. 'json' by default, can be changed to 'text' if needed
+# log_format: json
+
+# Audit usernames.
+# Set to true to see real usernames in the logs instead of key ids, which is easier to follow, but
+# incurs an extra API call on every gitlab-shell command.
+audit_usernames: false
+
+# Distributed Tracing. GitLab-Shell has distributed tracing instrumentation.
+# For more details, visit https://docs.gitlab.com/ee/development/distributed_tracing.html
+# gitlab_tracing: opentracing://driver
+
+# This section configures the built-in SSH server. Ignored when running on OpenSSH.
+sshd:
+  # Address which the SSH server listens on. Defaults to [::]:22.
+  listen: "[::]:22"
+  # Set to true if gitlab-sshd is being fronted by a load balancer that implements
+  # the PROXY protocol.
+  proxy_protocol: false
+  # Address which the server listens on HTTP for monitoring/health checks. Defaults to localhost:9122.
+  web_listen: "localhost:9122"
+  # Maximum number of concurrent sessions allowed on a single SSH connection. Defaults to 10.
+  concurrent_sessions_limit: 10
+  # SSH host key files.
+#  host_key_files:
+#    - /run/secrets/ssh-hostkeys/ssh_host_rsa_key
+#    - /run/secrets/ssh-hostkeys/ssh_host_ecdsa_key
+#    - /run/secrets/ssh-hostkeys/ssh_host_ed25519_key

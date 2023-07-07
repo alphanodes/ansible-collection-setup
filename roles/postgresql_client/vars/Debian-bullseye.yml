@@ -1,0 +1,5 @@
+---
+postgresql_client_check_php_package: php7.4-common
+postgresql_client_php_package: php7.4-pgsql
+postgresql_client_packages_prerequire:
+  - gnupg

@@ -1,0 +1,86 @@
+{{ ansible_managed | comment }}
+# nginx matomo vhost configuration
+
+server {
+  listen 443 {{ nginx_ssl_listen_option }}{{ ' default_server' if matomo_vhost_default else '' }};
+{% if nginx_with_ipv6 %}
+  listen [::]:443 {{ nginx_ssl_listen_option }}{{ ' default_server' if matomo_vhost_default else '' }};
+{% endif %}
+{% if not matomo_vhost_ssl_only %}
+  listen 80;
+{% if nginx_with_ipv6 %}
+  listen [::]:80;
+{% endif %}
+{% endif %}
+
+  server_name {{ matomo_vhost_server }};
+  root {{ matomo_dir }};
+  index index.php;
+
+  {% include 'templates/nginx_ssl.inc.j2' with context %}
+
+  location  /. { ## Disable .htaccess and other hidden files
+    deny all;
+  }
+
+  add_header Referrer-Policy origin always;
+  add_header X-Content-Type-Options "nosniff" always;
+  add_header X-XSS-Protection "1; mode=block" always;
+
+  location ~ ^/(index|matomo|piwik|js/index|plugins/HeatmapSessionRecording/configs)\.php$ {
+    {% include 'templates/nginx_fpm.inc.j2' with context %}
+  }
+
+  ## deny access to all other .php files
+  location ~* ^.+\.php$ {
+      deny all;
+      return 403;
+  }
+
+  ## serve all other files normally
+  location / {
+      try_files $uri $uri/ =404;
+  }
+
+  {% if matomo_vhost_includes is defined -%}
+  {% for include in matomo_vhost_includes -%}
+  include {{ include }}.conf;
+  {% endfor %}
+  {% endif %}
+
+  {% if not matomo_with_access_log -%}
+
+  access_log off;
+
+  {% endif -%}
+
+  location ~ \.(jpg|jpeg|gif|png|ico)$ {
+    access_log off;
+    expires 33d;
+  }
+
+  location ~ ^/(config|tmp|core|lang|libs|vendor|node_modules) {
+      deny all;
+      return 403;
+  }
+
+  ## properly display textfiles in root directory
+  location ~/(.*\.md|LEGALNOTICE|LICENSE) {
+      default_type text/plain;
+  }
+}
+
+{% if matomo_vhost_ssl_only %}
+server {
+  listen 80{{ ' default_server' if matomo_vhost_default else '' }};
+{% if nginx_with_ipv6 %}
+  listen [::]:80;
+{% endif %}
+  server_name {{ matomo_vhost_server }};
+  return 301 https://{{ matomo_vhost_server }}$request_uri;
+}
+{% endif %}
+
+{% if matomo_vhost_for_zabbix %}
+{% include 'templates/nginx_monitoring.inc.j2' with context %}
+{% endif %}

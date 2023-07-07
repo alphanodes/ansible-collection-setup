@@ -1,0 +1,50 @@
+---
+
+- name: Install gitlab shell
+  ansible.builtin.command: bash -lc "bundle exec rake gitlab:shell:install"
+  args:
+    chdir: '{{ gitlab_path }}'
+  environment:
+    RAILS_ENV: '{{ gitlab_rails_env }}'
+    REDIS_URL: '{{ gitlab_redis_url }}'
+    SKIP_STORAGE_VALIDATION: 'true'
+  become_user: "{{ gitlab_user }}"
+  become: true
+  when: (gitlab_setup_run.query_result[0].id | int) == 0
+
+- name: Configure gitlab shell (update)
+  when: (gitlab_setup_run.query_result[0].id | int) != 0
+  become_user: "{{ gitlab_user }}"
+  become: true
+  environment:
+    RAILS_ENV: '{{ gitlab_rails_env }}'
+    REDIS_URL: '{{ gitlab_redis_url }}'
+    SKIP_STORAGE_VALIDATION: 'true'
+  block:
+    - name: Get required shell version
+      ansible.builtin.command: cat GITLAB_SHELL_VERSION
+      args:
+        chdir: '{{ gitlab_path }}'
+      changed_when: false
+      register: shell_version
+
+    - name: Ensure gitlab shell version v{{ pages_version.stdout }}
+      ansible.builtin.git:
+        repo: "{{ gitlab_shell_repository }}"
+        dest: "{{ gitlab_shell_path }}"
+        version: "v{{ shell_version.stdout }}"
+        force: true
+
+    - name: Update Gitlab shell
+      ansible.builtin.command: bash -lc "make build"
+      args:
+        chdir: '{{ gitlab_shell_path }}'
+
+# see https://gitlab.com/gitlab-org/gitlab-shell
+- name: Setup config.yml for gitshell
+  ansible.builtin.template:
+    src: gitlab-shell/config.yml.j2
+    dest: '{{ gitlab_shell_path }}/config.yml'
+    owner: '{{ gitlab_user }}'
+    group: '{{ gitlab_group }}'
+    mode: 0644

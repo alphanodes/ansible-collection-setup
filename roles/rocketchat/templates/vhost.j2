@@ -1,0 +1,84 @@
+{{ ansible_managed | comment }}
+# nginx rocketchat configuration
+
+upstream rocket_chat {
+  server {{ rocketchat_internal_host }}:{{ rocketchat_internal_port }};
+}
+
+server {
+  listen 443 {{ nginx_ssl_listen_option }};
+{% if nginx_with_ipv6 %}
+  listen [::]:443 {{ nginx_ssl_listen_option }};
+{% endif %}
+  server_name {{ rocketchat_vhost_server }};
+  root {{ rocketchat_application_path }};
+
+  {% include 'templates/nginx_ssl.inc.j2' with context %}
+
+  # Referrer Policy
+  add_header Referrer-Policy 'no-referrer';
+
+
+  add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload";
+  add_header X-Frame-Options DENY;
+  add_header X-Content-Type-Options nosniff;
+
+  error_page 497  https://$host:$server_port$request_uri;
+  location / {
+      proxy_pass http://rocket_chat;
+      proxy_http_version 1.1;
+      proxy_set_header Host $host:$server_port;
+      proxy_set_header Referer $http_referer;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto https;
+      proxy_set_header X-Forwarded-Ssl on;
+      proxy_set_header X-Nginx-Proxy true;
+
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+
+      proxy_redirect off;
+
+      proxy_send_timeout 86400;
+      proxy_read_timeout 86400;
+  }
+
+  {% include 'templates/nginx_error_handler_static.inc.j2' with context %}
+
+  {% if rocketchat_vhost_includes is defined -%}
+  {% for include in rocketchat_vhost_includes -%}
+  include {{ include }}.conf;
+  {% endfor %}
+  {% endif %}
+
+}
+
+server {
+  listen 80;
+{% if nginx_with_ipv6 %}
+  listen [::]:80;
+{% endif %}
+  server_name {{ rocketchat_vhost_server }};
+  return 301 https://{{ rocketchat_vhost_server }}$request_uri;
+}
+
+{% if rocketchat_redirects is defined -%}
+server {
+  server_name {{ rocketchat_redirects | join(' ') }};
+  listen 80;
+  listen 443 {{ nginx_ssl_listen_option }};
+{% if nginx_with_ipv6 %}
+  listen [::]:80;
+  listen [::]:443 {{ nginx_ssl_listen_option }};
+{% endif %}
+
+  {% include 'templates/nginx_ssl.inc.j2' with context %}
+
+  return 301 https://{{ rocketchat_vhost_server }}$request_uri;
+}
+{% endif %}
+
+{% if rocketchat_vhost_for_zabbix %}
+{% include 'templates/nginx_monitoring.inc.j2' with context %}
+{% endif %}

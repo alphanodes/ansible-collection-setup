@@ -1,0 +1,27 @@
+---
+
+- name: Be sure sphinx required packages are installed
+  ansible.builtin.apt:
+    name: '{{ sphinx_packages }}'
+    state: present
+
+- name: Be sure pip and sphinx not installed with debian packages
+  ansible.builtin.apt:
+    name: '{{ sphinx_unwanted_packages }}'
+    state: absent
+
+- name: Include pip role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.pip
+
+- name: Install sphinx
+  ansible.builtin.pip:
+    name: sphinx
+    version: "{{ sphinx_version | default(omit) }}"
+    state: "{{ present if sphinx_version is defined else 'latest' }}"
+
+- name: Install additional sphinx modules with pip
+  ansible.builtin.pip:
+    name: '{{ item }}'
+    state: latest
+  loop: '{{ sphinx_pip_packages | default([]) }}'

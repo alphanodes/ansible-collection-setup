@@ -1,0 +1,3 @@
+{{ ansible_managed | comment }}
+Cmnd_Alias MON_DRUSH = {{ composer_path }} -V, {{ drush_path }} *
+zabbix ALL = NOPASSWD:SETENV: MON_DRUSH

@@ -1,0 +1,34 @@
+---
+
+- name: Run disable-transparent-hugepages
+  ansible.builtin.systemd:
+    name: disable-transparent-hugepages
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Restart mongodb
+  ansible.builtin.systemd:
+    name: "{{ mongodb_daemon_name }}"
+    state: restarted
+  when: mongodb_manage_service | bool
+
+- name: Restart mongodb-mms-monitoring-agent
+  ansible.builtin.systemd:
+    name: mongodb-mms-monitoring-agent
+    state: restarted
+  when: mongodb_manage_service | bool
+
+- name: Wait when mongodb is started
+  ansible.builtin.wait_for:
+    host: "{{ item }}"
+    port: "{{ mongodb_net_port }}"
+    timeout: 120
+  with_items: "{{ mongodb_net_bindip.split(',') | map('replace', '0.0.0.0', '127.0.0.1') | list }}"
+
+- name: Wait when mongodb is started on localhost
+  ansible.builtin.wait_for:
+    host: "127.0.0.1"
+    port: "{{ mongodb_net_port }}"
+    delay: 5
+    timeout: 120

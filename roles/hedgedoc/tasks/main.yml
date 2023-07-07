@@ -1,0 +1,17 @@
+---
+
+- name: Include PostgreSQL tasks
+  ansible.builtin.include_tasks: postgresql.yml
+  tags: hedgedoc
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  tags: hedgedoc
+
+- name: Include custom tasks
+  ansible.builtin.include_tasks: custom.yml
+  tags: hedgedoc
+
+- name: Include nginx tasks
+  ansible.builtin.include_tasks: nginx.yml
+  tags: hedgedoc

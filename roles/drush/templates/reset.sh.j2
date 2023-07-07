@@ -1,0 +1,42 @@
+#!/bin/bash
+{{ ansible_managed | comment }}
+
+echo "Sync database..."
+mysqladmin -f drop {{ drush_reset_script_db }}
+mysqladmin create {{ drush_reset_script_db }}
+
+drush --yes sql-sync {{ drush_reset_script_source}} {{ drush_reset_script_target }}
+if [[ $? -ne 0 ]] ; then
+  exit 1
+fi
+
+{% if drush_reset_script_db_queries %}
+{% for query in drush_reset_script_db_queries %}
+mysql {{ drush_reset_script_db }} -e "{{ query }}"
+if [[ $? -ne 0 ]] ; then
+  exit 2
+fi
+{% endfor %}
+{% endif %}
+
+{% if drush_reset_script_files != '' and drush_reset_script_files != '/' %}
+echo "Sync files..."
+rm -r {{ drush_reset_script_files }}
+drush --yes rsync {{ drush_reset_script_source}}:%files/ {{ drush_reset_script_target }}:%files
+if [[ $? -ne 0 ]] ; then
+  exit 3
+fi
+
+{% if drush_reset_script_file_owner != '' %}
+echo "Set files owner..."
+chown -R {{ drush_reset_script_file_owner }} {{ drush_reset_script_files }}
+{% endif %}
+
+{% if drush_reset_script_file_group != '' %}
+echo "Set files group..."
+chgrp -R {{ drush_reset_script_file_group }} {{ drush_reset_script_files }}
+{% endif %}
+
+{% endif %}
+
+echo "Successfully reseted."

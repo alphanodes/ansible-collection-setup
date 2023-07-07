@@ -1,0 +1,27 @@
+---
+
+- name: Include MySQL role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.mysql
+
+- name: Be sure matomo database exists
+  community.mysql.mysql_db:
+    name: '{{ matomo_db_name }}'
+    state: present
+
+- name: Create matomo mysql user
+  community.mysql.mysql_user:
+    name: '{{ matomo_db_user }}'
+    password: '{{ matomo_db_password }}'
+    host: '{{ matomo_db_host }}'
+    priv: '{{ matomo_db_name }}.*:ALL/*.*:FILE'
+    state: present
+
+- name: Allow mysql to write to {{ matomo_dir }}
+  ansible.builtin.lineinfile:
+    dest: '/etc/apparmor.d/usr.sbin.mysqld'
+    regexp: '{{ matomo_dir }}/\*'
+    insertbefore: 'Allow systemd notify messages'
+    line: '  {{ matomo_dir }}/* rw,'
+  when: ansible_distribution == 'Ubuntu'
+  notify: Restart apparmor

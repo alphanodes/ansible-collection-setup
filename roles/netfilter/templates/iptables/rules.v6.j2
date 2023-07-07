@@ -1,0 +1,14 @@
+{{ ansible_managed | comment }}
+{% if netfilter_prerouting | length > 0 %}
+{% include 'rules_nat.v6.j2' with context %}
+
+{% endif %}
+*filter
+:INPUT {{ netfilter_filter_input_policy }} [0:0]
+:FORWARD {{ netfilter_filter_forward_policy }} [0:0]
+:OUTPUT {{ netfilter_filter_output_policy }} [0:0]
+{% include 'rules_filter_input.v6.j2' with context %}
+{% include 'rules_filter_forward.v6.j2' with context %}
+{% include 'rules_filter_output.v6.j2' with context %}
+COMMIT
+# end

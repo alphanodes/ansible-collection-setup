@@ -1,0 +1,140 @@
+{{ ansible_managed | comment }}
+#
+# Postfix master process configuration file.  For details on the format
+# of the file, see the master(5) manual page (command: "man 5 master" or
+# on-line: http://www.postfix.org/master.5.html).
+#
+# Do not forget to execute "postfix reload" after editing this file.
+#
+# ==========================================================================
+# service type  private unpriv  chroot  wakeup  maxproc command + args
+#               (yes)   (yes)   (no)    (never) (100)
+# ==========================================================================
+{% if postfix_with_postscreen %}
+# Postscreen on Port 25/tcp, filters zombies (spam machines) on first level with lowest costs.
+smtp      inet  n       -       y       -       1       postscreen
+# Postscreen passes sane clients to the real SMTP daemon here.
+smtpd      pass  -       -       y       -       -       smtpd
+# Reject non-FQDN HELOs on Port 25 (after passing postscreen process)
+  -o smtpd_helo_restrictions=permit_mynetworks,reject_non_fqdn_helo_hostname
+  -o smtpd_proxy_filter=127.0.0.1:10024
+  -o smtpd_client_connection_count_limit=10
+  -o smtpd_proxy_options=speed_adjust
+{% else %}
+smtp      inet  n       -       y       -       -       smtpd
+{% endif %}
+{% if postfix_with_smtps %}
+smtps     inet  n       -       y       -       -       smtpd
+  -o syslog_name=postfix/smtps
+  -o smtpd_tls_wrappermode=yes
+  -o smtpd_tls_security_level=encrypt
+  -o smtpd_sasl_auth_enable=yes
+  -o smtpd_sasl_security_options=noanonymous
+  -o smtpd_client_restrictions=$mua_client_restrictions
+  -o smtpd_helo_restrictions=$mua_helo_restrictions
+  -o smtpd_sender_restrictions=$mua_sender_restrictions
+  -o smtpd_relay_restrictions=permit_sasl_authenticated,reject
+  -o milter_macro_daemon_name=ORIGINATING
+  -o smtpd_helo_required=no
+  -o smtpd_helo_restrictions=
+{% if postfix_header_cleanup %}
+  -o cleanup_service_name=submission-header-cleanup
+{% endif %}
+{% endif %}
+{% if postfix_with_vimbadmin %}
+dnsblog   unix  -       -       y       -       0       dnsblog
+# Handles TLS connections for postscreen to make them readable
+tlsproxy  unix  -       -       y       -       0       tlsproxy
+# For mail submitting users. Authenticated clients and known networks only.
+submission inet n       -       y       -       -       smtpd
+  -o syslog_name=postfix/submission
+  -o smtpd_client_restrictions=permit_sasl_authenticated,reject
+  -o smtpd_client_restrictions=$mua_client_restrictions
+  -o smtpd_helo_restrictions=$mua_helo_restrictions
+  -o smtpd_sender_restrictions=$mua_sender_restrictions
+  -o smtpd_proxy_filter=127.0.0.1:10025
+  -o smtpd_client_connection_count_limit=10
+  -o smtpd_proxy_options=speed_adjust
+{% if postfix_header_cleanup %}
+  -o cleanup_service_name=submission-header-cleanup
+{% endif %}
+{% endif %}
+#628       inet  n       -       y       -       -       qmqpd
+pickup    unix  n       -       y       60      1       pickup
+cleanup   unix  n       -       y       -       0       cleanup
+qmgr      unix  n       -       n       300     1       qmgr
+#qmgr     unix  n       -       n       300     1       oqmgr
+tlsmgr    unix  -       -       y       1000?   1       tlsmgr
+rewrite   unix  -       -       y       -       -       trivial-rewrite
+bounce    unix  -       -       y       -       0       bounce
+defer     unix  -       -       y       -       0       bounce
+trace     unix  -       -       y       -       0       bounce
+verify    unix  -       -       y       -       1       verify
+flush     unix  n       -       y       1000?   0       flush
+proxymap  unix  -       -       n       -       -       proxymap
+proxywrite unix -       -       n       -       1       proxymap
+smtp      unix  -       -       y       -       -       smtp
+relay     unix  -       -       y       -       -       smtp
+{% if not postfix_with_vimbadmin %}
+  -o syslog_name=postfix/$service_name
+{% endif %}
+showq     unix  n       -       y       -       -       showq
+error     unix  -       -       y       -       -       error
+retry     unix  -       -       y       -       -       error
+discard   unix  -       -       y       -       -       discard
+local     unix  -       n       n       -       -       local
+virtual   unix  -       n       n       -       -       virtual
+lmtp      unix  -       -       y       -       -       lmtp
+anvil     unix  -       -       y       -       1       anvil
+scache    unix  -       -       y       -       1       scache
+postlog   unix-dgram n  -       n       -       1       postlogd
+#
+# maildrop. See the Postfix MAILDROP_README file for details.
+# Also specify in main.cf: maildrop_destination_recipient_limit=1
+#
+maildrop  unix  -       n       n       -       -       pipe
+  flags=DRhu user=vmail argv=/usr/bin/maildrop -d ${recipient}
+#
+# See the Postfix UUCP_README file for configuration details.
+#
+uucp      unix  -       n       n       -       -       pipe
+  flags=Fqhu user=uucp argv=uux -r -n -z -a$sender - $nexthop!rmail ($recipient)
+#
+# Other external delivery methods.
+#
+mailman   unix  -       n       n       -       -       pipe
+  flags=FR user=list argv=/usr/lib/mailman/bin/postfix-to-mailman.py
+  ${nexthop} ${user}
+
+{% if postfix_with_vimbadmin %}
+# LMTP with STARTTLS support, needs newer Dovecot versions
+lmtps     unix  -       -       y       -       -       lmtp
+  -o lmtp_use_tls=yes
+  -o lmtp_tls_loglevel=1
+  -o lmtp_tls_CAfile=/etc/ssl/certs/ca-certificates.crt
+  -o lmtp_enforce_tls=yes
+  -o lmtp_tls_mandatory_protocols=!SSLv2,!SSLv3
+  -o lmtp_tls_protocols=!SSLv2,!SSLv3
+  -o lmtp_tls_mandatory_ciphers=high
+  -o lmtp_tls_ciphers=high
+  -o lmtp_send_xforward_command=yes
+  -o lmtp_tls_security_level=encrypt
+  -o lmtp_tls_note_starttls_offer=yes
+
+# Amavis reinjection, maximal 5 smtpd Prozesse, muss den Amavis Prozessen entsprechen!
+127.0.0.1:10035 inet    n       -       y       -       5       smtpd
+  -o smtpd_authorized_xforward_hosts=127.0.0.0/8
+  -o smtpd_client_restrictions=
+  -o smtpd_helo_restrictions=
+  -o smtpd_sender_restrictions=
+  -o smtpd_recipient_restrictions=permit_mynetworks,reject
+  -o smtpd_data_restrictions=
+  -o mynetworks=127.0.0.0/8
+  -o receive_override_options=no_unknown_recipient_checks
+{% endif %}
+
+{% if postfix_header_cleanup %}
+# Cleanup-Service to remove MUA header
+submission-header-cleanup unix n - n - 0 cleanup
+  -o header_checks=regexp:/etc/postfix/submission_header_cleanup
+{% endif %}

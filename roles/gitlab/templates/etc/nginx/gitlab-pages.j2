@@ -1,0 +1,78 @@
+{{ ansible_managed | comment }}
+## GitLab
+##
+
+## Redirects all HTTP traffic to the HTTPS host
+server {
+  ## Either remove "default_server" from the listen line below,
+  ## or delete the /etc/nginx/sites-enabled/default file. This will cause gitlab
+  ## to be served if you visit any address that your server responds to, eg.
+  ## the ip address of the server (http://x.x.x.x/)
+  listen 0.0.0.0:80;
+  listen [::]:80 ipv6only=on;
+
+  ## Replace this with something like pages.gitlab.com
+  server_name ~^.*\.{{ gitlab_pages_domain | replace('.', '\.') }}$;
+
+  return 301  https://$http_host$request_uri;
+
+  access_log  /var/log/nginx/gitlab_pages_access.log;
+  error_log   /var/log/nginx/gitlab_pages_access.log;
+}
+
+## Pages serving host
+server {
+  listen 0.0.0.0:{{ gitlab_pages_port_public }} ssl http2;
+  listen [::]:{{ gitlab_pages_port_public }} ipv6only=on ssl http2;
+
+  ## Replace this with something like pages.gitlab.com
+  server_name ~^.*\.{{ gitlab_pages_domain | replace('.', '\.') }}$;
+
+  ## Strong SSL Security
+  ## https://raymii.org/s/tutorials/Strong_SSL_Security_On_nginx.html & https://cipherli.st/
+  ssl_certificate /etc/ssl/certs/{{ gitlab_pages_domain_ssl_cert }}.crt;
+  ssl_certificate_key /etc/ssl/private/{{ gitlab_pages_domain_ssl_cert }}.key;
+
+  ssl_session_timeout 1d;
+  ssl_session_cache shared:SSL:10m;
+  ssl_session_tickets off;
+
+  # These settings are in line with the modern settings from https://ssl-config.mozilla.org/
+  # and are supported by all still-supported browsers since 2019. If you have specific needs
+  # for older settings, please consult the intermediate settings there.
+  ssl_protocols TLSv1.3;
+  ssl_prefer_server_ciphers off;
+
+  ## See app/controllers/application_controller.rb for headers set
+
+  ## [Optional] If your certficate has OCSP, enable OCSP stapling to reduce the overhead and latency of running SSL.
+  ## Replace with your ssl_trusted_certificate. For more info see:
+  ## - https://medium.com/devops-programming/4445f4862461
+  ## - https://www.ruby-forum.com/topic/4419319
+  ## - https://www.digitalocean.com/community/tutorials/how-to-configure-ocsp-stapling-on-apache-and-nginx
+  # ssl_stapling on;
+  # ssl_stapling_verify on;
+  # ssl_trusted_certificate /etc/nginx/ssl/stapling.trusted.crt;
+
+  ## Individual nginx logs for GitLab pages
+  access_log  /var/log/nginx/gitlab_pages_access.log;
+  error_log   /var/log/nginx/gitlab_pages_error.log;
+
+  location / {
+    proxy_set_header    Host                $http_host;
+    proxy_set_header    X-Real-IP           $remote_addr;
+    proxy_set_header    X-Forwarded-For     $proxy_add_x_forwarded_for;
+    proxy_set_header    X-Forwarded-Proto   $scheme;
+    proxy_set_header    Upgrade             $http_upgrade;
+    proxy_http_version 1.1;
+
+    proxy_cache off;
+
+    # The same address as passed to GitLab Pages: `-listen-proxy`
+    proxy_pass http://localhost:{{ gitlab_pages_port }}/;
+  }
+
+  # Define custom error pages
+  error_page 403 /403.html;
+  error_page 404 /404.html;
+}

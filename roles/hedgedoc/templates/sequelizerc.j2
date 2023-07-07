@@ -1,0 +1,8 @@
+var path = require('path');
+
+module.exports = {
+    'config':          path.resolve('config.json'),
+    'migrations-path': path.resolve('lib', 'migrations'),
+    'models-path':     path.resolve('lib', 'models'),
+    'url':             '{{ hedgedoc_db_type }}://{{ hedgedoc_db_user }}:{{ hedgedoc_db_password }}@{{ hedgedoc_db_host }}:{{ hedgedoc_db_port }}/{{ hedgedoc_db_name }}'
+}

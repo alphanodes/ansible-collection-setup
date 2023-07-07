@@ -1,0 +1,8 @@
+---
+
+phpmyadmin_packages:
+  - fonts-dejavu
+  - gettext
+  - php8.1-mysql
+  - php8.1-xml
+  - php8.1-zip

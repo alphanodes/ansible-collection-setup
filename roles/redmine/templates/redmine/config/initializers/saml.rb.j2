@@ -1,0 +1,52 @@
+# frozen_string_literal: true
+
+require Rails.root.join('plugins/redmine_saml/lib/redmine_saml')
+require Rails.root.join('plugins/redmine_saml/lib/redmine_saml/base')
+
+{{ instance.saml_middleware | default(redmine_saml_middleware)  }}::Base.configure do |config|
+  config.saml = {
+    assertion_consumer_service_url: '{{ instance.saml_assertion_consumer_service_url | default(redmine_saml_assertion_consumer_service_url) }}',
+{% if saml_idp_cert_fingerprint != '' %}
+    idp_cert_fingerprint: '{{ saml_idp_cert_fingerprint }}',
+{% if saml_idp_cert_fingerprint_algorithm != '' %}
+    idp_cert_fingerprint_algorithm: '{{ saml_idp_cert_fingerprint_algorithm }}',
+{% endif %}
+{% endif %}
+{% if saml_idp_cert != '' %}
+    idp_cert: '{{ saml_idp_cert }}',
+{% endif %}
+{% if saml_idp_slo_service_url != '' %}
+    idp_slo_service_url: '{{ saml_idp_slo_service_url }}',
+{% endif %}
+    idp_sso_service_url: '{{  instance.saml_idp_sso_service_url | default(redmine_saml_idp_sso_service_url) }}',
+    sp_entity_id: '{{ instance.saml_sp_entity_id | default(redmine_saml_sp_entity_id) }}',
+    name_identifier_format: '{{ instance.saml_name_identifier_format | default(redmine_saml_name_identifier_format) }}',
+    name_identifier_value: '{{ instance.saml_name_identifier_value | default(redmine_saml_name_identifier_value) }}',
+    allowed_clock_drift: {{ instance.saml_allowed_clock_drift | default(redmine_saml_allowed_clock_drift) }},
+{% if saml_signout_url != '' %}
+    signout_url: '{{ saml_signout_url }}',
+{% endif %}
+{% if saml_want_assertions_signed | string != '' or saml_signature_method != '' %}
+    request_attributes: {},
+    security: {
+{% if saml_want_assertions_signed | string != '' %}
+      want_assertions_signed: {{ saml_want_assertions_signed | bool | lower }}
+{% endif %}
+{% if saml_want_assertions_signed | string != '' and saml_signature_method != '' %},{% endif %}
+{% if saml_signature_method != '' %}
+      signature_method: {{ saml_signature_method }}
+{% endif %}
+    },
+{% endif %}
+{% if saml_single_logout_service_url != '' %}
+    single_logout_service_url: '{{ saml_single_logout_service_url }}',
+{% endif %}
+{% if saml_attribute_mapping_sep != '' %}
+    attribute_mapping_sep: '{{ saml_attribute_mapping_sep }}',
+{% endif %}
+    attribute_mapping: {
+{% for attribute_mapping in instance.saml_attribute_mapping | default(redmine_saml_attribute_mapping) %}
+      {{ attribute_mapping.name }}: '{{ attribute_mapping.value }}'{{ ' }' if loop.last else ',' }}
+{% endfor %}
+  }
+end

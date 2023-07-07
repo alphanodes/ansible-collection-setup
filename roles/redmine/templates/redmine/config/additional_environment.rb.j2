@@ -1,0 +1,45 @@
+{{ ansible_managed | comment }}
+
+# Use a different logger to use syslog
+config.log_level = :{{ instance.log_level | default('warn') }}
+{% if instance.use_logger is undefined or instance.use_logger == 'journald-logger' %}
+config.logger = Journald::TraceLogger.new('{{ instance_name }}')
+config.logger.level = Logger::{{ instance.log_level | default('warn') | upper }}
+{% endif %}
+{% if instance.use_logger is defined and instance.use_logger == 'syslog-logger' %}
+config.logger = ActiveSupport::TaggedLogging.new(Logger::Syslog.new('{{ instance_name }}', Syslog::LOG_LOCAL7))
+config.logger.level = Logger::{{ instance.log_level | default('warn') | upper }}
+{% endif %}
+{% if instance.prefix is defined %}
+
+config.relative_url_root = '{{ instance.prefix }}'
+RedmineApp::Application.routes.default_scope = config.relative_url_root
+{% endif %}
+{% if instance.with_memcache is defined and instance.with_memcache %}
+config.cache_store = :mem_cache_store, '127.0.0.1:11211', { namespace: '{{ instance_name }}',
+                                                            expires_in: {{ instance.memcache_expires_hours | default(redmine_memcache_expires_hours) }}.hours,
+                                                            compress: true,
+                                                            pool_size: {{ instance.db_pool | default(real_redmine_db_pool) }} }
+{% endif %}
+{% if redmine_with_nginx and nginx_with_ssl and redmine_rails_env != 'test' %}
+
+config.session_store :cookie_store,
+  key: '_redmine_session',
+  secure: true,
+  path: config.relative_url_root || '/'
+{% endif %}
+{% if redmine_rails_env == 'development' and active_redmine_repo_version == '5.0-stable' %}
+
+config.hosts << '{{ instance.server_name }}'
+{% endif %}
+{% if queue_adapter is defined and queue_adapter != '' %}
+{% if queue_adapter == 'async' %}
+# see https://api.rubyonrails.org/classes/ActiveJob/QueueAdapters/AsyncAdapter.html
+config.active_job.queue_adapter = ActiveJob::QueueAdapters::AsyncAdapter.new min_threads: {{ instance.async_queue_min_threads | default( redmine_async_queue_min_threads) }},
+                                                                             max_threads: {{ instance.async_queue_max_threads | default(redmine_async_queue_max_threads) }},
+                                                                             idletime: {{ instance.async_queue_idletime | default(redmine_async_queue_idletime) }}
+{% else %}
+# SEE https://github.com/mperham/sidekiq/wiki/Active-Job
+config.active_job.queue_adapter = :{{ queue_adapter }}
+{% endif %}
+{% endif %}

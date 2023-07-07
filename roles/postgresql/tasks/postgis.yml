@@ -1,0 +1,5 @@
+---
+- name: Be sure PostGIS packages are installed
+  ansible.builtin.apt:
+    name: '{{ postgresql_postgis_packages }}'
+    state: present

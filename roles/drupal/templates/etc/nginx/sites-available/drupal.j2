@@ -1,0 +1,149 @@
+{{ ansible_managed | comment }}
+# nginx drupal configuration
+
+server {
+{% if instance.server_port is undefined or instance.server_port == 80 %}
+  listen 80{{ ' reuseport' if instance.reuseport is defined and instance.reuseport else '' }};
+{% if nginx_with_ipv6 %}
+  listen [::]:80{{ ' reuseport' if instance.reuseport is defined and instance.reuseport else '' }};
+{% endif %}
+{% endif %}
+{% if nginx_with_ssl %}
+{% if instance.server_port is undefined or instance.server_port == 443 %}
+  listen 443 {{ nginx_ssl_listen_option }}{{ ' reuseport' if instance.reuseport is defined and instance.reuseport else '' }};
+{% if nginx_with_ipv6 %}
+  listen [::]:443 {{ nginx_ssl_listen_option }}{{ ' reuseport' if instance.reuseport is defined and instance.reuseport else '' }};
+{% endif %}
+{% endif %}
+{% endif %}
+
+  server_name {{ instance.server_name }}{{ ' ' + instance.server_alias if instance.server_alias is defined else '' }};
+  root {{ instance.dir }}{{ instance.vhost_dir | default(drupal_vhost_dir) }};
+  index index.php index.html;
+
+{% if nginx_with_ssl %}
+{% if instance.server_port is undefined or instance.server_port == 443 %}
+  {% include 'templates/nginx_ssl.inc.j2' with context %}
+{% endif %}
+{% endif %}
+
+{% if nginx_with_protection %}
+  {% include 'templates/nginx_protection.inc.j2' with context %}
+{% endif %}
+
+  # This is cool because no php is touched for static content
+  location / {
+    try_files $uri /index.php?$query_string;
+  }
+
+  # Regular private file serving (i.e. handled by Drupal).
+  location ^~ /system/files/ {
+    try_files $uri @drupal;
+  }
+{% if drupal_multilanguage | length %}
+
+  # multi language support
+  location ~ ^/({{ drupal_multilanguage | join('|') }})/sites/default/files/styles/ {
+    try_files $uri @drupal;
+  }
+
+{% for language in drupal_multilanguage %}
+  location ^~ /{{ language }}/system/files/ {
+    try_files $uri @drupal;
+  }
+{% endfor %}
+{% endif %}
+
+  # Drupal 7 generated image handling, i.e., imagecache in core. See:
+  # https://drupal.org/node/371374.
+  location ~ ^/sites/default/files/styles/ {
+    {% if drupal_with_hotlink_protection %}
+    # Image hotlinking protection. If you want hotlinking
+    # protection for your images uncomment the following line.
+    include hotlinking_protection.conf;
+    {% endif %}
+    try_files $uri @drupal;
+  }
+
+  # All static files will be served directly.
+  location ~* ^.+\.(?:css|js|jpe?g|gif|ico|png|html)$ {
+    access_log off;
+    expires 30d;
+    # No need to bleed constant updates. Send the all shebang in one fell swoop.
+    tcp_nodelay off;
+    # Set the OS file cache.
+    open_file_cache max=3000 inactive=120s;
+    open_file_cache_valid 45s;
+    open_file_cache_min_uses 2;
+    open_file_cache_errors off;
+  }
+
+  # PDFs and powerpoint files handling.
+  location ~* ^.+\.(?:pdf|pptx?)$ {
+    expires 30d;
+    # No need to bleed constant updates. Send the all shebang in one
+    # fell swoop.
+    tcp_nodelay off;
+  }
+
+  ## Replicate the Apache <FilesMatch> directive of Drupal standard
+  ## .htaccess. Disable access to any code files. Return a 404 to curtail
+  ## information disclosure. Hide also the text files.
+  location ~* ^(?:.+\.(?:htaccess|make|txt|engine|inc|info|install|module|profile|po|pot|sh|.*sql|test|theme|tpl(?:\.php)?|xtmpl)|code-style\.pl|/Entries.*|/Repository|/Root|/Tag|/Template)$ {
+      return 404;
+  }
+
+  # Some modules enforce no slash (/) at the end of the URL
+  # Else this rewrite block wouldn't be needed (GlobalRedirect)
+  location @drupal {
+    rewrite ^/(.*)$ /index.php?q=$1;
+  }
+
+  # Hide the Drupal 7 header X-Generator.
+  fastcgi_hide_header 'X-Generator';
+
+  # Hide PHP
+  fastcgi_hide_header 'X-Powered-By';
+
+  {% include 'templates/nginx_security_headers.inc.j2' with context %}
+
+{% if instance.vhost_includes is defined %}
+{% for vhost_include in instance.vhost_includes %}
+  include {{ vhost_include }}.conf;
+{% endfor %}
+{% endif %}
+
+  {% include 'templates/nginx_fpm.inc.j2' with context %}
+
+  {% include 'templates/nginx_location.inc.j2' with context %}
+
+  {% include 'templates/nginx_rewrite_lines.inc.j2' with context %}
+
+  {% include 'templates/nginx_error_handler.inc.j2' with context %}
+
+{% if instance.vhost_users is defined %}
+  # access protection
+  auth_basic "Restricted access only";
+  auth_basic_user_file /etc/nginx/.htpasswd_drupal_{{ instance.name }};
+{% endif %}
+}
+
+{% if instance.vhost_default is defined and instance.vhost_default %}
+{% include 'templates/nginx_default_host_redirect.inc.j2' with context %}
+{% endif %}
+
+{% if nginx_with_ssl and instance.server_port is defined %}
+{% include 'templates/nginx_port_redirect.inc.j2' with context %}
+{% endif %}
+
+{% if instance.redirects is defined %}
+{% include 'templates/nginx_redirects.inc.j2' with context %}
+{% endif %}
+
+{% if instance.external_redirects is defined %}
+{% include 'templates/nginx_external_redirects.inc.j2' with context %}
+{% endif %}
+
+{% if instance.vhost_for_zabbix is defined and instance.vhost_for_zabbix %}
+{% include 'templates/nginx_monitoring.inc.j2' with context %}
+{% endif %}

@@ -1,0 +1,30 @@
+<?php
+// {{ ansible_managed }}
+
+{% for item in drush_aliases %}
+$aliases['{{ item.name }}'] = array(
+  {% if item.uri is defined %}
+  'uri' => '{{ item.uri }}',
+  {% endif %}
+  {% if item.root is defined -%}
+  'root' => '{{ item.root }}',
+  {% endif %}
+  {% if item.db_url is defined -%}
+  'db-url' => '{{ item.db_url }}',
+  {% endif -%}
+  {% if item.remote_host is defined -%}
+  'remote-host' => '{{ item.remote_host }}',
+  {% endif %}
+  {% if item.remote_user is defined -%}
+  'remote-user' => '{{ item.remote_user }}',
+  {% endif -%}
+  {% if item.path_aliases is defined -%}
+  'path-aliases' => {{ item.path_aliases }},
+  {% endif %}
+
+);
+{% endfor %}
+
+{% if drupal_instances is defined and drupal_instances | length %}
+include 'aliases.drushrc.drupal.php';
+{% endif %}

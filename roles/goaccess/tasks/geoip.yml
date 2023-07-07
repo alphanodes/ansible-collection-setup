@@ -1,0 +1,28 @@
+---
+
+- name: Create goaccess_geoip_dir directory
+  ansible.builtin.file:
+    path: '{{ goaccess_geoip_dir }}'
+    state: directory
+    mode: 0755
+
+- name: Check goaccess_geoip_latest_database exists
+  ansible.builtin.stat:
+    path: '{{ goaccess_geoip_latest_database }}'
+  register: goaccess_geoip_latest_database_exists
+
+- name: Check goaccess_geoip_database exists
+  ansible.builtin.stat:
+    path: '{{ goaccess_geoip_database }}'
+  register: goaccess_geoip_database_exists
+
+- name: Download geoip database archive
+  ansible.builtin.get_url:
+    url: '{{ goaccess_geoip_url }}'
+    dest: '{{ goaccess_geoip_latest_database }}'
+    mode: 0644
+  when: not goaccess_geoip_latest_database_exists.stat.exists
+
+- name: Extract geoip database archive
+  ansible.builtin.shell: gunzip -c {{ goaccess_geoip_latest_database }} > {{ goaccess_geoip_database }}
+  when: not goaccess_geoip_database_exists.stat.exists

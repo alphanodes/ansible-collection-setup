@@ -1,0 +1,7 @@
+---
+
+- name: Stop ethercalc, if started
+  ansible.builtin.systemd:
+    name: ethercalc
+    state: stopped
+    enabled: false

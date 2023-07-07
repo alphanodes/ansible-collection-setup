@@ -1,0 +1,9 @@
+[Unit]
+Description=GitLab
+Wants=gitlab-gitaly.service gitlab-puma.service gitlab-sidekiq.service gitlab-workhorse.service
+{% if gitlab_pages_enabled %}
+Wants=gitlab-pages.service
+{% endif %}
+
+[Install]
+WantedBy=multi-user.target

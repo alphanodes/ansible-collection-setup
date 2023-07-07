@@ -1,0 +1,42 @@
+---
+
+- name: Set credentionals file name
+  ansible.builtin.set_fact:
+    credentials_file: /root/.cifs_credentials_{{ cifs_mount.name }}
+
+- name: Set fstab line options
+  ansible.builtin.set_fact:
+    line_options: []
+
+- name: Add credentials to line options
+  ansible.builtin.set_fact:
+    line_options: "{{ line_options + ['credentials=' + credentials_file] }}"
+  when: cifs_mount.credential_user is defined and cifs_mount.credential_password is defined
+
+- name: Options to line options
+  ansible.builtin.set_fact:
+    line_options: "{{ line_options + [cifs_mount.options if cifs_mount.options is defined else 'defaults'] }}"
+
+- name: Set fstab line
+  ansible.builtin.set_fact:
+    fstab_line: "{{ cifs_mount.source }} {{ cifs_mount.target }} cifs {{ line_options | join(',') }} 0 0"
+
+- name: Create credentials file
+  ansible.builtin.template:
+    src: credentials_file.j2
+    dest: '{{ credentials_file }}'
+    mode: 0600
+  when: cifs_mount.credential_user is defined and cifs_mount.credential_password is defined
+
+- name: Remove credentials file
+  ansible.builtin.file:
+    path: '{{ credentials_file }}'
+    state: absent
+  when: cifs_mount.credential_user is not defined or cifs_mount.credential_password is not defined
+
+- name: Set fstab entry
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    regexp: '{{ cifs_mount.source }} {{ cifs_mount.target }}'
+    line: '{{ fstab_line }}'
+    backup: true

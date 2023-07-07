@@ -1,0 +1,39 @@
+---
+
+# see https://www.redmine.org/boards/1/topics/33669?page=2
+- name: Disable IMAP ssl verification - {{ instance_name }}
+  ansible.builtin.copy:
+    src: config/initializers/bypass_ssl_verification.rb
+    dest: '{{ redmine_app_dir }}/config/initializers/bypass_ssl_verification.rb'
+    owner: '{{ redmine_user }}'
+    group: '{{ redmine_group }}'
+    mode: 0644
+  notify: Restart puma instance
+  when: instance.disable_imap_ssl_verify is defined and instance.disable_imap_ssl_verify
+
+- name: Enable IMAP ssl verification - {{ instance_name }}
+  ansible.builtin.file:
+    path: '{{ redmine_app_dir }}/config/initializers/bypass_ssl_verification.rb'
+    state: absent
+  notify: Restart puma instance
+  when: instance.disable_imap_ssl_verify is undefined or not instance.disable_imap_ssl_verify
+
+- name: Enable lograte - {{ instance_name }}
+  ansible.builtin.template:
+    src: redmine/config/initializers/lograge.rb.j2
+    dest: '{{ redmine_app_dir }}/config/initializers/lograge.rb'
+    owner: '{{ redmine_user }}'
+    group: '{{ redmine_group }}'
+    mode: 0640
+  notify: Restart puma instance
+  when: instance.use_logger is defined and instance.use_logger == 'lograge'
+
+- name: Disable lograte - {{ instance_name }}
+  ansible.builtin.file:
+    path: '{{ redmine_app_dir }}/config/initializers/lograte.rb'
+    state: absent
+  notify: Restart puma instance
+  when: instance.use_logger is undefined or instance.use_logger != 'lograge'
+
+- name: Include init saml tasks
+  ansible.builtin.include_tasks: instance_init_saml.yml

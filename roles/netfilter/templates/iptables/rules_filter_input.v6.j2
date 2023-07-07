@@ -1,0 +1,59 @@
+### FILTER INPUT RULES
+-A INPUT -i lo -j ACCEPT
+-A INPUT ! -i lo -s ::1/128 -j DROP
+-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -p icmpv6 -j ACCEPT
+{% for blocked_address in netfilter_blocked_addresses_v6 %}
+-A INPUT -s {{ blocked_address }} -j DROP
+{% endfor %}
+{% if netfilter_honeypot_tcp_ports | length or netfilter_honeypot_udp_ports | length %}
+# Protecting portscans (attacking IP will be removed after 10 minutes)
+-N HONEYPOT
+-A HONEYPOT -m recent --update --seconds 600 --name HONEYPOT --reap --rttl -j DROP
+-A HONEYPOT -p tcp -m tcp -m multiport --dports {{ netfilter_honeypot_tcp_ports | join(',') }} -m recent --name HONEYPOT --set -j LOG --log-prefix "HONEYPOT: " --log-level 6 --log-ip-options
+-A HONEYPOT -p udp -m udp -m multiport --dports {{ netfilter_honeypot_udp_ports | join(',') }} -m recent --name HONEYPOT --set -j LOG --log-prefix "HONEYPOT: " --log-level 6 --log-ip-options
+-A HONEYPOT -p tcp -m tcp -m multiport --dports {{ netfilter_honeypot_tcp_ports | join(',') }} -m recent --name HONEYPOT --set -j DROP
+-A HONEYPOT -p udp -m udp -m multiport --dports {{ netfilter_honeypot_udp_ports | join(',') }} -m recent --name HONEYPOT --set -j DROP
+-A INPUT ! -s ::1 -j HONEYPOT
+##
+{% endif %}
+{% for allowed_network in netfilter_allowed_networks_v6 %}
+-A INPUT -s {{ allowed_network }} -j ACCEPT
+{% endfor %}
+{% if '25' not in netfilter_allowed_tcp_ports or 25 not in netfilter_allowed_tcp_ports %}
+-A INPUT -p tcp --dport 25 -s ::1 -j ACCEPT
+{% endif %}
+-A INPUT -p udp --dport 123 -s ::1 -j ACCEPT
+{% for allowed_tcp_port in netfilter_allowed_tcp_ports %}
+-A INPUT -p tcp -m tcp --dport {{ allowed_tcp_port }} -j ACCEPT
+{% endfor %}
+{% for allowed_udp_port in netfilter_allowed_udp_ports %}
+-A INPUT -p udp -m udp --dport {{ allowed_udp_port }} -j ACCEPT
+{% endfor %}
+{% for allowed_tcp in netfilter_allowed_tcp_ports_with_saddr_v6 %}
+-A INPUT -p tcp -m tcp --dport {{ allowed_tcp.port }} -s {{ allowed_tcp.saddr }} -j ACCEPT
+{% endfor %}
+{% for allowed_udp in netfilter_allowed_udp_ports_with_saddr_v6 %}
+-A INPUT -p udp -m udp --dport {{ allowed_udp.port }} -s {{ allowed_udp.saddr }} -j ACCEPT
+{% endfor %}
+{% if netfilter_ssh_sources_v6 | length > 0 %}
+{% for ssh_source in netfilter_ssh_sources_v6 %}
+-A INPUT -s {{ ssh_source }} -p tcp -m tcp --dport {{ ssh_server_port | default('22') }} -j ACCEPT
+{% endfor %}
+{% else %}
+-A INPUT -p tcp -m tcp --dport {{ ssh_server_port | default('22') }} -j ACCEPT
+{% endif %}
+{% if netfilter_allow_zabbix_server and netfilter_zabbix_server_address_v6 != '' %}
+-A INPUT -p tcp -m tcp --dport {{ netfilter_zabbix_server_port }} -s {{ netfilter_zabbix_server_address_v6 }} -j ACCEPT
+{% endif %}
+{% if netfilter_allowed_active_zabbix_addresses_v6_all %}
+-A INPUT -p tcp -m tcp --dport 10051 -j ACCEPT
+{% else %}
+{% for active_zabbix_address in netfilter_allowed_active_zabbix_addresses_v6 %}
+-A INPUT -p tcp -m tcp --dport 10051 -s {{ active_zabbix_address }} -j ACCEPT
+{% endfor %}
+{% endif %}
+{% if netfilter_log_dropped_packets %}
+# Log other incoming requests (all of which are dropped) at 15/minute max.
+-A INPUT -m limit --limit 15/minute -j LOG --log-level 7 --log-prefix "netfilter-dropped: "
+{% endif %}

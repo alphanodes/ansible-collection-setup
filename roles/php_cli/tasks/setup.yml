@@ -1,0 +1,23 @@
+---
+
+- name: Be sure php-cli is installed
+  ansible.builtin.apt:
+    name: '{{ php_cli_packages }}'
+    state: present
+
+- name: Ensure unwanted php-fpm packages are removed
+  ansible.builtin.apt:
+    name: '{{ php_cli_remove_packages }}'
+    purge: true
+    state: absent
+
+- name: Install extra modules (if configured)
+  ansible.builtin.apt:
+    name: '{{ php_extra_modules }}'
+    state: present
+
+- name: Update php-cli configuration
+  ansible.builtin.template:
+    src: php_ini_custom.j2
+    dest: '{{ php_cli_custom_php_ini }}'
+    mode: 0644

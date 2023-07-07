@@ -1,0 +1,7 @@
+---
+# defaults rsync options
+
+rsync_service: false
+
+rsync_packages:
+  - rsync

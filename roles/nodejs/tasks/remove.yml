@@ -1,0 +1,23 @@
+---
+
+- name: Remove nodejs package
+  ansible.builtin.apt:
+    name: nodejs
+    purge: true
+    state: absent
+
+- name: Remove package directory (not npm_config_prefix used, because it can be system directory)
+  ansible.builtin.file:
+    path: /usr/local/lib/npm
+    state: absent
+
+- name: Remove nodejs configuration files
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/apt/sources.list.d/deb_nodesource_com_node_12_x.list
+    - /etc/apt/sources.list.d/deb_nodesource_com_node_14_x.list
+    - /etc/apt/sources.list.d/deb_nodesource_com_node_16_x.list
+    - /etc/apt/sources.list.d/deb_nodesource_com_node_18_x.list
+    - '{{ nodejs_gpg_trusted_file }}'

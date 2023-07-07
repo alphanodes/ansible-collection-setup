@@ -1,0 +1,48 @@
+# defaults file for php_fpm
+---
+
+# add additional pools
+php_fpm_extra_pools: []
+
+php_fpm_listen_allowed_clients: 127.0.0.1
+php_fpm_pm_max_children: 10
+php_fpm_pm_start_servers: 5
+php_fpm_pm_min_spare_servers: 5
+php_fpm_pm_max_spare_servers: 5
+php_fpm_pm_status_path: /php_status
+php_fpm_ping_path: /php_ping
+
+php_date_timezone: '{{ ntp_timezone }}'
+php_disable_functions: "pcntl_alarm,pcntl_fork,pcntl_waitpid,pcntl_wait,pcntl_wifexited,pcntl_wifstopped,pcntl_wifsignaled,pcntl_wexitstatus,pcntl_wtermsig,pcntl_wstopsig,pcntl_signal,pcntl_signal_dispatch,pcntl_get_last_error,pcntl_strerror,pcntl_sigprocmask,pcntl_sigwaitinfo,pcntl_sigtimedwait,pcntl_exec,pcntl_getpriority,pcntl_setpriority"
+php_error_log: syslog
+php_error_reporting: "E_ALL & ~E_NOTICE & ~E_STRICT"
+php_mail_log: syslog
+php_max_execution_time: 60
+php_max_file_uploads: 10
+php_max_input_time: 60
+php_max_input_vars: 1000
+php_memory_limit: 192M
+php_post_max_size: 72M
+php_realpath_cache_size: 32K
+php_realpath_cache_ttl: 100
+php_serialize_precision: 17
+php_short_open_tag: "Off"
+php_upload_max_filesize: 64M
+
+php_session_save_handler: files
+php_session_save_path: "{{ __php_session_save_path | default('/var/lib/php/sessions') }}"
+php_session_name: PHPSESSID
+php_session_cache_expire: 180
+php_session_gc_divisor: 1000
+php_session_gc_maxlifetime: 1440
+
+php_opcache_enable: 1
+php_opcache_enable_cli: 0
+php_opcache_memory_consumption: 96
+php_opcache_interned_strings_buffer: 16
+php_opcache_max_accelerated_files: 4096
+php_opcache_validate_timestamps: 1
+php_opcache_revalidate_freq: 60
+php_opcache_fast_shutdown: 1
+php_opcache_enable_file_override: 1
+php_opcache_optimization_level: '0x7FFFBFFF'

@@ -1,0 +1,13 @@
+---
+- name: Ensure PostgreSQL privileges are present.
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_privs:
+    database: "{{ item.database }}"
+    privs: "{{ item.privs | default(omit) }}"
+    objs: "{{ item.objs | default(omit) }}"
+    roles: "{{ item.roles }}"
+    type: "{{ item.type }}"
+    grant_option: "{{ item.grant_option | default(omit) }}"
+  loop: "{{ postgresql_privileges }}"
+  no_log: false

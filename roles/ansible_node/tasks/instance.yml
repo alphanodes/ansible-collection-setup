@@ -1,0 +1,89 @@
+---
+
+- name: Set variables
+  ansible.builtin.set_fact:
+    available_playbook: "{{ r_playbook.value }}"
+    available_playbook_name: "{{ r_playbook.key }}"
+
+- name: Set playbook_filename - {{ available_playbook_name }}
+  ansible.builtin.set_fact:
+    playbook_filename: '{{ ansible_node_playbook_dir }}/{{ available_playbook.playbook }}'
+
+- name: Set if playbook is required - {{ available_playbook_name }}
+  ansible.builtin.set_fact:
+    required_playbook: "{{ true if ansible_node_timers[available_playbook_name] is not defined and available_playbook_name in ansible_node_playbooks | map(attribute='name') else false }}"
+
+- name: Not required playbook
+  when: not required_playbook
+  block:
+    - name: Remove not required playbook - {{ available_playbook_name }}
+      ansible.builtin.file:
+        path: '{{ playbook_filename }}'
+        state: absent
+
+    - name: Remove timer - {{ available_playbook_name }}
+      ansible.builtin.include_role:
+        name: alphanodes.setup.systemd_timer
+      vars:
+        timers:
+          '{{ available_playbook_name }}':
+            state: absent
+        systemd_timer_prefix: '{{ ansible_node_timer_prefix }}'
+
+- name: Required playbook
+  when: required_playbook
+  block:
+    - name: Setup activated playbook - {{ available_playbook_name }}
+      ansible.builtin.template:
+        src: playbooks/{{ available_playbook.playbook }}.j2
+        dest: '{{ playbook_filename }}'
+        mode: 0640
+
+    - name: Prepare timer - {{ available_playbook_name }}
+      ansible.builtin.set_fact:
+        timer: '{{ available_playbook }}'
+
+    - name: Get active_playbook for custom settings - {{ available_playbook_name }}
+      ansible.builtin.set_fact:
+        active_playbook: "{{ ansible_node_playbooks | selectattr('name', 'eq', available_playbook_name) | list | first }}"
+
+    - name: Add state to timer - {{ available_playbook_name }}
+      ansible.builtin.set_fact:
+        timer: "{{ timer | combine({'state': timer_state}) }}"
+      vars:
+        timer_state: "{{ 'absent' if active_playbook.with_timer is defined and not active_playbook.with_timer else 'present' }}"
+
+    - name: Add exec_start to timer - {{ available_playbook_name }}
+      ansible.builtin.set_fact:
+        timer: "{{ timer | combine({'exec_start': '{{ ansible_node_playbook_script }} {{ playbook_filename }}'}) }}"
+
+    - name: Add env to timer if available - {{ available_playbook_name }}
+      ansible.builtin.set_fact:
+        timer: "{{ timer | combine({'env': '{{ playbook_env }}'}) }}"
+      when: playbook_env is defined
+
+    - name: Use custom on_calendar if defined - {{ available_playbook_name }}
+      ansible.builtin.set_fact:
+        timer: "{{ timer | combine({'on_calendar': '{{ active_playbook.on_calendar }}'}) }}"
+      when: active_playbook.on_calendar is defined
+
+    - name: Use custom accuracy_sec if defined - {{ available_playbook_name }}
+      ansible.builtin.set_fact:
+        timer: "{{ timer | combine({'accuracy_sec': '{{ active_playbook.accuracy_sec }}'}) }}"
+      when: active_playbook.accuracy_sec is defined
+
+    - name: Use randomized_delay_sec if defined - {{ available_playbook_name }}
+      ansible.builtin.set_fact:
+        timer: "{{ timer | combine({'randomized_delay_sec': '{{ active_playbook.randomized_delay_sec }}'}) }}"
+      when: active_playbook.randomized_delay_sec is defined
+
+    - name: Show debug
+      ansible.builtin.debug:
+        msg: "{{ timer }}"
+
+    - name: Setup activated timer - {{ available_playbook_name }}
+      ansible.builtin.include_role:
+        name: alphanodes.setup.systemd_timer
+      vars:
+        timers:
+          '{{ available_playbook_name }}': '{{ timer }}'

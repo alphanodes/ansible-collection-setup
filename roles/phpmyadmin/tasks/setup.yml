@@ -1,0 +1,82 @@
+---
+
+- name: Set phpmyadmin_dir
+  ansible.builtin.set_fact:
+    phpmyadmin_dir: "{{ alphanodes_dir | default('/usr/share/alphanodes') }}{{ phpmyadmin_location }}"
+
+- name: Be sure phpmyadmin debian packages are NOT installed by debian packages
+  ansible.builtin.apt:
+    name: '{{ phpmyadmin_unwandted_packages }}'
+    state: absent
+
+- name: Install required packages for phpmyadmin
+  ansible.builtin.apt:
+    name: '{{ phpmyadmin_packages }}'
+    state: present
+  notify: restart php
+
+- name: Include install tasks
+  ansible.builtin.include_tasks: install.yml
+
+- name: Be sure phpmyadmin database exists
+  community.mysql.mysql_db:
+    name: '{{ phpmyadmin_db_name }}'
+    state: present
+    login_host: "{{ phpmyadmin_db_host if phpmyadmin_db_host != 'localhost' else omit }}"
+    login_user: "{{ phpmyadmin_db_user if phpmyadmin_db_host != 'localhost' else omit }}"
+    login_password: "{{ phpmyadmin_db_password if phpmyadmin_db_host != 'localhost' else omit }}"
+  notify:
+    - Upload phpmyadmin structure
+    - Restore phpmyadmin db
+  when: not phpmyadmin_no_dbserver
+
+- name: Create phpmyadmin user
+  community.mysql.mysql_user:
+    name: '{{ phpmyadmin_db_user }}'
+    password: '{{ phpmyadmin_db_password }}'
+    host: '{{ phpmyadmin_db_host }}'
+    login_host: "{{ phpmyadmin_db_host if phpmyadmin_db_host != 'localhost' else omit }}"
+    login_user: "{{ phpmyadmin_db_user if phpmyadmin_db_host != 'localhost' else omit }}"
+    login_password: "{{ phpmyadmin_db_password if phpmyadmin_db_host != 'localhost' else omit }}"
+    priv: 'mysql.*:SELECT/{{ phpmyadmin_db_name }}.*:ALL'
+    state: present
+  when: not phpmyadmin_no_dbserver
+
+- name: Make sure nginx directory exists (required for first run after fresh installation)
+  ansible.builtin.file:
+    path: /etc/nginx
+    mode: 0755
+    owner: root
+    group: root
+    state: directory
+
+- name: Provide phpmyadmin nginx configuration
+  tags: nginx
+  ansible.builtin.template:
+    src: etc/nginx/phpmyadmin.j2
+    dest: /etc/nginx/phpmyadmin.conf
+    mode: 0644
+    owner: root
+    group: root
+  notify: Reload nginx
+
+- name: Ensure required phpmyadmin configuration directories exist
+  ansible.builtin.file:
+    path: /etc/phpmyadmin
+    state: directory
+    mode: 0755
+
+- name: Provide phpmyadmin configuration
+  ansible.builtin.template:
+    src: etc/phpmyadmin/config.inc.j2
+    dest: /etc/phpmyadmin/config.inc.php
+    mode: 0644
+    validate: 'php -l %s'
+
+- name: Provide tmp directory
+  ansible.builtin.file:
+    path: '{{ phpmyadmin_dir }}/tmp'
+    state: directory
+    owner: '{{ phpmyadmin_owner }}'
+    group: '{{ phpmyadmin_group }}'
+    mode: 0755

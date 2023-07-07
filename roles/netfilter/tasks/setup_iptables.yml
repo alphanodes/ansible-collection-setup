@@ -1,0 +1,58 @@
+---
+
+- name: Be sure iptables-persistent is installed
+  ansible.builtin.apt:
+    name: '{{ netfilter_iptables_packages }}'
+    state: present
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: Ensure unwanted packages are removed
+  ansible.builtin.apt:
+    name: '{{ netfilter_iptables_remove_packages }}'
+    state: absent
+    purge: true
+
+- name: Flush iptables-persistent
+  ansible.builtin.command: /etc/init.d/netfilter-persistent flush
+  when: netfilter_state == 'reset'
+
+- name: IP rules - setup
+  when: netfilter_state == 'setup'
+  block:
+    - name: Generate IPv4 rules without activation (setup)
+      ansible.builtin.template:
+        src: iptables/rules.v4.j2
+        dest: /etc/iptables/rules.v4
+        mode: 0644
+
+    - name: Generate IPv6 rules without activation (setup)
+      ansible.builtin.template:
+        src: iptables/rules.v6.j2
+        dest: /etc/iptables/rules.v6
+        mode: 0644
+
+# order of notify handlers matters!
+# see https://stackoverflow.com/questions/35130051/order-of-notify-handlers
+- name: IP rules - active
+  when: netfilter_state == 'active'
+  block:
+    - name: Generate IPv4 rules
+      ansible.builtin.template:
+        src: iptables/rules.v4.j2
+        dest: /etc/iptables/rules.v4
+        mode: 0644
+      notify:
+        - Flush iptables
+        - Restart iptables-persistent
+        - Restart fail2ban
+
+    - name: Generate IPv6 rules
+      ansible.builtin.template:
+        src: iptables/rules.v6.j2
+        dest: /etc/iptables/rules.v6
+        mode: 0644
+      notify:
+        - Flush iptables
+        - Restart iptables-persistent
+        - Restart fail2ban

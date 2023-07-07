@@ -1,0 +1,6 @@
+{% if netfilter_filter_output_policy != 'ACCEPT' %}
+### FILTER OUTPUT RULES
+{% for allowed_network in netfilter_allowed_networks_output_v6 %}
+-A OUTPUT -s {{ allowed_network }} -j ACCEPT
+{% endfor %}
+{% endif %}

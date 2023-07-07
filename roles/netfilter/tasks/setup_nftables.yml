@@ -1,0 +1,27 @@
+---
+
+- name: Be sure nftables packages are installed
+  ansible.builtin.apt:
+    name: '{{ netfilter_nftables_packages }}'
+    state: present
+
+- name: Ensure unwanted packages are removed
+  ansible.builtin.apt:
+    name: '{{ netfilter_nftables_remove_packages }}'
+    state: absent
+    purge: true
+
+- name: Start nftables service
+  ansible.builtin.systemd:
+    name: nftables
+    state: started
+    enabled: true
+
+- name: Generate nfs rules
+  ansible.builtin.template:
+    src: nftables.conf.j2
+    dest: /etc/nftables.conf
+    mode: 0644
+    validate: "nft --check --file %s"
+  notify: Reload nftables
+  when: netfilter_state == 'active'

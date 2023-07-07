@@ -1,0 +1,14 @@
+---
+
+- name: Include setup tasks
+  ansible.builtin.import_tasks: setup.yml
+  when: not glances_remove
+  tags:
+    - glances
+
+- name: Include remove tasks
+  ansible.builtin.import_tasks: remove.yml
+  when: glances_remove
+  tags:
+    - glances
+    - remove

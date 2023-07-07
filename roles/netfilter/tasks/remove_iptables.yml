@@ -1,0 +1,11 @@
+---
+
+- name: Flush iptables rules
+  ansible.builtin.command: /etc/init.d/netfilter-persistent flush
+  ignore_errors: true
+
+- name: Ensure nftables packages are removed
+  ansible.builtin.apt:
+    name: '{{ netfilter_iptables_packages }}'
+    state: absent
+    purge: true

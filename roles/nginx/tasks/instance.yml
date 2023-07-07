@@ -1,0 +1,55 @@
+---
+
+- name: Check trusted TLS cert
+  ansible.builtin.stat:
+    path: /etc/ssl/certs/{{ instance.vhost_ssl_cert | default(vhost_ssl_cert) }}_trusted.crt
+  register: trusted_cert
+  when: nginx_with_ssl and (instance.letsencrypt_cert is undefined or not instance.letsencrypt_cert)
+
+- name: Set TLS files
+  ansible.builtin.set_fact:
+    vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
+  when: nginx_with_ssl and (instance.letsencrypt_cert is undefined or not instance.letsencrypt_cert)
+
+- name: Configure vhosts - {{ instance.name }}
+  ansible.builtin.template:
+    src: vhost.j2
+    dest: /etc/nginx/sites-available/{{ instance.name }}.conf
+    mode: 0644
+  notify: Reload nginx
+
+- name: Update nginx vhost repo - {{ instance.name }}
+  ansible.builtin.git:
+    repo: '{{ instance.repo }}'
+    dest: '{{ instance.repo_root | default(instance.root) }}'
+    version: '{{ instance.repo_version | default(omit) }}'
+    update: '{{ instance.repo_update | default(true) }}'
+    accept_hostkey: true
+  when: instance.repo is defined
+
+- name: Ensure vhosts are enabled - {{ instance.name }}
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/{{ instance.name }}.conf
+    dest: /etc/nginx/sites-enabled/{{ instance.name }}.conf
+    state: link
+  notify: Reload nginx
+
+  # restart required, because file can be not available before
+- name: Protect nginx vhost user - {{ instance.name }}
+  community.general.htpasswd:
+    path: /etc/nginx/.htpasswd_nginx_{{ instance.name }}
+    name: '{{ item.user }}'
+    password: '{{ item.password }}'
+    owner: root
+    group: '{{ nginx_group }}'
+    mode: 0640
+  loop: '{{ instance.vhost_users | default([]) }}'
+  when: instance.vhost_users is defined
+  notify: Restart nginx
+
+- name: Remove htpasswd file, if no base auth is in use - {{ instance.name }}
+  ansible.builtin.file:
+    path: /etc/nginx/.htpasswd_nginx_{{ instance.name }}
+    state: absent
+  when: instance.vhost_users is undefined
+  notify: Restart nginx

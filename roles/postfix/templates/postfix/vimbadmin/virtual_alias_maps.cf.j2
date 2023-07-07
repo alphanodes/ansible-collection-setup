@@ -1,0 +1,5 @@
+user = {{ dovecot_db_user }}
+password = {{ dovecot_db_password }}
+hosts = {{ dovecot_db_host }}
+dbname = {{ dovecot_db_name }}
+query = SELECT goto FROM alias WHERE address = '%s' AND active = '1'

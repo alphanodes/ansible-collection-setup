@@ -1,0 +1,29 @@
+---
+
+- name: Pinning git backport packages
+  ansible.builtin.template:
+    src: backports-pin.j2
+    dest: /etc/apt/preferences.d/git
+    mode: 0644
+  when: debian_backports is defined and debian_backports and git_use_backports
+
+- name: Remove unwanted pinning for backport packages
+  ansible.builtin.file:
+    path: /etc/apt/preferences.d/git
+    state: absent
+  when: debian_backports is undefined or not debian_backports or not git_use_backports
+
+- name: Ensure required packages are present
+  ansible.builtin.apt:
+    name: '{{ git_required_packages }}'
+    state: present
+
+- name: Include git_config
+  ansible.builtin.include_role:
+    name: alphanodes.setup.git_config
+  vars:
+    git_config_settings:
+      - name: safe.directory
+        value: '*'
+        scope: global
+  when: not git_disable_safe_directory

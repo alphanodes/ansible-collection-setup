@@ -1,0 +1,6 @@
+---
+
+- name: Run bundle update for jekyll
+  ansible.builtin.command: bundler update
+  args:
+    chdir: '{{ jekyll_dir }}'

@@ -1,0 +1,21 @@
+---
+# file: run matomo config.ini.php sync
+
+- hosts: {{ ansible_node_playbook_host }}
+  serial: 1
+
+  vars:
+    ansible_python_interpreter: {{ ansible_node_playbook_ansible_python_interpreter }}
+{% if matomo_config_master is defined %}
+    matomo_config_master: {{ matomo_config_master }}
+{% endif %}
+{% if matomo_task_become is defined %}
+    matomo_task_become: {{ matomo_task_become | bool | lower }}
+{% endif %}
+{% if matomo_task_become_user is defined %}
+    matomo_task_become_user: {{ matomo_task_become_user }}
+{% endif %}
+    matomo_task_name: config-sync
+
+  roles:
+    - alphanodes.tasks.matomo_task

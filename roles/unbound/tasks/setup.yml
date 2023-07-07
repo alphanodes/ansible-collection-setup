@@ -1,0 +1,34 @@
+---
+
+- name: Be sure unbound is installed
+  ansible.builtin.apt:
+    name: '{{ unbound_packages }}'
+    state: present
+
+- name: Update root anchor
+  ansible.builtin.command: unbound-anchor
+  register: unbound_anchor_rc
+  changed_when: unbound_anchor_rc.rc == 1
+  failed_when: unbound_anchor_rc.rc > 1
+
+- name: Start the unbound service (systemd)
+  ansible.builtin.systemd:
+    name: unbound
+    state: started
+  register: systemd_rc
+
+- name: Run systemd
+  when: >
+    systemd_rc.status is undefined
+    or systemd_rc.status.ActiveState != 'active'
+    or (systemd_rc.status.NeedDaemonReload is defined and systemd_rc.status.NeedDaemonReload != 'no')
+  block:
+    - name: Reload daemon-reload for init script changes (systemd)
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    - name: Start the unbound service (systemd)
+      ansible.builtin.systemd:
+        name: unbound
+        state: started
+        enabled: true

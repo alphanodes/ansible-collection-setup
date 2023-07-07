@@ -1,0 +1,30 @@
+---
+
+- name: Ensure apt key for mysql.com is present (local key)
+  ansible.builtin.copy:
+    src: mysql.gpg
+    dest: /etc/apt/trusted.gpg.d/mysql.gpg
+    mode: 0644
+  when: mysql_with_mysql_com and mysql_local_apt_key
+
+# url for remote key is not available - dep package is provided by mysql.com
+# - name: Ensure apt key for mysql.com is present (remote key)
+#   ansible.builtin.get_url:
+#     url: "{{ mysql_repo_key_url }}"
+#     dest: /etc/apt/trusted.gpg.d/mysql.asc
+#     mode: 0644
+#     force: true
+#   when: not mysql_local_key
+
+- name: Ensure apt sources list for mysql.com sources is present
+  ansible.builtin.apt_repository:
+    repo: '{{ mysql_apt_repo_url }}'
+    update_cache: true
+    state: "{{ 'present' if ansible_distribution == 'Debian' and mysql_with_mysql_com else 'absent' }}"
+
+- name: Remove previous apt sources list from apt sources
+  ansible.builtin.apt_repository:
+    repo: 'deb http://repo.mysql.com/apt/debian/ {{ ansible_distribution_release | lower }} mysql-{{ mysql_apt_repo_version_prev }}'
+    update_cache: true
+    state: absent
+  when: mysql_with_mysql_com

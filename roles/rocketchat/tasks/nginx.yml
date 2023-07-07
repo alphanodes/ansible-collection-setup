@@ -1,0 +1,32 @@
+---
+
+- name: Set TLS files for letsencrypt
+  ansible.builtin.set_fact:
+    vhost_letsencrypt_cert: "{{ rocketchat_vhost_letsencrypt_cert }}"
+    vhost_letsencrypt_key: "{{ rocketchat_vhost_letsencrypt_key }}"
+  when: rocketchat_vhost_letsencrypt is defined and rocketchat_vhost_letsencrypt
+
+- name: Check trusted TLS cert
+  ansible.builtin.stat:
+    path: /etc/ssl/certs/{{ rocketchat_vhost_ssl_cert }}_trusted.crt
+  register: trusted_cert
+
+- name: Set TLS files
+  ansible.builtin.set_fact:
+    vhost_ssl_cert: "{{ rocketchat_vhost_ssl_cert }}"
+    vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
+  when: rocketchat_vhost_letsencrypt is undefined or not rocketchat_vhost_letsencrypt
+
+- name: Update Rocket.Chat vhost configuration
+  ansible.builtin.template:
+    src: vhost.j2
+    dest: /etc/nginx/sites-available/rocketchat.conf
+    mode: 0644
+  notify: Reload nginx
+
+- name: Ensure Rocket.Chat vhost is enabled
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/rocketchat.conf
+    dest: /etc/nginx/sites-enabled/rocketchat.conf
+    state: link
+  notify: Reload nginx

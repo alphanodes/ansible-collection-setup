@@ -1,0 +1,38 @@
+---
+- name: Be sure postgreSQL client packages (prerequire) are installed
+  ansible.builtin.apt:
+    name: '{{ postgresql_client_packages_prerequire }}'
+    state: present
+
+- name: Add postgreSQL GPG key
+  ansible.builtin.get_url:
+    url: '{{ postgresql_repo_key_url }}'
+    dest: /etc/apt/trusted.gpg.d/postgresql.asc
+    mode: 0644
+    force: true
+  when: not postgresq_skip_apt_key
+
+- name: Add postgreSQL debian repository
+  ansible.builtin.apt_repository:
+    repo: '{{ postgresql_repo_url }}'
+    update_cache: true
+    state: present
+
+- name: Be sure postgreSQL client packages are installed
+  ansible.builtin.apt:
+    name: '{{ postgresql_client_packages }}'
+    state: present
+
+- name: Gather the package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Check if PHP package is required
+  ansible.builtin.set_fact:
+    php_installed: "{{ true if postgresql_client_check_php_package in ansible_facts.packages else false }}"
+
+- name: Install PHP package (if required)
+  ansible.builtin.apt:
+    name: '{{ postgresql_client_php_package }}'
+    state: present
+  when: php_installed

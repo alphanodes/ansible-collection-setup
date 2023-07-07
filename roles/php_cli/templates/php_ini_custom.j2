@@ -1,0 +1,42 @@
+; {{ ansible_managed }}
+; customized php configuration
+
+[PHP]
+display_errors = On
+html_errors = Off
+error_log = {{ php_cli_error_log }}
+{% if php_cli_short_open_tag is defined %}
+short_open_tag = {{ php_cli_short_open_tag }}
+{% endif %}
+{% if php_cli_serialize_precision is defined %}
+serialize_precision = {{ php_cli_serialize_precision }}
+{% endif %}
+{% if php_cli_memory_limit is defined %}
+memory_limit = {{ php_cli_memory_limit }}
+{% endif %}
+{% if php_cli_error_reporting is defined %}
+error_reporting = {{ php_cli_error_reporting }}
+{% endif %}
+{% if php_cli_post_max_size is defined %}
+post_max_size = {{ php_cli_post_max_size }}
+{% endif %}
+{% if php_cli_default_socket_timeout is defined %}
+default_socket_timeout = {{ php_cli_default_socket_timeout }}
+{% endif %}
+
+[Date]
+date.timezone = {{ php_cli_date_timezone }}
+
+[mail function]
+mail.log = syslog
+
+[Session]
+{% if php_cli_session_name is defined %}
+session.name = {{ php_cli_session_name }}
+{% endif %}
+{% if php_cli_session_gc_divisor is defined %}
+session.gc_divisor = {{ php_cli_session_gc_divisor }}
+{% endif %}
+{% if php_cli_session_gc_maxlifetime is defined %}
+session.gc_maxlifetime = {{ php_cli_session_gc_maxlifetime }}
+{% endif %}

@@ -1,0 +1,8 @@
+{{ ansible_managed | comment }}
+Package: git*
+Pin: release n={{ ansible_distribution_release | lower }}-backports
+Pin-Priority: 600
+
+Package: svn2git
+Pin: release n={{ ansible_distribution_release | lower }}-backports
+Pin-Priority: 600

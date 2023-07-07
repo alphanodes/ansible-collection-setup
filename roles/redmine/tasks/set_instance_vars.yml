@@ -1,0 +1,67 @@
+---
+
+- name: Set instance variables
+  ansible.builtin.set_fact:
+    instance: "{{ r_instance.value }}"
+    instance_name: "{{ r_instance.key }}"
+
+- name: Set redmine_user - {{ instance_name }}
+  ansible.builtin.set_fact:
+    redmine_user: "{{ instance.user | default(instance_name) }}"
+
+- name: Set redmine_group - {{ instance_name }}
+  ansible.builtin.set_fact:
+    redmine_group: "{{ instance.group | default(redmine_user) }}"
+
+- name: Set redmine_home - {{ instance_name }}
+  ansible.builtin.set_fact:
+    redmine_home: "{{ redmine_base_dir }}/{{ instance_name }}"
+
+- name: Set redmine_app_dir - {{ instance_name }}
+  ansible.builtin.set_fact:
+    redmine_app_dir: "{{ redmine_home }}/{{ redmine_app_dir_name }}"
+
+- name: Set Redmine DB Name - {{ instance_name }}
+  ansible.builtin.set_fact:
+    redmine_db_name: '{{ instance.db_name | default(instance_name) | replace("-", "_") }}'
+
+- name: Set Redmine DB User - {{ instance_name }}
+  ansible.builtin.set_fact:
+    redmine_db_user: '{{ instance.db_user | default(redmine_user) | replace("-", "_") }}'
+
+- name: Set redmine_use_rvm - {{ instance_name }}
+  ansible.builtin.set_fact:
+    redmine_use_rvm: '{{ instance.use_rvm | default(redmine_use_rvm_as_default) }}'
+
+- name: Set active_system_infos_vars - {{ instance_name }}
+  ansible.builtin.set_fact:
+    active_system_infos_vars: '{{ instance.system_infos_vars | default(redmine_system_infos_vars) }}'
+
+- name: Set active_system_infos_bool_vars - {{ instance_name }}
+  ansible.builtin.set_fact:
+    active_system_infos_bool_vars: '{{ instance.system_infos_bool_vars | default(redmine_system_infos_bool_vars) }}'
+
+- name: Set more instance variables - {{ instance_name }}
+  ansible.builtin.set_fact:
+    redmine_files_dir: "{{ instance.files_dir | default(redmine_home + '/files') }}"
+    redmine_rails_env: "{{ instance.rails_env | default(rails_env) }}"
+    redmine_config_dir: "{{ redmine_global_config_dir }}/{{ instance_name }}"
+    redmine_plugin_dir: "{{ redmine_app_dir }}/plugins"
+    redmine_plugin_assets_dir: "{{ redmine_app_dir }}/public/plugin_assets"
+    redmine_theme_dir: "{{ redmine_app_dir }}/public/themes"
+    puma_service_name: puma-{{ instance_name }}
+    active_db_adapter: "{{ instance.adapter | default(redmine_db_adapter) }}"
+    active_mysql_socket: "{{ instance.mysql_socket | default(redmine_mysql_socket) }}"
+    active_redmine_patches: "{{ instance.patches | default(redmine_patches) }}"
+    active_redmine_repo_version: "{{ instance.repo_version | default(redmine_repo_version) }}"
+    instance: "{{ instance | combine([{'error_404_enabled': true}]) }}"
+    queue_adapter: "{{ instance.queue_adapter | default(redmine_queue_adapter) | default('') }}"
+
+- name: Correct db_host and db_encoding facts - {{ instance_name }}
+  ansible.builtin.set_fact:
+    active_db_host: "{{ instance.db_host if instance.db_host is defined else 'localhost' if active_db_adapter == 'mysql2' else redmine_run_base_path + '/postgresql' }}"
+    active_db_encoding: "{{ instance.db_encoding if instance.db_encoding is defined else 'utf8mb4' if active_db_adapter == 'mysql2' else 'unicode' }}"
+
+- name: Set active_puma_worker_killer - {{ instance_name }}
+  ansible.builtin.set_fact:
+    active_puma_worker_killer: '{{ (instance.puma_worker_killer | default(redmine_puma_worker_killer)) and real_redmine_puma_workers | int > 1 }}'

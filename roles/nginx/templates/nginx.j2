@@ -1,0 +1,129 @@
+{{ ansible_managed | comment }}
+# nginx configuration
+
+user {{ nginx_owner }};
+
+error_log {{ nginx_error_log }};
+pid /run/nginx.pid;
+include /etc/nginx/modules-enabled/*.conf;
+
+worker_processes {{ real_nginx_worker_processes }};
+worker_rlimit_nofile 8192;
+
+events {
+    # worker_rlimit_nofile has to be => worker_connections
+    worker_connections {{ nginx_worker_connections }};
+    # see http://nginx.org/en/docs/events.html
+    use epoll;
+    ## Accept as many connections as possible.
+    multi_accept on;
+}
+
+http {
+    ## MIME types.
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    log_format  app  '$remote_addr - $remote_user [$time_local] "$request" '
+                     '$status $body_bytes_sent "$http_referer" '
+                     '"$http_user_agent" "$http_x_forwarded_for" '
+                     '$request_time $upstream_response_time "$upstream_addr"';
+
+    ## Default log
+    access_log {{ nginx_access_log }};
+
+    ## Use sendfile() syscall to speed up I/O operations and speed up
+    ## static file serving.
+    sendfile on;
+    ## TCP options.
+    tcp_nodelay on;
+    ## Optimization of socket handling when using sendfile.
+    tcp_nopush on;
+
+    types_hash_max_size {{ nginx_types_hash_max_size }};
+    map_hash_bucket_size {{ nginx_map_hash_bucket_size }};
+
+    ## Define a zone for limiting the number of simultaneous
+    ## connections nginx accepts. 1m means 32000 simultaneous
+    ## sessions. We need to define for each server the limit_conn
+    ## value refering to this or other zones.
+    limit_conn_zone $binary_remote_addr zone=arbeit:10m;
+
+{% if nginx_fastcgi_microcache_zone != '' %}
+    # microcache zone configuration
+    fastcgi_cache_path {{ nginx_fastcgi_microcache_base_dir }}/{{ nginx_fastcgi_microcache_zone }} levels=1:2 keys_zone={{ nginx_fastcgi_microcache_zone }}:{{ nginx_fastcgi_microcache_time }} max_size={{ nginx_fastcgi_microcache_max_size }} inactive={{ nginx_fastcgi_microcache_inactive }};
+{% endif %}
+
+    ## KeepAlive limits to prevents resource exhaustion
+    keepalive_timeout {{ nginx_keepalive_timeout }};
+    keepalive_requests {{ nginx_keepalive_requests }};
+
+    # fix startup problem
+    variables_hash_max_size {{ nginx_variables_hash_max_size }};
+    proxy_headers_hash_bucket_size {{ nginx_proxy_headers_hash_bucket_size }};
+    server_names_hash_bucket_size {{ nginx_server_names_hash_bucket_size }};
+
+    ## Reset lingering timed out connections. Deflect DDoS.
+    reset_timedout_connection on;
+
+    ## Body size.
+    client_max_body_size {{ nginx_client_max_body_size }};
+
+{% if nginx_proxy_max_temp_file_size is defined %}
+    # This directive sets the maximum size of the temporary file
+    # see http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_max_temp_file_size
+    proxy_max_temp_file_size {{ nginx_proxy_max_temp_file_size }};
+{% endif %}
+{% if nginx_proxy_buffer_size is defined %}
+    proxy_buffer_size {{ nginx_proxy_buffer_size }};
+{% endif %}
+{% if nginx_proxy_buffers is defined %}
+    proxy_buffers {{ nginx_proxy_buffers }};
+{% endif %}
+{% if nginx_proxy_busy_buffers_size is defined %}
+    proxy_busy_buffers_size {{ nginx_proxy_busy_buffers_size }};
+{% endif %}
+
+    ## Compression.
+    gzip              on;
+    gzip_buffers      16 8k;
+    gzip_comp_level   1;
+    gzip_http_version 1.1;
+    gzip_min_length   100;
+    gzip_types        text/plain text/css application/javascript application/x-javascript text/xml application/xml application/xml+rss text/javascript image/x-icon application/vnd.ms-fontobject font/opentype application/x-font-ttf;
+    gzip_vary         on;
+    gzip_proxied      any; # Compression for all requests.
+    ## No need for regexps. See
+    ## http://wiki.nginx.org/NginxHttpGzipModule#gzip_disable
+    gzip_disable "msie6";
+
+    ## Serve already compressed files directly, bypassing on-the-fly
+    ## compression.
+    gzip_static on;
+
+    ## Hide the Nginx version number.
+    server_tokens off;
+
+    ## Fix upstream response buffered to a temporary file warnings
+    ## see http://serverfault.com/questions/587386/an-upstream-response-is-buffered-to-a-temporary-file
+    proxy_max_temp_file_size 0;
+
+{% if nginx_with_websocket %}
+    # As suggested in https://nginx.org/en/docs/http/websocket.html
+    map $http_upgrade $connection_upgrade {
+        default upgrade;
+        '' close;
+    }
+{% endif %}
+
+{% for nginx_limit_req_zone in nginx_limit_req_zones %}
+    limit_req_zone {{ nginx_limit_req_zone }};
+{% endfor %}
+
+    include /etc/nginx/conf.d/*.conf;
+    include /etc/nginx/sites-enabled/*;
+}

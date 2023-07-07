@@ -1,0 +1,13 @@
+{% if netfilter_filter_forward_policy != 'ACCEPT' %}
+### FILTER FORWARD RULES
+-A FORWARD -o lo -j ACCEPT
+-A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+{% for allowed_network in netfilter_allowed_networks %}
+-A FORWARD -s {{ allowed_network }} -j ACCEPT
+{% endfor %}
+{% if netfilter_forward | length > 0 %}
+{% for forward in netfilter_forward %}
+-A FORWARD{{ ' -s ' + forward.saddr + '/32' if forward.saddr is defined else '' }} -d {{ forward.daddr }}/32 -p {{ forward.prot | default('tcp') }}{{ ' --dport ' + forward.dport|string if forward.dport is defined else '' }} -j ACCEPT
+{% endfor %}
+{% endif %}
+{% endif %}

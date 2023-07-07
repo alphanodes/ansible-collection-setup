@@ -1,0 +1,11 @@
+
+location ^~ /goaccess {
+  alias {{ goaccess_output_dir }};
+  index index.html;
+{% if goaccess_password != '' %}
+
+  # access protection
+  auth_basic "Restricted access only";
+  auth_basic_user_file /etc/nginx/.htpasswd_goaccess;
+{% endif %}
+}

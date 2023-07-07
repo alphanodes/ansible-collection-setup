@@ -1,0 +1,12 @@
+---
+# defaults file for unbound
+# see https://thomas-leister.de/unbound-als-lokaler-dns-resolver/
+# see https://github.com/aruhier/ansible-role-unbound
+
+unbound_packages:
+  - unbound
+  # for dig
+  - bind9-dnsutils
+
+# do uninstall unbound, set it to yes
+unbound_remove: false

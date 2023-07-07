@@ -1,0 +1,25 @@
+# alt_document_root = '/home/git/public/assets'
+# shutdown_timeout = "60s"
+# trusted_cidrs_for_x_forwarded_for = []
+# trusted_cidrs_for_propagation = []
+
+[redis]
+URL = "{{ gitlab_redis_url }}"
+{% if activ_object_store_consolidated %}
+
+[object_storage]
+  # Allowed options: AWS, AzureRM
+  provider = "{{ gitlab_object_store_connection.provider }}"
+
+[object_storage.s3]
+  aws_access_key_id = "{{ gitlab_object_store_connection.aws_access_key_id | default('') }}"
+  aws_secret_access_key = "{{ gitlab_object_store_connection.aws_secret_access_key | default('') }}"
+{% endif %}
+
+[image_resizer]
+  max_scaler_procs = {{ gitlab_puma_workers }} # Recommendation: CPUs / 2
+  max_filesize = 250000
+
+[[listeners]]
+  network = "tcp"
+  addr = "127.0.0.1:3443"
