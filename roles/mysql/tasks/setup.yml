@@ -15,11 +15,6 @@
   changed_when: False
   when: not mysql_installed.stat.exists
 
-- name: Ensure MySQL Python libraries are installed.
-  ansible.builtin.apt:
-    name: "{{ mysql_python_package_debian }}"
-    state: present
-
 - name: Ensure MySQL packages are installed.
   ansible.builtin.apt:
     name: "{{ mysql_packages }}"

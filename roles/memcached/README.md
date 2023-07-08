@@ -25,10 +25,6 @@ Number of threads to run.
 
 Memcached limits. The maximum amount of RAM `memcached` will consume (64MB is the default), the memory-limit of a single item and the maximum number of simultaneous connections memcached will handle.
 
-    memcached_log_file: /var/log/memcached.log
-
-The location of the memcached log file.
-
     memcached_log_verbosity: ""
 
 Normally memcached does not log anything. Change to "-v" to enable logging or to "-vv" for debug logging.

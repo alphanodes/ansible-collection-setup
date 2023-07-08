@@ -3,6 +3,14 @@
   hosts: all
 
   pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        name: bash
+        state: present
+        update_cache: yes
+        cache_valid_time: 600
+      changed_when: false
+
     # fix Illegal option -o pipefail
     - name: Set default interactive shell to bash (used by scripts)
       ansible.builtin.file:

@@ -1,6 +1,4 @@
 ---
 
-mysql_client_packages:
- - mysql-client
 mysql_client_check_php_package: php8.1-common
 mysql_client_php_package: php8.1-mysql

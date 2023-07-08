@@ -8,4 +8,8 @@ mysql_local_apt_key: true
 mysql_apt_repo_version: '8.0'
 mysql_apt_repo_version_prev: '5.7'
 
+mysql_client_packages:
+ - mysql-client
+ - python3-mysqldb
+
 mysql_apt_repo_url: 'deb https://repo.mysql.com/apt/debian/ {{ ansible_distribution_release | lower }} mysql-{{ mysql_apt_repo_version }}'
