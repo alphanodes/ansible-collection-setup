@@ -12,7 +12,7 @@ name: "alphanodes.setup.systemd_timer"
 
 defaults:
   run:
-    working-directory: 'alphanodes.systemd_timer'
+    working-directory: 'systemd_timer'
 
 jobs:
   build:
@@ -31,7 +31,7 @@ jobs:
       - name: Check out the codebase.
         uses: actions/checkout@v3
         with:
-          path: 'alphanodes.barman'
+          path: 'systemd_timer'
 
       - name: Set up Python 3.
         uses: actions/setup-python@v4

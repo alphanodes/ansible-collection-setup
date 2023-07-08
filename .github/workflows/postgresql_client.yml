@@ -12,7 +12,7 @@ name: "alphanodes.setup.postgresql_client"
 
 defaults:
   run:
-    working-directory: 'alphanodes.postgresql_client'
+    working-directory: 'postgresql_client'
 
 jobs:
   build:
@@ -31,7 +31,7 @@ jobs:
       - name: Check out the codebase.
         uses: actions/checkout@v3
         with:
-          path: 'alphanodes.barman'
+          path: 'postgresql_client'
 
       - name: Set up Python 3.
         uses: actions/setup-python@v4

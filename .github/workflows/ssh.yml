@@ -5,15 +5,22 @@ name: "alphanodes.setup.ssh"
   push:
     branches:
       - main
+    paths:
+      - 'roles/ssh/**'
+      - 'molecule/ssh/**'
+      - '.github/workflows/ssh.yml'
 
 defaults:
   run:
-    working-directory: 'alphanodes.ssh'
+    working-directory: 'ssh'
 
 jobs:
-  molecule:
-    name: Molecule
+  build:
     runs-on: ubuntu-latest
+    env:
+      PY_COLORS: 1
+      ANSIBLE_FORCE_COLOR: 1
+
     strategy:
       matrix:
         distro:
@@ -24,7 +31,7 @@ jobs:
       - name: Check out the codebase.
         uses: actions/checkout@v3
         with:
-          path: 'alphanodes.ssh'
+          path: 'ssh'
 
       - name: Set up Python 3.
         uses: actions/setup-python@v4
@@ -32,13 +39,13 @@ jobs:
           python-version: '3.x'
 
       - name: Install test dependencies.
-        run: pip3 install ansible molecule molecule-plugins[docker] docker
+        run: |
+          python -m pip install --no-cache-dir --upgrade pip
+          python -m pip install -r requirements.txt
 
       - name: Run Molecule tests.
         run: |
           molecule --version
           molecule test -s ssh
         env:
-          PY_COLORS: '1'
-          ANSIBLE_FORCE_COLOR: '1'
           MOLECULE_DISTRO: ${{ matrix.distro }}

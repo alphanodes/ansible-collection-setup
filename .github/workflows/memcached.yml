@@ -12,7 +12,7 @@ name: "alphanodes.setup.memcached"
 
 defaults:
   run:
-    working-directory: 'alphanodes.memcached'
+    working-directory: 'memcached'
 
 jobs:
   build:
@@ -31,7 +31,7 @@ jobs:
       - name: Check out the codebase.
         uses: actions/checkout@v3
         with:
-          path: 'alphanodes.barman'
+          path: 'memcached'
 
       - name: Set up Python 3.
         uses: actions/setup-python@v4

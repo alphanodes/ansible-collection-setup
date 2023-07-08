@@ -12,7 +12,7 @@ name: "alphanodes.setup.pip"
 
 defaults:
   run:
-    working-directory: 'alphanodes.pip'
+    working-directory: 'pip'
 
 jobs:
   build:
@@ -31,7 +31,7 @@ jobs:
       - name: Check out the codebase.
         uses: actions/checkout@v3
         with:
-          path: 'alphanodes.barman'
+          path: 'pip'
 
       - name: Set up Python 3.
         uses: actions/setup-python@v4
