@@ -5,11 +5,6 @@
     name: '{{ mysql_client_packages }}'
     state: present
 
-- name: Be sure mysqldb is installed
-  ansible.builtin.apt:
-    name: "{{ 'python3-mysqldb' if ansible_python_interpreter is defined and 'python3' in ansible_python_interpreter else 'python-mysqldb' }}"
-    state: present
-
 - name: Gather the package facts
   ansible.builtin.package_facts:
     manager: auto
