@@ -22,7 +22,7 @@ __metaclass__ = type
 
 DOCUMENTATION = '''
 ---
-module: mongodb_replication
+module: alphanodes.setup.mongodb_replication
 short_description: Adds or removes a node from a MongoDB Replica Set.
 description:
     - Adds or removes host from a MongoDB replica set. Initialize replica set if it needed.

@@ -1,10 +1,12 @@
+*.pyc
 *~
 .DS_Store
+.ruby-lsp
 .venv
 .vscode
 /*.retry
 /*.tar.gz
-.ruby-lsp
+/.python-version
 Gemfile.lock
 hosts
 tmp/

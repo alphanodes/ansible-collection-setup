@@ -1,7 +1,7 @@
 ---
 
 - name: Replication configuration
-  mongodb_replication:
+  alphanodes.setup.mongodb_replication:
     build_indexes: "{{ item.build_indexes | default(omit) }}"
     login_host: "{{ mongodb_login_host | default('localhost') }}"
     login_port: "{{ mongodb_login_port | default(27017) }}"
@@ -20,7 +20,7 @@
     - "{{ mongodb_replication_params | default([]) }}"
 
 - name: Replication configuration without auth on master
-  mongodb_replication:
+  alphanodes.setup.mongodb_replication:
     build_indexes: "{{ item.build_indexes | default(omit) }}"
     login_host: "{{ mongodb_login_host | default('localhost') }}"
     login_port: "{{ mongodb_login_port | default(27017) }}"
@@ -38,7 +38,7 @@
     - "{{ mongodb_replication_params | default([]) }}"
 
 - name: Replication configuration without auth on replicas and arbiters
-  mongodb_replication:
+  alphanodes.setup.mongodb_replication:
     build_indexes: "{{ item.build_indexes | default(omit) }}"
     login_host: "{{ mongodb_login_host | default('localhost') }}"
     login_port: "{{ mongodb_login_port | default(27017) }}"
