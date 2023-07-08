@@ -1,0 +1,23 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 600
+
+  roles:
+    - role: alphanodes.setup.mysql_client
+
+  post_tasks:
+    - name: Run mysql client
+      ansible.builtin.command: mysql --version
+      changed_when: false
+      register: mysql_info
+
+    - name: Show mysql client version info
+      ansible.builtin.debug:
+        var: mysql_info.stdout
