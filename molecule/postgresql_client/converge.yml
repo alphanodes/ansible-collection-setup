@@ -2,5 +2,12 @@
 - name: Converge
   hosts: all
 
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 600
+      changed_when: false
+
   roles:
     - role: alphanodes.setup.postgresql_client
