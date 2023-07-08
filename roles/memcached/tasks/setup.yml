@@ -21,7 +21,7 @@
   notify: Restart memcached
 
 - name: Ensure Memcached is started and set to run on startup.
-  ansible.builtin.service:
+  ansible.builtin.systemd:
     name: memcached
     state: started
     enabled: yes

@@ -1,5 +1,5 @@
 ---
 - name: Restart memcached
-  ansible.builtin.service:
+  ansible.builtin.systemd:
     name: memcached
     state: restarted
