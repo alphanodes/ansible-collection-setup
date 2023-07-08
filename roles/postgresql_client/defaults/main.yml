@@ -10,7 +10,7 @@ postgresql_client_use_repo: true
 postgresql_client_version: "{{ postgresql_version | default('14') }}"
 postgresql_client_packages:
  - postgresql-client-{{ postgresql_version | default(postgresql_client_version) }}
-
+ - python3-psycopg2
 
 postgresql_repo_key_url: 'https://www.postgresql.org/media/keys/ACCC4CF8.asc'
 postgresql_repo_protocol: https
