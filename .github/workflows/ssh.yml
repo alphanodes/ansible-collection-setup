@@ -1,5 +1,5 @@
 ---
-name: Swapfile
+name: "alphanodes.setup.ssh"
 'on':
   pull_request:
   push:
@@ -8,7 +8,7 @@ name: Swapfile
 
 defaults:
   run:
-    working-directory: 'AlphaNodes.drupal_task'
+    working-directory: 'alphanodes.ssh'
 
 jobs:
   molecule:
@@ -24,7 +24,7 @@ jobs:
       - name: Check out the codebase.
         uses: actions/checkout@v3
         with:
-          path: 'AlphaNodes.drupal_task'
+          path: 'alphanodes.ssh'
 
       - name: Set up Python 3.
         uses: actions/setup-python@v4

@@ -1,14 +1,19 @@
 ---
-name: Systemd Timer
+name: "alphanodes.setup.mongodb"
 'on':
   pull_request:
   push:
     branches:
       - main
+    paths:
+      - 'plugins/modules/mongodb_replication.py'
+      - 'roles/mongodb/**'
+      - 'molecule/mongodb/**'
+      - '.github/workflows/mongodb.yml'
 
 defaults:
   run:
-    working-directory: 'AlphaNodes.drupal_task'
+    working-directory: 'alphanodes.mongodb'
 
 jobs:
   molecule:
@@ -24,7 +29,7 @@ jobs:
       - name: Check out the codebase.
         uses: actions/checkout@v3
         with:
-          path: 'AlphaNodes.drupal_task'
+          path: 'alphanodes.mongodb'
 
       - name: Set up Python 3.
         uses: actions/setup-python@v4
