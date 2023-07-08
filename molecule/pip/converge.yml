@@ -16,8 +16,8 @@
     # fix Illegal option -o pipefail
     - name: Set default interactive shell to bash (used by scripts)
       ansible.builtin.file:
-        src: /usr/bin/bash
-        path: /usr/bin/sh
+        src: bash
+        path: /bin/sh
         state: link
         force: true
 

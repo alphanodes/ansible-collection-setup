@@ -7,8 +7,11 @@ name: "alphanodes.setup.postgresql"
       - main
     paths:
       - 'roles/postgresql/**'
+      - 'roles/postgresql_client/**'
       - 'molecule/postgresql/**'
+      - 'molecule/postgresql_client/**'
       - '.github/workflows/postgresql.yml'
+      - '.github/workflows/postgresql_client.yml'
 
 defaults:
   run:
