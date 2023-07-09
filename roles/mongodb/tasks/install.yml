@@ -29,6 +29,11 @@
     state: present
   when: mongodb_package == 'mongodb-org'
 
+- name: Apt cache update - does not work with ansible.builtin.apt_repository
+  ansible.builtin.apt:
+    update_cache: true
+  when: mongodb_package == 'mongodb-org'
+
 - name: Install MongoDB package
   ansible.builtin.apt:
     name: "{{ item }}{% if (mongodb_version | length > 3) %}={{ mongodb_version }}{% endif %}"
