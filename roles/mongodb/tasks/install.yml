@@ -3,11 +3,6 @@
   ansible.builtin.set_fact:
     mongodb_major_version: "{{ mongodb_version[0:3] | string }}"
 
-- name: Disable transparent huge pages on systemd systems
-  ansible.builtin.include_tasks: disable_transparent_hugepages.yml
-  when:
-    - mongodb_disable_transparent_hugepages | bool
-
 - name: Add APT key
   ansible.builtin.apt_key:
     keyserver: "{{ mongodb_apt_keyserver if not mongodb_apt_key_from_url | bool else omit }}"
@@ -68,9 +63,9 @@
 
 - name: Add systemd configuration if present
   ansible.builtin.template:
-    src: mongodb.service.j2
-    dest: "/lib/systemd/system/{{ mongodb_daemon_name }}.service"
-    mode: '0644'
+    src: systemd/mongodb.service.j2
+    dest: /lib/systemd/system/{{ mongodb_daemon_name }}.service
+    mode: 0644
   when:
     - mongodb_manage_systemd_unit | bool
   notify:
@@ -78,43 +73,30 @@
 
 - name: Add symlink for systemd
   ansible.builtin.file:
-    src: "/lib/systemd/system/{{ mongodb_daemon_name }}.service"
-    dest: "/etc/systemd/system/multi-user.target.wants/{{ mongodb_daemon_name }}.service"
+    src: /lib/systemd/system/{{ mongodb_daemon_name }}.service
+    dest: /etc/systemd/system/multi-user.target.wants/{{ mongodb_daemon_name }}.service
     state: link
   when:
     - mongodb_manage_systemd_unit | bool
   notify:
     - Reload systemd daemon
 
-  # Workaround for the idempotence issue on Debian 10 with pip module
-- name: Forcefully set mongodb_pymongo_from_pip to false on Debian 10
-  ansible.builtin.set_fact:
-    mongodb_pymongo_from_pip: false
-  when:
-    - ansible_distribution == 'Debian'
-    - ansible_distribution_release == 'buster'
-
 - name: Install PyMongo package
   ansible.builtin.apt:
     name: "{{ mongodb_pymongo_package }}"
+    state: present
   when: not mongodb_pymongo_from_pip
 
-- name: Install PIP
-  ansible.builtin.apt:
-    pkg: "{{ mongodb_pymongo_deps }}"
-  when: mongodb_pymongo_from_pip | bool
+- name: Using pip
+  when: mongodb_pymongo_from_pip
+  block:
+    - name: Include pip role
+      ansible.builtin.include_role:
+        name: alphanodes.setup.pip
 
-  # TODO: check if it is still needed for Debian/Ubuntu
-- name: Install setuptools (required for ansible 2.7+)
-  ansible.builtin.apt:
-    pkg: "{{ mongodb_python_setuptools }}"
-  when: mongodb_pymongo_from_pip | bool
-
-- name: Install PyMongo from PIP
-  ansible.builtin.pip:
-    name:
-      - pymongo
-    state: "{{ mongodb_pymongo_pip_version is defined | ternary('present', 'latest') }}"
-    version: "{{ mongodb_pymongo_pip_version | default(omit) }}"
-    executable: "{{ mongodb_pip_executable }}"
-  when: mongodb_pymongo_from_pip | bool
+    - name: Install PyMongo pip package
+      ansible.builtin.pip:
+        name:
+          - pymongo
+        state: "{{ mongodb_pymongo_pip_version is defined | ternary('present', 'latest') }}"
+        version: "{{ mongodb_pymongo_pip_version | default(omit) }}"

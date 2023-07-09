@@ -9,7 +9,7 @@
 
 - name: Ensure required packages are installed
   ansible.builtin.apt:
-    pkg: "{{ ethercalc_required_packages }}"
+    name: "{{ ethercalc_required_packages }}"
     state: present
 
 - name: Ensure ethercalc is latest

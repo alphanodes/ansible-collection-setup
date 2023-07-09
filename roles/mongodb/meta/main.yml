@@ -1,6 +1,7 @@
 ---
 dependencies:
   - role: alphanodes.setup.common
+  - role: alphanodes.setup.pip
 
 galaxy_info:
   author: alexandermeindl

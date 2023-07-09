@@ -13,6 +13,7 @@
     - name: "Include ansible-role-mongodb"
       ansible.builtin.include_role:
         name: alphanodes.setup.mongodb
+
   vars:
     mongodb_package: "{{ lookup('env','MONGODB_PACKAGE') }}"
     mongodb_version: "{{ lookup('env','MONGODB_VERSION') }}"

@@ -7,6 +7,12 @@
     state: started
     daemon_reload: true
 
+- name: Run enable-transparent-hugepages
+  ansible.builtin.systemd:
+    name: disable-transparent-hugepages
+    enabled: false
+    state: stopped
+
 - name: Restart mongodb
   ansible.builtin.systemd:
     name: "{{ mongodb_daemon_name }}"

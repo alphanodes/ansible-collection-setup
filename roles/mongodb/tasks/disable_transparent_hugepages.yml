@@ -1,13 +1,32 @@
 ---
+
 - name: Create disable transparent hugepages systemd service file
+  when: mongodb_disable_transparent_hugepages | bool
   ansible.builtin.template:
-    src: "{{ item }}"
+    src: systemd/disable-transparent-hugepages.service.j2
     dest: /etc/systemd/system/disable-transparent-hugepages.service
     mode: 0644
-  with_first_found:
-    - "disable-transparent-hugepages.{{ ansible_distribution | lower }}.service.j2"
-    - "disable-transparent-hugepages.{{ ansible_os_family | lower }}.service.j2"
   notify:
     - Run disable-transparent-hugepages
-  when:
-    - mongodb_disable_transparent_hugepages | bool
+
+- name: Enable transparent hugepages (this is system default)
+  when: not mongodb_disable_transparent_hugepages | bool
+  block:
+    - name: Get bin information
+      ansible.builtin.stat:
+        path: /etc/systemd/system/disable-transparent-hugepages.service
+      register: hugepages_file
+
+    - name: Stop service
+      when: hugepages_file.stat.exists
+      ansible.builtin.systemd:
+        name: disable-transparent-hugepages
+        enabled: false
+        state: stopped
+
+    - name: Remove service file
+      ansible.builtin.systemd:
+        path: /etc/systemd/system/disable-transparent-hugepages.service
+        state: absent
+      notify:
+        - Reload systemd daemon

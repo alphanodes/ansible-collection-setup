@@ -1,0 +1,13 @@
+# {{ ansible_managed }}
+[Unit]
+Description="Disable Transparent Hugepage before MongoDB boots"
+Before={{ mongodb_daemon_name }}.service
+
+[Service]
+Type=oneshot
+ExecStart=-/usr/bin/bash -c 'echo never > /sys/kernel/mm/transparent_hugepage/enabled'
+ExecStart=-/usr/bin/bash -c 'echo never > /sys/kernel/mm/transparent_hugepage/defrag'
+ExecStart=-/usr/bin/bash -c 'echo 0 > /sys/kernel/mm/transparent_hugepage/khugepaged/defrag'
+
+[Install]
+RequiredBy={{ mongodb_daemon_name }}.service
