@@ -18,6 +18,10 @@
     mongodb_package == 'mongodb-org' and
     mongodb_version is not defined
 
+- name: Show apt url
+  ansible.builtin.debug:
+    msg: "mongodb_apt_url = {{ mongodb_apt_url }}"
+
 - name: Add APT repository
   ansible.builtin.apt_repository:
     repo: '{{ mongodb_apt_url }}'
@@ -28,8 +32,7 @@
 - name: Install MongoDB package
   ansible.builtin.apt:
     name: "{{ item }}{% if (mongodb_version | length > 3) %}={{ mongodb_version }}{% endif %}"
-    state: "{{ mongodb_package_state }}"
-    update_cache: true
+    state: present
   with_items:
     - "{{ mongodb_package }}"
     - "{{ mongodb_package }}-database-tools-extra"
