@@ -2,30 +2,27 @@
 - name: Establish some role-related facts
   ansible.builtin.set_fact:
     mongodb_major_version: "{{ mongodb_version[0:3] | string }}"
+    mongodb_apt_url: "{{ mongodb_apt_ubuntu_url if ansible_distribution == 'Ubuntu' else mongodb_apt_debian_url }}"
 
-- name: Add APT key
-  ansible.builtin.apt_key:
-    keyserver: "{{ mongodb_apt_keyserver if not mongodb_apt_key_from_url | bool else omit }}"
-    url: "{{ mongodb_apt_key_url[mongodb_major_version] if mongodb_apt_key_from_url | bool else omit }}"
-    id: "{{ mongodb_apt_key_id[mongodb_major_version] }}"
-  when: mongodb_package == 'mongodb-org'
-  tags:
-    - skip_ansible_lint
+- name: Add mongodb gpg key
+  ansible.builtin.get_url:
+    url: "{{ mongodb_apt_key_url }}"
+    dest: /etc/apt/trusted.gpg.d/mongodb.asc
+    mode: 0644
+    force: true
 
 - name: Fail when used wrong mongodb_version variable
   ansible.builtin.fail:
-    msg: "mongodb_version variable should be 4.0, 4.2, 4.4, 5.0 or 6.0"
-  when: (mongodb_package == 'mongodb-org' and
-        (mongodb_version is not defined
-         or mongodb_repository[mongodb_major_version] is not defined))
+    msg: "mongodb_version is not defined"
+  when: >
+    mongodb_package == 'mongodb-org' and
+    mongodb_version is not defined
 
 - name: Add APT repository
   ansible.builtin.apt_repository:
-    repo: "{{ mongodb_repository[version_item] }}"
+    repo: '{{ mongodb_apt_url }}'
     update_cache: true
-  with_items: "{{ mongodb_major_version }}"
-  loop_control:
-    loop_var: version_item
+    state: present
   when: mongodb_package == 'mongodb-org'
 
 - name: Install MongoDB package

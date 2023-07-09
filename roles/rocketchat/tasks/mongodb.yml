@@ -1,13 +1,5 @@
 ---
 
-# alphanodes.mongodb use deprecated apt_key
-- name: Add mongodb gpg key
-  ansible.builtin.get_url:
-    url: "{{ rocketchat_mongodb_apt_key_url }}"
-    dest: /etc/apt/trusted.gpg.d/mongodb.asc
-    mode: 0644
-    force: true
-
 - name: Include mongodb role
   ansible.builtin.include_role:
     name: alphanodes.setup.mongodb

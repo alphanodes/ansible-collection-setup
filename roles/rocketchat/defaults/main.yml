@@ -39,5 +39,3 @@ rocketchat_vhost_letsencrypt_key: '{{ letsencrypt_keys[0] | default(omit) }}'
 
 # if you want to remove rocketchat, set it to yes
 rocketchat_remove: false
-
-rocketchat_mongodb_apt_key_url: https://www.mongodb.org/static/pgp/server-5.0.asc
