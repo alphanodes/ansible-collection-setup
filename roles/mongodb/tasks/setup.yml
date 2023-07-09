@@ -13,12 +13,6 @@
           and mongodb_net_ssl_host != mongodb_login_host
           and not mongodb_replication_replset )
 
-- name: Include OS-specific variables
-  ansible.builtin.include_vars: "{{ item }}"
-  with_first_found:
-    - "{{ ansible_distribution_release }}.yml"
-    - "{{ ansible_distribution }}.yml"
-
 - name: Include installation tasks
   ansible.builtin.include_tasks: install.yml
 
