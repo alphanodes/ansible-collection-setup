@@ -3,11 +3,18 @@
   hosts: all
 
   pre_tasks:
-    - name: Update apt cache.
+    - name: Make sure bash is installed
       ansible.builtin.apt:
-        update_cache: yes
-        cache_valid_time: 600
-      changed_when: false
+        name: bash
+        state: present
+
+    # fix Illegal option -o pipefail
+    - name: Set default interactive shell to bash (used by scripts)
+      ansible.builtin.file:
+        src: bash
+        path: /bin/sh
+        state: link
+        force: true
 
   tasks:
     - name: "Include ansible-role-mongodb"

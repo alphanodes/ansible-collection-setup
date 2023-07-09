@@ -1,10 +1,18 @@
 ---
 
+- name: Set fact dth_service_name
+  ansible.builtin.set_fact:
+    dth_service_name: 'disable-transparent-hugepages'
+
+- name: Set fact dth_service_file
+  ansible.builtin.set_fact:
+    dth_service_file: '/etc/systemd/system/{{ dth_service_name }}.service'
+
 - name: Create disable transparent hugepages systemd service file
   when: mongodb_disable_transparent_hugepages | bool
   ansible.builtin.template:
     src: systemd/disable-transparent-hugepages.service.j2
-    dest: /etc/systemd/system/disable-transparent-hugepages.service
+    dest: '{{ dth_service_file }}'
     mode: 0644
   notify:
     - Run disable-transparent-hugepages
@@ -14,19 +22,19 @@
   block:
     - name: Get bin information
       ansible.builtin.stat:
-        path: /etc/systemd/system/disable-transparent-hugepages.service
+        path: '{{ dth_service_file }}'
       register: hugepages_file
 
     - name: Stop service
       when: hugepages_file.stat.exists
       ansible.builtin.systemd:
-        name: disable-transparent-hugepages
+        name: '{{ dth_service_name }}'
         enabled: false
         state: stopped
 
     - name: Remove service file
-      ansible.builtin.systemd:
-        path: /etc/systemd/system/disable-transparent-hugepages.service
+      ansible.builtin.file:
+        path: '{{ dth_service_file }}'
         state: absent
       notify:
         - Reload systemd daemon
