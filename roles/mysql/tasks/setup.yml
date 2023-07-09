@@ -34,7 +34,7 @@
   ansible.builtin.file:
     path: "{{ mysql_datadir }}/{{ item }}"
     state: absent
-  with_items:
+  loop:
     - ib_logfile0
     - ib_logfile1
   when: not mysql_installed.stat.exists

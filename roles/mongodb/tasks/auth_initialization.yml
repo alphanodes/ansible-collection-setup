@@ -20,7 +20,7 @@
     roles: "{{ item.roles }}"
     login_host: "{{ mongodb_net_bindip.split(',') | map('replace', '0.0.0.0', '127.0.0.1') | list | first }}"
     login_port: "{{ mongodb_net_port | int }}"
-  with_items:
+  loop:
     - name: "{{ mongodb_user_admin_name }}"
       password: "{{ mongodb_user_admin_password }}"
       roles: "userAdminAnyDatabase"
@@ -34,7 +34,7 @@
     roles: "{{ item.roles }}"
     login_host: "{{ mongodb_net_bindip.split(',') | map('replace', '0.0.0.0', '127.0.0.1') | list | first }}"
     login_port: "{{ mongodb_net_port | int }}"
-  with_items:
+  loop:
     - name: "{{ mongodb_root_admin_name }}"
       password: "{{ mongodb_root_admin_password }}"
       roles: "root"
@@ -48,7 +48,7 @@
     roles: "{{ item.roles }}"
     login_host: "{{ mongodb_net_bindip.split(',') | map('replace', '0.0.0.0', '127.0.0.1') | list | first }}"
     login_port: "{{ mongodb_net_port | int }}"
-  with_items:
+  loop:
     - name: "{{ mongodb_root_backup_name }}"
       password: "{{ mongodb_root_backup_password }}"
       roles: "backup,clusterMonitor"

@@ -24,7 +24,7 @@
 
 - name: Disallow root login remotely
   ansible.builtin.command: 'mysql -NBe "{{ item }}"'
-  with_items:
+  loop:
     - DELETE FROM mysql.user WHERE User='{{ mysql_root_username }}' AND Host NOT IN ('localhost', '127.0.0.1', '::1')
   changed_when: false
 

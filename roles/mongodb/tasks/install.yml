@@ -22,7 +22,7 @@
   ansible.builtin.debug:
     msg: "mongodb_apt_url = {{ mongodb_apt_url }}"
 
-- name: Add APT repository
+- name: Ensure apt sources list for mongodb.org sources is present
   ansible.builtin.apt_repository:
     repo: '{{ mongodb_apt_url }}'
     update_cache: true
@@ -33,7 +33,7 @@
   ansible.builtin.apt:
     name: "{{ item }}{% if (mongodb_version | length > 3) %}={{ mongodb_version }}{% endif %}"
     state: present
-  with_items:
+  loop:
     - "{{ mongodb_package }}"
     - "{{ mongodb_package }}-database-tools-extra"
     - "{{ mongodb_package }}-mongos"
