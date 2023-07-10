@@ -3,21 +3,16 @@
 - name: Use pip
   when: glances_with_pip
   block:
-    - name: Include pip role
-      ansible.builtin.include_role:
-        name: alphanodes.setup.pip
-
     - name: Be sure glances not installed with debian packages
       ansible.builtin.apt:
         name: glances
         state: absent
 
-    # see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/pip_module.html
-    - name: Install pip modules
-      ansible.builtin.pip:
-        name: '{{ glances_pip_modules }}'
-        state: present
-        virtualenv: "{{ python_venv_parent }}/glances"
+    - name: Include python role
+      ansible.builtin.include_role:
+        name: alphanodes.setup.python
+      vars:
+        python_pip_packages: '{{ glances_pip_packages }}'
 
 - name: Use debian package
   when: not glances_with_pip

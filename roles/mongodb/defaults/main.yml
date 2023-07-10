@@ -10,7 +10,17 @@ mongodb_apt_key_url: https://www.mongodb.org/static/pgp/server-{{ mongodb_versio
 
 # Install latest PyMongo via PIP or package manager
 mongodb_pymongo_from_pip: false
-# mongodb_pymongo_pip_version: 3.11.3
+
+mongodb_pymongo_pip_packages:
+  - pymongo
+
+# or for a specific version
+
+# mongodb_pymongo_pip_packages:
+#  - name: pymongo
+#    state: present
+#    version: 3.11.3
+
 mongodb_pymongo_package: python3-pymongo
 
 mongodb_user_update_password: "on_create"        # MongoDB user password update default policy

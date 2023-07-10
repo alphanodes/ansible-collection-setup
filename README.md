@@ -43,7 +43,7 @@ This collection provides setup for:
 - [alphanodes.setup.php_cli](roles/php_cli/)
 - [alphanodes.setup.php_fpm](roles/php_fpm/)
 - [alphanodes.setup.phpmyadmin](roles/phpmyadmin/)
-- [alphanodes.setup.pip](roles/pip/)
+- [alphanodes.setup.python](roles/python/)
 - [alphanodes.setup.postfix](roles/postfix/)
 - [alphanodes.setup.postgresql](roles/postgresql/)
 - [alphanodes.setup.postgresql_client](roles/postgresql_client/)

@@ -1,13 +1,14 @@
 ---
 
-- name: Include pip role
-  ansible.builtin.include_role:
-    name: alphanodes.setup.pip
-
-- name: Be sure pip and ansible not installed with debian packages
+- name: Be sure ansible not installed with debian packages
   ansible.builtin.apt:
     name: '{{ ansible_node_disallowed_packages }}'
     state: absent
+
+- name: Include python role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.python
+    public: true
 
 - name: Be sure ansible and pip requirements are installed
   ansible.builtin.apt:
@@ -32,13 +33,15 @@
 - name: Install ansible
   ansible.builtin.pip:
     name: ansible
-    version: "{{ ansible_node_ansible_version if ansible_node_ansible_version != 'latest' }}"
-    state: "{{ ansible_node_ansible_version if ansible_node_ansible_version == 'latest' else 'present' }}"
+    version: "{{ ansible_node_ansible_version }}"
+    state: present
+    virtualenv_site_packages: '{{ python_pip_virtualenv_site_packages }}'
 
 - name: Install additional pip modules
   ansible.builtin.pip:
     name: '{{ ansible_node_pip_packages }}'
-    state: present
+    state: '{{ python_pip_default_state }}'
+    virtualenv_site_packages: '{{ python_pip_virtualenv_site_packages }}'
 
 - name: Check if ansible configuration directory exist
   ansible.builtin.file:

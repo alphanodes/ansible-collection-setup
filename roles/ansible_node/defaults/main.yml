@@ -40,8 +40,6 @@ ansible_node_packages:
 # these packages are installed with pip
 ansible_node_disallowed_packages:
   - ansible
-  - python-pip
-  - python3-pip
 
 # fixed version or latest
 # use 7.2 or 7.2.1 for minor fixed version
@@ -53,6 +51,7 @@ ansible_node_remove_before_install: false
 # this is only used, if ansible_node_remove_before_install is true
 # NOTE: all supported distributions uses python 3.9 or newer
 # TODO: this should be moved to pip role
+# NOTE: pip is installed by apt! (not in /usr/local)
 ansible_node_old_files:
   - /usr/local/bin/easy_install
   - /usr/local/bin/easy_install-2.7
@@ -62,12 +61,17 @@ ansible_node_old_files:
   - /usr/local/bin/easy_install-3.8
   - /usr/local/bin/echo_supervisord_conf
   - /usr/local/bin/pidproxy
+  - /usr/local/bin/pip
   - /usr/local/bin/pip2
   - /usr/local/bin/pip2.7
+  - /usr/local/bin/pip3
   - /usr/local/bin/pip3.5
   - /usr/local/bin/pip3.6
   - /usr/local/bin/pip3.7
   - /usr/local/bin/pip3.8
+  - /usr/local/bin/pip3.9
+  - /usr/local/bin/pip3.10
+  - /usr/local/bin/pip3.11
   - /usr/local/lib/python2.7
   - /usr/local/lib/python3.5
   - /usr/local/lib/python3.6

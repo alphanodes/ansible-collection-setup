@@ -6,9 +6,9 @@ name: "alphanodes.setup.glances"
     branches:
       - main
     paths:
-      - 'roles/pip/**'
-      - 'molecule/pip/**'
-      - '.github/workflows/pip.yml'
+      - 'roles/python/**'
+      - 'molecule/python/**'
+      - '.github/workflows/python.yml'
       - 'roles/glances/**'
       - 'molecule/glances/**'
       - '.github/workflows/glances.yml'

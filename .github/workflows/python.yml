@@ -1,18 +1,18 @@
 ---
-name: "alphanodes.setup.pip"
+name: "alphanodes.setup.python"
 'on':
   pull_request:
   push:
     branches:
       - main
     paths:
-      - 'roles/pip/**'
-      - 'molecule/pip/**'
-      - '.github/workflows/pip.yml'
+      - 'roles/python/**'
+      - 'molecule/python/**'
+      - '.github/workflows/python.yml'
 
 defaults:
   run:
-    working-directory: 'pip'
+    working-directory: 'python'
 
 jobs:
   build:
@@ -31,7 +31,7 @@ jobs:
       - name: Check out the codebase.
         uses: actions/checkout@v3
         with:
-          path: 'pip'
+          path: 'python'
 
       - name: Set up Python 3.
         uses: actions/setup-python@v4
@@ -46,6 +46,6 @@ jobs:
       - name: Run Molecule tests.
         run: |
           molecule --version
-          molecule test -s pip
+          molecule test -s python
         env:
           MOLECULE_DISTRO: ${{ matrix.distro }}

@@ -95,13 +95,8 @@
 - name: Using pip
   when: mongodb_pymongo_from_pip
   block:
-    - name: Include pip role
+    - name: Include python role
       ansible.builtin.include_role:
-        name: alphanodes.setup.pip
-
-    - name: Install PyMongo pip package
-      ansible.builtin.pip:
-        name:
-          - pymongo
-        state: "{{ mongodb_pymongo_pip_version is defined | ternary('present', 'latest') }}"
-        version: "{{ mongodb_pymongo_pip_version | default(omit) }}"
+        name: alphanodes.setup.python
+      vars:
+        python_pip_packages: '{{ mongodb_pymongo_pip_packages }}'

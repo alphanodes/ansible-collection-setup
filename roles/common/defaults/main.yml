@@ -1,3 +1,1 @@
 ---
-
-python_venv_parent: "{{ ansible_env.HOME }}/.venvs"

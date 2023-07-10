@@ -10,18 +10,8 @@
     name: '{{ sphinx_unwanted_packages }}'
     state: absent
 
-- name: Include pip role
+- name: Include python role
   ansible.builtin.include_role:
-    name: alphanodes.setup.pip
-
-- name: Install sphinx
-  ansible.builtin.pip:
-    name: sphinx
-    version: "{{ sphinx_version | default(omit) }}"
-    state: "{{ present if sphinx_version is defined else 'latest' }}"
-
-- name: Install additional sphinx modules with pip
-  ansible.builtin.pip:
-    name: '{{ item }}'
-    state: latest
-  loop: '{{ sphinx_pip_packages | default([]) }}'
+    name: alphanodes.setup.python
+  vars:
+    python_pip_packages: '{{ sphinx_pip_packages }}'

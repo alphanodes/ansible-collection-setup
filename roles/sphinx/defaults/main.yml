@@ -4,9 +4,6 @@
 # all instances are stored there
 sphinx_base_dir: /srv/sphinx
 
-# if you want a specific version. do not set means latest version
-# sphinx_version: 1.7.5
-
 sphinx_packages:
   - build-essential
   - texlive-latex-recommended
@@ -18,10 +15,14 @@ sphinx_packages:
 
 sphinx_unwanted_packages:
   - sphinx-common
-  - python-pip
-  - python3-pip
 
+# if you want a specific version. do not set means latest version
+# use:
+# - name: sphinx
+#   version: 1.7.5
+#   state: present
 sphinx_pip_packages:
+  - sphinx
   - sphinx_rtd_theme
   - myst-parser
   - sphinx-copybutton
