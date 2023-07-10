@@ -1,5 +1,10 @@
 ---
 
+- name: Ensure pip packages are installed
+  ansible.builtin.apt:
+    name: '{{ pip_packages }}'
+    state: present
+
 # Causes an error if we try and which something that doesn't exist so use this
 # as a workaround.
 - name: Check to see if pip is already installed.
