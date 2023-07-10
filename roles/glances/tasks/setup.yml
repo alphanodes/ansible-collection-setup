@@ -12,10 +12,12 @@
         name: glances
         state: absent
 
+    # see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/pip_module.html
     - name: Install pip modules
       ansible.builtin.pip:
         name: '{{ glances_pip_modules }}'
         state: present
+        virtualenv: "{{ python_venv_parent }}/glances"
 
 - name: Use debian package
   when: not glances_with_pip

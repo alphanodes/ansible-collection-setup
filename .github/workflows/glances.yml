@@ -1,0 +1,54 @@
+---
+name: "alphanodes.setup.glances"
+'on':
+  pull_request:
+  push:
+    branches:
+      - main
+    paths:
+      - 'roles/pip/**'
+      - 'molecule/pip/**'
+      - '.github/workflows/pip.yml'
+      - 'roles/glances/**'
+      - 'molecule/glances/**'
+      - '.github/workflows/glances.yml'
+
+defaults:
+  run:
+    working-directory: 'glances'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      PY_COLORS: 1
+      ANSIBLE_FORCE_COLOR: 1
+
+    strategy:
+      matrix:
+        distro:
+          - ubuntu2204
+          - debian11
+
+    steps:
+      - name: Check out the codebase.
+        uses: actions/checkout@v3
+        with:
+          path: 'glances'
+
+      - name: Set up Python 3.
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install test dependencies.
+        run: |
+          python -m pip install --no-cache-dir --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Run Molecule tests.
+        run: |
+          molecule --version
+          molecule test -s glances
+        env:
+          MOLECULE_DISTRO: ${{ matrix.distro }}

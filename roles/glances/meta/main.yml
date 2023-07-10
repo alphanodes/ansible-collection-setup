@@ -1,5 +1,6 @@
 ---
-dependencies: []
+dependencies:
+  - role: alphanodes.setup.common
 
 galaxy_info:
   description: Setup glances
