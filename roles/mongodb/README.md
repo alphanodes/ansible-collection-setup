@@ -56,7 +56,7 @@ mongodb_security_authorization: "disabled"
 mongodb_security_keyfile: /etc/mongodb-keyfile # Specify path to keyfile with password for inter-process authentication
 
 ## storage Options
-mongodb_storage_dbpath: /data/db # Directory for datafiles
+mongodb_storage_dbpath: /var/lib/mongodb # Directory for datafiles
 mongodb_storage_dirperdb: false # Use one directory per DB
 
 # The storage engine for the mongod database

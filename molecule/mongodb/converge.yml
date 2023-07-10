@@ -26,7 +26,6 @@
     mongodb_version: "{{ lookup('env','MONGODB_VERSION') }}"
     mongodb_security_authorization: "{{ lookup('env', 'AUTH_STATE') }}"
     mongodb_replication_replset: "{{ lookup('env', 'REPLICASET') }}"
-    mongodb_storage_dbpath: /var/lib/mongodb
     mongodb_net_bindip: 0.0.0.0
     mongodb_login_host: "{{ hostvars[groups['mongo_master'][0]].ansible_default_ipv4.address }}"
 

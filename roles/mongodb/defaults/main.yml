@@ -8,7 +8,8 @@ mongodb_apt_ubuntu_url: "deb http://repo.mongodb.org/apt/ubuntu {{ ansible_distr
 
 mongodb_apt_key_url: https://www.mongodb.org/static/pgp/server-{{ mongodb_version }}.asc
 
-mongodb_pymongo_from_pip: true                   # Install latest PyMongo via PIP or package manager
+# Install latest PyMongo via PIP or package manager
+mongodb_pymongo_from_pip: false
 # mongodb_pymongo_pip_version: 3.11.3
 mongodb_pymongo_package: python3-pymongo
 
@@ -51,7 +52,7 @@ mongodb_security_keyfile: /etc/mongodb-keyfile   # Specify path to keyfile with 
 mongodb_security_javascript_enabled: true        # Enables or disables server-side JavaScript execution
 
 ## storage Options
-mongodb_storage_dbpath: /data/db                 # Directory for datafiles
+mongodb_storage_dbpath: /var/lib/mongodb         # Directory for datafiles
 mongodb_storage_dirperdb: false                  # Use one directory per DB
 
 # The storage engine for the mongod database
