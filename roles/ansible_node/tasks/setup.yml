@@ -35,12 +35,14 @@
     name: ansible
     version: "{{ ansible_node_ansible_version }}"
     state: present
+    virtualenv: '{{ ansible_pip_venv_path }}'
     virtualenv_site_packages: '{{ python_pip_virtualenv_site_packages }}'
 
 - name: Install additional pip modules
   ansible.builtin.pip:
     name: '{{ ansible_node_pip_packages }}'
     state: '{{ python_pip_default_state }}'
+    virtualenv: '{{ ansible_pip_venv_path }}'
     virtualenv_site_packages: '{{ python_pip_virtualenv_site_packages }}'
 
 - name: Check if ansible configuration directory exist
@@ -62,12 +64,12 @@
     mode: 0644
 
 - name: Install ansible roles
-  ansible.builtin.command: ansible-galaxy role {{ item.action | default('install') }} {{ item.name }}
+  ansible.builtin.command: "{{ ansible_node_playbook_galaxy_script }} role {{ item.action | default('install') }} {{ item.name }}"
   loop: '{{ ansible_node_roles | default([]) }}'
   when: ansible_node_identifier != ''
 
 - name: Install ansible collections
-  ansible.builtin.command: ansible-galaxy collection {{ item.action | default('install') }} {{ item.name }}
+  ansible.builtin.command: "{{ ansible_node_playbook_galaxy_script }} collection {{ item.action | default('install') }} {{ item.name }}"
   loop: '{{ ansible_node_collections | default([]) }}'
   when: ansible_node_identifier != ''
 

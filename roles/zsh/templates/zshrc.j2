@@ -92,6 +92,9 @@ alias u="apt update && apt upgrade"
 # Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
 export PATH="$PATH:$HOME/.rvm/bin"
 {% endif %}
+{% for export_info in zsh_global_exports %}
+export {{ export_info.name }}={{ export_info.value }}
+{% endfor %}
 {% for export_info in zsh_local_exports %}
 export {{ export_info.name }}={{ export_info.value }}
 {% endfor %}

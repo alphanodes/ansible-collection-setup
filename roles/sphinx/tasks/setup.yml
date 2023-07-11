@@ -13,5 +13,11 @@
 - name: Include python role
   ansible.builtin.include_role:
     name: alphanodes.setup.python
+    public: true
   vars:
     python_pip_packages: '{{ sphinx_pip_packages }}'
+    python_pip_default_venv: '{{ sphinx_pip_venv }}'
+
+- name: Set sphinx_bin_path
+  ansible.builtin.set_fact:
+    sphinx_bin_path: '{{ python_venv_parent }}/{{ sphinx_pip_venv }}/bin'

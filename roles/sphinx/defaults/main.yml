@@ -29,6 +29,8 @@ sphinx_pip_packages:
   - asciinema
   - sphinxcontrib-httpdomain
 
+sphinx_pip_venv: sphinx
+
 sphinx_instances: []
 
 sphinx_always_build: false

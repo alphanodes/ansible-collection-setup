@@ -1,10 +1,9 @@
 ---
 
-- name: Remove glances pip module
-  ansible.builtin.pip:
-    name: '{{ glances_pip_modules }}'
+- name: Remove glances venv
+  ansible.builtin.file:
+    path: '{{ python_venv_parent }}/{{ glances_pip_venv }}'
     state: absent
-  ignore_errors: true
 
 - name: Remove glance package
   ansible.builtin.apt:

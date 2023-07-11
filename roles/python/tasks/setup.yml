@@ -6,16 +6,17 @@
     state: present
 
 # see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/pip_module.html
-- name: Ensure python_pip_packages are installed.
+- name: Ensure python_pip_packages are installed
   ansible.builtin.pip:
     name: "{{ item.name | default(item) }}"
     version: "{{ item.version | default(omit) }}"
     state: "{{ item.state | default(python_pip_default_state) }}"
     executable: "{{ python_pip_executable | default(omit) }}"
-    virtualenv: "{{ item.virtualenv | default(omit) }}"
+    virtualenv: "{{ item.virtualenv | default(python_venv_parent + '/' + python_pip_default_venv) | default(omit) }}"
     virtualenv_site_packages: "{{ item.virtualenv_site_packages | default(python_pip_virtualenv_site_packages) }}"
   loop: "{{ python_pip_packages }}"
+  # see https://github.com/ansible/ansible/issues/77604
   # see https://github.com/pypa/setuptools/issues/3301#issuecomment-1143186241
   # and https://github.com/pypa/setuptools/issues/3625
   # environment:
-  #   SETUPTOOLS_USE_DISTUTILS: stdlib
+  #  SETUPTOOLS_USE_DISTUTILS: stdlib

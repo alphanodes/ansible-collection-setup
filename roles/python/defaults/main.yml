@@ -7,6 +7,8 @@ python_packages:
 python_pip_packages: []
 
 python_pip_default_state: latest
-python_pip_virtualenv_site_packages: true
+python_pip_virtualenv_site_packages: false
+
+# python_pip_default_venv: yourenv
 
 python_venv_parent: "{{ ansible_env.HOME }}/.venvs"

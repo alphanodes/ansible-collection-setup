@@ -3,7 +3,11 @@
 
 ansible_node_etc_dir: /etc/ansible
 ansible_node_playbook_dir: '{{ ansible_node_etc_dir }}/playbooks'
-ansible_node_playbook_script: /usr/local/bin/ansible-playbook
+
+ansible_pip_venv_path: "{{ python_venv_parent }}/{{ ansible_pip_venv }}"
+
+ansible_node_playbook_script: "{{ ansible_pip_venv_path + '/bin/ansible-playbook' | default('/usr/local/bin/ansible-playbook') }}"
+ansible_node_playbook_galaxy_script: "{{ ansible_pip_venv_path + '/bin/ansible-galaxy' | default('/usr/local/bin/ansible-galaxy') }}"
 
 # If specified, files/hosts/IDENTIFIER is used as /etc/ansible/hosts
 # and all playbooks in files/playbooks/IDENTIFIER/ are copied to /etc/ansible/playbooks.

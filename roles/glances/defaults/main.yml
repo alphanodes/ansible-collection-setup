@@ -7,6 +7,8 @@ glances_with_pip: true
 glances_pip_packages:
   - glances
 
+glances_pip_venv: glances
+
 # problem with glances package is, that a lot packages are
 # installed, if nginx is installed -> do not use it, if nginx is installed
 glances_packages:

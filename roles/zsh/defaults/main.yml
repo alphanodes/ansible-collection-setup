@@ -20,6 +20,7 @@ zsh_powerlevel10k_packages:
 zsh_user: root
 
 # used in .zshrc
+zsh_global_exports: []
 zsh_local_exports: []
 
 zsh_global_env:

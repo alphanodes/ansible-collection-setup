@@ -77,7 +77,7 @@
         timer: "{{ timer | combine({'randomized_delay_sec': '{{ active_playbook.randomized_delay_sec }}'}) }}"
       when: active_playbook.randomized_delay_sec is defined
 
-    - name: Show debug
+    - name: Show debug for playbook - {{ available_playbook_name }}
       ansible.builtin.debug:
         msg: "{{ timer }}"
 

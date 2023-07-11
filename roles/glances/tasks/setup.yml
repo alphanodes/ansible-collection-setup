@@ -13,6 +13,12 @@
         name: alphanodes.setup.python
       vars:
         python_pip_packages: '{{ glances_pip_packages }}'
+        python_pip_default_venv: '{{ glances_pip_venv }}'
+
+- name: Remove obsolete glances without venv
+  ansible.builtin.file:
+    path: /usr/local/bin/glances
+    state: absent
 
 - name: Use debian package
   when: not glances_with_pip

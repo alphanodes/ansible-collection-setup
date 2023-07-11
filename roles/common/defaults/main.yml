@@ -1,1 +1,4 @@
 ---
+
+ansible_pip_venv: ansible
+python_venv_parent: "{{ ansible_env.HOME }}/.venvs"
