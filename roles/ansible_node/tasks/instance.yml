@@ -81,9 +81,14 @@
       ansible.builtin.debug:
         msg: "{{ timer }}"
 
+    - name: Transform to items
+      ansible.builtin.set_fact:
+        timer_items:
+          - key: '{{ available_playbook_name }}'
+            value: '{{ timer }}'
+
     - name: Setup activated timer - {{ available_playbook_name }}
       ansible.builtin.include_role:
         name: alphanodes.setup.systemd_timer
       vars:
-        timers:
-          '{{ available_playbook_name }}': '{{ timer }}'
+        timers: '{{ timer_items | items2dict }}'
