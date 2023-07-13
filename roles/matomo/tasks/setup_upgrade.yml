@@ -25,14 +25,14 @@
     state: absent
 
 - name: Latest Matomo rsynced over last version
-  ansible.builtin.shell: "rsync -aq {{ matomo_working_dir }}/matomo/ {{ matomo_dir }}/"
+  ansible.builtin.command: "rsync -aq {{ matomo_working_dir }}/matomo/ {{ matomo_dir }}/"
   args:
     executable: /bin/bash
   become: true
   become_user: "{{ matomo_user }}"
 
 - name: Run matomo console core:update
-  ansible.builtin.shell: "php console --no-ansi -n core:update --yes"
+  ansible.builtin.command: "php console --no-ansi -n core:update --yes"
   args:
     executable: /bin/bash
     chdir: "{{ matomo_dir }}"

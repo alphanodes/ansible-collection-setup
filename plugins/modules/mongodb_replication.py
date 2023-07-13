@@ -203,6 +203,7 @@ def check_compatibility(module, client):
     if loose_srv_version >= LooseVersion('4.0') and loose_driver_version < LooseVersion('3.7'):
         module.fail_json(msg=' (Note: you must use pymongo 3.7+ with MongoDB >= 4.0)')
 
+
 def check_members(state, module, client, host_name, host_port, host_type):
     local_db = client['local']
 
