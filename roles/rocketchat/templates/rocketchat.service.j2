@@ -13,7 +13,7 @@ Environment=MONGO_URL=mongodb://{{ rocketchat_mongodb_uri }}
 Environment=MONGO_OPLOG_URL=mongodb://{{ rocketchat_mongodb_server }}:{{ rocketchat_mongodb_port }}/local
 Environment=ROOT_URL=https://{{ rocketchat_vhost_server }}
 Environment=PORT={{ rocketchat_internal_port }}
-{% for item in rocketchat_service_environment) %}
+{% for item in rocketchat_service_environment %}
 Environment={{ item.name }}={{ item.value }}
 {% endfor -%}
 WorkingDirectory={{ rocketchat_application_path }}
