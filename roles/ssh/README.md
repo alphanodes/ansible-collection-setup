@@ -136,7 +136,8 @@ Same as `ssh_known_hosts`, but you **cannot** overwrite it user based with `know
 ## Example Playbook with just ssh server
 
 ```yaml
-- hosts: localhost
+- hosts: all
+
   roles:
     - alphanodes.setup.ssh
 ```
@@ -144,7 +145,8 @@ Same as `ssh_known_hosts`, but you **cannot** overwrite it user based with `know
 ## Example Playbook with key management
 
 ```yaml
-- hosts: localhost
+- hosts: all
+
   vars:
     # used for all users as default
     ssh_known_hosts:
@@ -167,6 +169,7 @@ Same as `ssh_known_hosts`, but you **cannot** overwrite it user based with `know
         known_hosts:
           - name: myhost1.com
             key: 'myhost1.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIO1TMULuqiGtbwkbbPccedorx7jqlrDyRCHg3978a7iy'
+
   roles:
     - alphanodes.setup.ssh
 ```

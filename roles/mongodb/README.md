@@ -154,7 +154,7 @@ mongodb_root_backup_password: passw0rd
 
 #### Usage
 
-Add `alphanodes.mongodb` to your roles and set vars in your playbook file.
+Add `alphanodes.setup.mongodb` to your roles and set vars in your playbook file.
 
 Example vars for authorization:
 
@@ -212,7 +212,7 @@ And inventory file for replica set:
 [mongo_master]
 192.158.56.2 mongodb_master=True # it is't a really master of MongoDB replica set,
                                  # use this variable for replica set init only
-								 # or when master is moved from initial master node
+					                			 # or when master is moved from initial master node
 
 [mongo_replicas]
 192.168.56.3
@@ -222,9 +222,3 @@ And inventory file for replica set:
 mongo_master
 mongo_replicas
 ```
-
-Licensed under the GPLv2 License. See the [LICENSE.md](LICENSE.md) file for details.
-
-#### Feedback, bug-reports, requests, ...
-
-Are [welcome](https://github.com/UnderGreen/ansible-role-mongodb/issues)!

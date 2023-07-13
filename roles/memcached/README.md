@@ -35,6 +35,7 @@ None.
 
 ## Example Playbook
 
-    - hosts: cache
+    - hosts: all
+
       roles:
-        - { role: alphanodes.setup.memcached }
+        - alphanodes.setup.memcached

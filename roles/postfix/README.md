@@ -4,12 +4,12 @@ Installs Postfix server on Debian and Ubuntu servers.
 
 ## Role Variables
 
-Available variables can be found in `defaults/main.yml`
+Available variables can be found in [defaults/main.yml](defaults/main.yml)
 
 ## Example Playbook
 
 ```yaml
-    - hosts: myserver
+    - hosts: all
       vars:
         postfix_root_alias: 'my@mail.com'
       roles:
@@ -19,7 +19,7 @@ Available variables can be found in `defaults/main.yml`
 ## Example Playbook with google relay
 
 ```yaml
-    - hosts: myserver
+    - hosts: all
       vars:
         postfix_root_alias: 'my@mail.com'
         postfix_relayhost: smtp.gmail.com

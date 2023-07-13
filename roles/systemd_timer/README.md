@@ -1,9 +1,14 @@
 # Ansible Role: systemd_timer
 
+## Role Variables
+
+Available variables can be found in [defaults/main.yml](defaults/main.yml)
+
 ## Example Playbook for add timer
 
 ```yaml
-    - hosts: server-name
+    - hosts: all
+
       vars:
         timers:
           microcache_directory:
@@ -13,6 +18,7 @@
             env:
               RAILS_ENV: production
               YOUR_VAR: 1
+
       roles:
         - alphanodes.setup.systemd_timer
 ```
@@ -20,7 +26,8 @@
 ## Example Playbook for remove timer
 
 ```yaml
-    - hosts: server-name
+    - hosts: all
+
       vars:
         timers:
           microcache_directory:

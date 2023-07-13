@@ -4,18 +4,16 @@ Run barman backups and install/setup barman on Debian and Ubuntu servers.
 
 ## Role Variables
 
-Available variables are listed below, along with default values (see `defaults/main.yml`):
-
-## Dependencies
-
-- alphanodes.setup.postgresql_client
+Available variables can be found in [defaults/main.yml](defaults/main.yml)
 
 ## Example Playbook
 
 ```yaml
-    - hosts: your-barman-server
+    - hosts: all
+
       vars:
         barman_postgresql_password: yoursecretpassword
+
       roles:
         - alphanodes.barman
 ```

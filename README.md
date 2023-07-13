@@ -8,6 +8,8 @@ This collection provides setup for:
   - Debian 10/11
   - Ubuntu 20.04/22.04
 
+All provided roles do not use docker as container system.
+
 ## Minimum required Ansible-version
 
 - Ansible >= 2.15.0

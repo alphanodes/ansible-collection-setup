@@ -59,7 +59,8 @@ If you want to remove debian packages with  `svn_server_remove`, set `svn_server
 ## Example Playbook
 
 ```yaml
-- hosts: localhost
+- hosts: all
+
   roles:
     - alphanodes.setup.svn
 ```

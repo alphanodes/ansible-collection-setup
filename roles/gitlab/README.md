@@ -1,17 +1,19 @@
 # Ansible Role: gitlab
 
-Setup GitLab source installation (without docker)
+Setup [GitLab source installation](https://docs.gitlab.com/ee/install/installation.html) (without docker)
 
 ## Role Variables
 
-Available variables are listed below, along with default values (see `defaults/main.yml`):
+Available variables can be found in [defaults/main.yml](defaults/main.yml)
 
 ## Example Playbook
 
 ```yaml
-    - hosts: yourhost
+    - hosts: all
+
       vars:
-        barman_postgresql_password: yoursecretpassword
+        gitlab_root_password: yourdefaultpassword
+
       roles:
         - alphanodes.setup.gitlab
 ```
