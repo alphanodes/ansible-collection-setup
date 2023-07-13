@@ -10,7 +10,9 @@
     group: '{{ nginx_group }}'
     mode: 0640
   loop: '{{ hedgedoc_vhost_users | default([]) }}'
-  when: hedgedoc_vhost_users is defined and hedgedoc_vhost_users|length > 0
+  when:
+    - hedgedoc_vhost_users is defined
+    - hedgedoc_vhost_users | length > 0
   notify: Restart nginx
 
 - name: Remove .htpasswd_hedgedoc, if no base auth is in use
@@ -28,7 +30,9 @@
         vhost_letsencrypt_cert: "{{ hedgedoc_vhost_letsencrypt_cert }}"
         vhost_letsencrypt_key: "{{ hedgedoc_vhost_letsencrypt_key }}"
         force_letsencrypt: true
-      when: hedgedoc_vhost_letsencrypt is defined and hedgedoc_vhost_letsencrypt
+      when:
+        - hedgedoc_vhost_letsencrypt is defined
+        - hedgedoc_vhost_letsencrypt
 
     - name: Check trusted TLS cert
       ansible.builtin.stat:

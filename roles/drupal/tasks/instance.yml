@@ -3,12 +3,17 @@
 - name: Include mysql tasks
   ansible.builtin.include_tasks: instance_mysql.yml
   tags: mysql
-  when: (instance.db_driver is undefined or instance.db_driver == 'mysql') and (instance.db_host is undefined or instance.db_host == 'localhost' or instance.db_host == '127.0.0.1' )
+  when:
+    - instance.db_driver is undefined or instance.db_driver == 'mysql'
+    - instance.db_host is undefined or instance.db_host == 'localhost' or instance.db_host == '127.0.0.1'
 
 - name: Include postgresql tasks
   ansible.builtin.include_tasks: instance_postgresql.yml
   tags: postgresql
-  when: instance.db_driver is defined and instance.db_driver == 'pgsql' and (instance.db_host is undefined or instance.db_host == 'localhost' or instance.db_host == '127.0.0.1' )
+  when:
+    - instance.db_driver is defined
+    - instance.db_driver == 'pgsql'
+    - instance.db_host is undefined or instance.db_host == 'localhost' or instance.db_host == '127.0.0.1'
 
 - name: Install drupal - {{ instance.name }}
   ansible.builtin.git:
@@ -24,7 +29,9 @@
 - name: Run post commands
   ansible.builtin.command: "{{ item | replace('[drush]', '{{ instance.drush_path | default(drupal_drush_path) }} @{{ instance.name }}') }}"
   loop: "{{ instance.post_commands }}"
-  when: git_result.changed and instance.post_commands is defined
+  when:
+    - git_result.changed
+    - instance.post_commands is defined
 
 - name: Create drupal directories for permissions - {{ instance.name }}
   ansible.builtin.file:
@@ -61,7 +68,9 @@
 - name: Include Drupal 8 tasks
   ansible.builtin.include_tasks: instance_drupal8.yml
   tags: drupal8
-  when: instance.major_version is defined and instance.major_version == 8
+  when:
+    - instance.major_version is defined
+    - instance.major_version == 8
 
 - name: Check trusted TLS cert
   ansible.builtin.stat:
@@ -72,7 +81,9 @@
 - name: Set TLS files
   ansible.builtin.set_fact:
     vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
-  when: nginx_with_ssl and (instance.letsencrypt_cert is undefined or not instance.letsencrypt_cert)
+  when:
+    - nginx_with_ssl
+    - instance.letsencrypt_cert is undefined or not instance.letsencrypt_cert
 
 - name: Update drupal vhosts configuration - {{ instance.name }}
   tags: nginx

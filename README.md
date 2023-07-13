@@ -63,11 +63,11 @@ This collection provides setup for:
 
 ## Installation
 
-Install the collection via ansible-galaxy (this is not working at moment because of <https://github.com/ansible/galaxy/issues/3191>):
+Install the collection via ansible-galaxy:
 
 `ansible-galaxy collection install alphanodes.setup`
 
-or
+or use latest (unreleased) version from git with:
 
 `ansible-galaxy collection install git+https://github.com/alphanodes/ansible-collection-setup.git,main`
 

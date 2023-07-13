@@ -6,7 +6,9 @@
   check_mode: false
 
 - name: Verify mysql include directories exist.
-  when: mysql_with_includedirs and not mysql_remove_unused_includedirs
+  when:
+    - mysql_with_includedirs
+    - not mysql_remove_unused_includedirs
   loop:
     - "{{ mysql_config_include_dir }}"
     - "{{ mysql_config_mysql_include_dir }}"
@@ -34,7 +36,9 @@
     state: absent
 
 - name: Remove mysql include directory conf.d, if no include files defined.
-  when: not mysql_with_includedirs and mysql_remove_unused_includedirs
+  when:
+    - not mysql_with_includedirs
+    - mysql_remove_unused_includedirs
   loop:
     - "{{ mysql_config_include_dir }}"
     - "{{ mysql_config_mysql_include_dir }}"
@@ -53,7 +57,7 @@
         line: "!includedir {{ mysql_config_mysql_include_dir }}/"
         state: present
       register: includedir_search
-      check_mode: yes
+      check_mode: true
       failed_when: includedir_search.changed
 
     - name: Correct my.cnf selected
@@ -93,7 +97,9 @@
   ansible.builtin.command: "touch {{ mysql_slow_query_log_file }}"
   args:
     creates: "{{ mysql_slow_query_log_file }}"
-  when: mysql_log_output == 'FILE' and mysql_slow_query_log_enabled
+  when:
+    - mysql_log_output == 'FILE'
+    - mysql_slow_query_log_enabled
 
 - name: Create datadir if it does not exist
   ansible.builtin.file:
@@ -111,7 +117,9 @@
     owner: mysql
     group: "{{ mysql_log_file_group }}"
     mode: 0640
-  when: mysql_log_output == 'FILE' and mysql_slow_query_log_enabled
+  when:
+    - mysql_log_output == 'FILE'
+    - mysql_slow_query_log_enabled
 
 - name: Create error log file (if required)
   when: >

@@ -7,7 +7,7 @@
 - name: Include microcache tasks
   ansible.builtin.include_tasks: microcache.yml
   tags: nginx
-  when: nginx_fastcgi_microcache_zone != ''
+  when: nginx_fastcgi_microcache_zone | length > 0
 
 - name: Include instance tasks
   ansible.builtin.include_tasks: instance.yml

@@ -15,7 +15,7 @@ defaults:
     working-directory: 'svn'
 
 jobs:
-   build:
+  build:
     runs-on: ubuntu-latest
     env:
       PY_COLORS: 1

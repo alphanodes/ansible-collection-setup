@@ -38,4 +38,6 @@
     chdir: "{{ matomo_dir }}"
   become: "{{ true if matomo_user is defined else false }}"
   become_user: '{{ matomo_user | default(omit) }}'
-  when: (mysql_replication_role is undefined or mysql_replication_role == 'master') and (sync_master is undefined)
+  when:
+    - mysql_replication_role is undefined or mysql_replication_role == 'master'
+    - sync_master is undefined

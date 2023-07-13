@@ -18,7 +18,9 @@
   ansible.builtin.file:
     path: '{{ gitlab_go_path }}'
     state: absent
-  when: not gitlab_go_file_exists.stat.exists and gitlab_go_path_exists.stat.exists
+  when:
+    - not gitlab_go_file_exists.stat.exists
+    - gitlab_go_path_exists.stat.exists
 
 - name: Creating {{ gitlab_go_path }}
   ansible.builtin.file:

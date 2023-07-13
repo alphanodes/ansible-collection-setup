@@ -2,20 +2,28 @@
 
 - name: Include iptables setup tasks
   ansible.builtin.include_tasks: setup_iptables.yml
-  when: netfilter_engine == 'iptables' and netfilter_state != 'remove'
+  when:
+    - netfilter_engine == 'iptables'
+    - netfilter_state != 'remove'
   tags: netfilter
 
 - name: Include iptables remove tasks
   ansible.builtin.include_tasks: remove_iptables.yml
-  when: netfilter_engine == 'iptables' and netfilter_state == 'remove'
+  when:
+    - netfilter_engine == 'iptables'
+    - netfilter_state == 'remove'
   tags: netfilter
 
 - name: Include nftables setup tasks
   ansible.builtin.include_tasks: setup_iptables.yml
-  when: netfilter_engine == 'nftables' and netfilter_state != 'remove'
+  when:
+    - netfilter_engine == 'nftables'
+    - netfilter_state != 'remove'
   tags: netfilter
 
 - name: Include nftables remove tasks
   ansible.builtin.include_tasks: remove_iptables.yml
-  when: netfilter_engine == 'nftables' and netfilter_state == 'remove'
+  when:
+    - netfilter_engine == 'nftables'
+    - netfilter_state == 'remove'
   tags: netfilter

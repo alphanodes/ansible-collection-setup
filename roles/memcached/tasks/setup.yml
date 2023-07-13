@@ -24,4 +24,4 @@
   ansible.builtin.systemd:
     name: memcached
     state: started
-    enabled: yes
+    enabled: true

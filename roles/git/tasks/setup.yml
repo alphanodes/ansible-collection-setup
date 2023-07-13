@@ -5,7 +5,10 @@
     src: backports-pin.j2
     dest: /etc/apt/preferences.d/git
     mode: 0644
-  when: debian_backports is defined and debian_backports and git_use_backports
+  when:
+    - debian_backports is defined
+    - debian_backports
+    - git_use_backports
 
 - name: Remove unwanted pinning for backport packages
   ansible.builtin.file:

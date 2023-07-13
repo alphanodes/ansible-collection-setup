@@ -100,7 +100,9 @@
     - name: Set resolver for non lxc clients
       ansible.builtin.set_fact:
         nginx_resolver: "{{ hetzner_nameserver_v4 if hoster == 'hetzner' else ['8.8.8.8', '8.8.4.4'] }}"
-      when: ansible_virtualization_type != 'lxc' and nginx_resolver | length < 1
+      when:
+        - ansible_virtualization_type != 'lxc'
+        - nginx_resolver | length < 1
 
 - name: Setup SSL configuration
   ansible.builtin.template:

@@ -7,7 +7,9 @@
 - name: Correct preferred_git_url if required
   ansible.builtin.set_fact:
     preferred_git_url: 'https_url'
-  when: preferred_git_url == 'url' and redmine_plugin_access == 'https'
+  when:
+    - preferred_git_url == 'url'
+    - redmine_plugin_access == 'https'
 
 - name: Check if custom available_themes_list is available
   ansible.builtin.stat:

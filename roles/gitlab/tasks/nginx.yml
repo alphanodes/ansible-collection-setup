@@ -5,7 +5,9 @@
     vhost_letsencrypt_cert: "{{ gitlab_vhost_letsencrypt_cert }}"
     vhost_letsencrypt_key: "{{ gitlab_vhost_letsencrypt_key }}"
     force_letsencrypt: true
-  when: gitlab_vhost_letsencrypt is defined and gitlab_vhost_letsencrypt
+  when:
+    - gitlab_vhost_letsencrypt is defined
+    - gitlab_vhost_letsencrypt
 
 - name: SSL (non-letsencrypt)
   when: gitlab_vhost_letsencrypt is undefined or not gitlab_vhost_letsencrypt

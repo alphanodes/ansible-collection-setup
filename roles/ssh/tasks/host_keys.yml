@@ -45,4 +45,4 @@
     key: '{{ ssh_known_host_results.stdout }}'
     state: present
   delegate_to: localhost
-  when: ssh_known_host_results.stdout != ""
+  when: ssh_known_host_results.stdout | length > 0

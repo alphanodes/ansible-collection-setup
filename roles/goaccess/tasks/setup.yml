@@ -22,6 +22,8 @@
 
 - name: Include geoip tasks
   ansible.builtin.include_tasks: geoip.yml
-  when: goaccess_with_geoip and goaccess_geoip_download
+  when:
+    - goaccess_with_geoip
+    - goaccess_geoip_download
   tags:
     - geoip

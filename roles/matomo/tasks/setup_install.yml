@@ -30,4 +30,6 @@
     owner: '{{ matomo_user }}'
     group: '{{ matomo_user }}'
     mode: '{{ matomo_config_file_mode }}'
-  when: matomo_multi_server_environment and not matomo_config_file_exists.stat.exists
+  when:
+    - matomo_multi_server_environment
+    - not matomo_config_file_exists.stat.exists

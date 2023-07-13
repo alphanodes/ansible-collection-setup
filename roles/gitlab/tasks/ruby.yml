@@ -11,7 +11,9 @@
   when: not gitlab_rvm_ruby
 
 - name: Install rvm with ppa {{ gitlab_ruby_version }}
-  when: gitlab_rvm_ruby and gitlab_rvm_ruby_ppa
+  when:
+    - gitlab_rvm_ruby
+    - gitlab_rvm_ruby_ppa
   block:
     - name: Add rvm-rael-gc apt key.
       ansible.builtin.get_url:
@@ -52,7 +54,9 @@
       ansible.builtin.command: bash -lc "rvm install {{ gitlab_ruby_version }} --with-openssl-dir=/usr/share/rvm/usr"
 
 - name: Install rvm without ppa {{ gitlab_ruby_version }}
-  when: gitlab_rvm_ruby and not gitlab_rvm_ruby_ppa
+  when:
+    - gitlab_rvm_ruby
+    - not gitlab_rvm_ruby_ppa
   block:
     - name: Remove ppa files
       ansible.builtin.file:

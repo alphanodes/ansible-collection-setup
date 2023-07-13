@@ -16,7 +16,7 @@
     user: postgres
     key: '{{ postgresql_barman_ssh_public_key }}'
     state: present
-  when: postgresql_barman_ssh_public_key != ''
+  when: postgresql_barman_ssh_public_key | length > 0
 
 - name: Check if ssh private key for barman server is provided by host
   ansible.builtin.stat:
@@ -50,7 +50,9 @@
     group: postgres
     force: false
     mode: 0600
-  when: not key_by_host.stat.exists and key_by_group.stat.exists
+  when:
+    - not key_by_host.stat.exists
+    - key_by_group.stat.exists
 
 - name: Create barman postgresql user
   become_user: postgres

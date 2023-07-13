@@ -6,3 +6,7 @@ skip_list:
   - package-latest  # Package installs should not use latest
   - ignore-errors
   - var-naming[no-role-prefix]
+
+enable_list:
+  # this is used by galaxy
+  - empty-string-compare

@@ -80,7 +80,9 @@
 
 - name: Build canonical-redirect map
   ansible.builtin.command: postmap /etc/postfix/canonical-redirect
-  when: postfix_redirect_all_mails_to is defined and canonical_redirect.changed
+  when:
+    - postfix_redirect_all_mails_to is defined
+    - canonical_redirect.changed
   notify: Restart postfix
 
 - name: Remove canonical-redirect map (if unused)
@@ -98,12 +100,14 @@
     src: postfix/sender-canonical.j2
     dest: /etc/postfix/sender-canonical
     mode: 0644
-  when: postfix_sender_canonicals|length > 0
+  when: postfix_sender_canonicals | length > 0
   register: sender_canonical
 
 - name: Build sender-canonicals map
   ansible.builtin.command: postmap /etc/postfix/sender-canonical
-  when: postfix_sender_canonicals|length > 0 and sender_canonical.changed
+  when:
+    - postfix_sender_canonicals | length > 0
+    - sender_canonical.changed
   notify: Restart postfix
 
 - name: Remove sender-canonicals map (if unused)
@@ -113,5 +117,5 @@
   loop:
     - /etc/postfix/sender-canonical
     - /etc/postfix/sender-canonical.db
-  when: postfix_sender_canonicals|length == 0
+  when: postfix_sender_canonicals | length == 0
   notify: Restart postfix

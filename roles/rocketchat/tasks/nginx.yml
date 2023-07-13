@@ -4,7 +4,9 @@
   ansible.builtin.set_fact:
     vhost_letsencrypt_cert: "{{ rocketchat_vhost_letsencrypt_cert }}"
     vhost_letsencrypt_key: "{{ rocketchat_vhost_letsencrypt_key }}"
-  when: rocketchat_vhost_letsencrypt is defined and rocketchat_vhost_letsencrypt
+  when:
+    - rocketchat_vhost_letsencrypt is defined
+    - rocketchat_vhost_letsencrypt
 
 - name: Check trusted TLS cert
   ansible.builtin.stat:

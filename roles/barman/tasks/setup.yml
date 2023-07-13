@@ -3,7 +3,7 @@
 - name: Check if barman_postgresql_password is set
   ansible.builtin.fail:
     msg: 'barman_postgresql_password is not set, please provide it!'
-  when: barman_postgresql_password == ''
+  when: barman_postgresql_password | length == 0
 
 - name: Include PostgreSQL client
   ansible.builtin.include_role:

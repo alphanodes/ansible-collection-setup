@@ -1,7 +1,9 @@
 ---
 
 - name: Enable SAML support - {{ instance_name }}
-  when: instance.with_saml is defined and instance.with_saml
+  when:
+    - instance.with_saml is defined
+    - instance.with_saml
   block:
     - name: Set facts for saml template
       ansible.builtin.set_fact:
@@ -18,17 +20,19 @@
     - name: Check idp cert
       ansible.builtin.fail:
         msg: 'saml_idp_cert_fingerprint or saml_idp_cert is required.'
-      when: saml_idp_cert_fingerprint == '' and  saml_idp_cert == ''
+      when:
+        - saml_idp_cert_fingerprint | length == 0
+        - saml_idp_cert | length == 0
 
     - name: Check saml_single_logout_service_url
       ansible.builtin.fail:
         msg: 'saml_single_logout_service_url is required.'
-      when: saml_single_logout_service_url == ''
+      when: saml_single_logout_service_url | length == 0
 
     - name: Check saml_idp_slo_service_url for redmine_saml plugin
       ansible.builtin.fail:
         msg: 'saml_idp_slo_service_url is required.'
-      when: saml_idp_slo_service_url == ''
+      when: saml_idp_slo_service_url | length == 0
 
     - name: Update saml init script
       ansible.builtin.template:

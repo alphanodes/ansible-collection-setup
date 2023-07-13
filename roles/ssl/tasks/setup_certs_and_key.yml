@@ -9,7 +9,9 @@
     ssl_cert_group: '{{ ssl_cert.group | default("ssl-cert") }}'
 
 - name: Generate self-signed cert, if wanted and required
-  when: ssl_cert.provider is defined and (ssl_cert.provider == 'selfsigned' or ssl_cert.provider == 'ownca')
+  when:
+    - ssl_cert.provider is defined
+    - ssl_cert.provider == 'selfsigned' or ssl_cert.provider == 'ownca'
   block:
     # see https://docs.ansible.com/ansible/latest/collections/community/crypto/openssl_privatekey_module.html
     - name: Generate an OpenSSL private key
@@ -104,14 +106,18 @@
     owner: '{{ ssl_cert_owner }}'
     group: '{{ ssl_cert_group }}'
     mode: 0644
-  when: ssl_cert.provider is undefined and trusted_cert.stat.exists
+  when:
+    - ssl_cert.provider is undefined
+    - trusted_cert.stat.exists
   notify: Check for Reload nginx
 
 - name: Remove obsolete trusted ssl certificates - {{ ssl_cert.name }}
   ansible.builtin.file:
     path: /etc/ssl/certs/{{ ssl_cert.name }}_trusted.crt
     state: absent
-  when: ssl_cert.provider is undefined and not trusted_cert.stat.exists
+  when:
+    - ssl_cert.provider is undefined
+    - not trusted_cert.stat.exists
 
 - name: Install ssl keys - {{ ssl_cert.name }}
   ansible.builtin.copy:

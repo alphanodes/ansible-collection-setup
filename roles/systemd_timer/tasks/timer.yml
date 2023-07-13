@@ -45,7 +45,9 @@
         daemon_reload: true
 
 - name: Remove timer
-  when: timer.state is defined and timer.state == 'absent'
+  when:
+    - timer.state is defined
+    - timer.state == 'absent'
   block:
     - name: Check if systemd timer file exists - {{ timer_name }}
       ansible.builtin.stat:

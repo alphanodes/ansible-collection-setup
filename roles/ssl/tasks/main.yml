@@ -7,4 +7,4 @@
 - name: Include MySQL tasks
   ansible.builtin.include_tasks: mysql.yml
   tags: ssl
-  when: mysql_with_ssl is defined and mysql_with_ssl or ssl_mysql_mode !=''
+  when: mysql_with_ssl is defined and mysql_with_ssl or (ssl_mysql_mode | length > 0)

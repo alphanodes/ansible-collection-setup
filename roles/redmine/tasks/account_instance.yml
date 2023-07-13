@@ -111,7 +111,9 @@
 
 - name: Migrate to new home structure - {{ instance_name }}
   ansible.builtin.include_tasks: account_migrate_to_new_home.yml
-  when: account_migrate_to_new_home and old_config_dir.stat.exists
+  when:
+    - account_migrate_to_new_home
+    - old_config_dir.stat.exists
 # end migration
 
 - name: RVM Mode

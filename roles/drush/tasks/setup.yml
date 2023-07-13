@@ -1,7 +1,9 @@
 ---
 
 - name: Drush install/update
-  when: drush_update and drush_install
+  when:
+    - drush_update
+    - drush_install
   block:
     - name: Install drush
       ansible.builtin.command: '{{ composer_path }} global require drush/drush:{{ drush_version }}'

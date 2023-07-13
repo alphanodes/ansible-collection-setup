@@ -9,7 +9,9 @@
     group: '{{ redmine_group }}'
     mode: 0644
   notify: Restart puma instance
-  when: instance.disable_imap_ssl_verify is defined and instance.disable_imap_ssl_verify
+  when:
+    - instance.disable_imap_ssl_verify is defined
+    - instance.disable_imap_ssl_verify
 
 - name: Enable IMAP ssl verification - {{ instance_name }}
   ansible.builtin.file:
@@ -26,7 +28,9 @@
     group: '{{ redmine_group }}'
     mode: 0640
   notify: Restart puma instance
-  when: instance.use_logger is defined and instance.use_logger == 'lograge'
+  when:
+    - instance.use_logger is defined
+    - instance.use_logger == 'lograge'
 
 - name: Disable lograte - {{ instance_name }}
   ansible.builtin.file:

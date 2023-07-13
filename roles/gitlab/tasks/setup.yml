@@ -74,7 +74,9 @@
     name: "{{ gitlab_user }}"
     groups: rvm
     append: true
-  when: gitlab_rvm_ruby and gitlab_rvm_ruby_ppa
+  when:
+    - gitlab_rvm_ruby
+    - gitlab_rvm_ruby_ppa
 
 # @see https://gitlab.com/gitlab-org/gitlab-workhorse/-/issues/129
 - name: Add redis and www-data to gitlab group

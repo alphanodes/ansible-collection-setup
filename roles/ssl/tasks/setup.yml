@@ -47,14 +47,20 @@
   args:
     creates: '{{ ssl_forward_secrecy_key_path }}'
   notify: Reload nginx
-  when: nginx_with_ssl is defined and nginx_with_ssl and not ssl_forward_secrecy_key_force
+  when:
+    - nginx_with_ssl is defined
+    - nginx_with_ssl
+    - not ssl_forward_secrecy_key_force
 
 - name: Regenerate dhparam key
   tags: nginx
   ansible.builtin.command: 'openssl dhparam -out {{ ssl_forward_secrecy_key_path }} {{ ssl_forward_secrecy_key_length }}'
   notify: Reload nginx
   changed_when: false
-  when: nginx_with_ssl is defined and nginx_with_ssl and ssl_forward_secrecy_key_force
+  when:
+    - nginx_with_ssl is defined
+    - nginx_with_ssl
+    - ssl_forward_secrecy_key_force
 
 - name: Check ssl forward secret key permission
   tags: nginx
@@ -64,4 +70,6 @@
     group: ssl-cert
     mode: 0640
   notify: Reload nginx
-  when: nginx_with_ssl is defined and nginx_with_ssl
+  when:
+    - nginx_with_ssl is defined
+    - nginx_with_ssl

@@ -18,7 +18,9 @@
   ansible.builtin.file:
     path: '{{ redmine_app_dir }}/config/{{ config_file.name }}'
     state: absent
-  when: file_info.stat.islnk is defined and not file_info.stat.islnk
+  when:
+    - file_info.stat.islnk is defined
+    - not file_info.stat.islnk
 
 - name: Symlinks to redmine/config - {{ instance_name }}
   ansible.builtin.file:

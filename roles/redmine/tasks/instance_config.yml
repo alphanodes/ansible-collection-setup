@@ -51,7 +51,9 @@
       ansible.builtin.file:
         path: '{{ redmine_app_dir }}/config/merge_projects.rb'
         state: absent
-      when: file_info.stat.islnk is defined and not file_info.stat.islnk
+      when:
+        - file_info.stat.islnk is defined
+        - not file_info.stat.islnk
 
     - name: Symlinks to merge_projects configuration file - {{ instance_name }}
       ansible.builtin.file:
@@ -82,7 +84,9 @@
       ansible.builtin.file:
         path: '{{ redmine_app_dir }}/config/database.yml'
         state: absent
-      when: file_info.stat.islnk is defined and not file_info.stat.islnk
+      when:
+        - file_info.stat.islnk is defined
+        - not file_info.stat.islnk
 
     - name: Symlinks to database configuration - {{ instance_name }}
       ansible.builtin.file:

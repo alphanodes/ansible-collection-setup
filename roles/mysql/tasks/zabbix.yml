@@ -9,7 +9,9 @@
   when: zabbix_config_exists.stat.exists
   block:
     - name: Enabled monitoring
-      when: zabbix_monitoring and (zabbix_agent_remove is undefined or not zabbix_agent_remove)
+      when:
+        - zabbix_monitoring
+        - zabbix_agent_remove is undefined or not zabbix_agent_remove
       block:
         - name: Create zabbix monitoring mysql user
           community.mysql.mysql_user:

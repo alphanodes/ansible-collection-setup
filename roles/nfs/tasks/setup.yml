@@ -50,11 +50,15 @@
     name: nfs-kernel-server
     state: started
     enabled: true
-  when: nfs_server and nfs_server_start
+  when:
+    - nfs_server
+    - nfs_server_start
 
 - name: Stop the nfs-kernel-server service
   ansible.builtin.systemd:
     name: nfs-kernel-server
     state: stopped
     enabled: false
-  when: nfs_server and not nfs_server_start
+  when:
+    - nfs_server
+    - not nfs_server_start

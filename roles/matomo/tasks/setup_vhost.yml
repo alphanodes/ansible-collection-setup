@@ -5,13 +5,17 @@
     vhost_letsencrypt_cert: "{{ matomo_vhost_letsencrypt_cert }}"
     vhost_letsencrypt_key: "{{ matomo_vhost_letsencrypt_key }}"
     force_letsencrypt: true
-  when: matomo_vhost_letsencrypt is defined and matomo_vhost_letsencrypt
+  when:
+    - matomo_vhost_letsencrypt is defined
+    - matomo_vhost_letsencrypt
 
 - name: Check trusted TLS cert - {{ matomo_vhost_ssl_cert }}
   ansible.builtin.stat:
     path: /etc/ssl/certs/{{ matomo_vhost_ssl_cert }}_trusted.crt
   register: trusted_cert
-  when: matomo_vhost_ssl_cert is defined and matomo_vhost_ssl_cert != ''
+  when:
+    - matomo_vhost_ssl_cert is defined
+    - matomo_vhost_ssl_cert | length > 0
 
 - name: Set TLS files
   ansible.builtin.set_fact:

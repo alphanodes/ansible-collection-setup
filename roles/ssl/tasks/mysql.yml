@@ -8,7 +8,7 @@
 - name: Check if ssl_mysql_ca is set
   ansible.builtin.fail:
     msg: "With mysql_with_ssl: true, you have to set ssl_mysql_ca."
-  when: ssl_mysql_ca == ''
+  when: ssl_mysql_ca | length == 0
 
 - name: Set facts
   ansible.builtin.set_fact:

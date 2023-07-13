@@ -1,7 +1,7 @@
 ---
 
 - name: Rocket.Chat configuration
-  when: fail2ban_rocketchat_hook != ''
+  when: fail2ban_rocketchat_hook | length > 0
   block:
     - name: Install Rocket.Chat configuration
       ansible.builtin.template:
@@ -34,4 +34,4 @@
   loop:
     - rocketchat.conf
     - rocketchat.sh
-  when: fail2ban_rocketchat_hook == ''
+  when: fail2ban_rocketchat_hook | length == 0

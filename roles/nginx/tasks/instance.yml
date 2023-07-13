@@ -4,12 +4,16 @@
   ansible.builtin.stat:
     path: /etc/ssl/certs/{{ instance.vhost_ssl_cert | default(vhost_ssl_cert) }}_trusted.crt
   register: trusted_cert
-  when: nginx_with_ssl and (instance.letsencrypt_cert is undefined or not instance.letsencrypt_cert)
+  when:
+    - nginx_with_ssl
+    - instance.letsencrypt_cert is undefined or not instance.letsencrypt_cert
 
 - name: Set TLS files
   ansible.builtin.set_fact:
     vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
-  when: nginx_with_ssl and (instance.letsencrypt_cert is undefined or not instance.letsencrypt_cert)
+  when:
+    - nginx_with_ssl
+    - instance.letsencrypt_cert is undefined or not instance.letsencrypt_cert
 
 - name: Configure vhosts - {{ instance.name }}
   ansible.builtin.template:

@@ -36,5 +36,7 @@
     name: puma-{{ instance_name }}
     state: stopped
     enabled: false
-  when: instance.state is defined and instance.state =='inactive'
+  when:
+    - instance.state is defined
+    - instance.state =='inactive'
   ignore_errors: true

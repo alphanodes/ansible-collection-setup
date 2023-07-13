@@ -58,7 +58,9 @@
       community.general.gem:
         name: mailcatcher
         state: latest
-      when: instance.with_mailcatcher is defined and instance.with_mailcatcher
+      when:
+        - instance.with_mailcatcher is defined
+        - instance.with_mailcatcher
 
     # Check obsolete secret token - Start
     - name: Check if secret token file exists - {{ instance_name }}

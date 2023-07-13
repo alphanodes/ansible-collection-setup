@@ -10,14 +10,16 @@
     group: '{{ nginx_group }}'
     mode: 0640
   loop: '{{ ethercalc_vhost_users | default([]) }}'
-  when: ethercalc_vhost_users is defined and ethercalc_vhost_users|length > 0
+  when:
+    - ethercalc_vhost_users is defined
+    - ethercalc_vhost_users | length > 0
   notify: Restart nginx
 
 - name: Remove .htpasswd_ethercalc, if no base auth is in use
   ansible.builtin.file:
     path: /etc/nginx/.htpasswd_ethercalc
     state: absent
-  when: ethercalc_vhost_users|length < 1
+  when: ethercalc_vhost_users | length < 1
   notify: Restart nginx
 
 - name: Enable block
@@ -28,7 +30,9 @@
         vhost_letsencrypt_cert: "{{ ethercalc_vhost_letsencrypt_cert }}"
         vhost_letsencrypt_key: "{{ ethercalc_vhost_letsencrypt_key }}"
         force_letsencrypt: true
-      when: ethercalc_vhost_letsencrypt is defined and ethercalc_vhost_letsencrypt
+      when:
+        - ethercalc_vhost_letsencrypt is defined
+        - ethercalc_vhost_letsencrypt
 
     - name: Check trusted TLS cert
       ansible.builtin.stat:

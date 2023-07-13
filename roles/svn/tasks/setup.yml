@@ -67,7 +67,9 @@
   ansible.builtin.file:
     path: '{{ svn_server_systemd_service_file }}'
     state: absent
-  when: sym.stat.islnk is defined and sym.stat.islnk
+  when:
+    - sym.stat.islnk is defined
+    - sym.stat.islnk
 
 - name: Setup systemd unit configuration
   ansible.builtin.template:

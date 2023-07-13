@@ -44,7 +44,9 @@
         state: absent
         remove: true
         name: '{{ user.name }}'
-      when: user.active is defined and not user.active
+      when:
+        - user.active is defined
+        - not user.active
 
 - name: Active user tasks
   when: user.active is undefined or user.active
@@ -84,7 +86,9 @@
     - name: Set access for authorized_keys without management keys - {{ user.name }}
       ansible.builtin.set_fact:
         user_access: "{{ user.access }}"
-      when: user_access == '' and user.access is defined
+      when:
+        - user_access | length == 0
+        - user.access is defined
 
     - name: Setup access with .ssh/authorized_keys  - {{ user.name }}
       ansible.posix.authorized_key:
@@ -95,7 +99,7 @@
             {{ lookup('file', 'ssh/access/' + key) }}
             {% endfor %}
         state: present
-      when: user_access != ''
+      when: user_access | length > 0
 
     - name: Setup .ssh/known_hosts only (if provided) - {{ user.name }}
       ansible.builtin.known_hosts:
@@ -104,7 +108,9 @@
         hash_host: '{{ ssh_client_hash_known_hosts }}'
       loop: '{{ known_keys }}'
       register: known_hosts_rc
-      when: managing_user and item.host is defined and item.key is defined
+      when:
+        - managing_user and item.host is defined
+        - item.key is defined
 
     - name: Setup .ssh/known_hosts only (all) - {{ user.name }}
       ansible.builtin.known_hosts:
@@ -130,10 +136,14 @@
         owner: '{{ user.name }}'
         group: '{{ user_group }}'
         mode: 0600
-      when: user.name != 'root' and known_hosts_result.stat.exists
+      when:
+        - user.name != 'root'
+        - known_hosts_result.stat.exists
 
     - name: Manage private ssh keys and config file
-      when: user.private_keys is defined and user.private_keys
+      when:
+        - user.private_keys is defined
+        - user.private_keys
       block:
         - name: Setup .ssh/config - home {{ user_home }}
           ansible.builtin.template:
@@ -152,7 +162,10 @@
             group: '{{ user_group }}'
             mode: 0600
           loop: '{{ user.private_keys }}'
-          when: item.dir is defined and item.user is defined and (item.default_key is undefined or not item.default_key)
+          when:
+            - item.dir is defined
+            - item.user is defined
+            - item.default_key is undefined or not item.default_key
 
         - name: Install default private keys - {{ user.name }}
           ansible.builtin.copy:
@@ -162,4 +175,7 @@
             group: '{{ user_group }}'
             mode: 0600
           loop: '{{ user.private_keys }}'
-          when: item.dir is defined and item.default_key is defined and item.default_key
+          when:
+            - item.dir is defined
+            - item.default_key is defined
+            - item.default_key

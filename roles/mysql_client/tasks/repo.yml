@@ -5,7 +5,9 @@
     src: mysql.gpg
     dest: /etc/apt/trusted.gpg.d/mysql.gpg
     mode: 0644
-  when: mysql_with_mysql_com and mysql_local_apt_key
+  when:
+    - mysql_with_mysql_com
+    - mysql_local_apt_key
 
 # url for remote key is not available - dep package is provided by mysql.com
 # - name: Ensure apt key for mysql.com is present (remote key)

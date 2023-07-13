@@ -21,7 +21,7 @@
     - name: Make sure redmine_ruby_opt value is set always for system ruby
       ansible.builtin.set_fact:
         redmine_ruby_opt: '-W:no-deprecated -W:no-experimental'
-      when: redmine_ruby_opt == ''
+      when: redmine_ruby_opt | length == 0
 
 - name: Set redmine_ruby_opt
   ansible.builtin.set_fact:
@@ -57,7 +57,9 @@
     enabled: true
 
 - name: Mailcatcher service
-  when: instance.with_mailcatcher is defined and instance.with_mailcatcher
+  when:
+    - instance.with_mailcatcher is defined
+    - instance.with_mailcatcher
   block:
     - name: Install mailcatcher systemd configuation - {{ instance_name }}
       ansible.builtin.template:

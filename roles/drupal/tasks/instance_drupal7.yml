@@ -31,4 +31,6 @@
     owner: root
     group: '{{ nginx_group }}'
     mode: 0640
-  when: ( instance.write_settings_file is not defined or instance.write_settings_file ) and drupal_instances | length
+  when:
+    - instance.write_settings_file is not defined or instance.write_settings_file
+    - drupal_instances | length

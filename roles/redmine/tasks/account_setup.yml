@@ -22,4 +22,6 @@
     name: ruby-dev
     purge: true
     state: absent
-  when: not redmine_with_ruby_dev and redmine_use_rvm_as_default
+  when:
+    - not redmine_with_ruby_dev
+    - redmine_use_rvm_as_default

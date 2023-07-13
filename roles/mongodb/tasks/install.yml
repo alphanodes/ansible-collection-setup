@@ -58,7 +58,9 @@
 - name: Don't use NUMA if it is unavailable on host
   ansible.builtin.set_fact:
     mongodb_use_numa: false
-  when: (mongodb_use_numa | bool and numa_available.rc != 0)
+  when:
+    - mongodb_use_numa | bool
+    - numa_available.rc != 0
 
 - name: Install numactl package
   ansible.builtin.apt:

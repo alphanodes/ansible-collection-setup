@@ -45,7 +45,9 @@
 
 - name: Include config tasks
   ansible.builtin.include_tasks: instance_mysql2postgres.yml
-  when: instance.with_mysql2postgres is defined and instance.with_mysql2postgres
+  when:
+    - instance.with_mysql2postgres is defined
+    - instance.with_mysql2postgres
 
 - name: Include plugin tasks
   ansible.builtin.include_tasks: instance_plugins.yml
@@ -73,12 +75,16 @@
       ansible.builtin.stat:
         path: /etc/ssl/certs/{{ instance.vhost_ssl_cert | default(vhost_ssl_cert) }}_trusted.crt
       register: trusted_cert
-      when: nginx_with_ssl and (instance.letsencrypt_cert is undefined or not instance.letsencrypt_cert)
+      when:
+        - nginx_with_ssl
+        - instance.letsencrypt_cert is undefined or not instance.letsencrypt_cert
 
     - name: Set TLS files
       ansible.builtin.set_fact:
         vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
-      when: nginx_with_ssl and (instance.letsencrypt_cert is undefined or not instance.letsencrypt_cert)
+      when:
+        - nginx_with_ssl
+        - instance.letsencrypt_cert is undefined or not instance.letsencrypt_cert
 
     - name: Update redmine vhost configuration - {{ instance_name }}
       ansible.builtin.template:
@@ -120,7 +126,9 @@
   ansible.builtin.file:
     path: '{{ redmine_app_dir }}/public/robots.txt'
     state: absent
-  when: instance.use_robots_txt_from_redmine is defined and instance.use_robots_txt_from_redmine
+  when:
+    - instance.use_robots_txt_from_redmine is defined
+    - instance.use_robots_txt_from_redmine
 
 - name: Include systemd tasks
   ansible.builtin.include_tasks: instance_systemd.yml
@@ -128,4 +136,6 @@
 
 - name: Include prepare_only tasks
   ansible.builtin.include_tasks: instance_prepare_only.yml
-  when: instance.state is defined and instance.state == 'prepare_only'
+  when:
+    - instance.state is defined
+    - instance.state == 'prepare_only'

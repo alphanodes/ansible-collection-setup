@@ -11,7 +11,9 @@
 - name: Add credentials to line options
   ansible.builtin.set_fact:
     line_options: "{{ line_options + ['credentials=' + credentials_file] }}"
-  when: cifs_mount.credential_user is defined and cifs_mount.credential_password is defined
+  when:
+    - cifs_mount.credential_user is defined
+    - cifs_mount.credential_password is defined
 
 - name: Options to line options
   ansible.builtin.set_fact:
@@ -26,7 +28,9 @@
     src: credentials_file.j2
     dest: '{{ credentials_file }}'
     mode: 0600
-  when: cifs_mount.credential_user is defined and cifs_mount.credential_password is defined
+  when:
+    - cifs_mount.credential_user is defined
+    - cifs_mount.credential_password is defined
 
 - name: Remove credentials file
   ansible.builtin.file:

@@ -28,7 +28,9 @@
   ansible.builtin.file:
     path: '{{ matomo_plugin_path }}/{{ plugin_name }}'
     state: absent
-  when: active_plugin.state is defined and active_plugin.state == 'absent'
+  when:
+    - active_plugin.state is defined
+    - active_plugin.state == 'absent'
 
 - name: Download installation of plugin - {{ plugin_name }}
   when: not plugin_use_git
@@ -79,7 +81,9 @@
           ansible.builtin.command: mv {{ tmp_plugin_dir }} {{ plugin_dir }}
 
 - name: Git Installation of plugin - {{ plugin_name }}
-  when: plugin_use_git and (active_plugin.state is undefined or active_plugin.state!='absent')
+  when:
+    - plugin_use_git
+    - active_plugin.state is undefined or active_plugin.state != 'absent'
   block:
     - name: Install plugin - {{ plugin_name }}
       ansible.builtin.git:

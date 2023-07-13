@@ -55,7 +55,9 @@
 
 - name: Include upgrade tasks
   ansible.builtin.include_tasks: setup_upgrade.yml
-  when: matomo_exists.stat.exists and not matomo_archive_file_exists.stat.exists
+  when:
+    - matomo_exists.stat.exists
+    - not matomo_archive_file_exists.stat.exists
 
 # required for matomo_console jobs
 - name: Make sure ansible working directory for matomo_user is existing
@@ -130,14 +132,18 @@
     insertbefore: '^salt ='
     regexp: 'multi_server_environment ='
     line: 'multi_server_environment = 1'
-  when: matomo_multi_server_environment and matomo_config_file_exists.stat.exists
+  when:
+    - matomo_multi_server_environment
+    - matomo_config_file_exists.stat.exists
 
 - name: Remove multi_server_environment, if not used
   ansible.builtin.lineinfile:
     path: '{{ matomo_config_file }}'
     state: absent
     regexp: 'multi_server_environment ='
-  when: not matomo_multi_server_environment and matomo_config_file_exists.stat.exists
+  when:
+    - not matomo_multi_server_environment
+    - matomo_config_file_exists.stat.exists
 
 - name: Apply database settings
   ansible.builtin.lineinfile:

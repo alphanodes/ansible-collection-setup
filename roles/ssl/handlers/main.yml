@@ -3,7 +3,9 @@
 
 - name: Check for Reload nginx
   ansible.builtin.command: /bin/true
-  when: nginx_with_ssl is defined and nginx_with_ssl
+  when:
+    - nginx_with_ssl is defined
+    - nginx_with_ssl
   notify: Reload nginx
 
 - name: Update ca certificates

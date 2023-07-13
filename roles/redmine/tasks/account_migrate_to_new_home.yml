@@ -92,7 +92,7 @@
   ansible.builtin.file:
     path: '{{ redmine_home }}{{ item }}'
     state: absent
-  when: redmine_home != ''
+  when: redmine_home | length > 0
   loop:
     - /.bzr.log
     - /.git

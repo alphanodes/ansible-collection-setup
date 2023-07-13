@@ -66,12 +66,12 @@
 - name: Install ansible roles
   ansible.builtin.command: "{{ ansible_node_playbook_galaxy_script }} role {{ item.action | default('install') }} {{ item.name }}"
   loop: '{{ ansible_node_roles | default([]) }}'
-  when: ansible_node_identifier != ''
+  when: ansible_node_identifier | length > 0
 
 - name: Install ansible collections
   ansible.builtin.command: "{{ ansible_node_playbook_galaxy_script }} collection {{ item.action | default('install') }} {{ item.name }}"
   loop: '{{ ansible_node_collections | default([]) }}'
-  when: ansible_node_identifier != ''
+  when: ansible_node_identifier | length > 0
 
 - name: Remove obsolete ansible roles
   ansible.builtin.file:

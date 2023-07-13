@@ -38,7 +38,9 @@
   ansible.builtin.set_fact:
     vhost_letsencrypt_cert: "{{ nextcloud_vhost_letsencrypt_cert }}"
     vhost_letsencrypt_key: "{{ nextcloud_vhost_letsencrypt_key }}"
-  when: nextcloud_vhost_letsencrypt is defined and nextcloud_vhost_letsencrypt
+  when:
+    - nextcloud_vhost_letsencrypt is defined
+    - nextcloud_vhost_letsencrypt
 
 - name: Check trusted TLS cert
   ansible.builtin.stat:
@@ -99,7 +101,9 @@
   ansible.builtin.file:
     path: '{{ nextcloud_old_htdocs }}'
     state: absent
-  when: not nextcloud_source_file_exists.stat.exists and nextcloud_exists.stat.exists
+  when:
+    - not nextcloud_source_file_exists.stat.exists
+    - nextcloud_exists.stat.exists
 
 - name: Stats for nextcloud configuration
   ansible.builtin.stat:
@@ -109,7 +113,9 @@
 # update: step 1
 - name: _update step1_ Rename existing htdocs to {{ nextcloud_old_htdocs }}
   ansible.builtin.command: mv {{ nextcloud_htdocs }} {{ nextcloud_old_htdocs }}
-  when: not nextcloud_source_file_exists.stat.exists and nextcloud_exists.stat.exists
+  when:
+    - not nextcloud_source_file_exists.stat.exists
+    - nextcloud_exists.stat.exists
 
 - name: Stats for nextcloud htdocs directory
   ansible.builtin.stat:
@@ -135,7 +141,9 @@
   when: not nextcloud_htdocs_exists.stat.exists
 
 - name: Step 3 to 5
-  when: nextcloud_config_exists.stat.exists and not nextcloud_source_file_exists.stat.exists
+  when:
+    - nextcloud_config_exists.stat.exists
+    - not nextcloud_source_file_exists.stat.exists
   block:
     - name: _update step3_ restore configuration files for update
       ansible.builtin.command: mv {{ item }} {{ nextcloud_htdocs }}/config
@@ -166,7 +174,9 @@
   ansible.builtin.command: php occ maintenance:mode --off
   args:
     chdir: '{{ nextcloud_htdocs }}'
-  when: nextcloud_config_exists.stat.exists and not nextcloud_source_file_exists.stat.exists
+  when:
+    - nextcloud_config_exists.stat.exists
+    - not nextcloud_source_file_exists.stat.exists
 
 - name: Install nextcloud custom config file
   ansible.builtin.template:
@@ -186,4 +196,6 @@
     owner: '{{ nginx_owner }}'
     group: '{{ nginx_group }}'
     mode: 0660
-  when: not nextcloud_exists.stat.exists and not nextcloud_config_exists.stat.exists
+  when:
+    - not nextcloud_exists.stat.exists
+    - not nextcloud_config_exists.stat.exists
