@@ -59,22 +59,22 @@
 
     - name: Add env to timer if available - {{ available_playbook_name }}
       ansible.builtin.set_fact:
-        timer: "{{ timer | combine({'env': '{{ playbook_env }}'}) }}"
+        timer: "{{ timer | combine({'env': playbook_env}) }}"
       when: playbook_env is defined
 
     - name: Use custom on_calendar if defined - {{ available_playbook_name }}
       ansible.builtin.set_fact:
-        timer: "{{ timer | combine({'on_calendar': '{{ active_playbook.on_calendar }}'}) }}"
+        timer: "{{ timer | combine({'on_calendar': active_playbook.on_calendar}) }}"
       when: active_playbook.on_calendar is defined
 
     - name: Use custom accuracy_sec if defined - {{ available_playbook_name }}
       ansible.builtin.set_fact:
-        timer: "{{ timer | combine({'accuracy_sec': '{{ active_playbook.accuracy_sec }}'}) }}"
+        timer: "{{ timer | combine({'accuracy_sec': active_playbook.accuracy_sec}) }}"
       when: active_playbook.accuracy_sec is defined
 
     - name: Use randomized_delay_sec if defined - {{ available_playbook_name }}
       ansible.builtin.set_fact:
-        timer: "{{ timer | combine({'randomized_delay_sec': '{{ active_playbook.randomized_delay_sec }}'}) }}"
+        timer: "{{ timer | combine({'randomized_delay_sec': active_playbook.randomized_delay_sec}) }}"
       when: active_playbook.randomized_delay_sec is defined
 
     - name: Show debug for playbook - {{ available_playbook_name }}

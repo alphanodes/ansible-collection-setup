@@ -116,7 +116,7 @@ cloud:
 
 {% if mongodb_set_parameters -%}
 setParameter:
-  {% for key, value in mongodb_set_parameters.items() -%}
-  {{ key }}: {{ value }}
+  {% for item in mongodb_set_parameters -%}
+  {{ item.name }}: {{ item.value }}
   {% endfor %}
 {% endif %}

@@ -94,10 +94,10 @@ mongodb_replication_oplogsize: 1024 # specifies a maximum size in megabytes for 
 # Configure setParameter option.
 # Example :
 mongodb_set_parameters:
-  {
-    "enableLocalhostAuthBypass": "true",
-    "authenticationMechanisms": "SCRAM-SHA-1,MONGODB-CR",
-  }
+  - name: "enableLocalhostAuthBypass"
+    value: "true"
+  - name: "authenticationMechanisms"
+    value: "SCRAM-SHA-1,MONGODB-CR"
 
 ## Extend config with arbitrary values
 # Example :

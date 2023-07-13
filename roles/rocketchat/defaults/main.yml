@@ -11,7 +11,7 @@ rocketchat_tarball_fetch_timeout: 100
 rocketchat_tarball_validate_remote_cert: true
 rocketchat_service_user: rocketchat
 rocketchat_service_group: rocketchat
-rocketchat_service_environment: {}
+rocketchat_service_environment: []
 
 # MongoDB settings
 # mongodb can be disabled for bulleyes update

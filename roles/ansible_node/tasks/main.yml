@@ -17,8 +17,10 @@
 - name: Playbook env for proxy
   ansible.builtin.set_fact:
     playbook_env:
-      http_proxy: "{{ http_proxy | default('') }}"
-      https_proxy: "{{ https_proxy | default('') }}"
+      - name: http_proxy
+        value: "{{ http_proxy | default('') }}"
+      - name: https_proxy
+        value: "{{ https_proxy | default('') }}"
   when: http_proxy is defined and (http_proxy | length > 0) or https_proxy is defined and (https_proxy | length > 0)
 
 - name: Include playbook tasks
