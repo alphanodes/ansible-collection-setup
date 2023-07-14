@@ -19,7 +19,7 @@
     group: '{{ redmine_group }}'
     groups: '{{ instance.user_groups | default(omit) }}'
     comment: Redmine {{ redmine_user }}
-    shell: '{{ "/bin/zsh" if redmine_with_zsh else "/bin/bash" }}'
+    shell: '{{ "/usr/bin/zsh" if redmine_with_zsh else "/usr/bin/bash" }}'
 
 - name: Install Redmine shell configuation - {{ instance_name }}
   ansible.builtin.copy:
