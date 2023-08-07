@@ -5,7 +5,7 @@
 This collection provides setup for:
 
 - Linux operating systems:
-  - Debian 10/11
+  - Debian 10/11/12
   - Ubuntu 20.04/22.04
 
 All provided roles do not use docker as container system.
