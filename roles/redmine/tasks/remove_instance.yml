@@ -19,8 +19,6 @@
     - puma-{{ instance_name }}-directory.service
     - puma-{{ instance_name }}-directory.timer
     - puma-{{ instance_name }}.service
-    - redmine-automation.service
-    - redmine-automation.timer
 
 - name: Remove sudoer file - {{ instance_name }}
   ansible.builtin.file:
