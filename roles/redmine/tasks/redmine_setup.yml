@@ -27,10 +27,17 @@
     name: alphanodes.setup.mysql
   when: redmine_with_mysql
 
-- name: Include PostgreSQL role
-  ansible.builtin.include_role:
-    name: alphanodes.setup.postgresql
+- name: PostgreSQL
   when: redmine_with_postgresql
+  block:
+    # client role is not triggered by meta dep on alphanodes.setup.postgresql
+    - name: Include PostgreSQL client role
+      ansible.builtin.include_role:
+        name: alphanodes.setup.postgresql_client
+
+    - name: Include PostgreSQL role
+      ansible.builtin.include_role:
+        name: alphanodes.setup.postgresql
 
 - name: Fix ImageMagick security policies for PDF preview
   ansible.builtin.lineinfile:
