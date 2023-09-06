@@ -23,7 +23,7 @@
 
 - name: Make sure redmine home directory exists
   ansible.builtin.file:
-    path: '{{ docker_broker_dir }}'
+    path: '{{ redmine_home }}'
     state: directory
     mode: 0755
     owner: '{{ redmine_home }}'
