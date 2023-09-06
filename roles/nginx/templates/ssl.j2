@@ -2,10 +2,12 @@
 
 # ssl configuration
 ssl_protocols {{ nginx_ssl_protocols }};
+{% if nginx_ssl_protocols != 'TLSv1.3' %}
 ssl_ciphers {{ nginx_ssl_ciphers }};
+ssl_dhparam /etc/ssl/private/dhparams.pem;
+{% endif %}
 ssl_prefer_server_ciphers {{ 'on' if nginx_ssl_prefer_server_ciphers else 'off' }};
 ssl_session_tickets off;
-ssl_dhparam /etc/ssl/private/dhparams.pem;
 ssl_session_cache {{ nginx_ssl_session_cache }};
 ssl_session_timeout {{ nginx_ssl_session_timeout }};
 

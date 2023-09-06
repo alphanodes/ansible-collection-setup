@@ -21,10 +21,18 @@
     comment: Redmine {{ redmine_user }}
     shell: '{{ "/usr/bin/zsh" if redmine_with_zsh else "/usr/bin/bash" }}'
 
+- name: Make sure redmine home directory exists
+  ansible.builtin.file:
+    path: '{{ docker_broker_dir }}'
+    state: directory
+    mode: 0755
+    owner: '{{ redmine_home }}'
+    group: '{{ redmine_group }}'
+
 - name: Install Redmine shell configuation - {{ instance_name }}
   ansible.builtin.copy:
     src: '{{ item }}'
-    dest: '{{ redmine_home }}'
+    dest: '{{ redmine_home }}/'
     owner: '{{ redmine_user }}'
     group: '{{ redmine_group }}'
     mode: 0644
