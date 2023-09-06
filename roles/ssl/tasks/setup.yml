@@ -41,35 +41,44 @@
   loop: '{{ ssl_system_certs }}'
   notify: Update ca certificates
 
-- name: Generate dhparam key
-  tags: nginx
-  ansible.builtin.command: 'openssl dhparam -out {{ ssl_forward_secrecy_key_path }} {{ ssl_forward_secrecy_key_length }}'
-  args:
-    creates: '{{ ssl_forward_secrecy_key_path }}'
-  notify: Reload nginx
-  when:
-    - nginx_with_ssl is defined
-    - nginx_with_ssl
-    - not ssl_forward_secrecy_key_force
+- name: Handle dhparams
+  when: nginx_ssl_protocols != 'TLSv1.3'
+  block:
+    - name: Generate dhparam key
+      tags: nginx
+      ansible.builtin.command: 'openssl dhparam -out {{ ssl_forward_secrecy_key_path }} {{ ssl_forward_secrecy_key_length }}'
+      args:
+        creates: '{{ ssl_forward_secrecy_key_path }}'
+      notify: Reload nginx
+      when:
+        - nginx_with_ssl is defined
+        - nginx_with_ssl
+        - not ssl_forward_secrecy_key_force
 
-- name: Regenerate dhparam key
-  tags: nginx
-  ansible.builtin.command: 'openssl dhparam -out {{ ssl_forward_secrecy_key_path }} {{ ssl_forward_secrecy_key_length }}'
-  notify: Reload nginx
-  changed_when: false
-  when:
-    - nginx_with_ssl is defined
-    - nginx_with_ssl
-    - ssl_forward_secrecy_key_force
+    - name: Regenerate dhparam key
+      tags: nginx
+      ansible.builtin.command: 'openssl dhparam -out {{ ssl_forward_secrecy_key_path }} {{ ssl_forward_secrecy_key_length }}'
+      notify: Reload nginx
+      changed_when: false
+      when:
+        - nginx_with_ssl is defined
+        - nginx_with_ssl
+        - ssl_forward_secrecy_key_force
 
-- name: Check ssl forward secret key permission
-  tags: nginx
-  ansible.builtin.file:
+    - name: Check ssl forward secret key permission
+      tags: nginx
+      ansible.builtin.file:
+        path: '{{ ssl_forward_secrecy_key_path }}'
+        owner: root
+        group: ssl-cert
+        mode: 0640
+      notify: Reload nginx
+      when:
+        - nginx_with_ssl is defined
+        - nginx_with_ssl
+
+- name: Remove dhparam file, if not required
+  when: nginx_ssl_protocols == 'TLSv1.3'
+  file:
     path: '{{ ssl_forward_secrecy_key_path }}'
-    owner: root
-    group: ssl-cert
-    mode: 0640
-  notify: Reload nginx
-  when:
-    - nginx_with_ssl is defined
-    - nginx_with_ssl
+    state: absent
