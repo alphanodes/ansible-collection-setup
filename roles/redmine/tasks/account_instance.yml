@@ -26,7 +26,7 @@
     path: '{{ redmine_home }}'
     state: directory
     mode: 0755
-    owner: '{{ redmine_home }}'
+    owner: '{{ redmine_user }}'
     group: '{{ redmine_group }}'
 
 - name: Install Redmine shell configuation - {{ instance_name }}
