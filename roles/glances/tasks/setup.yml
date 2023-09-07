@@ -8,11 +8,6 @@
         name: glances
         state: absent
 
-    - name: Make sure build tools are installed
-      ansible.builtin.apt:
-        name: build-essential
-        state: present
-
     - name: Include python role
       ansible.builtin.include_role:
         name: alphanodes.setup.python

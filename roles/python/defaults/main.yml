@@ -4,6 +4,8 @@ python_packages:
   - python3-pip
   - python3-virtualenv
 
+python_with_dev: false
+
 python_pip_packages: []
 
 python_pip_default_state: latest
