@@ -5,6 +5,13 @@
     name: "{{ python_packages }}"
     state: present
 
+
+- name: Make sure build tools are installed
+  ansible.builtin.apt:
+    name: python3-dev
+    state: present
+  when: python_with_dev
+
 # see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/pip_module.html
 - name: Ensure python_pip_packages are installed
   ansible.builtin.pip:
