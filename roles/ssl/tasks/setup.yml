@@ -42,7 +42,7 @@
   notify: Update ca certificates
 
 - name: Handle dhparams
-  when: nginx_ssl_protocols != 'TLSv1.3'
+  when: nginx_ssl_protocols is defined and nginx_ssl_protocols != 'TLSv1.3'
   block:
     - name: Generate dhparam key
       tags: nginx
@@ -78,7 +78,7 @@
         - nginx_with_ssl
 
 - name: Remove dhparam file, if not required
-  when: nginx_ssl_protocols == 'TLSv1.3'
+  when: nginx_ssl_protocols is undefined or nginx_ssl_protocols == 'TLSv1.3'
   file:
     path: '{{ ssl_forward_secrecy_key_path }}'
     state: absent
