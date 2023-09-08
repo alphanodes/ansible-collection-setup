@@ -33,16 +33,6 @@ server {
   ssl_certificate /etc/ssl/certs/{{ gitlab_pages_domain_ssl_cert }}.crt;
   ssl_certificate_key /etc/ssl/private/{{ gitlab_pages_domain_ssl_cert }}.key;
 
-  ssl_session_timeout 1d;
-  ssl_session_cache shared:SSL:10m;
-  ssl_session_tickets off;
-
-  # These settings are in line with the modern settings from https://ssl-config.mozilla.org/
-  # and are supported by all still-supported browsers since 2019. If you have specific needs
-  # for older settings, please consult the intermediate settings there.
-  ssl_protocols TLSv1.3;
-  ssl_prefer_server_ciphers off;
-
   ## See app/controllers/application_controller.rb for headers set
 
   ## [Optional] If your certficate has OCSP, enable OCSP stapling to reduce the overhead and latency of running SSL.
