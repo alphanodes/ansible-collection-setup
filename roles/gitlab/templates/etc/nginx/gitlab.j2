@@ -57,13 +57,6 @@ server {
 
   {% include 'templates/nginx_ssl.inc.j2' with context %}
 
-  ssl_session_timeout 1d;
-  ssl_session_cache shared:SSL:10m;
-  ssl_session_tickets off;
-
-  ssl_protocols TLSv1.3;
-  ssl_prefer_server_ciphers off;
-
   ## See app/controllers/application_controller.rb for headers set
 
   ## [Optional] If your certficate has OCSP, enable OCSP stapling to reduce the overhead and latency of running SSL.
