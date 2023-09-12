@@ -79,6 +79,6 @@
 
 - name: Remove dhparam file, if not required
   when: nginx_ssl_protocols is undefined or nginx_ssl_protocols == 'TLSv1.3'
-  file:
+  ansible.builtin.file:
     path: '{{ ssl_forward_secrecy_key_path }}'
     state: absent
