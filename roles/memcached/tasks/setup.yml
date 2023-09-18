@@ -5,10 +5,9 @@
   when: memcached_user is not defined
 
 - name: Install Memcached.
-  ansible.builtin.package:
-    name: memcached
+  ansible.builtin.apt:
+    name: "{{ memcached_packages }}"
     state: present
-  register: memcached_install
 
 # Configure Memcached.
 - name: Copy Memcached configuration.
