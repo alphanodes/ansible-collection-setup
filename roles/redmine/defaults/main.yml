@@ -47,6 +47,7 @@ redmine_with_nginx: true
 
 redmine_with_hedgedoc: false
 redmine_with_memcache: true
+redmine_memcached_host: '127.0.0.1:11211'
 
 account_migrate_to_new_home: true
 
