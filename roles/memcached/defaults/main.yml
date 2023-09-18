@@ -11,3 +11,7 @@ memcached_log_verbosity: ""
 memcached_max_item_size: 1m
 
 memcached_threads: 4
+
+memcached_packages:
+  - memcached
+  - libmemcached-tools
