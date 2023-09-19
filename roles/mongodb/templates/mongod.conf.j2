@@ -102,7 +102,7 @@ operationProfiling:
   {% endfor %}
   {% endif %}
 
-{% if mongodb_major_version is version("4.0", ">=") -%}
+{% if mongodb_major_version is version("4.0", ">=") and mongodb_cloud_monitoring_free_state != "" -%}
 cloud:
   monitoring:
     free:
