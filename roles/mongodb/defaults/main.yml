@@ -89,8 +89,10 @@ mongodb_systemlog_path: /var/log/mongodb/{{ mongodb_daemon_name }}.log   # Log f
 mongodb_operation_profiling_slow_op_threshold_ms: 100
 mongodb_operation_profiling_mode: "off"
 
-## cloud options (MongoDB >= 4.0)
-mongodb_cloud_monitoring_free_state: "runtime"
+## cloud options (MongoDB >= 4.0).
+# Enterprice license required.
+# mongodb_cloud_monitoring_free_state: "runtime"
+mongodb_cloud_monitoring_free_state: ""
 
 ## replication Options
 mongodb_replication_replset: ""                   # Enable replication
