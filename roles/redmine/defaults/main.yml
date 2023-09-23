@@ -159,7 +159,7 @@ redmine_saml_name_identifier_format: 'urn:oasis:names:tc:SAML:2.0:nameid-format:
 # This would be on the identity provider
 # redmine_saml_idp_slo_service_url: 'https://sso.example.com/saml2/idp/SingleLogoutService.php'
 # Which redmine field is used as name_identifier_value for SAML logout
-redmine_saml_name_identifier_value: 'mail'
+redmine_saml_name_identifier_value: mail
 redmine_saml_allowed_clock_drift: 2
 # Seperator for mapping
 # redmine_saml_attribute_mapping_sep: '.'

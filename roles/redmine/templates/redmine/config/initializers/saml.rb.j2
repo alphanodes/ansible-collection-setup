@@ -13,7 +13,7 @@ require Rails.root.join('plugins/redmine_saml/lib/redmine_saml/base')
 {% endif %}
 {% endif %}
 {% if saml_idp_cert != '' %}
-    idp_cert: '{{ saml_idp_cert }}',
+    idp_cert: "{{ saml_idp_cert }}",
 {% endif %}
 {% if saml_idp_slo_service_url != '' %}
     idp_slo_service_url: '{{ saml_idp_slo_service_url }}',
