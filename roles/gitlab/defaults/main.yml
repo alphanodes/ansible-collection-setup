@@ -16,7 +16,7 @@ gitlab_with_zsh: true
 gitlab_omniauth_enabled: false
 gitlab_omniauth_providers: []
 
-gitlab_repository_version: '16-3-stable'
+gitlab_repository_version: '16-4-stable'
 gitlab_ce_version: '{{ gitlab_repository_version }}'
 gitlab_ee_version: '{{ gitlab_repository_version }}-ee'
 gitlab_path: "{{ gitlab_home }}/gitlab"
@@ -38,6 +38,7 @@ gitlab_sidekiq_pidfile: '{{ gitlab_pid_path }}/sidekiq.pid'
 # PID file is not used with systemd
 gitlab_sidekiq_logfile: '{{ gitlab_path }}/log/sidekiq.log'
 gitlab_sidekiq_threads: 5
+gitlab_sidekiq_log_format: json
 
 gitlab_redis_url: 'unix:/run/redis/redis.sock'
 gitlab_authbackend_port: 8080
