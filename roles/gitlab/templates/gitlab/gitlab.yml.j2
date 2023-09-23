@@ -396,7 +396,13 @@ production: &base
 
   ## Sidekiq
   sidekiq:
-    log_format: default # (json is also supported)
+    log_format: {{ gitlab_sidekiq_log_format }} # (text is the original format)
+    # An array of tuples indicating the rules for re-routing a worker to a
+    # desirable queue before scheduling. For example:
+    # routing_rules:
+    #   - ["resource_boundary=cpu", "cpu_boundary"]
+    #   - ["feature_category=pages", null]
+    #   - ["*", "default"]
 
   ## Auxiliary jobs
   # Periodically executed jobs, to self-heal GitLab, do external synchronizations, etc.
