@@ -145,6 +145,8 @@ redmine_saml_idp_sso_service_url: 'https://sso.desarrollo.unlp.edu.ar/saml2/idp/
 # see https://www.samltool.com/fingerprint.php
 # redmine_saml_idp_cert_fingerprint: 'certificate fingerprint'
 # redmine_saml_idp_cert: ''
+# if true, \n can be used in string
+redmine_saml_idp_cert_line_break_format: false
 # Used during SP-initiated SSO.
 # Describes the format of the username required by this application.
 # If you need the email address, use "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress".
