@@ -30,8 +30,8 @@ require Rails.root.join('plugins/redmine_saml/lib/redmine_saml/base')
 {% if saml_signout_url != '' %}
     signout_url: '{{ saml_signout_url }}',
 {% endif %}
-{% if saml_want_assertions_signed | string != '' or saml_signature_method != '' %}
     request_attributes: {},
+{% if saml_want_assertions_signed | string != '' or saml_signature_method != '' %}
     security: {
 {% if saml_want_assertions_signed | string != '' %}
       want_assertions_signed: {{ saml_want_assertions_signed | bool | lower }}
