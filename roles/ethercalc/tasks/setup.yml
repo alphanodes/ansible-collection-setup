@@ -17,6 +17,7 @@
     repo: "{{ ethercalc_repository }}"
     dest: "{{ ethercalc_path }}"
     version: "{{ ethercalc_repository_version }}"
+  become: true
   become_user: "{{ ethercalc_user }}"
   notify:
     - Install nodejs dependencies
