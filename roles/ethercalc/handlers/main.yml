@@ -9,4 +9,5 @@
   ansible.builtin.command: npm clean-install
   args:
     chdir: "{{ ethercalc_path }}"
+  become: true
   become_user: "{{ ethercalc_user }}"
