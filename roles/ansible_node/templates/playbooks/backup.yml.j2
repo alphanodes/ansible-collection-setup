@@ -76,5 +76,15 @@
     backup_remote_dir: {{ backup_remote_dir }}
 {% endif %}
 
+{% if backup_file_encrypted is defined %}
+    backup_file_encrypted: {{ backup_file_encrypted }}
+{% endif %}
+{% if backup_file_encrypt_password is defined %}
+    backup_file_encrypt_password: {{ backup_file_encrypt_password }}
+{% endif %}
+{% if backup_file_encrypt_command is defined %}
+    backup_file_encrypt_command: {{ backup_file_encrypt_command }}
+{% endif %}
+
   roles:
     - alphanodes.tasks.backup
