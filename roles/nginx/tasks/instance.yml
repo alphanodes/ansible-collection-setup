@@ -20,7 +20,7 @@
     src: vhost.j2
     dest: /etc/nginx/sites-available/{{ instance.name }}.conf
     mode: 0644
-  notify: Reload nginx
+  notify: Restart nginx
 
 - name: Update nginx vhost repo - {{ instance.name }}
   ansible.builtin.git:
@@ -36,7 +36,7 @@
     src: /etc/nginx/sites-available/{{ instance.name }}.conf
     dest: /etc/nginx/sites-enabled/{{ instance.name }}.conf
     state: link
-  notify: Reload nginx
+  notify: Restart nginx
 
   # restart required, because file can be not available before
 - name: Protect nginx vhost user - {{ instance.name }}
