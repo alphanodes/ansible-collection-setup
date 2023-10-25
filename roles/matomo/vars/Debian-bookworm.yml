@@ -2,9 +2,9 @@
 
 matomo_packages:
   - libmaxminddb-dev
-  - php-geoip
   - php8.2-gd
   - php8.2-ldap
+  - php8.2-maxminddb
   - php8.2-mbstring
   - php8.2-xml
 matomo_php_mods_available: /etc/php/8.2/mods-available
