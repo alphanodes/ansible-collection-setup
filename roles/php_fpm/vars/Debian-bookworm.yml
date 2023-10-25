@@ -12,7 +12,6 @@ __php_session_save_path: /var/lib/php/sessions
 php_fpm_packages:
   - php8.2-fpm
   - php8.2-gd
-  - php8.2-json
   - php8.2-readline
   - php8.2-mbstring
   - php8.2-xml
