@@ -1,9 +1,4 @@
 ---
-rocketchat_packages:
-  - graphicsmagick
-  - make
-  - python3-pymongo
-
 rocketchat_mongodb_uri: "\
   {% set temp_out =
       rocketchat_mongodb_server ~ ':' ~ rocketchat_mongodb_port -%}

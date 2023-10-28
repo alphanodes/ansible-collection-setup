@@ -1,6 +1,11 @@
 ---
 # defaults file for rocketchat server
 
+rocketchat_packages:
+  - build-essential
+  - graphicsmagick
+  - python3-pymongo
+
 rocketchat_dir: /srv/rocketchat
 rocketchat_application_path: '{{ rocketchat_dir }}/bundle'
 # "latest" implies latest stable here, can be "3.3.0", for example
