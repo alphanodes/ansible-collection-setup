@@ -7,11 +7,6 @@ upstream gitlab-workhorse {
   server unix:{{ gitlab_workhorse_socket }} fail_timeout=0;
 }
 
-map $http_upgrade $connection_upgrade_gitlab_ssl {
-    default upgrade;
-    ''      close;
-}
-
 ## NGINX 'combined' log format with filtered query strings
 log_format gitlab_ssl_access '$remote_addr - $remote_user [$time_local] "$request_method $gitlab_ssl_filtered_request_uri $server_protocol" $status $body_bytes_sent "$gitlab_ssl_filtered_http_referer" "$http_user_agent"';
 
@@ -101,7 +96,7 @@ server {
     proxy_set_header    X-Forwarded-For     $proxy_add_x_forwarded_for;
     proxy_set_header    X-Forwarded-Proto   $scheme;
     proxy_set_header    Upgrade             $http_upgrade;
-    proxy_set_header    Connection          $connection_upgrade_gitlab_ssl;
+    proxy_set_header    Connection          $connection_upgrade;
 
     proxy_pass http://gitlab-workhorse;
   }

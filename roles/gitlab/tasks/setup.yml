@@ -20,6 +20,24 @@
   ansible.builtin.set_fact:
     gitaly_socket_path: "{{ gitaly_socket_dir }}/gitaly.socket"
 
+- name: Include rsync role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.rsync
+
+- name: Include ssl role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.ssl
+
+- name: Include redis_server role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.redis_server
+
+- name: Include nginx role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nginx
+  vars:
+    nginx_with_websocket: true
+
 - name: Install required packages for gitlab
   ansible.builtin.apt:
     name: '{{ gitlab_packages }}'
