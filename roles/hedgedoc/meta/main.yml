@@ -4,8 +4,6 @@ dependencies:
   - role: alphanodes.setup.ssl
   - role: alphanodes.setup.postgresql
   - role: alphanodes.setup.nginx
-  # TODO: hedgedoc user has to be exist before
-  - role: alphanodes.setup.nodejs
 
 galaxy_info:
   description: Setup hedgedoc

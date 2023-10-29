@@ -5,7 +5,7 @@ Description=hedgedoc service
 User={{ hedgedoc_user }}
 Group={{ hedgedoc_group }}
 Environment=NODE_ENV={{ hedgedoc_node_env }}
-ExecStart=/usr/bin/node {{ hedgedoc_path }}/app.js
+ExecStart={{ nodejs_bin }} {{ hedgedoc_path }}/app.js
 WorkingDirectory={{ hedgedoc_path }}
 SyslogIdentifier={{ hedgedoc_syslog_identifier }}
 Restart=on-failure

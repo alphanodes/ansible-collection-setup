@@ -3,7 +3,6 @@ dependencies:
   - role: alphanodes.setup.mysql_client
   - role: alphanodes.setup.php_fpm
   - role: geerlingguy.composer
-  - role: alphanodes.setup.nodejs
 
 galaxy_info:
   description: Setup phpmyadmin

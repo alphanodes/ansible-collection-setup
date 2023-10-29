@@ -43,6 +43,7 @@
 - name: Include nodejs role
   ansible.builtin.include_role:
     name: alphanodes.setup.nodejs
+    public: true
 
 - name: Stats for rocketchat source file
   ansible.builtin.stat:

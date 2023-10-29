@@ -1,0 +1,4 @@
+---
+
+# path to node (this is fixed by used debian packages)
+nodejs_bin: /usr/bin/node

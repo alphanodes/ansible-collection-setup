@@ -32,6 +32,11 @@
   notify:
     - Run yarn build
 
+- name: Include nodejs role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nodejs
+    public: true
+
 - name: Ensure hedgedoc configuration is latest
   ansible.builtin.template:
     src: config.json.j2
