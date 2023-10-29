@@ -4,7 +4,6 @@ dependencies:
   - role: alphanodes.setup.ssl
   - role: alphanodes.setup.redis_server
   - role: alphanodes.setup.nginx
-  - role: alphanodes.setup.nodejs
 
 galaxy_info:
   description: Setup ethercalc

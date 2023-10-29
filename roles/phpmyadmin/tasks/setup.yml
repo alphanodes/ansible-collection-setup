@@ -15,6 +15,11 @@
     state: present
   notify: restart php
 
+- name: Include nodejs role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nodejs
+    public: true
+
 - name: Include install tasks
   ansible.builtin.include_tasks: install.yml
 

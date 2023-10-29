@@ -17,7 +17,7 @@ Environment=PORT={{ rocketchat_internal_port }}
 Environment={{ item.name }}={{ item.value }}
 {% endfor -%}
 WorkingDirectory={{ rocketchat_application_path }}
-ExecStart=/usr/bin/node {{ rocketchat_application_path }}/main.js
+ExecStart={{ nodejs_bin }} {{ rocketchat_application_path }}/main.js
 
 [Install]
 WantedBy=multi-user.target
