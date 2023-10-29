@@ -35,6 +35,7 @@
 - name: Include nginx role
   ansible.builtin.include_role:
     name: alphanodes.setup.nginx
+    public: true
   vars:
     nginx_with_websocket: true
 
