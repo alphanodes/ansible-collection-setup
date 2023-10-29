@@ -1,5 +1,9 @@
 ---
 
+- name: Include postgresql role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.postgresql
+
 - name: Create gitlab postgresql database user
   become_user: postgres
   become: true

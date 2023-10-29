@@ -1,16 +1,6 @@
 ---
 dependencies:
   - role: alphanodes.setup.common
-  - role: alphanodes.setup.rsync
-    when: not gitlab_remove
-  - role: alphanodes.setup.ssl
-    when: not gitlab_remove
-  - role: alphanodes.setup.redis_server
-    when: not gitlab_remove
-  - role: alphanodes.setup.nginx
-    when: not gitlab_remove
-  - role: alphanodes.setup.postgresql
-    when: not gitlab_remove
 
 galaxy_info:
   description: Setup gitlab
