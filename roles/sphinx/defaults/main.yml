@@ -8,7 +8,6 @@ sphinx_packages:
   - build-essential
   - texlive-latex-recommended
   - texlive-fonts-recommended
-  # texlive-latex-extra requires python 2.7 :( - but we need it for PDF creation
   - texlive-latex-extra
   - texlive-lang-german
   - latexmk

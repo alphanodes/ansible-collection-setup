@@ -15,7 +15,7 @@
 - name: Build
   when: (git_result is defined and git_result.changed) or sphinx_always_build
   environment:
-    PATH: '{{ sphinx_bin_path }}:$PATH'
+    PATH: "{{ sphinx_bin_path }}:$PATH"
   block:
     - name: Run sphinx clean - {{ instance.name }}
       ansible.builtin.command: make clean
