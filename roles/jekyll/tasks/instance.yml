@@ -24,13 +24,7 @@
     dest: '{{ jekyll_dir }}'
     version: '{{ instance.repo_version | default(omit) }}'
     accept_hostkey: true
-  notify: Run bundle update for jekyll
   register: git_result
-
-- name: Install bundler - {{ instance.name }}
-  community.general.gem:
-    name: bundler
-    state: latest
 
 - name: Run build on env {{ jekyll_env }}
   when: jekyll_run_clean or git_result.changed
@@ -40,6 +34,11 @@
   tags:
     - skip_ansible_lint
   block:
+    - name: Run bundle update for jekyll
+      ansible.builtin.command: bundle update
+      args:
+        chdir: '{{ jekyll_dir }}'
+
     - name: Run Jekyll clean - {{ instance.name }}
       ansible.builtin.command: bundle exec jekyll clean
       args:
