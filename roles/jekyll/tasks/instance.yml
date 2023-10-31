@@ -17,7 +17,7 @@
 - name: Install bundler - {{ instance.name }}
   community.general.gem:
     name: bundler
-    state: present
+    state: latest
 
 - name: Run build on env {{ jekyll_env }}
   when: jekyll_run_clean or git_result.changed
