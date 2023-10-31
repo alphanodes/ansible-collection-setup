@@ -29,7 +29,7 @@ config.session_store :cookie_store,
   secure: true,
   path: config.relative_url_root || '/'
 {% endif %}
-{% if redmine_rails_env == 'development' and active_redmine_repo_version == '5.0-stable' %}
+{% if redmine_rails_env == 'development' and (active_redmine_repo_version == '5.0-stable' or active_redmine_repo_version == '5.1-stable') %}
 
 config.hosts << '{{ instance.server_name }}'
 {% endif %}
