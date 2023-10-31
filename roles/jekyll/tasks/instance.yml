@@ -35,17 +35,17 @@
     - skip_ansible_lint
   block:
     - name: Run bundle update for jekyll
-      ansible.builtin.command: bundle update
+      ansible.builtin.command: bash -lc "bundle update"
       args:
         chdir: '{{ jekyll_dir }}'
 
     - name: Run Jekyll clean - {{ instance.name }}
-      ansible.builtin.command: bundle exec jekyll clean
+      ansible.builtin.command: bash -lc "bundle exec jekyll clean"
       args:
         chdir: '{{ jekyll_dir }}'
 
     - name: Run Jekyll build - {{ instance.name }}
-      ansible.builtin.command: bundle exec jekyll build
+      ansible.builtin.command: bash -lc "bundle exec jekyll build"
       args:
         chdir: '{{ jekyll_dir }}'
 
