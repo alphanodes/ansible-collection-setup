@@ -29,10 +29,6 @@ export http_proxy={{ http_proxy }}
 {% if https_proxy is defined %}
 export https_proxy={{ https_proxy }}
 {% endif %}
-{% if shell_with_ruby_gems %}
-export GEM_HOME=$(ruby -e 'print Gem.user_dir')
-export PATH="$GEM_HOME/bin:$PATH"
-{% endif %}
 
 {% for env_line in zsh_global_env %}
 {{ env_line }}
