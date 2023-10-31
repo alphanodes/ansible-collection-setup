@@ -1,9 +1,22 @@
 ---
 
+- name: Get Gem.user_dir
+  ansible.builtin.command: ruby -e 'print Gem.user_dir'
+  register: gem_info
+  changed_when: false
+
 - name: Set facts
   ansible.builtin.set_fact:
     jekyll_dir: "{{ instance.dir | default(jekyll_base_dir + '/' + instance.name) }}"
     jekyll_env: "{{ instance.jekyll_env | default(jekyll_env) }}"
+    jekyll_ruby_gem_home: '{{ gem_info.stdout }}'
+
+- name: Install bundler - {{ instance.name }}
+  community.general.gem:
+    name: bundler
+    state: present
+  environment:
+    GEM_HOME: '{{ jekyll_ruby_gem_home }}'
 
 - name: Install jekyll - {{ instance.name }}
   ansible.builtin.git:
@@ -21,6 +34,9 @@
 
 - name: Run build on env {{ jekyll_env }}
   when: jekyll_run_clean or git_result.changed
+  environment:
+    JEKYLL_ENV: '{{ jekyll_env }}'
+    GEM_HOME: '{{ jekyll_ruby_gem_home }}'
   tags:
     - skip_ansible_lint
   block:
@@ -28,15 +44,11 @@
       ansible.builtin.command: bundle exec jekyll clean
       args:
         chdir: '{{ jekyll_dir }}'
-      environment:
-        JEKYLL_ENV: '{{ jekyll_env }}'
 
     - name: Run Jekyll build - {{ instance.name }}
       ansible.builtin.command: bundle exec jekyll build
       args:
         chdir: '{{ jekyll_dir }}'
-      environment:
-        JEKYLL_ENV: '{{ jekyll_env }}'
 
     - name: Run Jekyll remove old release dir - {{ instance.name }}
       ansible.builtin.file:
