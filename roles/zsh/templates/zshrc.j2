@@ -92,10 +92,6 @@ alias u="apt update && apt upgrade"
 # Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
 export PATH="$PATH:$HOME/.rvm/bin"
 {% endif %}
-{% if shell_with_ruby_gems %}
-export GEM_HOME=$(ruby -e 'print Gem.user_dir')
-export PATH="$GEM_HOME/bin:$PATH"
-{% endif %}
 {% for export_info in zsh_global_exports %}
 export {{ export_info.name }}={{ export_info.value }}
 {% endfor %}
