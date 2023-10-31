@@ -16,6 +16,14 @@
   tags:
     - zsh
 
+- name: Gather the package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Check if ruby-rubygems is installed
+  ansible.builtin.set_fact:
+    shell_with_ruby_gems: "{{ true if 'ruby-rubygems' in ansible_facts.packages else false }}"
+
 - name: Configure /etc/zsh/zshenv
   ansible.builtin.template:
     src: zshenv.j2
