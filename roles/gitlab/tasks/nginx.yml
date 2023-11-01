@@ -1,17 +1,5 @@
 ---
 
-- name: Include ssl role
-  ansible.builtin.include_role:
-    name: alphanodes.setup.ssl
-    public: true
-
-- name: Include nginx role
-  ansible.builtin.include_role:
-    name: alphanodes.setup.nginx
-    public: true
-  vars:
-    nginx_with_websocket: true
-
 - name: Set TLS files for letsencrypt
   ansible.builtin.set_fact:
     vhost_letsencrypt_cert: "{{ gitlab_vhost_letsencrypt_cert }}"
