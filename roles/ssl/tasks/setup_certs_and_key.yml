@@ -90,7 +90,7 @@
     owner: '{{ ssl_cert_owner }}'
     group: '{{ ssl_cert_group }}'
     mode: 0644
-  notify: Check for Reload nginx
+  notify: Restart nginx
   when: ssl_cert.provider is undefined
 
 - name: Check trusted TLS cert - {{ ssl_cert.name }}
@@ -109,7 +109,7 @@
   when:
     - ssl_cert.provider is undefined
     - trusted_cert.stat.exists
-  notify: Check for Reload nginx
+  notify: Restart nginx
 
 - name: Remove obsolete trusted ssl certificates - {{ ssl_cert.name }}
   ansible.builtin.file:
@@ -126,5 +126,5 @@
     owner: '{{ ssl_cert_owner }}'
     group: '{{ ssl_cert_group }}'
     mode: 0640
-  notify: Check for Reload nginx
+  notify: Restart nginx
   when: ssl_cert.provider is undefined

@@ -1,13 +1,16 @@
 ---
 # handlers file for ssl
 
-- name: Check for Reload nginx
-  ansible.builtin.command: /bin/true
-  when:
-    - nginx_with_ssl is defined
-    - nginx_with_ssl
-  notify: Reload nginx
-
 - name: Update ca certificates
   ansible.builtin.command: update-ca-certificates
   notify: Restart nginx
+
+- name: Restart nginx
+  ansible.builtin.command: nginx -t -c /etc/nginx/nginx.conf
+  changed_when: false
+  notify: Real restart nginx
+
+- name: Real restart nginx
+  ansible.builtin.systemd:
+    name: nginx
+    state: restarted
