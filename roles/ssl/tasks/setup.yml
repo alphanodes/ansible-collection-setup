@@ -49,7 +49,7 @@
       ansible.builtin.command: 'openssl dhparam -out {{ ssl_forward_secrecy_key_path }} {{ ssl_forward_secrecy_key_length }}'
       args:
         creates: '{{ ssl_forward_secrecy_key_path }}'
-      notify: Reload nginx
+      notify: Restart nginx
       when:
         - nginx_with_ssl is defined
         - nginx_with_ssl
@@ -58,7 +58,7 @@
     - name: Regenerate dhparam key
       tags: nginx
       ansible.builtin.command: 'openssl dhparam -out {{ ssl_forward_secrecy_key_path }} {{ ssl_forward_secrecy_key_length }}'
-      notify: Reload nginx
+      notify: Restart nginx
       changed_when: false
       when:
         - nginx_with_ssl is defined
@@ -72,7 +72,7 @@
         owner: root
         group: ssl-cert
         mode: 0640
-      notify: Reload nginx
+      notify: Restart nginx
       when:
         - nginx_with_ssl is defined
         - nginx_with_ssl
