@@ -1,21 +1,18 @@
 ---
-name: "alphanodes.setup.postgresql"
+name: "alphanodes.setup.golang"
 'on':
   pull_request:
   push:
     branches:
       - main
     paths:
-      - 'roles/postgresql/**'
-      - 'roles/postgresql_client/**'
-      - 'molecule/postgresql/**'
-      - 'molecule/postgresql_client/**'
-      - '.github/workflows/postgresql.yml'
-      - '.github/workflows/postgresql_client.yml'
+      - 'roles/golang/**'
+      - 'molecule/golang/**'
+      - '.github/workflows/golang.yml'
 
 defaults:
   run:
-    working-directory: 'postgresql'
+    working-directory: 'golang'
 
 jobs:
   build:
@@ -34,7 +31,7 @@ jobs:
       - name: Check out the codebase.
         uses: actions/checkout@v4
         with:
-          path: 'postgresql'
+          path: 'golang'
 
       - name: Set up Python 3.
         uses: actions/setup-python@v4
@@ -49,6 +46,6 @@ jobs:
       - name: Run Molecule tests.
         run: |
           molecule --version
-          molecule test -s postgresql
+          molecule test -s golang
         env:
           MOLECULE_DISTRO: ${{ matrix.distro }}
