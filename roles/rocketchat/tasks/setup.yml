@@ -83,7 +83,7 @@
 
 - name: Unpack the Rocket.Chat binary tarball version {{ rocketchat_version }}
   ansible.builtin.unarchive:
-    copy: false
+    remote_src: true
     src: "{{ rocketchat_source_file }}"
     dest: "{{ rocketchat_dir }}"
     creates: "{{ rocketchat_application_path }}"

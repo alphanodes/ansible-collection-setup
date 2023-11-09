@@ -17,7 +17,7 @@
     dest: '{{ matomo_working_dir }}'
     owner: '{{ matomo_user }}'
     group: '{{ matomo_group }}'
-    copy: false
+    remote_src: true
 
 - name: Make sure config.ini.php will not be overwritten
   ansible.builtin.file:

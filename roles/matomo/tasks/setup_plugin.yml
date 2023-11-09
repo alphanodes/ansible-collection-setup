@@ -75,7 +75,7 @@
             dest: '{{ matomo_plugin_path }}'
             owner: '{{ nginx_owner }}'
             group: '{{ nginx_group }}'
-            copy: false
+            remote_src: true
 
         - name: Corrent directory name - {{ plugin_name }}
           ansible.builtin.command: mv {{ tmp_plugin_dir }} {{ plugin_dir }}
