@@ -4,8 +4,8 @@
   become: true
 
   vars:
-    golang_version: '1.20.11'
-    golang_sha256_checksum: 'ced1b5cfd4e8aa7aff5e6a399ed111e5ed2903ee17aaa79ac0c93565fb229776'
+    golang_version: '1.21.4'
+    golang_sha256_checksum: 73cac0215254d0c7d1241fa40837851f3b9a8a742d0b54714cbdfb3feaf8f0af
 
   roles:
     - role: alphanodes.setup.golang
