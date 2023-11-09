@@ -20,4 +20,4 @@
       - name: yo
 
   roles:
-    - role: geerlingguy.nodejs
+    - role: alphanodes.setup.nodejs
