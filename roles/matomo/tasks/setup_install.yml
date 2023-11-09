@@ -17,7 +17,7 @@
     dest: '{{ matomo_working_dir }}'
     owner: '{{ matomo_user }}'
     group: '{{ matomo_group }}'
-    copy: false
+    remote_src: true
 
 - name: Install new matomo files
   ansible.builtin.command: mv {{ matomo_working_dir }}/matomo {{ matomo_dir }}
