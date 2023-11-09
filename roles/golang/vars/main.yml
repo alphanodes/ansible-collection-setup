@@ -1,0 +1,4 @@
+---
+
+golang_file: "{{ golang_real_version }}.linux-{{ golang_arch }}.tar.gz"
+golang_latest_version_url: https://go.dev/VERSION?m=text

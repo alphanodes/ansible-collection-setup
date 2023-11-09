@@ -1,0 +1,23 @@
+---
+
+- name: Remove for non-dist installation
+  when: not golang_dist_packages
+  block:
+    - name: Remove golang files and directories
+      ansible.builtin.file:
+        path: '{{ golang_install_dir }}'
+        state: absent
+
+    - name: Remove links
+      ansible.builtin.file:
+        path: "/usr/local/bin/{{ item }}"
+        state: absent
+      when: golang_link_to_local
+      loop: '{{ golang_link_binaries }}'
+
+- name: Be sure debian packages are removed
+  ansible.builtin.apt:
+    name: '{{ golang_packages }}'
+    purge: true
+    state: absent
+  when: golang_dist_packages

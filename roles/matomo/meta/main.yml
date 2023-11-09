@@ -1,6 +1,8 @@
 ---
 
 dependencies:
+  - role: alphanodes.setup.common
+    public: true
   - role: alphanodes.setup.ssl
     when: matomo_with_nginx
   - role: alphanodes.setup.mysql_client

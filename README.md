@@ -29,6 +29,7 @@ All provided roles do not use docker as container system.
 - [alphanodes.setup.gitlab](roles/gitlab/)
 - [alphanodes.setup.glances](roles/glances/)
 - [alphanodes.setup.goaccess](roles/goaccess/)
+- [alphanodes.setup.golang](roles/golang/)
 - [alphanodes.setup.hedgedoc](roles/hedgedoc/)
 - [alphanodes.setup.java](roles/java/)
 - [alphanodes.setup.jekyll](roles/jekyll/)

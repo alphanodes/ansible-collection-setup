@@ -2,3 +2,9 @@
 
 ansible_pip_venv: ansible
 python_venv_parent: "{{ ansible_env.HOME }}/.venvs"
+
+# Directory, which is used for downloading software packages
+software_dir: /srv/software
+# software_dir_owner:
+# software_dir_group: "{{ software_dir_owner | omit }}"
+# software_dir_mode:

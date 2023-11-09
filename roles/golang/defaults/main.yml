@@ -1,0 +1,38 @@
+---
+
+# Go language SDK version number
+# use fixed version e.g. '1.20.11' or latest
+golang_version: latest
+golang_arch: amd64
+
+# use it with fixed version
+# golang_sha256_checksum: ef79a11aa095a08772d2a69e4f152f897c4e96ee297b0dc20264b7dec2961abe
+
+# Mirror to download the Go language SDK redistributable package from
+golang_mirror: 'https://dl.google.com/go'
+
+# Base installation directory the Go language SDK distribution
+golang_install_dir: '/usr/local/go'
+
+# create link to /usr/local/bin to go binaries
+# NOTE: only if golang_dist_packages = false
+golang_link_to_local: true
+
+golang_link_binaries:
+  - go
+  - gofmt
+
+# Location for GOPATH environment variable
+golang_gopath:
+
+# if true, golang is installed with packages from linux distribution
+# (not from golang_mirror)
+golang_dist_packages: false
+
+# only used with golang_dist_packages = true
+golang_packages:
+  - golang-go
+  - golang-src
+
+# set it to true, if you want to remove go
+golang_remove: false
