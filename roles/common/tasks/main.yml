@@ -1,0 +1,7 @@
+- name: Ensures software_dir exists
+  ansible.builtin.file:
+    path: '{{ software_dir }}'
+    owner: '{{ software_dir_owner | default(omit) }}'
+    group: '{{ software_dir_group | default(omit) }}'
+    mode: '{{ software_dir_mode | default(omit) }}'
+    state: directory

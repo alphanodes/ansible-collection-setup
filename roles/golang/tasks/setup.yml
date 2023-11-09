@@ -1,0 +1,80 @@
+---
+
+- name: Be sure debian packages are installed - {{ golang_latest_version_url }}
+  ansible.builtin.apt:
+    name: '{{ golang_packages }}'
+    state: present
+  when: golang_dist_packages
+
+- name: Install for non-dist installation
+  when: not golang_dist_packages
+  block:
+    - name: Set golang_real_version with latest version
+      ansible.builtin.set_fact:
+        golang_real_version: "{{ lookup('url', golang_latest_version_url, wantlist=True) | first }}"
+      when: golang_version == 'latest'
+
+    - name: Show backup volkstheater
+      ansible.builtin.debug:
+        var: golang_real_version
+
+    - name: Set golang_real_version with fixed version
+      ansible.builtin.set_fact:
+        golang_real_version: "go{{ golang_version }}"
+      when: golang_version != 'latest'
+
+    - name: Check golang_file exists - {{ golang_real_version }}
+      ansible.builtin.stat:
+        path: '{{ software_dir }}/{{ golang_file }}'
+      register: golang_file_exists
+
+    - name: Check Go exists
+      ansible.builtin.stat:
+        path: '{{ golang_install_dir }}/bin/go'
+      register: golang_install_dir_exists
+
+    - name: Delete existing path for update - {{ golang_install_dir }}
+      ansible.builtin.file:
+        path: '{{ golang_install_dir }}'
+        state: absent
+      when:
+        - not golang_file_exists.stat.exists
+        - golang_install_dir_exists.stat.exists
+
+    - name: Creating {{ golang_install_dir }}
+      ansible.builtin.file:
+        path: '{{ golang_install_dir }}'
+        state: directory
+        mode: 0755
+        owner: root
+        group: root
+
+    - name: Download golang_file archive version {{ golang_real_version }}
+      ansible.builtin.get_url:
+        url: '{{ golang_mirror }}/{{ golang_file }}'
+        dest: '{{ software_dir }}/{{ golang_file }}'
+        mode: 0644
+        checksum: "{{ 'sha256:' + golang_sha256_checksum | default(omit) }}"
+        force: false
+        use_proxy: true
+        validate_certs: true
+      when: not golang_file_exists.stat.exists
+
+    - name: Extract golang_file archive
+      ansible.builtin.unarchive:
+        src: '{{ software_dir }}/{{ golang_file }}'
+        dest: '{{ golang_install_dir }}'
+        extra_opts: '--strip-components=1'
+        owner: root
+        group: root
+        remote_src: true
+      when: not golang_install_dir_exists.stat.exists or not golang_file_exists.stat.exists
+
+    - name: Create symlinks to go binaries
+      ansible.builtin.file:
+        src: '{{ golang_install_dir }}/bin/{{ item }}'
+        dest: /usr/local/bin/{{ item }}
+        force: true
+        state: link
+      when: golang_link_to_local
+      loop: '{{ golang_link_binaries }}'

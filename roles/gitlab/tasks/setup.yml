@@ -124,8 +124,12 @@
   register: gitlab_git_changed
   when: gitlab_update
 
-- name: Include Go tasks
-  ansible.builtin.include_tasks: go.yml
+- name: Include Go role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.golang
+  vars:
+    golang_version: '{{ gitlab_go_version | default(omit) }}'
+    golang_sha256_checksum: '{{ gitlab_go_sha256_checksum | default(omit) }}'
 
 - name: Remove system yarnpkg is removed
   ansible.builtin.apt:

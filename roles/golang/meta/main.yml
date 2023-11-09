@@ -1,12 +1,11 @@
 ---
+
 dependencies:
   - role: alphanodes.setup.common
     public: true
-  - role: alphanodes.setup.ssl
-  - role: alphanodes.setup.nginx
 
 galaxy_info:
-  description: Setup rocketchat server
+  description: Install go language.
   author: alexandermeindl
   company: AlphaNodes GmbH
   license: Apache License 2.0
@@ -20,3 +19,4 @@ galaxy_info:
       versions:
         - buster
         - bullseye
+        - bookworm
