@@ -247,6 +247,8 @@ redmine_patches:
 #    strip: 1
   - file: allowed_to_condition
     strip: 1
+  - file: query_filter_group_fix
+    strip: 1
 
 # set to yes, if git history for ssh is required on deploy
 redmine_full_remote_deploy: false
@@ -264,6 +266,7 @@ redmine_write_permission_dirs:
   # for additional_tags hint file
   - path: /plugins
 
+# https://api.rubyonrails.org/classes/ActiveJob/QueueAdapters/AsyncAdapter.html
 # redmine_queue_adapter: async
 
 redmine_async_queue_min_threads: 1
