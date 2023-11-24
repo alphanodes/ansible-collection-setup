@@ -4,7 +4,6 @@
   ansible.builtin.stat:
     path: "{{ swapfile_path }}"
     get_checksum: false
-    get_md5: false
   register: swapfile_check
   changed_when: false
 
