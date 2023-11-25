@@ -29,7 +29,7 @@
   delegate_to: "{{ mysql_replication_master_inventory_host | default(omit, true) }}"
   register: master
   when:
-    - mysql_replication_master_inventory_host != ''
+    - (mysql_replication_master_inventory_host | length) > 0
     - (slave.Is_Slave is defined and not slave.Is_Slave) or (slave.Is_Replica is defined and not slave.Is_Replica) or (slave.Is_Slave is not defined and slave.Is_Replica is not defined and slave is failed)
     - mysql_replication_role == 'slave'
     - (mysql_replication_master | length) > 0
