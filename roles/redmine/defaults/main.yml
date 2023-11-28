@@ -40,6 +40,7 @@ redmine_delivery_method: ':sendmail'
 
 # see https://guides.rubyonrails.org/action_mailer_basics.html
 # and https://github.com/mikel/mail/issues/1538
+redmine_sendmail_settings_location: /usr/sbin/sendmail
 redmine_sendmail_settings_arguments:
   - "-i"
 

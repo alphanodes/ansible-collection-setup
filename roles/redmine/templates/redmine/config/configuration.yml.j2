@@ -5,8 +5,9 @@ default:
   email_delivery:
     delivery_method: {{ active_delivery_method }}
 {% if active_delivery_method  == ':sendmail' %}
-{% if redmine_sendmail_settings_arguments | length %}
     sendmail_settings:
+      location: {{ redmine_sendmail_settings_location }}
+{% if redmine_sendmail_settings_arguments | length %}
       arguments:
 {% for sendmail_arg in redmine_sendmail_settings_arguments %}
         - "{{ sendmail_arg }}"
