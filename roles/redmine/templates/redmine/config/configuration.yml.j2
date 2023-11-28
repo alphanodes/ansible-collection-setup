@@ -3,15 +3,23 @@
 
 default:
   email_delivery:
-    delivery_method: {{ instance.delivery_method | default(redmine_delivery_method) }}
-    {% if instance.delivery_method is undefined or instance.delivery_method == ':smtp' -%}
-
+    delivery_method: {{ active_delivery_method }}
+{% if active_delivery_method  == ':sendmail' %}
+{% if redmine_sendmail_settings_arguments | length %}
+    sendmail_settings:
+      arguments:
+{% for sendmail_arg in redmine_sendmail_settings_arguments %}
+        - "{{ sendmail_arg }}"
+{% endfor %}
+{% endif %}
+{% endif %}
+{% if active_delivery_method  == ':smtp' %}
     smtp_settings:
       address: "{{ instance.smtp_address | default(redmine_smtp_address) }}"
       port: {{ instance.smtp_port | default(redmine_smtp_port) }}
       tls: {{ 'true' if instance.smtp_tls | default(redmine_smtp_tls) else 'false' }}
       enable_starttls_auto: {{ 'true' if instance.smtp_enable_starttls_auto | default(redmine_smtp_enable_starttls_auto) else 'false' }}
-    {% endif %}
+{% endif %}
 
   attachments_storage_path: {{ redmine_files_dir }}
 {% if instance.sudo_mode is defined and instance.sudo_mode %}

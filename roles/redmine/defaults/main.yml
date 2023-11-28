@@ -37,6 +37,12 @@ redmine_system_infos_bool_vars:
 # @see https://guides.rubyonrails.org/action_mailer_basics.html
 # redmine 5 has problems with local smtp server without ssl
 redmine_delivery_method: ':sendmail'
+
+# see https://guides.rubyonrails.org/action_mailer_basics.html
+# and https://github.com/mikel/mail/issues/1538
+redmine_sendmail_settings_arguments:
+  - "-i"
+
 redmine_smtp_address: localhost
 redmine_smtp_port: 25
 redmine_smtp_tls: false

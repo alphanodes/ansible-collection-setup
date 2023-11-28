@@ -54,6 +54,7 @@
     active_mysql_socket: "{{ instance.mysql_socket | default(redmine_mysql_socket) }}"
     active_redmine_patches: "{{ instance.patches | default(redmine_patches) }}"
     active_redmine_repo_version: "{{ instance.repo_version | default(redmine_repo_version) }}"
+    active_delivery_method: "{{ instance.delivery_method | default(redmine_delivery_method) }}"
     instance: "{{ instance | combine([{'error_404_enabled': true}]) }}"
     queue_adapter: "{{ instance.queue_adapter | default(redmine_queue_adapter) | default('') }}"
 
