@@ -265,7 +265,7 @@ redmine_write_permission_dirs:
   - path: /plugins
 
 # https://api.rubyonrails.org/classes/ActiveJob/QueueAdapters/AsyncAdapter.html
-# redmine_queue_adapter: async
+redmine_queue_adapter: async
 
 redmine_async_queue_min_threads: 1
 redmine_async_queue_max_threads: 2
