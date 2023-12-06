@@ -10,5 +10,10 @@
         cache_valid_time: 600
       changed_when: false
 
+    - name: python3-debian required for deb822
+      ansible.builtin.apt:
+        name: python3-debian
+        state: present
+
   roles:
     - role: alphanodes.setup.postgresql
