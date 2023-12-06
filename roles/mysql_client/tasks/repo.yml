@@ -1,32 +1,43 @@
 ---
 
-- name: Ensure apt key for mysql.com is present (local key)
-  ansible.builtin.copy:
-    src: mysql.gpg
-    dest: /etc/apt/trusted.gpg.d/mysql.gpg
-    mode: 0644
-  when:
-    - mysql_with_mysql_com
-    - mysql_local_apt_key
-
-# url for remote key is not available - dep package is provided by mysql.com
-# - name: Ensure apt key for mysql.com is present (remote key)
-#   ansible.builtin.get_url:
-#     url: "{{ mysql_repo_key_url }}"
-#     dest: /etc/apt/trusted.gpg.d/mysql.asc
-#     mode: 0644
-#     force: true
-#   when: not mysql_local_key
-
-- name: Ensure apt sources list for mysql.com sources is present
-  ansible.builtin.apt_repository:
-    repo: '{{ mysql_apt_repo_url }}'
-    update_cache: true
-    state: "{{ 'present' if ansible_distribution == 'Debian' and mysql_with_mysql_com else 'absent' }}"
-
-- name: Remove previous apt sources list from apt sources
-  ansible.builtin.apt_repository:
-    repo: 'deb http://repo.mysql.com/apt/debian/ {{ ansible_distribution_release | lower }} mysql-{{ mysql_apt_repo_version_prev }}'
-    update_cache: true
+- name: Remove mysql apt repository
+  ansible.builtin.deb822_repository:
+    name: mysql
     state: absent
+  when: not mysql_with_mysql_com
+
+- name: MySQL.com block
   when: mysql_with_mysql_com
+  block:
+    - name: Use local gpg key for apt repository
+      ansible.builtin.copy:
+        src: mysql.gpg
+        dest: '{{ mysql_apt_repo_key_file }}'
+        mode: 0644
+      when: mysql_apt_key_url is not defined
+
+    - name: Remove old apt repository files
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: absent
+      loop:
+        - /etc/apt/sources.list.d/repo_mysql_com_apt_debian.list
+
+    # see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/deb822_repository_module.html
+    - name: Add mysql apt repository
+      ansible.builtin.deb822_repository:
+        name: mysql
+        uris: "{{ mysql_apt_url }}"
+        types: deb
+        suites: '{{ mysql_apt_suites }}'
+        components: '{{ mysql_apt_components }}'
+        signed_by: "{{ mysql_apt_key_url | default(mysql_apt_repo_key_file) }}"
+        state: present
+      register: mysql_repo
+
+    - name: Update apt cache.
+      apt:
+        update_cache: true
+      when: mysql_repo.changed
+      tags:
+        - skip_ansible_lint

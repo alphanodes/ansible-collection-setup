@@ -1,0 +1,1 @@
+mysql_apt_repo_key_file: /etc/apt/trusted.gpg.d/mysql.gpg

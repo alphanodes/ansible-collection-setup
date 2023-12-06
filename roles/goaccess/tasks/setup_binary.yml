@@ -1,19 +1,43 @@
 ---
 
-- name: Add goaccess GPG key
-  ansible.builtin.get_url:
-    url: '{{ goaccess_repo_key_url }}'
-    dest: /etc/apt/trusted.gpg.d/goaccess.asc
-    mode: 0644
-    force: true
+- name: Install binary
+  when: not goaccess_from_source
+  block:
+    - name: Remove old apt repository files
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: absent
+      loop:
+        - /etc/apt/trusted.gpg.d/goaccess.asc
 
-- name: Add goaccess debian repository
-  ansible.builtin.apt_repository:
-    repo: '{{ goaccess_repo_url }}'
-    update_cache: true
-    state: "{{ 'absent' if geoaccess_from_source else 'present' }}"
+    # see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/deb822_repository_module.html
+    - name: Add goaccess apt repository
+      ansible.builtin.deb822_repository:
+        name: goaccess
+        uris: '{{ goaccess_apt_url }}'
+        types: deb
+        suites: '{{ goaccess_apt_suites }}'
+        components: '{{ goaccess_apt_components }}'
+        signed_by: '{{ goaccess_apt_key_url }}'
+        state: present
+      register: goaccess_repo
 
-- name: Be sure goaccess packages are installed
-  ansible.builtin.apt:
-    name: '{{ goaccess_packages }}'
-    state: "{{ 'absent' if geoaccess_from_source else 'present' }}"
+    - name: Update apt cache
+      apt:
+        update_cache: true
+      when: goaccess_repo.changed
+      tags:
+        - skip_ansible_lint
+
+    - name: Be sure goaccess packages are installed
+      ansible.builtin.apt:
+        name: '{{ goaccess_packages }}'
+        state: present
+
+- name: Remove binary
+  when: goaccess_from_source
+  block:
+    - name: Remove goaccess apt repository
+      ansible.builtin.deb822_repository:
+        name: goaccess
+        state: absent

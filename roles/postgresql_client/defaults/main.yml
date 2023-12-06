@@ -12,8 +12,8 @@ postgresql_client_packages:
  - postgresql-client-{{ postgresql_version | default(postgresql_client_version) }}
  - python3-psycopg2
 
-postgresql_repo_key_url: 'https://www.postgresql.org/media/keys/ACCC4CF8.asc'
-postgresql_repo_protocol: https
-postgresql_repo_url: 'deb {{ postgresql_repo_protocol }}://apt.postgresql.org/pub/repos/apt/ {{ ansible_distribution_release }}-pgdg main'
-
-postgresq_skip_apt_key: false
+postgresql_apt_url_protocol: https
+postgresql_apt_url: '{{ postgresql_apt_url_protocol }}://apt.postgresql.org/pub/repos/apt/'
+postgresql_apt_key_url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+postgresql_apt_suites: '{{ ansible_distribution_release }}-pgdg'
+postgresql_apt_components: main

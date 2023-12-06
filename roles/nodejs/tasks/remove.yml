@@ -11,13 +11,7 @@
     path: /usr/local/lib/npm
     state: absent
 
-- name: Remove nodejs configuration files
-  ansible.builtin.file:
-    path: '{{ item }}'
+- name: Remove nodesource apt repository
+  ansible.builtin.deb822_repository:
+    name: nodesource
     state: absent
-  loop:
-    - /etc/apt/sources.list.d/deb_nodesource_com_node_12_x.list
-    - /etc/apt/sources.list.d/deb_nodesource_com_node_14_x.list
-    - /etc/apt/sources.list.d/deb_nodesource_com_node_16_x.list
-    - /etc/apt/sources.list.d/deb_nodesource_com_node_18_x.list
-    - '{{ nodejs_gpg_trusted_file }}'

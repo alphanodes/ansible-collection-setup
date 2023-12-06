@@ -3,8 +3,9 @@
 mongodb_package: mongodb-org
 mongodb_version: '5.0'
 
-mongodb_apt_debian_url: "deb http://repo.mongodb.org/apt/debian {{ ansible_distribution_release }}/mongodb-org/{{ mongodb_version }} main"
-mongodb_apt_ubuntu_url: "deb http://repo.mongodb.org/apt/ubuntu {{ ansible_distribution_release }}/mongodb-org/{{ mongodb_version }} multiverse"
+mongodb_apt_url: http://repo.mongodb.org/apt/{{ ansible_distribution | lower }}
+mongodb_apt_suites: "{{ ansible_distribution_release }}/mongodb-org/{{ mongodb_version }}"
+mongodb_apt_components: "{{ 'multiverse' if ansible_distribution == 'Ubuntu' else 'main' }}"
 
 mongodb_apt_key_url: https://www.mongodb.org/static/pgp/server-{{ mongodb_version }}.asc
 

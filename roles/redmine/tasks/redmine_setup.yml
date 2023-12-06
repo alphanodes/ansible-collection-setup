@@ -1,11 +1,40 @@
 ---
 
-- name: Use PPA for Ruby with Ubuntu
-  ansible.builtin.apt_repository:
-    repo: 'ppa:brightbox/ruby-ng'
-    state: "{{ 'present' if redmine_use_ppa | bool else 'absent' }}"
-    update_cache: true
-  when: ansible_distribution == 'Ubuntu'
+- name: Use rvm repository for ruby for Ubuntu
+  when: ansible_distribution == 'Ubuntu' and redmine_rvm_apt
+  block:
+    - name: Remove old apt repository files
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: absent
+      loop:
+        - /etc/apt/sources.list.d/ppa_launchpadcontent_net_rael_gc_rvm_ubuntu.list
+        - /etc/apt/trusted.gpg.d/rvm-ppa.asc
+
+    # see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/deb822_repository_module.html
+    - name: Add rvm apt repository
+      ansible.builtin.deb822_repository:
+        name: rvm
+        uris: '{{ redmine_rvm_apt_url }}'
+        types: deb
+        suites: '{{ redmine_rvm_apt_suites }}'
+        components: '{{ redmine_rvm_apt_components }}'
+        signed_by: '{{ redmine_rvm_apt_key_url }}'
+        state: present
+      register: rvm_repo
+
+    - name: Update apt cache
+      apt:
+        update_cache: true
+      when: rvm_repo.changed
+      tags:
+        - skip_ansible_lint
+
+- name: Do not use rvm apt repository for Ubuntu
+  when: ansible_distribution == 'Ubuntu' and not redmine_rvm_apt
+  ansible.builtin.deb822_repository:
+    name: rvm
+    state: absent
 
 - name: Remove obsolete local bin scripts
   ansible.builtin.file:

@@ -7,10 +7,10 @@
     state: absent
   loop:
     - '{{ goaccess_from_source_build_dir }}'
-  when: not geoaccess_from_source
+  when: not goaccess_from_source
 
 - name: Run from source tasks
-  when: geoaccess_from_source
+  when: goaccess_from_source
   block:
     # do not remove packages, if not from source, because these packages could be used by other roles
     - name: Be sure goaccess source packages are installed
@@ -20,9 +20,9 @@
 
     - name: Get source code to compile
       ansible.builtin.git:
-        repo: "{{ geoaccess_source_repo }}"
+        repo: "{{ goaccess_source_repo }}"
         dest: "{{ goaccess_from_source_build_dir }}"
-        version: "{{ geoaccess_source_version | default('master') }}"
+        version: "{{ goaccess_source_version | default('master') }}"
         force: true
       become: true
       register: goaccess_git_changed
