@@ -4,19 +4,32 @@
     name: '{{ postgresql_client_packages_prerequire }}'
     state: present
 
-- name: Add postgreSQL GPG key
-  ansible.builtin.get_url:
-    url: '{{ postgresql_repo_key_url }}'
-    dest: /etc/apt/trusted.gpg.d/postgresql.asc
-    mode: 0644
-    force: true
-  when: not postgresq_skip_apt_key
+- name: Remove old apt repository files
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/apt/sources.list.d/apt_postgresql_org_pub_repos_apt.list
+    - /etc/apt/trusted.gpg.d/postgresql.asc
 
-- name: Add postgreSQL debian repository
-  ansible.builtin.apt_repository:
-    repo: '{{ postgresql_repo_url }}'
-    update_cache: true
+# see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/deb822_repository_module.html
+- name: Add postgresql apt repository
+  ansible.builtin.deb822_repository:
+    name: postgresql
+    uris: '{{ postgresql_apt_url }}'
+    types: deb
+    suites: '{{ postgresql_apt_suites }}'
+    components: '{{ postgresql_apt_components }}'
+    signed_by: '{{ postgresql_apt_key_url }}'
     state: present
+  register: postgres_repo
+
+- name: Update apt cache
+  apt:
+    update_cache: true
+  when: postgres_repo.changed
+  tags:
+    - skip_ansible_lint
 
 - name: Be sure postgreSQL client packages are installed
   ansible.builtin.apt:

@@ -71,7 +71,7 @@
   vars:
     zsh_user: '{{ gitlab_user }}'
     zsh_with_setup: false
-    zsh_with_rvm: '{{ gitlab_rvm_ruby and not gitlab_rvm_ruby_ppa }}'
+    zsh_with_rvm: '{{ gitlab_rvm_ruby and not gitlab_rvm_ruby_apt }}'
     zsh_with_ruby: true
     zsh_user_home: '{{ gitlab_home }}'
     zsh_local_exports:
@@ -95,7 +95,7 @@
     append: true
   when:
     - gitlab_rvm_ruby
-    - gitlab_rvm_ruby_ppa
+    - gitlab_rvm_ruby_apt
 
 # @see https://gitlab.com/gitlab-org/gitlab-workhorse/-/issues/129
 - name: Add redis and www-data to gitlab group

@@ -13,20 +13,34 @@
 - name: Install rvm with ppa {{ gitlab_ruby_version }}
   when:
     - gitlab_rvm_ruby
-    - gitlab_rvm_ruby_ppa
+    - gitlab_rvm_ruby_apt
   block:
-    - name: Add rvm-rael-gc apt key.
-      ansible.builtin.get_url:
-        url: '{{ gitlab_rvm_ruby_ppa_key_url }}'
-        dest: /etc/apt/trusted.gpg.d/rvm-ppa.asc
-        mode: 0644
-        force: true
+    - name: Remove old apt repository files
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: absent
+      loop:
+        - /etc/apt/sources.list.d/ppa_launchpadcontent_net_rael_gc_rvm_ubuntu.list
+        - /etc/apt/trusted.gpg.d/rvm-ppa.asc
 
+    # see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/deb822_repository_module.html
     - name: Add rvm apt repository
-      ansible.builtin.apt_repository:
-        repo: 'deb https://ppa.launchpadcontent.net/rael-gc/rvm/ubuntu/ {{ ansible_distribution_release | lower }} main'
-        update_cache: true
+      ansible.builtin.deb822_repository:
+        name: rvm
+        uris: '{{ gitlab_rvm_ruby_apt_url }}'
+        types: deb
+        suites: '{{ gitlab_rvm_ruby_apt_suites }}'
+        components: '{{ gitlab_rvm_ruby_apt_components }}'
+        signed_by: '{{ gitlab_rvm_ruby_apt_key_url }}'
         state: present
+      register: rvm_repo
+
+    - name: Update apt cache
+      apt:
+        update_cache: true
+      when: rvm_repo.changed
+      tags:
+        - skip_ansible_lint
 
     - name: Pinning libssl-dev
       ansible.builtin.template:
@@ -56,16 +70,17 @@
 - name: Install rvm without ppa {{ gitlab_ruby_version }}
   when:
     - gitlab_rvm_ruby
-    - not gitlab_rvm_ruby_ppa
+    - not gitlab_rvm_ruby_apt
   block:
-    - name: Remove ppa files
+    - name: Remove openssl apt configuration
       ansible.builtin.file:
-        path: '{{ item }}'
+        path: /etc/apt/preferences.d/openssl
         state: absent
-      loop:
-        - /etc/apt/trusted.gpg.d/rvm-ppa.asc
-        - /etc/apt/preferences.d/openssl
-        - /etc/apt/sources.list.d/ppa_launchpadcontent_net_rael_gc_rvm_ubuntu.list
+
+    - name: Remove rvm apt repository
+      ansible.builtin.deb822_repository:
+        name: rvm
+        state: absent
 
     - name: Remove PPA package
       ansible.builtin.apt:

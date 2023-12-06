@@ -3,13 +3,14 @@
 
 # use mysql.com packages (only with Debian)
 mysql_with_mysql_com: true
-mysql_local_apt_key: true
-
 mysql_apt_repo_version: '8.0'
-mysql_apt_repo_version_prev: '5.7'
+
+mysql_apt_url: https://repo.mysql.com/apt/debian/
+# if not specified, local key is used
+# mysql_apt_key_url: https://url_to_gpg_key
+mysql_apt_suites: '{{ ansible_distribution_release | lower }}'
+mysql_apt_components: 'mysql-{{ mysql_apt_repo_version }}'
 
 mysql_client_packages:
  - mysql-client
  - python3-mysqldb
-
-mysql_apt_repo_url: 'deb https://repo.mysql.com/apt/debian/ {{ ansible_distribution_release | lower }} mysql-{{ mysql_apt_repo_version }}'
