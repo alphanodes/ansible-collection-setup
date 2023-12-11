@@ -23,7 +23,7 @@
 - name: Ensure dependencies are present.
   ansible.builtin.apt:
     name:
-      - gnupg2
+      - gnupg
     state: present
 
 - name: Remove old apt repository files {{ nodejs_version }}

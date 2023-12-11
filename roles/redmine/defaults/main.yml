@@ -218,7 +218,7 @@ redmine_packages:
   - build-essential
   - gawk
   - ghostscript
-  - gnupg2
+  - gnupg
   - graphviz
   - imagemagick-6.q16
   - libffi-dev
