@@ -4,8 +4,7 @@
 Description=Gitlab mailroom Worker
 PartOf=gitlab.target
 After=network.target
-StartLimitIntervalSec={{ gitlab_systemd_start_limit_interval_sec }}
-StartLimitBurst={{ gitlab_systemd_start_limit_burst }}
+StartLimitIntervalSec={{ gitlab_systemd_start_limit_interval_sec_mailroom }}
 
 [Service]
 Type=simple

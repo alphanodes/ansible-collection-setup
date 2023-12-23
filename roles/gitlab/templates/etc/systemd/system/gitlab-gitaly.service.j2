@@ -5,8 +5,6 @@ Description=Gitaly is a Git RPC service for handling all the git calls made by G
 ReloadPropagatedFrom=gitlab.target
 PartOf=gitlab.target
 After=network.target
-StartLimitIntervalSec={{ gitlab_systemd_start_limit_interval_sec }}
-StartLimitBurst={{ gitlab_systemd_start_limit_burst }}
 
 [Service]
 Type=simple

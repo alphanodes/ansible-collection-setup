@@ -7,8 +7,7 @@ ReloadPropagatedFrom=gitlab.target
 PartOf=gitlab.target
 Wants=redis.service postgresql.service
 After=redis.service postgresql.service
-StartLimitIntervalSec={{ gitlab_systemd_start_limit_interval_sec }}
-StartLimitBurst={{ gitlab_systemd_start_limit_burst }}
+StartLimitIntervalSec={{ gitlab_systemd_start_limit_interval_sec_puma }}
 
 [Service]
 Type=simple
