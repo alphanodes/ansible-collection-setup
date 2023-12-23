@@ -16,7 +16,7 @@ gitlab_with_zsh: true
 gitlab_omniauth_enabled: false
 gitlab_omniauth_providers: []
 
-gitlab_repository_version: '16-6-stable'
+gitlab_repository_version: '16-7-stable'
 gitlab_ce_version: '{{ gitlab_repository_version }}'
 gitlab_ee_version: '{{ gitlab_repository_version }}-ee'
 gitlab_path: "{{ gitlab_home }}/gitlab"
@@ -266,8 +266,9 @@ gitlab_object_store_connection:
 # ? https://docs.gitlab.com/ee/administration/object_storage.html#proxy-download
 gitlab_object_store_proxy_download: true
 
-gitlab_systemd_start_limit_interval_sec: 600
-gitlab_systemd_start_limit_burst: 5
+gitlab_systemd_start_limit_interval_sec_mailroom: 100s
+gitlab_systemd_start_limit_interval_sec_puma: 11min
+gitlab_systemd_start_limit_interval_sec_sidekiq: 11min
 gitlab_systemd_restart_sec: 60
 
 gitlab_stop_puma_for_update: false

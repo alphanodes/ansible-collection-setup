@@ -6,8 +6,6 @@ ReloadPropagatedFrom=gitlab.target
 PartOf=gitlab.target
 After=network.target gitlab-puma.service
 Wants=gitlab-puma.service
-StartLimitIntervalSec={{ gitlab_systemd_start_limit_interval_sec }}
-StartLimitBurst={{ gitlab_systemd_start_limit_burst }}
 
 [Service]
 Type=simple
