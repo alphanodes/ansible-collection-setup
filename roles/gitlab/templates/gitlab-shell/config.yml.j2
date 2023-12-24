@@ -13,7 +13,7 @@ user: git
 # only listen on a Unix domain socket. For Unix domain sockets use
 # "http+unix://<urlquoted-path-to-socket>", e.g.
 # "http+unix://%2Fpath%2Fto%2Fsocket"
-gitlab_url: "{{ gitlab_shell_gitlab_url }}"
+gitlab_url: "{{ gitlab_http_unix_url }}"
 
 # When a http+unix:// is used in gitlab_url, this is the relative URL root to GitLab.
 # Not used if gitlab_url is http:// or https://.
@@ -35,7 +35,7 @@ http_settings:
 auth_file: "{{ gitlab_home }}/.ssh/authorized_keys"
 
 # SSL certificate dir where custom certificates can be placed
-# https://pkg.go.dev/crypto/x509
+# https://golang.org/pkg/crypto/x509/
 # ssl_cert_dir: /opt/gitlab/embedded/ssl/certs/
 
 # File that contains the secret key for verifying access to GitLab.
@@ -72,12 +72,49 @@ sshd:
   # Set to true if gitlab-sshd is being fronted by a load balancer that implements
   # the PROXY protocol.
   proxy_protocol: false
+  # Proxy protocol policy ("use", "require", "reject", "ignore"), "use" is the default value
+  # Values: https://github.com/pires/go-proxyproto/blob/195fedcfbfc1be163f3a0d507fac1709e9d81fed/policy.go#L20
+  proxy_policy: "use"
+  # Proxy allowed IP addresses. Takes precedent over proxy_policy. Disabled by default.
+  # proxy_allowed:
+  #  - "192.168.0.1"
+  #  - "192.168.1.0/24"
   # Address which the server listens on HTTP for monitoring/health checks. Defaults to localhost:9122.
   web_listen: "localhost:9122"
   # Maximum number of concurrent sessions allowed on a single SSH connection. Defaults to 10.
   concurrent_sessions_limit: 10
+  # Sets an interval after which server will send keepalive message to a client. Defaults to 15s.
+  client_alive_interval: 15
+  # The server waits for this time for the ongoing connections to complete before shutting down. Defaults to 10s.
+  grace_period: 10
+  # The server disconnects after this time if the user has not successfully logged in. Defaults to 60s.
+  login_grace_time: 60
+  # A short timeout to decide to abort the connection if the protocol header is not seen within it. Defaults to 500ms
+  proxy_header_timeout: 500ms
+  # The endpoint that returns 200 OK if the server is ready to receive incoming connections; otherwise, it returns 503 Service Unavailable. Defaults to "/start".
+  readiness_probe: "/start"
+  # The endpoint that returns 200 OK if the server is alive. Defaults to "/health".
+  liveness_probe: "/health"
+  # Specifies the available message authentication code algorithms that are used for protecting data integrity
+  macs: [hmac-sha2-256-etm@openssh.com, hmac-sha2-512-etm@openssh.com, hmac-sha2-256, hmac-sha2-512, hmac-sha1]
+  # Specifies the available Key Exchange algorithms
+  kex_algorithms: [curve25519-sha256, curve25519-sha256@libssh.org, ecdh-sha2-nistp256, ecdh-sha2-nistp384, ecdh-sha2-nistp521, diffie-hellman-group14-sha256, diffie-hellman-group14-sha1]
+  # Specified the ciphers allowed
+  ciphers: [aes128-gcm@openssh.com, chacha20-poly1305@openssh.com, aes256-gcm@openssh.com, aes128-ctr, aes192-ctr,aes256-ctr]
   # SSH host key files.
-#  host_key_files:
-#    - /run/secrets/ssh-hostkeys/ssh_host_rsa_key
-#    - /run/secrets/ssh-hostkeys/ssh_host_ecdsa_key
-#    - /run/secrets/ssh-hostkeys/ssh_host_ed25519_key
+  host_key_files:
+    - /run/secrets/ssh-hostkeys/ssh_host_rsa_key
+    - /run/secrets/ssh-hostkeys/ssh_host_ecdsa_key
+    - /run/secrets/ssh-hostkeys/ssh_host_ed25519_key
+  host_key_certs:
+    - /run/secrets/ssh-hostkeys/ssh_host_rsa_key-cert.pub
+    - /run/secrets/ssh-hostkeys/ssh_host_ecdsa_key-cert.pub
+    - /run/secrets/ssh-hostkeys/ssh_host_ed25519_key-cert.pub
+  # GSSAPI-related settings
+  gssapi:
+    # Enable the gssapi-with-mic authentication method. Defaults to false.
+    enabled: false
+    # Keytab path. Defaults to "", system default (usually /etc/krb5.keytab).
+    keytab: ""
+    # The Kerberos service name to be used by sshd. Defaults to "", accepts any service name in keytab file.
+    service_principal_name: ""
