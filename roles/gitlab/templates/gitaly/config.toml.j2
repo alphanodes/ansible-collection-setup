@@ -1,37 +1,42 @@
-# Example Gitaly configuration file
-# Documentation lives at https://docs.gitlab.com/ee/administration/gitaly/ and
-# ? https://docs.gitlab.com/ee/administration/gitaly/reference.html
+# Example Gitaly configuration file.
+# For Gitaly documentation, see https://docs.gitlab.com/ee/administration/gitaly/
 
+# A path which Gitaly should open a Unix socket.
 socket_path = "{{ gitaly_socket_path }}"
 
-# The directory where Gitaly's executables are stored
+# Directory containing Gitaly executables.
 bin_dir = "{{ gitlab_gitaly_bin_path }}"
 
-# # Optional: The directory where Gitaly can create all files required to
+# # Optional. The directory where Gitaly can create all files required to
 # # properly operate at runtime. If not set, Gitaly will create a directory in
 # # the global temporary directory. This directory must exist.
 # runtime_dir = "/home/git/gitaly/run"
 
-# Optional: listen on a TCP socket. This is insecure (no authentication)
+# # Optional if socket_path is set. TCP address for Gitaly to listen on. This is insecure (unencrypted connection).
 # listen_addr = "localhost:9999"
+
+# # Optional. TCP over TLS address for Gitaly to listen on.
 # tls_listen_addr = "localhost:8888"
 
-# Optional: export metrics via Prometheus
+# # Optional. TCP listen address for Prometheus metrics. If not set, no Prometheus listener is started.
 # prometheus_listen_addr = "localhost:9236"
 
-# Optional: configure where the Gitaly creates the sockets for internal connections. If unset, Gitaly will create a randomly
-# named temp directory each time it boots.
-# Non Gitaly clients should never connect to these sockets.
-# !! this directory has to exist
-#internal_socket_dir = "{{ gitaly_socket_dir }}/internal"
-
-# # Optional: authenticate Gitaly requests using a shared secret
+# # Optional. Authenticate Gitaly requests using a shared secret.
+# # Gitaly rejects requests that do not contain the authentication token in their headers.
+# # Authentication is disabled when the token setting is absent or an empty string.
 # [auth]
 # token = 'abc123secret'
-# transitioning = false # Set `transitioning` to true to temporarily allow unauthenticated while rolling out authentication.
+# # Set `transitioning` to true to temporarily allow unauthenticated while rolling out authentication. This allows you
+# # to monitor if all clients are authenticating correctly without causing a service outage for clients that are still
+# # to be configured correctly.
+# # Remember to disable transitioning when you are done changing your token settings.
+# transitioning = false
 
+# # Gitaly supports TLS encryption. You must bring your own certificates because this isn’t provided automatically.
 # [tls]
+# # Path to the certificate.
 # certificate_path = '/home/git/cert.cert'
+# # Path to the key.
 # key_path = '/home/git/key.pem'
 
 # # Git settings
@@ -39,19 +44,15 @@ bin_dir = "{{ gitlab_gitaly_bin_path }}"
 bin_path = "{{ gitlab_git_bin }}"
 # catfile_cache_size = 100
 #
-# # Set this setting to `true` to start ignoring gitconfig files installed in
-# # the system. This includes both system-level (e.g. '/etc/gitconffig') and
-# # global-level (e.g. `$HOME/.gitconfig`) files. This setting will become the
-# # default with v16.0. If you intend to override Git configuration you can do
-# # so via `[[git.config]]`. The default value is `false`.
-# ignore_gitconfig = false
-#
 # [[git.config]]
 # key = fetch.fsckObjects
 # value = true
-
+# # Storages are the directories where Gitaly stores its data such as the repositories and runtime state.
+# # Each storage must have a unique name.
 [[storage]]
+# # The name of the storage
 name = "default"
+# # The path to the storage.
 path = "{{ gitlab_repositories_path }}"
 
 # # You can optionally configure more storages for this Gitaly instance to serve up
@@ -59,30 +60,30 @@ path = "{{ gitlab_repositories_path }}"
 # [[storage]]
 # name = "other_storage"
 # path = "/mnt/other_storage/repositories"
+#
 
 # # You can optionally configure Gitaly to output JSON-formatted log messages to stdout
 [logging]
 # # The directory where Gitaly stores extra log files
-dir = "{{ gitlab_home }}/gitlab/log"
+dir = "{{ gitlab_path }}/log"
 # format = "json"
-# # Optional: Set log level to only log entries with that severity or above
+# # Optional. Set log level to only log entries with that severity or above
 # # One of, in order: debug, info, warn, errror, fatal, panic
 # # Defaults to "info"
 level = "{{ gitlab_gitaly_logging_level }}"
+#
+# # Additionally exceptions from the Go server can be reported to Sentry
+# sentry_dsn = "https://<key>:<secret>@sentry.io/<project>"
 
 # # You can optionally configure Gitaly to record histogram latencies on GRPC method calls
 # [prometheus]
 # grpc_latency_buckets = [0.001, 0.005, 0.025, 0.1, 0.5, 1.0, 10.0, 30.0, 60.0, 300.0, 1500.0]
 
-[gitlab-shell]
-# The directory where gitlab-shell is installed
-dir = "{{ gitlab_home }}/gitlab-shell"
-
 [hooks]
 custom_hooks_dir = "{{ gitlab_home }}/custom_hooks"
 
 [gitlab]
-secret_file = "{{ gitlab_home }}/gitlab-shell/.gitlab_shell_secret"
+secret_file = "{{ gitlab_shell_path }}/.gitlab_shell_secret"
 url = "{{ gitlab_http_unix_url }}"
 # Only needed if a UNIX socket is used in `url` and GitLab is configured to
 # use a relative path (e.g. /gitlab).
@@ -98,7 +99,7 @@ self_signed_cert = false
 
 # # You can adjust the concurrency of each RPC endpoint
 # [[concurrency]]
-# rpc = "/gitaly.RepositoryService/GarbageCollect"
+# rpc = "/gitaly.RepositoryService/OptimizeRepository"
 # max_per_repo = 1
 # max_queue_wait = "1m"
 # max_queue_size = 10
@@ -117,15 +118,29 @@ self_signed_cert = false
 # storages = ["default"]
 # disabled = false
 
+# Limit the resources Gitaly can use via Linux cgroups v1
 # [cgroups]
-# count = 10
 # mountpoint = "/sys/fs/cgroup"
 # hierarchy_root = "gitaly"
+# memory_bytes = 64424509440 # 60gb
+# cpu_shares = 1024
+# cpu_quota_us = 400000
 
-# [cgroups.memory]
-# enabled = true
-# limit = 1048576
+# Limit the resources each repository can use via Linux cgroups v1
+# [cgroups.repositories]
+# count = 500
+# memory_bytes = 12884901888 # 12gb
+# cpu_shares = 512
+# cpu_quota_us = 200000
 
-# [cgroups.cpu]
-# enabled = true
-# shares = 512
+# # Server-side backups
+# [backup]
+# # The destination object-storage URL.
+# go_cloud_url = "gs://gitaly-backups"
+# # Optional: defaults to pointer
+# # layout = "pointer"
+
+# # Negotiation timeouts for remote Git operations
+# [timeout]
+# upload_pack_negotiation = "10m"
+# upload_archive_negotiation = "1m"

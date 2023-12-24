@@ -94,8 +94,6 @@ gitlab_http_unix_url: "http+unix://{{ gitlab_workhorse_socket | urlencode | repl
 gitlab_shell_repository: https://gitlab.com/gitlab-org/gitlab-shell.git
 gitlab_shell_path: '{{ gitlab_home }}/gitlab-shell'
 
-# socket is used as default.
-gitlab_shell_gitlab_url: '{{ gitlab_http_unix_url }}'
 # is required, if gitlab_shell_gitlab_url is used with https instead of socket
 gitlab_shell_ca_file: ''
 # default is INFO
@@ -232,6 +230,7 @@ gitlab_terraform_object_store_bucket: gl-terraform
 
 gitlab_pages_enabled: false
 gitlab_pages_storage_path: shared/pages
+gitlab_pages_local_storage: true
 gitlab_pages_repository: https://gitlab.com/gitlab-org/gitlab-pages.git
 gitlab_pages_path: "{{ gitlab_home }}/gitlab-pages"
 gitlab_pages_secret_path: "{{ gitlab_path }}/.gitlab_pages_secret"

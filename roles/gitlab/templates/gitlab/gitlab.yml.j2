@@ -364,6 +364,13 @@ production: &base
       connection:
         {{ gitlab_object_store_connection | to_nice_yaml(indent=2) | trim | indent(8) }}
 {% endif %}
+{% if gitlab_pages_local_storage %}
+    local_store:
+      enabled: true
+      # The location where pages are stored (default: shared/pages).
+      path: '{{ gitlab_pages_storage_path }}'
+    # namespace_in_path: false # Set to true if you want to enable namespace in the URL path. It requires pages nginx to be enabled.
+{% endif %}
 
   issues_tracker:
     redmine:
