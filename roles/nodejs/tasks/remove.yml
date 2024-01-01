@@ -11,6 +11,11 @@
     path: /usr/local/lib/npm
     state: absent
 
+- name: Remove apt pinning
+  ansible.builtin.file:
+    path: /etc/apt/preferences.d/nodesource
+    state: absent
+
 - name: Remove nodesource apt repository
   ansible.builtin.deb822_repository:
     name: nodesource

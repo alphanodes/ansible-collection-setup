@@ -46,6 +46,12 @@
     state: present
   register: node_repo
 
+- name: Pinning nodesource repository
+  ansible.builtin.template:
+    src: nodesource-pinning.j2
+    dest: /etc/apt/preferences.d/nodesource
+    mode: 0644
+
 - name: Update apt cache
   apt:
     update_cache: true
@@ -55,7 +61,7 @@
 
 - name: Ensure Node.js and npm are installed.
   ansible.builtin.apt:
-    name: "nodejs={{ nodejs_version | regex_replace('x', '') }}*"
+    name: nodejs
     state: present
 
 - name: Set prefix for npm (root)
