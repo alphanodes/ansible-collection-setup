@@ -8,7 +8,7 @@
         name: bash
         state: present
 
-    - name: python3-debian required for deb822
+    - name: Add python3-debian for deb822 support
       ansible.builtin.apt:
         name: python3-debian
         state: present
