@@ -12,7 +12,7 @@ golang_arch: amd64
 # Mirror to download the Go language SDK redistributable package from
 golang_mirror: 'https://dl.google.com/go'
 
-golang_mirror_validate_certs: false
+golang_mirror_validate_certs: true
 
 # Base installation directory the Go language SDK distribution
 golang_install_dir: '/usr/local/go'
