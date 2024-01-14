@@ -61,7 +61,7 @@
     force: true
     dest: "{{ rocketchat_source_file }}"
     timeout: "{{ rocketchat_tarball_fetch_timeout }}"
-    validate_certs: "{{ rocketchat_tarball_validate_remote_cert }}"
+    validate_certs: "{{ rocketchat_tarball_validate_certs }}"
     mode: 0644
     owner: "{{ rocketchat_service_user }}"
     group: "{{ rocketchat_service_group }}"

@@ -13,7 +13,7 @@ rocketchat_version: 6.4.9
 # rocketchat_tarball_remote: https://releases.rocket.chat/{{ rocketchat_version }}/download
 rocketchat_tarball_remote: https://cdn-download.rocket.chat/build/rocket.chat-{{ rocketchat_version }}.tgz
 rocketchat_tarball_fetch_timeout: 100
-rocketchat_tarball_validate_remote_cert: true
+rocketchat_tarball_validate_certs: true
 rocketchat_service_user: rocketchat
 rocketchat_service_group: rocketchat
 rocketchat_service_environment: []
