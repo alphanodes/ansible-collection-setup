@@ -13,6 +13,7 @@ golang_arch: amd64
 golang_mirror: 'https://dl.google.com/go'
 
 golang_mirror_validate_certs: true
+golang_mirror_use_proxy: true
 
 # Base installation directory the Go language SDK distribution
 golang_install_dir: '/usr/local/go'
