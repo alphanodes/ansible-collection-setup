@@ -57,7 +57,7 @@
         checksum: "{{ 'sha256:' + golang_sha256_checksum | default(omit) }}"
         force: false
         use_proxy: true
-        validate_certs: true
+        validate_certs: '{{ golang_mirror_validate_certs }}'
       when: not golang_file_exists.stat.exists
 
     - name: Extract golang_file archive
