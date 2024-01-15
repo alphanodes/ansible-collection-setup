@@ -15,6 +15,13 @@ production: &base
     port: {{ gitlab_vhost_port }} # Set to 443 if using HTTPS, see installation.md#using-https for additional HTTPS configuration details
     https: {{ 'true' if gitlab_vhost_ssl else 'false' }} # Set to true if using HTTPS, see installation.md#using-https for additional HTTPS configuration details
 
+    # Uncomment this line if you want to configure the Rails asset host for a CDN.
+    # cdn_host: localhost
+
+    # The maximum time Puma can spend on the request. This needs to be smaller than the worker timeout.
+    # Default is 95% of the worker timeout
+    max_request_duration_seconds: 57
+
     # Uncomment this line below if your ssh host is different from HTTP/HTTPS one
     # (you'd obviously need to replace ssh.host_example.com with your own host).
     # Otherwise, ssh host will be set to the `host:` value above
@@ -27,6 +34,29 @@ production: &base
     # Uncomment and customize the following line to run in a non-root path
     #
     # relative_url_root: /gitlab
+
+    # Content Security Policy
+    # See https://guides.rubyonrails.org/security.html#content-security-policy
+    # content_security_policy:
+    #   enabled: true
+    #   report_only: false
+    #   directives:
+    #     base_uri:
+    #     child_src:
+    #     connect_src: "'self' http://localhost:* ws://localhost:* wss://localhost:*"
+    #     default_src: "'self'"
+    #     font_src:
+    #     form_action:
+    #     frame_ancestors: "'self'"
+    #     frame_src: "'self' https://www.google.com/recaptcha/ https://www.recaptcha.net/ https://content.googleapis.com https://content-compute.googleapis.com https://content-cloudbilling.googleapis.com https://content-cloudresourcemanager.googleapis.com"
+    #     img_src: "* data: blob:"
+    #     manifest_src:
+    #     media_src:
+    #     object_src: "'none'"
+    #     script_src: "'self' 'unsafe-eval' http://localhost:* https://www.google.com/recaptcha/ https://www.recaptcha.net/ https://www.gstatic.com/recaptcha/ https://apis.google.com"
+    #     style_src: "'self' 'unsafe-inline'"
+    #     worker_src: "'self' blob:"
+    #     report_uri: #}
 
     allowed_hosts: []
 
@@ -57,9 +87,11 @@ production: &base
     email_subject_suffix: ''
 
     # Email server smtp settings are in config/initializers/smtp_settings.rb.sample
+    # File location to read encrypted SMTP secrets from
+    # email_smtp_secret_file: /mnt/gitlab/smtp.yaml.enc # Default: shared/encrypted_settings/smtp.yaml.enc
 
     # default_can_create_group: false  # default: true
-    # username_changing_enabled: false # default: true - User can change her username/namespace
+    # username_changing_enabled: false # default: true - User can change their username/namespace
     ## Default theme ID
     ##   1 - Indigo
     ##   2 - Gray
@@ -138,6 +170,7 @@ production: &base
 
     # The email address including the `%{key}` placeholder that will be replaced to reference the item being replied to.
     # The placeholder can be omitted but if present, it must appear in the "user" part of the address (before the `@`).
+    # Please be aware that a placeholder is required for the Service Desk feature to work.
     address: "gitlab-incoming+%{key}@gmail.com"
 
     # Email account username
@@ -395,7 +428,7 @@ production: &base
   ## Gravatar
   ## If using gravatar.com, there's nothing to change here. For Libravatar
   ## you'll need to provide the custom URLs. For more information,
-  ## see: https://docs.gitlab.com/ee/customization/libravatar.html
+  ## see: https://docs.gitlab.com/ee/administration/libravatar.html
   gravatar:
     # Gravatar/Libravatar URLs: possible placeholders: %{hash} %{size} %{email} %{username}
     # plain_url: "http://..."     # default: https://www.gravatar.com/avatar/%{hash}?s=%{size}&d=identicon

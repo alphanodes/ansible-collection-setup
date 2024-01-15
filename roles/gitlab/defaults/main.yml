@@ -116,12 +116,12 @@ gitlab_email_reply_to: 'noreply@{{ gitlab_vhost_server }}'
 gitlab_default_theme: 2
 
 gitlab_default_projects_features:
-  issues: false
-  merge_requests: true
-  wiki: false
-  snippets: false
   builds: true
   container_registry: false
+  issues: false
+  merge_requests: true
+  snippets: false
+  wiki: false
 
 gitlab_trusted_proxies: []
 
@@ -278,7 +278,7 @@ gitlab_backup_path_mode: '0750'
 # every day at 2:30 (see systemd timer)
 gitlab_backup_on_calendar: '02:30'
 # Permissions for the resulting backup.tar file (default: 0600)
-gitlab_backup_archive_permissions: 0640
+gitlab_backup_archive_permissions: '0640'
 # default: 0 (forever) (in seconds) - 7 days
 gitlab_backup_keep_time: 604800
 # default: nil, it means that all schemas will be backed up
