@@ -270,7 +270,7 @@ gitlab_systemd_start_limit_interval_sec_puma: 11min
 gitlab_systemd_start_limit_interval_sec_sidekiq: 11min
 gitlab_systemd_restart_sec: 60
 
-gitlab_stop_puma_for_update: false
+gitlab_stop_puma_for_update: true
 
 # Relative paths are relative to Rails.root (default: tmp/backups/)
 gitlab_backup_path: /srv/backups/gitlab
