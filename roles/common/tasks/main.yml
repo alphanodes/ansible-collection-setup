@@ -1,3 +1,5 @@
+---
+
 - name: Ensures software_dir exists
   ansible.builtin.file:
     path: '{{ software_dir }}'

@@ -3,7 +3,7 @@
 - name: Detect rubies
   ansible.builtin.command: '{{ rvm1_rvm }} list strings'
   register: rvm_list_strings
-  changed_when: False
+  changed_when: false
 
 - name: Install rubies
   ansible.builtin.command: '{{ rvm1_rvm }} install {{ item }} {{ rvm1_ruby_install_flags }}'
@@ -11,7 +11,7 @@
 
 - name: Detect default ruby version
   ansible.builtin.command: '{{ rvm1_rvm }} alias list default'
-  changed_when: False
+  changed_when: false
   register: detect_default_ruby_version
 
 - name: Select default ruby
@@ -26,9 +26,10 @@
     grep {{ item }} |
     tail -n 1
   with_items: '{{ rvm1_rubies }}'
-  changed_when: False
+  changed_when: false
   register: ruby_patch
-  check_mode: no # Run in normal mode when in --check mode (http://docs.ansible.com/ansible/playbooks_checkmode.html)
+  # Run in normal mode when in --check mode (http://docs.ansible.com/ansible/playbooks_checkmode.html)
+  check_mode: false
 
 - name: Install bundler if not installed
   ansible.builtin.shell: >

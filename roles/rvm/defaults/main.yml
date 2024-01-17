@@ -32,7 +32,7 @@ rvm1_rvm_latest_installer: 'https://raw.githubusercontent.com/rvm/rvm/master/bin
 rvm1_rvm_version: 'stable'
 
 # Check and update rvm, disabling this will force rvm to never update
-rvm1_rvm_check_for_updates: True
+rvm1_rvm_check_for_updates: true
 
 # GPG key verification, use an empty string if you want to skip this
 # Note: Unless you know what you're doing, just keep it as is
