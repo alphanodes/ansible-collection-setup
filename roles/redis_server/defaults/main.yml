@@ -6,7 +6,14 @@ redis_server_packages:
   - redis-server
   - iproute2
 
-redis_server_bind: '127.0.0.1 ::1'
+# redis 6.2 or newer is required for GitLab 16.8
+redis_use_redis_io: true
+redis_apt_url: https://packages.redis.io/deb
+redis_apt_suites: '{{ ansible_distribution_release }}'
+redis_apt_components: main
+redis_apt_key_url: https://packages.redis.io/gpg
+
+redis_server_bind: '127.0.0.1 -::1'
 
 # socket is not working on all systems!
 # port 0 for socket only

@@ -1,5 +1,33 @@
 ---
 
+- name: Redis repo
+  when: redis_use_redis_io
+  block:
+    # see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/deb822_repository_module.html
+    - name: Add nodesource apt repository
+      ansible.builtin.deb822_repository:
+        name: redis
+        uris: "{{ redis_apt_url }}"
+        types: deb
+        suites: "{{ redis_apt_suites }}"
+        components: "{{ redis_apt_components }}"
+        signed_by: "{{ redis_apt_key_url }}"
+        state: present
+      register: redis_repo
+
+    - name: Update apt cache
+      apt:
+        update_cache: true
+      when: redis_repo.changed
+      tags:
+        - skip_ansible_lint
+
+- name: Do not redis repo
+  when: not redis_use_redis_io
+  ansible.builtin.deb822_repository:
+    name: redis
+    state: absent
+
 - name: Be sure redis is installed
   ansible.builtin.apt:
     name: '{{ redis_server_packages }}'
