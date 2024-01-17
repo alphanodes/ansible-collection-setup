@@ -89,11 +89,10 @@
 
     - name: Install ruby with rvm version {{ gitlab_ruby_version }}
       ansible.builtin.include_role:
-        name: rvm.ruby
+        name: alphanodes.setup.rvm
       vars:
         rvm1_rubies: ['ruby-{{ gitlab_ruby_version }}']
         rvm1_user: '{{ gitlab_user }}'
-        rvm1_bundler_install: false
         ansible_become: true
 
     - name: Install bundler for RVM
