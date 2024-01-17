@@ -62,6 +62,7 @@
 - name: Ensure Node.js and npm are installed.
   ansible.builtin.apt:
     name: nodejs
+    allow_downgrades: yes
     state: present
 
 - name: Set prefix for npm (root)

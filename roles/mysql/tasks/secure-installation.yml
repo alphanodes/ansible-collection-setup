@@ -5,6 +5,7 @@
     host: 'localhost'
     password: "{{ mysql_user_password }}"
     priv: '*.*:ALL,GRANT'
+    column_case_sensitive: true
     state: present
   when: mysql_user_name != mysql_root_username
 

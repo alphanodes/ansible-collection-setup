@@ -44,6 +44,7 @@
     login_user: "{{ phpmyadmin_db_user if phpmyadmin_db_host != 'localhost' else omit }}"
     login_password: "{{ phpmyadmin_db_password if phpmyadmin_db_host != 'localhost' else omit }}"
     priv: 'mysql.*:SELECT/{{ phpmyadmin_db_name }}.*:ALL'
+    column_case_sensitive: true
     state: present
   when: not phpmyadmin_no_dbserver
 

@@ -17,7 +17,7 @@
     name: '{{ postgresql_pgbadger_user }}'
     password: '{{ postgresql_pgbadger_password }}'
     owner: root
-    group: "{{ nginx_group | default('www-data') }}"
+    group: "{{ nginx_group }}"
     mode: 0640
 
 - name: Provide pgBadger nginx configuration

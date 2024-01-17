@@ -15,6 +15,7 @@
     password: '{{ matomo_db_password }}'
     host: '{{ matomo_db_host }}'
     priv: '{{ matomo_db_name }}.*:ALL/*.*:FILE'
+    column_case_sensitive: true
     state: present
 
 - name: Allow mysql to write to {{ matomo_dir }}

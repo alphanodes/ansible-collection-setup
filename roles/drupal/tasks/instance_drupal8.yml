@@ -14,14 +14,14 @@
 - name: Set private files permissions - {{ instance.name }}
   ansible.builtin.file:
     path: '{{ file_private_path }}'
-    owner: '{{ nginx_owner }}'
+    owner: '{{ nginx_user }}'
     group: '{{ nginx_group }}'
     recurse: true
 
 - name: Set configuration sync permissions - {{ instance.name }}
   ansible.builtin.file:
     path: '{{ config_sync_directory }}'
-    owner: '{{ nginx_owner }}'
+    owner: '{{ nginx_user }}'
     group: '{{ nginx_group }}'
     recurse: true
 
@@ -35,4 +35,3 @@
     mode: 0640
   when:
     - instance.write_settings_file is not defined or instance.write_settings_file
-    - drupal_instances | length

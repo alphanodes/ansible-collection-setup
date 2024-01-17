@@ -12,7 +12,7 @@
     name: '{{ goaccess_user }}'
     password: '{{ goaccess_password }}'
     owner: root
-    group: "{{ nginx_group | default('www-data') }}"
+    group: "{{ nginx_group }}"
     mode: 0640
 
 - name: Provide goaccess nginx configuration

@@ -1,0 +1,13 @@
+---
+
+- name: Install WP-CLI
+  ansible.builtin.get_url:
+    url: '{{ wordpress_cli_url }}'
+    dest: '{{ wordpress_cli_path }}'
+    mode: '0755'
+
+- name: Install WP-CLI tab completions
+  ansible.builtin.get_url:
+    url: '{{ wordpress_cli_bash_complete_url }}'
+    dest: /etc/bash_completion.d
+    mode: '0644'

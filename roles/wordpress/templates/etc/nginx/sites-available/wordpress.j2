@@ -1,0 +1,116 @@
+{{ ansible_managed | comment }}
+# nginx wordpress configuration
+
+server {
+{% if instance.server_port is undefined or instance.server_port == 80 %}
+  listen 80{{ ' reuseport' if instance.reuseport is defined and instance.reuseport else '' }};
+{% if nginx_with_ipv6 %}
+  listen [::]:80{{ ' reuseport' if instance.reuseport is defined and instance.reuseport else '' }};
+{% endif %}
+{% endif %}
+{% if nginx_with_ssl %}
+{% if instance.server_port is undefined or instance.server_port == 443 %}
+  listen 443 {{ nginx_ssl_listen_option }}{{ ' reuseport' if instance.reuseport is defined and instance.reuseport else '' }};
+{% if nginx_with_ipv6 %}
+  listen [::]:443 {{ nginx_ssl_listen_option }}{{ ' reuseport' if instance.reuseport is defined and instance.reuseport else '' }};
+{% endif %}
+{% endif %}
+{% endif %}
+
+  server_name {{ instance.server_name }}{{ ' ' + instance.server_alias if instance.server_alias is defined else '' }};
+  root {{ wordpress_dir }};
+
+{% if nginx_with_ssl %}
+{% if instance.server_port is undefined or instance.server_port == 443 %}
+  {% include 'templates/nginx_ssl.inc.j2' with context %}
+{% endif %}
+{% endif %}
+
+{% if nginx_with_protection %}
+  {% include 'templates/nginx_protection.inc.j2' with context %}
+{% endif %}
+
+  charset utf-8;
+
+  location / {
+    index index.php index.html;
+    try_files $uri $uri/ /index.php?$args;
+  }
+
+  # Disallow .php files in uploads
+  location ~* /(?:uploads|files)/.*\.php$ {
+    deny all;
+  }
+
+  # Add trailing slash to */wp-admin requests
+  rewrite /wp-admin$ $scheme://$host$uri/ permanent;
+
+  # Prevent hidden files (beginning with a period) from being served
+  location ~ /\. {
+    access_log off;
+    log_not_found off;
+    deny all;
+  }
+
+  # Pass uploaded files to wp-includes/ms-files.php
+  rewrite /files/$ /index.php last;
+
+  if ($uri !~ wp-content/plugins) {
+    rewrite /files/(.+)$ /wp-includes/ms-files.php?file=$1 last;
+  }
+
+  # Rewrite multisite in a subdirectory '.../wp-.*' and '.../*.php'
+  if (!-e $request_filename) {
+    rewrite ^/[_0-9a-zA-Z-]+(/wp-.*) $1 last;
+    rewrite ^/[_0-9a-zA-Z-]+.*(/wp-admin/.*\.php)$ $1 last;
+    rewrite ^/[_0-9a-zA-Z-]+(/.*\.php)$ $1 last;
+  }
+
+  # Hide the wordpress header X-Generator.
+  fastcgi_hide_header 'X-Generator';
+
+  # Hide PHP
+  fastcgi_hide_header 'X-Powered-By';
+
+  {% include 'templates/nginx_security_headers.inc.j2' with context %}
+
+{% if instance.vhost_includes is defined %}
+{% for vhost_include in instance.vhost_includes %}
+  include {{ vhost_include }}.conf;
+{% endfor %}
+{% endif %}
+
+  {% include 'templates/nginx_fpm.inc.j2' with context %}
+
+  {% include 'templates/nginx_location.inc.j2' with context %}
+
+  {% include 'templates/nginx_rewrite_lines.inc.j2' with context %}
+
+  {% include 'templates/nginx_error_handler.inc.j2' with context %}
+
+{% if instance.vhost_users is defined %}
+  # access protection
+  auth_basic "Restricted access only";
+  auth_basic_user_file /etc/nginx/.htpasswd_wordpress_{{ instance.name }};
+{% endif %}
+}
+
+{% if instance.vhost_default is defined and instance.vhost_default %}
+{% include 'templates/nginx_default_host_redirect.inc.j2' with context %}
+{% endif %}
+
+{% if nginx_with_ssl and instance.server_port is defined %}
+{% include 'templates/nginx_port_redirect.inc.j2' with context %}
+{% endif %}
+
+{% if instance.redirects is defined %}
+{% include 'templates/nginx_redirects.inc.j2' with context %}
+{% endif %}
+
+{% if instance.external_redirects is defined %}
+{% include 'templates/nginx_external_redirects.inc.j2' with context %}
+{% endif %}
+
+{% if instance.vhost_for_zabbix is defined and instance.vhost_for_zabbix %}
+{% include 'templates/nginx_monitoring.inc.j2' with context %}
+{% endif %}

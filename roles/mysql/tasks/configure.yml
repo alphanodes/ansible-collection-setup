@@ -162,6 +162,7 @@
     password: "{{ mysql_server_debian_sys_maint_password }}"
     host: localhost
     priv: '*.*:ALL,GRANT'
+    column_case_sensitive: true
     state: present
   no_log: true
 

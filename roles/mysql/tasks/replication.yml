@@ -5,6 +5,7 @@
     host: "{{ mysql_replication_user.host | default('%') }}"
     password: "{{ mysql_replication_user.password }}"
     priv: "{{ mysql_replication_user.priv | default('*.*:REPLICATION SLAVE,REPLICATION CLIENT') }}"
+    column_case_sensitive: true
     state: present
   when:
     - mysql_replication_role == 'master'

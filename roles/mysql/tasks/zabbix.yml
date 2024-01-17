@@ -21,6 +21,7 @@
             # USAGE,REPLICATION CLIENT,PROCESS,SHOW DATABASES,SHOW VIEW
             priv: '*.*:SUPER,PROCESS,RELOAD,SELECT'
             update_password: always
+            column_case_sensitive: true
             state: present
           no_log: true
 

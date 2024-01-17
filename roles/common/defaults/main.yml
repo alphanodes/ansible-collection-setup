@@ -8,3 +8,6 @@ software_dir: /srv/software
 # software_dir_owner:
 # software_dir_group: "{{ software_dir_owner | omit }}"
 # software_dir_mode:
+
+nginx_user: www-data
+nginx_group: www-data

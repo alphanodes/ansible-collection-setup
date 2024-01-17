@@ -66,10 +66,10 @@ ssh_client_host_key_algorithms:
 # true to enable sftp configuration (required for ansible sftp usage)
 ssh_server_sftp_enabled: true
 ssh_server_sftp_umask: '0027'
-ssh_server_sftp_chroot_dir: /home/%u
 # original debian subsystem for sftp:
 # ssh_server_subsystem_sftp: /usr/lib/openssh/sftp-server -f AUTHPRIV -l INFO
-ssh_server_subsystem_sftp: internal-sftp -l INFO -f LOCAL6 -u {{ ssh_server_sftp_umask }}
+# @see https://man.openbsd.org/sftp-server
+ssh_server_subsystem_sftp: internal-sftp -f AUTHPRIV -l ERROR -u {{ ssh_server_sftp_umask }}
 
 ssh_deny_users: ''
 ssh_deny_groups: ''

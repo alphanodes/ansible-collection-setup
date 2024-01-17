@@ -13,7 +13,7 @@
   ansible.builtin.user:
     name: '{{ item.user | default(item.name) }}'
     home: '{{ item.home | default(omit) }}'
-    groups: www-data
+    groups: '{{ nginx_group }}'
     append: true
     system: true
   loop: '{{ php_fpm_extra_pools | default([]) }}'
