@@ -1,8 +1,5 @@
 ---
 roles:
-  - name: rvm/ruby
-    src: https://github.com/rvm/rvm1-ansible
-    version: v2.2.0
   - name: geerlingguy.composer
     src: https://github.com/geerlingguy/ansible-role-composer
     version: master

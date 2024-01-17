@@ -137,14 +137,12 @@
 
     - name: RVM setup - {{ redmine_user }}
       ansible.builtin.include_role:
-        name: rvm.ruby
+        name: alphanodes.setup.rvm
         allow_duplicates: true
       vars:
         rvm1_rubies: '{{ instance.rvm_rubies | default(rvm_rubies) }}'
         rvm1_user: '{{ instance_name }}'
-        rvm1_bundler_install: false
         rvm1_install_path: '{{ redmine_home }}/.rvm'
-        rvm1_install_flags: '{{ rvm_install_flags }}'
         # see https://github.com/ansible/ansible/issues/29159#issuecomment-380862971
         ansible_become: true
       tags:
