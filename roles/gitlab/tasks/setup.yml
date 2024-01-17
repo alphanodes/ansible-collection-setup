@@ -303,6 +303,16 @@
     owner: '{{ gitlab_user }}'
     group: '{{ gitlab_group }}'
     mode: 0644
+  when: gitlab_initializers_rack_attack
+  notify:
+    - Restart gitlab
+    - Restart gitlab.slice
+
+- name: Remove initializers_rack_attack
+  when: not gitlab_initializers_rack_attack
+  ansible.builtin.file:
+    path: '{{ gitlab_path }}/config/initializers/rack_attack.rb'
+    state: absent
   notify:
     - Restart gitlab
     - Restart gitlab.slice

@@ -43,6 +43,8 @@ gitlab_sidekiq_log_format: json
 gitlab_redis_url: 'unix:/run/redis/redis.sock'
 gitlab_authbackend_port: 8080
 
+gitlab_rails_rack_timeout: 600
+
 gitlab_git_prefix: /usr/local
 gitlab_git_bin: '{{ gitlab_git_prefix }}/bin/git'
 gitlab_rails_env: production
@@ -265,8 +267,12 @@ gitlab_object_store_connection:
 # ? https://docs.gitlab.com/ee/administration/object_storage.html#proxy-download
 gitlab_object_store_proxy_download: true
 
+gitlab_initializers_rack_attack: false
+
+gitlab_systemd_start_limit_burst: 5
+
 gitlab_systemd_start_limit_interval_sec_mailroom: 100s
-gitlab_systemd_start_limit_interval_sec_puma: 11min
+gitlab_systemd_start_limit_interval_sec_puma: 600
 gitlab_systemd_start_limit_interval_sec_sidekiq: 11min
 gitlab_systemd_restart_sec: 60
 

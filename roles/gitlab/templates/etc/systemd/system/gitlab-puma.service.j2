@@ -8,6 +8,7 @@ PartOf=gitlab.target
 Wants=redis.service postgresql.service
 After=redis.service postgresql.service
 StartLimitIntervalSec={{ gitlab_systemd_start_limit_interval_sec_puma }}
+StartLimitBurst={{ gitlab_systemd_start_limit_burst }}
 
 [Service]
 Type=simple
@@ -16,6 +17,7 @@ WorkingDirectory={{ gitlab_path }}
 Environment=RAILS_ENV={{ gitlab_rails_env }}
 Environment=USER={{ gitlab_user }}
 Environment=GITLAB_LOG_LEVEL={{ gitlab_log_level }}
+Environment=GITLAB_RAILS_RACK_TIMEOUT={{ gitlab_rails_rack_timeout }}
 # see  https://gitlab.com/gitlab-org/gitlab/-/issues/352055
 Environment=WIPE_METRICS_DIR=1
 Environment=prometheus_multiproc_dir={{ gitlab_path }}/tmp/prometheus_multiproc_dir
