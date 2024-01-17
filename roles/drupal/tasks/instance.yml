@@ -46,7 +46,7 @@
 - name: Set drupal permissions - {{ instance.name }}
   ansible.builtin.file:
     path: '{{ instance.dir }}{{ item }}'
-    owner: '{{ nginx_owner }}'
+    owner: '{{ nginx_user }}'
     group: '{{ nginx_group }}'
     recurse: true
   loop: '{{ instance.write_permissions | default([]) }}'
@@ -54,7 +54,7 @@
 - name: Make sure tmp directory exists and permissions are correct - {{ instance.name }}
   ansible.builtin.file:
     path: '{{ instance.dir }}{{ instance.tmp_dir }}'
-    owner: '{{ nginx_owner }}'
+    owner: '{{ nginx_user }}'
     group: '{{ nginx_group }}'
     state: directory
     recurse: true

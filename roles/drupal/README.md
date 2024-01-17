@@ -11,6 +11,13 @@ Available variables can be found in [defaults/main.yml](defaults/main.yml)
 ```yaml
     - hosts: all
 
+    - vars:
+      drupal_major_version: 8
+      drupal_instances:
+        - name: drupal8
+          dir: /srv/drupal8
+          server_name: www.mydrupal8.com
+
       roles:
         - alphanodes.setup.drupal
 ```

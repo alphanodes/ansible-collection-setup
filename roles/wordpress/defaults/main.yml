@@ -1,0 +1,60 @@
+---
+# defaults file for drupal
+
+wordpress_instances: []
+  # name of instance (is used as drush profile name)
+  # - name: demo
+
+# Default values for a drupal instance (overwrite it in instance hash)
+wordpress_vhost_dir: '/htdocs'
+wordpress_vhost_for_zabbix: false
+wordpress_vhost_default: false
+
+wordpress_user: '{{ nginx_user }}'
+wordpress_group: '{{ nginx_group }}'
+
+wordpress_owner_home: '{{ nginx_user }}'
+wordpress_group_home: '{{ nginx_group }}'
+# root is required for ssh ChrootDirectory should have write permissions
+wordpress_mode_home: '0755'
+
+wordpress_install_file_url: https://de.wordpress.org/latest-de_DE.tar.gz
+
+wordpress_cli_url: https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+wordpress_cli_path: /usr/local/bin/wp
+wordpress_cli_bash_complete_url: https://raw.githubusercontent.com/wp-cli/wp-cli/master/utils/wp-completion.bash
+
+wordpress_api_secret_key_url: https://api.wordpress.org/secret-key/1.1/salt/
+
+# wordpress_db_user: item.name
+wordpress_db_password: '{{ [ansible_machine_id, ansible_hostname, "wordpress"] | join | hash("md5") }}'
+wordpress_db_host: localhost
+wordpress_db_port: 3306
+wordpress_db_driver: mysql
+wordpress_db_table_prefix: 'wp_'
+wordpress_db_charset: 'utf8mb4'
+wordpress_db_collation: ''
+
+wordpress_auth_key: '{{ [ansible_machine_id, ansible_hostname, "wordpress_auth"] | join | hash("md5") }}'
+wordpress_secure_auth_key: '{{ [ansible_machine_id, ansible_hostname, "wordpress_secure_auth"] | join | hash("md5") }}'
+wordpress_logged_in_key: '{{ [ansible_machine_id, ansible_hostname, "wordpress_logged_in"] | join | hash("md5") }}'
+wordpress_nonce_key: '{{ [ansible_machine_id, ansible_hostname, "wordpress_nonce"] | join | hash("md5") }}'
+wordpress_auth_salt: '{{ [ansible_machine_id, ansible_hostname, "wordpress_auth_salt"] | join | hash("md5") }}'
+wordpress_secure_auth_salt: '{{ [ansible_machine_id, ansible_hostname, "wordpress_secure_auth_salt"] | join | hash("md5") }}'
+wordpress_logged_in_salt: '{{ [ansible_machine_id, ansible_hostname, "wordpress_logged_in_salt"] | join | hash("md5") }}'
+wordpress_nonce_salt: '{{ [ansible_machine_id, ansible_hostname, "wordpress_nonce_salt"] | join | hash("md5") }}'
+
+wordpress_debug: false
+
+# if defined, only these users can access vhost
+# if no directory (location) is defined and vhost_users are defined, whole vhost is protected
+wordpress_vhost_users: []
+#  - user: 'user name'
+#    password: 'password'
+#    location: ''
+
+# this is not working at the moment
+# no default value possible for with_subelements
+wordpress_write_permissions: []
+
+wordpress_write_settings_file: true

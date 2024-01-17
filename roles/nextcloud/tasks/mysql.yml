@@ -15,4 +15,5 @@
     password: '{{ nextcloud_db_password }}'
     host: '{{ nextcloud_db_host }}'
     priv: '{{ nextcloud_db_name }}.*:ALL'
+    column_case_sensitive: true
     state: present

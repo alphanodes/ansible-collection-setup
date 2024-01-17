@@ -13,8 +13,8 @@ phpmyadmin_db_ssl_key: /etc/ssl/private/mysql_client.key
 phpmyadmin_db_ssl_cert: /etc/ssl/certs/mysql_client.crt
 phpmyadmin_db_ssl_ca: /etc/ssl/certs/mysql_ca.crt
 
-phpmyadmin_owner: "{{ nginx_owner | default('www-data') }}"
-phpmyadmin_group: "{{ nginx_group | default('www-data') }}"
+phpmyadmin_owner: "{{ nginx_user }}"
+phpmyadmin_group: "{{ nginx_group }}"
 
 phpmyadmin_ssl_only: true
 

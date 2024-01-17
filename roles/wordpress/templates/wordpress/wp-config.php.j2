@@ -1,0 +1,116 @@
+<?php
+/**
+ * Grundeinstellungen für WordPress
+ *
+ * Diese Datei wird zur Erstellung der wp-config.php verwendet.
+ * Du musst aber dafür nicht das Installationsskript verwenden.
+ * Stattdessen kannst du auch diese Datei als „wp-config.php“ mit
+ * deinen Zugangsdaten für die Datenbank abspeichern.
+ *
+ * Diese Datei beinhaltet diese Einstellungen:
+ *
+ * * Datenbank-Zugangsdaten,
+ * * Tabellenpräfix,
+ * * Sicherheitsschlüssel
+ * * und ABSPATH.
+ *
+ * @link https://wordpress.org/documentation/article/editing-wp-config-php/
+ *
+ * @package WordPress
+ */
+
+// ** Datenbank-Einstellungen - Diese Zugangsdaten bekommst du von deinem Webhoster. ** //
+/**
+ * Ersetze datenbankname_hier_einfuegen
+ * mit dem Namen der Datenbank, die du verwenden möchtest.
+ */
+define( 'DB_NAME', '{{ instance.db_name | default(instance.name) | replace('-', '_') }}' );
+
+/**
+ * Ersetze benutzername_hier_einfuegen
+ * mit deinem Datenbank-Benutzernamen.
+ */
+define( 'DB_USER', '{{ instance.db_user | default(instance.name) | replace('-', '_') }}' );
+
+/**
+ * Ersetze passwort_hier_einfuegen mit deinem Datenbank-Passwort.
+ */
+define( 'DB_PASSWORD', '{{ instance.db_password | default(wordpress_db_password) }}' );
+
+/**
+ * Ersetze localhost mit der Datenbank-Serveradresse.
+ */
+define( 'DB_HOST', '{{ instance.db_host | default(wordpress_db_host) }}' );
+
+/**
+ * Der Datenbankzeichensatz, der beim Erstellen der
+ * Datenbanktabellen verwendet werden soll
+ */
+define( 'DB_CHARSET', '{{ instance.db_charset | default(wordpress_db_charset) }}' );
+
+/**
+ * Der Collate-Type sollte nicht geändert werden.
+ */
+define( 'DB_COLLATE', '{{ instance.db_collation | default(wordpress_db_collation) }}' );
+
+/**#@+
+ * Sicherheitsschlüssel
+ *
+ * Ändere jeden untenstehenden Platzhaltertext in eine beliebige,
+ * möglichst einmalig genutzte Zeichenkette.
+ * Auf der Seite {@link https://api.wordpress.org/secret-key/1.1/salt/ WordPress.org secret-key service}
+ * kannst du dir alle Schlüssel generieren lassen.
+ *
+ * Du kannst die Schlüssel jederzeit wieder ändern, alle angemeldeten
+ * Benutzer müssen sich danach erneut anmelden.
+ *
+ * @since 2.6.0
+ */
+define( 'AUTH_KEY',         '{{ instance.auth_key | default(wordpress_auth_key) }}' );
+define( 'SECURE_AUTH_KEY',  '{{ instance.secure_auth_key | default(wordpress_secure_auth_key) }}' );
+define( 'LOGGED_IN_KEY',    '{{ instance.logged_in_key | default(wordpress_logged_in_key) }}' );
+define( 'NONCE_KEY',        '{{ instance.nonce_key | default(wordpress_nonce_key) }}' );
+define( 'AUTH_SALT',        '{{ instance.auth_salt | default(wordpress_auth_salt) }}' );
+define( 'SECURE_AUTH_SALT', '{{ instance.secure_auth_salt | default(wordpress_secure_auth_salt) }}' );
+define( 'LOGGED_IN_SALT',   '{{ instance.logged_in_salt | default(wordpress_logged_in_salt) }}' );
+define( 'NONCE_SALT',       '{{ instance.nonce_salt | default(wordpress_nonce_salt) }}' );
+
+/**#@-*/
+
+/**
+ * WordPress Datenbanktabellen-Präfix
+ *
+ * Wenn du verschiedene Präfixe benutzt, kannst du innerhalb einer Datenbank
+ * verschiedene WordPress-Installationen betreiben.
+ * Bitte verwende nur Zahlen, Buchstaben und Unterstriche!
+ */
+$table_prefix = '{{ instance.db_table_prefix | default(wordpress_db_table_prefix) }}';
+
+/**
+ * Für Entwickler: Der WordPress-Debug-Modus.
+ *
+ * Setze den Wert auf „true“, um bei der Entwicklung Warnungen und Fehler-Meldungen angezeigt zu bekommen.
+ * Plugin- und Theme-Entwicklern wird nachdrücklich empfohlen, WP_DEBUG
+ * in ihrer Entwicklungsumgebung zu verwenden.
+ *
+ * Besuche den Codex, um mehr Informationen über andere Konstanten zu finden,
+ * die zum Debuggen genutzt werden können.
+ *
+ * @link https://wordpress.org/documentation/article/debugging-in-wordpress/
+ */
+define( 'WP_DEBUG', {{ 'true' if wordpress_debug else 'false' }} );
+
+/* Füge individuelle Werte zwischen dieser Zeile und der „Schluss mit dem Bearbeiten“ Zeile ein. */
+
+
+
+/* Das war’s, Schluss mit dem Bearbeiten! Viel Spaß. */
+/* That's all, stop editing! Happy publishing. */
+
+/** Der absolute Pfad zum WordPress-Verzeichnis. */
+if ( ! defined( 'ABSPATH' ) ) {
+	define( 'ABSPATH', __DIR__ . '/' );
+}
+
+/** Definiert WordPress-Variablen und fügt Dateien ein.  */
+require_once ABSPATH . 'wp-settings.php';

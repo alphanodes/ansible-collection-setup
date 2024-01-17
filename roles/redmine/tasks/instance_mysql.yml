@@ -18,6 +18,7 @@
     password: '{{ instance.db_password | default(redmine_db_password) }}'
     host: '{{ active_db_host }}'
     priv: '{{ redmine_db_name }}.*:ALL'
+    column_case_sensitive: true
     state: present
   when: instance.db_skip_user_setup is undefined or not instance.db_skip_user_setup
 

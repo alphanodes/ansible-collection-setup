@@ -1,6 +1,8 @@
 ---
 dependencies:
-  - { role: alphanodes.setup.postgresql_client }
+  - role: alphanodes.setup.common
+    public: true
+  - role: alphanodes.setup.postgresql_client
 
 galaxy_info:
   author: alexandermeindl

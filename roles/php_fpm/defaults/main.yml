@@ -22,12 +22,12 @@ php_max_file_uploads: 10
 php_max_input_time: 60
 php_max_input_vars: 1000
 php_memory_limit: 192M
-php_post_max_size: 72M
+php_post_max_size: 128M
 php_realpath_cache_size: 32K
 php_realpath_cache_ttl: 100
 php_serialize_precision: 17
 php_short_open_tag: "Off"
-php_upload_max_filesize: 64M
+php_upload_max_filesize: 128M
 
 php_session_save_handler: files
 php_session_save_path: "{{ __php_session_save_path | default('/var/lib/php/sessions') }}"

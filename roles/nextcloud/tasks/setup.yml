@@ -76,7 +76,7 @@
     path: '{{ nextcloud_data }}'
     state: directory
     recurse: true
-    owner: '{{ nginx_owner }}'
+    owner: '{{ nginx_user }}'
     group: '{{ nginx_group }}'
   when: nextcloud_with_data_permission
 
@@ -126,7 +126,7 @@
   ansible.builtin.unarchive:
     src: '{{ nextcloud_source_file_path }}'
     dest: '{{ nextcloud_dir }}'
-    owner: '{{ nginx_owner }}'
+    owner: '{{ nginx_user }}'
     group: '{{ nginx_group }}'
     remote_src: true
   # workaround for ansible 2.1.0.0 bug
@@ -153,14 +153,14 @@
 
     - name: _update step4_ Run nextcloud update
       become: true
-      become_user: '{{ nginx_owner }}'
+      become_user: '{{ nginx_user }}'
       ansible.builtin.command: php occ upgrade
       args:
         chdir: '{{ nextcloud_htdocs }}'
 
     - name: _update step5_ Enable plugins
       become: true
-      become_user: '{{ nginx_owner }}'
+      become_user: '{{ nginx_user }}'
       ansible.builtin.command: php occ app:install {{ item.name }}
       register: plugin_rc
       failed_when: plugin_rc.rc > 1
@@ -170,7 +170,7 @@
 
 - name: _update step6_ Disable maintenance mode
   become: true
-  become_user: '{{ nginx_owner }}'
+  become_user: '{{ nginx_user }}'
   ansible.builtin.command: php occ maintenance:mode --off
   args:
     chdir: '{{ nextcloud_htdocs }}'
@@ -183,7 +183,7 @@
     src: custom.config.php.j2
     dest: '{{ nextcloud_htdocs }}/config/custom.config.php'
     validate: 'php -l %s'
-    owner: '{{ nginx_owner }}'
+    owner: '{{ nginx_user }}'
     group: '{{ nginx_group }}'
     mode: 0640
   when: nextcloud_config_exists.stat.exists
@@ -193,7 +193,7 @@
     src: autoconfig.php.j2
     dest: '{{ nextcloud_htdocs }}/config/autoconfig.php'
     validate: 'php -l %s'
-    owner: '{{ nginx_owner }}'
+    owner: '{{ nginx_user }}'
     group: '{{ nginx_group }}'
     mode: 0660
   when:

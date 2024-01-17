@@ -9,7 +9,7 @@ nginx_worker_connections: 1024
 # leave empty, ansible_processor_nproc is used  with lxc containers)
 nginx_worker_processes: ''
 
-nginx_owner: www-data
+nginx_user: www-data
 nginx_group: www-data
 
 # use it, if e.g. www-data needs access to ssl certs

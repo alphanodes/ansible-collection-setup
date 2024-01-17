@@ -1,7 +1,7 @@
 {{ ansible_managed | comment }}
 # nginx configuration
 
-user {{ nginx_owner }};
+user {{ nginx_user }};
 
 error_log {{ nginx_error_log }};
 pid /run/nginx.pid;

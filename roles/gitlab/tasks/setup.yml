@@ -98,17 +98,17 @@
     - gitlab_rvm_ruby_apt
 
 # @see https://gitlab.com/gitlab-org/gitlab-workhorse/-/issues/129
-- name: Add redis and www-data to gitlab group
+- name: Add redis and nginx to gitlab group
   ansible.builtin.user:
     name: '{{ gitlab_group }}'
     groups:
       - redis
-      - www-data
+      - '{{ nginx_group }}'
     append: true
 
-- name: Add git to www-data group
+- name: Add nginx user to gitlab group
   ansible.builtin.user:
-    name: www-data
+    name: '{{ nginx_user }}'
     groups:
       - '{{ gitlab_user }}'
     append: true

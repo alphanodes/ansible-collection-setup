@@ -6,7 +6,7 @@
   vars:
     timers:
       microcache_directory:
-        exec_start: /usr/bin/install -g {{ nginx_group }} -o {{ nginx_owner }} -d {{ nginx_fastcgi_microcache_base_dir }}/{{ nginx_fastcgi_microcache_zone }}
+        exec_start: /usr/bin/install -g {{ nginx_group }} -o {{ nginx_user }} -d {{ nginx_fastcgi_microcache_base_dir }}/{{ nginx_fastcgi_microcache_zone }}
         on_boot_sec: 5s
         before_service: nginx.service
 

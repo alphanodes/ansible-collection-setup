@@ -1,0 +1,6 @@
+---
+
+- name: Be sure system dependencies are installed
+  ansible.builtin.apt:
+    name: '{{ wordpress_packages }}'
+    state: present
