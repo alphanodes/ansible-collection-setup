@@ -6,7 +6,7 @@ diagnostic_with_bottom: false
 # bottom is not implemented at the moment
 diagnostic_with_btop: true
 # make sure pip is installed for glances
-diagnostic_with_glances: tfalse
+diagnostic_with_glances: false
 diagnostic_with_htop: false
 diagnostic_with_nmap: false
 diagnostic_with_sysstat: false
