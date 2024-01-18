@@ -4,7 +4,7 @@ dependencies:
     public: true
 
 galaxy_info:
-  description: Setup glances
+  description: Setup diagnostic tools
   author: alexandermeindl
   company: AlphaNodes GmbH
   license: Apache License 2.0
@@ -16,8 +16,13 @@ galaxy_info:
         - jammy
     - name: Debian
       versions:
-        - buster
         - bullseye
         - bookworm
   galaxy_tags:
+    - atop
+    - bottom
+    - btop
+    - htop
     - glances
+    - nmap
+    - sysstat

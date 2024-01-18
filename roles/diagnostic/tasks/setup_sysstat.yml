@@ -1,0 +1,36 @@
+---
+
+# see https://wiki.debian.org/sysstat
+# see https://www.thomas-krenn.com/de/wiki/Linux_Performance_Aufzeichnung_und_Auswertung_mit_sar
+# Anzeige der RAM Auslastung: sar -r
+
+- name: Activated sysstat
+  when: diagnostic_with_sysstat
+  block:
+    - name: Be sure sysstat package are installed
+      ansible.builtin.apt:
+        name: sysstat
+        state: present
+
+    - name: Enable data collection
+      when: sysstat_enable_data_collecting
+      ansible.builtin.lineinfile:
+        dest: /etc/default/sysstat
+        regexp: '^ENABLED=.*'
+        line: 'ENABLED="true"'
+
+    - name: Disable data collection
+      when: not sysstat_enable_data_collecting
+      ansible.builtin.lineinfile:
+        dest: /etc/default/sysstat
+        regexp: '^ENABLED=.*'
+        line: 'ENABLED="false"'
+
+- name: Disabled sysstat
+  when: not diagnostic_with_sysstat
+  block:
+    - name: Remove sysstat packages
+      ansible.builtin.apt:
+        name: sysstat
+        purge: true
+        state: absent

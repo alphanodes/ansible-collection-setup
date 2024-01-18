@@ -1,0 +1,20 @@
+---
+
+# see https://nmap.org/
+
+- name: Activated nmap
+  when: diagnostic_with_nmap
+  block:
+    - name: Be sure nmap package are installed
+      ansible.builtin.apt:
+        name: nmap
+        state: present
+
+- name: Disabled nmap
+  when: not diagnostic_with_nmap
+  block:
+    - name: Remove nmap packages
+      ansible.builtin.apt:
+        name: nmap
+        purge: true
+        state: absent

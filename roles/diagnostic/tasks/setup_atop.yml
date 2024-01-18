@@ -1,0 +1,26 @@
+---
+
+# see https://www.atoptool.nl/
+# see https://github.com/Atoptool/atop
+
+- name: Activated atop
+  when: diagnostic_with_atop
+  block:
+    - name: Be sure atop package are installed
+      ansible.builtin.apt:
+        name: atop
+        state: present
+
+- name: Disabled atop
+  when: not diagnostic_with_atop
+  block:
+    - name: Remove atop packages
+      ansible.builtin.apt:
+        name: atop
+        purge: true
+        state: absent
+
+    - name: Remove atop user configuration
+      ansible.builtin.file:
+        path: "{{ '/root' if managing_user == 'root' else user_infos.home }}/.atoprc"
+        state: absent

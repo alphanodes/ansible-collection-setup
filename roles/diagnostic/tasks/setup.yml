@@ -1,0 +1,50 @@
+---
+
+- name: Set facts
+  ansible.builtin.set_fact:
+    managing_user: "{{ ansible_user | default(ansible_env.USER) }}"
+
+# Update should never be updated here because user already exists,
+# but we have to specify it because otherwise ansible user reset password to empty string
+- name: Get user information for non-root
+  ansible.builtin.user:
+    name: '{{ managing_user }}'
+    update_password: on_create
+    state: present
+  register: user_infos
+  when: managing_user != 'root'
+
+- name: Be sure diagnostic packages are installed
+  ansible.builtin.apt:
+    name: '{{ diagnostic_packages }}'
+    state: present
+
+- name: Include setup atop tasks
+  ansible.builtin.import_tasks: setup_atop.yml
+  tags:
+    - atop
+
+- name: Include setup bottom tasks
+  ansible.builtin.import_tasks: setup_bottom.yml
+  tags:
+    - bottom
+
+- name: Include setup btop tasks
+  ansible.builtin.import_tasks: setup_btop.yml
+  tags:
+    - btop
+
+- name: Include setup glances tasks
+  ansible.builtin.import_tasks: setup_glances.yml
+  tags:
+    - glances
+
+- name: Include setup htop tasks
+  ansible.builtin.import_tasks: setup_htop.yml
+  tags:
+    - htop
+
+- name: Include setup sysstat tasks
+  ansible.builtin.import_tasks: setup_sysstat.yml
+  tags:
+    - sysstat

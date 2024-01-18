@@ -1,0 +1,23 @@
+---
+# defaults file for diagnostic tools
+
+diagnostic_with_atop: false
+diagnostic_with_bottom: false
+# bottom is not implemented at the moment
+diagnostic_with_btop: true
+# make sure pip is installed for glances
+diagnostic_with_glances: tfalse
+diagnostic_with_htop: false
+diagnostic_with_nmap: false
+diagnostic_with_sysstat: false
+
+diagnostic_packages:
+  - deborphan
+
+# required a lot of packages for glances without pip (e.g. nginx)
+glances_with_pip: true
+glances_pip_packages:
+  - glances
+glances_pip_venv: glances
+
+sysstat_enable_data_collecting: true

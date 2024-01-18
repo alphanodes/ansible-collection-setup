@@ -1,0 +1,25 @@
+---
+
+# see https://github.com/aristocratos/btop
+
+- name: Activated btop
+  when: diagnostic_with_btop
+  block:
+    - name: Be sure btop package are installed
+      ansible.builtin.apt:
+        name: btop
+        state: present
+
+- name: Disabled btop
+  when: not diagnostic_with_btop
+  block:
+    - name: Remove btop packages
+      ansible.builtin.apt:
+        name: btop
+        purge: true
+        state: absent
+
+    - name: Remove btop user configuration
+      ansible.builtin.file:
+        path: "{{ '/root' if managing_user == 'root' else user_infos.home }}/.config/btop"
+        state: absent

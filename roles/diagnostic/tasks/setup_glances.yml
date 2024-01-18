@@ -1,0 +1,48 @@
+---
+
+# see https://github.com/nicolargo/glances
+
+- name: Activated glances
+  when: diagnostic_with_glances
+  block:
+    - name: Use pip
+      when: glances_with_pip
+      block:
+        - name: Include python role
+          ansible.builtin.include_role:
+            name: alphanodes.setup.python
+          vars:
+            python_pip_packages: '{{ glances_pip_packages }}'
+            python_pip_default_venv: '{{ glances_pip_venv }}'
+
+        - name: Use debian package
+          when: not glances_with_pip
+          block:
+            - name: Be sure glances not installed with debian packages
+              ansible.builtin.apt:
+                name: glances
+                state: absent
+
+- name: Remove obsolete glances without venv
+  ansible.builtin.file:
+    path: /usr/local/bin/glances
+    state: absent
+
+- name: Disabled glances
+  when: not diagnostic_with_glances
+  block:
+    - name: Remove glances venv
+      ansible.builtin.file:
+        path: '{{ python_venv_parent }}/{{ glances_pip_venv }}'
+        state: absent
+
+    - name: Remove glance package
+      ansible.builtin.apt:
+        name: glances
+        purge: true
+        state: absent
+
+    - name: Remove glances user configuration
+      ansible.builtin.file:
+        path: "{{ '/root' if managing_user == 'root' else user_infos.home }}/.local/share/glances"
+        state: absent

@@ -1,0 +1,20 @@
+---
+
+# see https://github.com/ClementTsang/bottom
+
+- name: Activated bottom
+  when: diagnostic_with_bottom
+  block:
+    - name: Be sure bottom package are installed
+      ansible.builtin.apt:
+        name: bottom
+        state: present
+
+- name: Disabled bottom
+  when: not diagnostic_with_bottom
+  block:
+    - name: Remove bottom packages
+      ansible.builtin.apt:
+        name: bottom
+        purge: true
+        state: absent

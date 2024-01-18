@@ -1,0 +1,6 @@
+---
+
+- name: Include setup tasks
+  ansible.builtin.import_tasks: setup.yml
+  tags:
+    - diagnostic

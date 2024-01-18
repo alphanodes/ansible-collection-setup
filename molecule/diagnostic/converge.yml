@@ -22,4 +22,4 @@
         force: true
 
   roles:
-    - role: alphanodes.setup.glances
+    - role: alphanodes.setup.diagnostic
