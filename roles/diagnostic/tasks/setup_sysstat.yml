@@ -14,17 +14,35 @@
 
     - name: Enable data collection
       when: sysstat_enable_data_collecting
-      ansible.builtin.lineinfile:
-        dest: /etc/default/sysstat
-        regexp: '^ENABLED=.*'
-        line: 'ENABLED="true"'
+      block:
+        - name: Enable default
+          ansible.builtin.lineinfile:
+            dest: /etc/default/sysstat
+            regexp: '^ENABLED=.*'
+            line: 'ENABLED="true"'
+
+        - name: Enable sysstat service
+          when: sysstat_enable_data_collecting
+          ansible.builtin.systemd:
+            name: sysstat
+            state: started
+            enabled: true
 
     - name: Disable data collection
       when: not sysstat_enable_data_collecting
-      ansible.builtin.lineinfile:
-        dest: /etc/default/sysstat
-        regexp: '^ENABLED=.*'
-        line: 'ENABLED="false"'
+      block:
+        - name: Disable default
+          ansible.builtin.lineinfile:
+            dest: /etc/default/sysstat
+            regexp: '^ENABLED=.*'
+            line: 'ENABLED="false"'
+
+        - name: Enable sysstat service
+          when: sysstat_enable_data_collecting
+          ansible.builtin.systemd:
+            name: sysstat
+            state: stopped
+            enabled: false
 
 - name: Disabled sysstat
   when: not diagnostic_with_sysstat
