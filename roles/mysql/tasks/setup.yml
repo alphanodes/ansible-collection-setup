@@ -95,12 +95,6 @@
 - name: Include mysqltuner tasks
   ansible.builtin.include_tasks: mysqltuner.yml
 
-# tuning-primer is obsolete - remove it
-- name: Remove tuning-primer script
-  ansible.builtin.file:
-    path: /usr/local/bin/tuning-primer.sh
-    state: absent
-
 - name: Include zabbix tasks
   ansible.builtin.include_tasks: zabbix.yml
   tags:

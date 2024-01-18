@@ -1,0 +1,34 @@
+---
+
+# see https://github.com/htop-dev/htop
+
+- name: Activated htop
+  when: diagnostic_with_htop
+  block:
+    - name: Be sure htop package are installed
+      ansible.builtin.apt:
+        name: htop
+        state: present
+
+    # @see https://haydenjames.io/htop-heres-how-to-customize-it/
+    - name: Install htop configration
+      ansible.builtin.copy:
+        src: htoprc
+        dest: "{{ '/root' if managing_user == 'root' else user_infos.home }}/.config/htop/"
+        mode: 0644
+        owner: '{{ managing_user }}'
+        group: "{{ 'root' if managing_user == 'root' else user_infos.group }}"
+
+- name: Disabled htop
+  when: not diagnostic_with_htop
+  block:
+    - name: Remove htop packages
+      ansible.builtin.apt:
+        name: htop
+        purge: true
+        state: absent
+
+    - name: Remove htop user configuration
+      ansible.builtin.file:
+        path: "{{ '/root' if managing_user == 'root' else user_infos.home }}/.config/htop"
+        state: absent

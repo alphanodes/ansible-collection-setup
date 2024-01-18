@@ -153,7 +153,6 @@ mysql_table_definition_cache: 2048
 mysql_server_debian_sys_maint_password: '{{ [ansible_machine_id, ansible_hostname, mysql_server_password_salt, "debian-sys-maint"] | join | hash("md5") }}'
 
 mysql_mysqltuner_url: https://raw.githubusercontent.com/major/MySQLTuner-perl/master/mysqltuner.pl
-mysql_tuning_primer_url: https://raw.githubusercontent.com/RootService/tuning-primer/master/tuning-primer.sh
 
 mysql_with_ssl: false
 mysql_ssl_ca: /etc/ssl/certs/mysql_ca.crt
