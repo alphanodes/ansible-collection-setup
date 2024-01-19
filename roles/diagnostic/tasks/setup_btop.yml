@@ -2,13 +2,131 @@
 
 # see https://github.com/aristocratos/btop
 
+- name: Set facts
+  ansible.builtin.set_fact:
+    btop_bin: "{{ '/usr/bin/btop' if btop_install_type == 'apt' else btop_install_path + '/bin/btop' }}"
+    btop_static_file: btop-x86_64-{{ btop_static_version }}.tbz
+
+- name: Set btop_static_path
+  ansible.builtin.set_fact:
+    btop_static_source_file_path: '{{ software_dir }}/{{ btop_static_file }}'
+
 - name: Activated btop
   when: diagnostic_with_btop
   block:
     - name: Be sure btop package are installed
+      when: btop_install_type == 'apt'
       ansible.builtin.apt:
         name: btop
         state: present
+
+    - name: Remove btop packages for non apt installation type
+      when: btop_install_type != 'apt'
+      ansible.builtin.apt:
+        name: btop
+        purge: true
+        state: absent
+
+    - name: Install static binary
+      when: btop_install_type == 'static'
+      block:
+        - name: Stats for btop static source file
+          ansible.builtin.stat:
+            path: '{{ btop_static_source_file_path }}'
+          register: btop_static_source_file_exists
+
+        - name: Check if btop bin is installed
+          ansible.builtin.stat:
+            path: "{{ btop_bin }}"
+          register: btop_installed
+
+        - name: Fetch the btop static binary tarball
+          ansible.builtin.get_url:
+            url: "{{ btop_static_url }}"
+            force: true
+            dest: "{{ btop_static_source_file_path }}"
+            timeout: 100
+            mode: '0644'
+            owner: root
+            group: root
+          register: download_result
+          until: (download_result is succeeded)
+          retries: 2
+          changed_when: download_result is changed
+          when: not btop_static_source_file_exists.stat.exists
+
+        - name: Install static
+          when: >
+            not btop_installed.stat.exists | bool
+            or not btop_static_source_file_exists.stat.exists
+          block:
+            - name: Remove previous btop source directory
+              ansible.builtin.file:
+                path: "{{ btop_source_path }}"
+                state: absent
+
+            - name: Create btop source directory
+              ansible.builtin.file:
+                path: "{{ btop_source_path }}"
+                mode: "0775"
+                state: directory
+
+            - name: Unpack the binary tarball version {{ btop_static_version }}
+              ansible.builtin.unarchive:
+                remote_src: true
+                src: "{{ btop_static_source_file_path }}"
+                dest: "{{ btop_source_base_path }}"
+                owner: root
+                group: root
+
+            - name: Run make install
+              ansible.builtin.command: make install PREFIX={{ btop_install_path }}
+              args:
+                chdir: '{{ btop_source_path }}'
+              register: make_install
+
+            - name: Output of btop make_install
+              ansible.builtin.debug:
+                var: make_install.stdout_lines
+
+    - name: Install from source
+      when: btop_install_type == 'source'
+      block:
+        - name: Get btop sources
+          ansible.builtin.git:
+            repo: '{{ btop_source_repo }}'
+            dest: '{{ btop_source_path }}'
+            version: '{{ btop_source_version }}'
+          register: git_result
+
+        # see https://github.com/aristocratos/btop#compilation-linux
+        - name: Build
+          when: git_result is defined and git_result.changed or btop_source_force_rebuild
+          block:
+            - name: Run make clean
+              ansible.builtin.command: make clean
+              args:
+                chdir: '{{ btop_source_path }}'
+
+            - name: Run make
+              ansible.builtin.command: make ADDFLAGS=-march=native
+              args:
+                chdir: '{{ btop_source_path }}'
+              register: make_result
+
+            - name: Output of btop make_result
+              ansible.builtin.debug:
+                var: make_result.stdout_lines
+
+            - name: Run make install
+              ansible.builtin.command: make install PREFIX={{ btop_install_path }}
+              args:
+                chdir: '{{ btop_source_path }}'
+              register: make_install
+
+            - name: Output of btop make_install
+              ansible.builtin.debug:
+                var: make_install.stdout_lines
 
 - name: Disabled btop
   when: not diagnostic_with_btop
@@ -23,3 +141,16 @@
       ansible.builtin.file:
         path: "{{ '/root' if managing_user == 'root' else user_infos.home }}/.config/btop"
         state: absent
+
+    - name: Remove btop files with sources
+      when: btop_install_type == 'source' or btop_install_type == 'static'
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - '{{ btop_source_path }}'
+        - '{{ btop_bin }}'
+        - '{{ btop_install_path }}/share/btop'
+        - '{{ btop_install_path }}/share/applications/btop.desktop'
+        - '{{ btop_install_path }}/usr/share/icons/hicolor/48x48/apps/btop.png'
+        - '{{ btop_install_path }}/usr/share/icons/hicolor/scalable/apps/btop.svg'

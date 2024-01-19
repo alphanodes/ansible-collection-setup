@@ -1,5 +1,7 @@
 ---
 
+dependencies: []
+
 galaxy_info:
   description: Setup unbound
   author: alexandermeindl

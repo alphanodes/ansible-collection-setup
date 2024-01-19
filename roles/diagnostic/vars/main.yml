@@ -1,0 +1,2 @@
+btop_source_base_path: /usr/src
+btop_source_path: '{{ btop_source_base_path }}/btop'
