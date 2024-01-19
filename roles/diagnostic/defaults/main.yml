@@ -31,7 +31,7 @@ btop_install_path: /usr
 # btop source
 btop_source_repo: https://github.com/aristocratos/btop.git
 btop_source_version: main
-btop_source_force_rebuild: true
+btop_source_force_rebuild: false
 
 # btop static
 btop_static_version: v1.3.0
