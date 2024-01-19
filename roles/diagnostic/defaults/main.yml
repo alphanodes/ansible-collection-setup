@@ -21,3 +21,18 @@ glances_pip_packages:
 glances_pip_venv: glances
 
 sysstat_enable_data_collecting: true
+
+# apt, source or static
+# debian bullseye has no apt version, in this case use static
+btop_install_type: "{{ 'static' if ansible_distribution_release == 'bullseye' else 'apt' }}"
+# used for non apt install type
+btop_install_path: /usr
+
+# btop source
+btop_source_repo: https://github.com/aristocratos/btop.git
+btop_source_version: main
+btop_source_force_rebuild: true
+
+# btop static
+btop_static_version: v1.3.0
+btop_static_url: https://github.com/aristocratos/btop/releases/download/{{ btop_static_version }}/btop-x86_64-linux-musl.tbz
