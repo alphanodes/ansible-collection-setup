@@ -7,9 +7,9 @@
 - name: Create wordpress home
   ansible.builtin.file:
     path: '{{ instance.dir }}'
-    owner: '{{ wordpress_user_home }}'
-    group: '{{ wordpress_group_home }}'
-    mode: '{{ wordpress_mode_home }}'
+    owner: '{{ wordpress_home_user }}'
+    group: '{{ wordpress_home_group }}'
+    mode: '{{ wordpress_home_mode }}'
     state: directory
 
 - name: Include cli tasks

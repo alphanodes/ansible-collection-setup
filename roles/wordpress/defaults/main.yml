@@ -13,10 +13,10 @@ wordpress_vhost_default: false
 wordpress_user: '{{ nginx_user }}'
 wordpress_group: '{{ nginx_group }}'
 
-wordpress_owner_home: '{{ nginx_user }}'
-wordpress_group_home: '{{ nginx_group }}'
+wordpress_home_user: '{{ nginx_user }}'
+wordpress_home_group: '{{ nginx_group }}'
 # root is required for ssh ChrootDirectory should have write permissions
-wordpress_mode_home: '0755'
+wordpress_home_mode: '0755'
 
 wordpress_install_file_url: https://de.wordpress.org/latest-de_DE.tar.gz
 
