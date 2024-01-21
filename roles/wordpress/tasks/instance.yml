@@ -22,6 +22,7 @@
 
 - name: Include install tasks
   ansible.builtin.include_tasks: instance_install.yml
+  when: wordpress_install_wordpress
   tags:
     - mysql
 
@@ -66,7 +67,7 @@
     group: '{{ wordpress_group }}'
     recurse: true
 
-- name: Include cli tasks
+- name: Include config tasks
   ansible.builtin.include_tasks: instance_config.yml
   when: instance.write_settings_file | default(wordpress_write_settings_file)
 

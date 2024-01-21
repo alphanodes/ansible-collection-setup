@@ -57,4 +57,5 @@ wordpress_vhost_users: []
 # no default value possible for with_subelements
 wordpress_write_permissions: []
 
-wordpress_write_settings_file: true
+wordpress_install_wordpress: false
+wordpress_write_settings_file: false
