@@ -25,7 +25,7 @@ fail2ban_sshd_ddos: false
 fail2ban_roundcube_auth: false
 fail2ban_roundcube_auth_log: /srv/roundcube/logs/errors.log
 
-fail2ban_ignoreip: '127.0.0.1/8 {{ lxc_internal_subnet }} {{ hostvars["s1"].ip_address_v4 }}/32 {{ hostvars["s2"].ip_address_v4 }}/32 {{ hostvars["s5"].ip_address_v4 }}/32 {{ hostvars["s6"].ip_address_v4 }}/32 {{ hostvars["code"].ext_ip_address_v4 }}/32'
+fail2ban_ignoreip: '127.0.0.1/8 {{ lxc_internal_subnet }} {{ hostvars["s1"].ip_address_v4 }}/32 {{ hostvars["s2"].ip_address_v4 }}/32 {{ hostvars["s5"].ip_address_v4 }}/32 {{ hostvars["backup"].ip_address_v4 }}/32 {{ hostvars["code"].ext_ip_address_v4 }}/32'
 fail2ban_destemail: "{{ alphanodes_support_mail | default('root@localhost') }}"
 fail2ban_action: "%(action_)s"
 fail2ban_backend: systemd
