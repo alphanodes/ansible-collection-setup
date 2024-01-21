@@ -27,8 +27,16 @@
       become: true
       register: goaccess_git_changed
 
+    - name: Check if binary exists
+      ansible.builtin.stat:
+        path: /usr/bin/goaccess
+      register: bin_file
+
     - name: Compile if source code changed or forced
-      when: goaccess_force_build or goaccess_git_changed.changed
+      when: >
+        goaccess_force_build
+        or goaccess_git_changed.changed
+        or not bin_file.stat.exists
       tags:
         - skip_ansible_lint
       block:
