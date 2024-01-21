@@ -15,12 +15,14 @@ goaccess_source_version: v1.6
 
 goaccess_from_source_packages:
   - autoconf
+  - automake
   - autopoint
   - gettext
   - libmaxminddb-dev
   - libncurses-dev
   - libssl-dev
   - libtokyocabinet-dev
+  - libtool
 
 goaccess_from_source_build_dir: /usr/src/goaccess
 goaccess_force_build: false
