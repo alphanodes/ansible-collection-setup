@@ -2,11 +2,22 @@
 - name: Include vars
   ansible.builtin.import_tasks: include-vars.yml
 
+- name: Include MySQL role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.mysql
+  tags:
+    - matomo
+    - mysql
+  when: matomo_with_mysql
+
 - name: Include setup tasks
   ansible.builtin.include_tasks: setup.yml
-  tags: matomo
+  tags:
+    - matomo
 
 - name: Include MySQL tasks
   ansible.builtin.include_tasks: mysql.yml
-  tags: matomo
+  tags:
+    - matomo
+    - mysql
   when: matomo_with_mysql

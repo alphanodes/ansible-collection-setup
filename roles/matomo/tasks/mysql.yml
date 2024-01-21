@@ -1,9 +1,5 @@
 ---
 
-- name: Include MySQL role
-  ansible.builtin.include_role:
-    name: alphanodes.setup.mysql
-
 - name: Be sure matomo database exists
   community.mysql.mysql_db:
     name: '{{ matomo_db_name }}'
