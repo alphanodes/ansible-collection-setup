@@ -6,6 +6,12 @@
 - name: Include source setup tasks
   ansible.builtin.include_tasks: setup_source.yml
 
+- name: Make sure configuration directory exists
+  ansible.builtin.file:
+    path: /etc/goaccess
+    state: directory
+    mode: 0755
+
 # see https://github.com/allinurl/goaccess/blob/master/config/goaccess.conf
 - name: Setup configuration
   ansible.builtin.template:
