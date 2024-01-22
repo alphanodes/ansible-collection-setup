@@ -5,7 +5,9 @@
   serial: 1
 
   vars:
+{% if ansible_node_playbook_ansible_python_interpreter != '' %}
     ansible_python_interpreter: {{ ansible_node_playbook_ansible_python_interpreter }}
+{% endif %}
     system_watch_repo: {{ system_watch_repo }}
 {% if https_user is defined and https_user != '' %}
     https_user: {{ https_user }}
