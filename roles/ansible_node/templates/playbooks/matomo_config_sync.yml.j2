@@ -5,7 +5,9 @@
   serial: 1
 
   vars:
+{% if ansible_node_playbook_ansible_python_interpreter != '' %}
     ansible_python_interpreter: {{ ansible_node_playbook_ansible_python_interpreter }}
+{% endif %}
 {% if matomo_config_master is defined %}
     matomo_config_master: {{ matomo_config_master }}
 {% endif %}
