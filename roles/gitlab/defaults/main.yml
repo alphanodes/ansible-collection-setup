@@ -175,8 +175,8 @@ gitlab_packages:
 # NOTE: version should be tests in gitlab pipeline
 # SEE https://gitlab.com/gitlab-org/gitlab/-/blob/master/.gitlab/ci/workhorse.gitlab-ci.yml#L30
 # https://go.dev/dl/ -> linux-amd64.tar.gz
-gitlab_go_version: '1.20.13'
-gitlab_go_sha256_checksum: 9a9d3dcae2b6a638b1f2e9bd4db08ffb39c10e55d9696914002742d90f0047b5
+gitlab_go_version: '1.21.7'
+gitlab_go_sha256_checksum: 13b76a9b2a26823e53062fa841b07087d48ae2ef2936445dc34c4ae03293702c
 
 gitlab_nginx_auth_realm: 'Code access is restricted'
 gitlab_nginx_client_max_body_size: '0'
