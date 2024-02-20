@@ -1,0 +1,25 @@
+
+  location {{ puma_location }} {
+{% if redmine_content_security_policy != '' and (instance.content_security_policy is defined and instance.content_security_policy or instance.content_security_policy is undefined) %}
+    ## see https://infosec.mozilla.org/guidelines/web_security#Content_Security_Policy
+    add_header Content-Security-Policy "{{ redmine_content_security_policy }}";
+{% endif %}
+{% if nginx_with_ssl %}
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header X-Forwarded-Ssl on;
+{% if nginx_force_ssl %}
+    add_header Strict-Transport-Security 'max-age=31536000; includeSubDomains; preload';
+{% endif %}
+{% endif %}
+    proxy_http_version 1.1;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+{% if nginx_with_proxy_forwarded_hosts | length>0 %}
+    proxy_set_header X-Forwarded-Host $forwarded_host;
+{% endif %}
+{% if nginx_with_proxy_forwarded_for %}
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+{% endif %}
+    proxy_pass {{ proxy_pass }};
+    proxy_redirect off;
+  }
