@@ -4,6 +4,10 @@
     ## see https://infosec.mozilla.org/guidelines/web_security#Content_Security_Policy
     add_header Content-Security-Policy "{{ redmine_content_security_policy }}";
 {% endif %}
+{% if with_connection_upgrade is defined and with_connection_upgrade %}
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+{% endif %}
 {% if nginx_with_ssl %}
     proxy_set_header X-Forwarded-Proto https;
     proxy_set_header X-Forwarded-Ssl on;

@@ -112,7 +112,7 @@ server {
   {% endwith %}
 
   {% if active_agile -%}
-  {% with puma_location="/rcrm_cable_agile", proxy_pass="http://{{ instance_name | replace('-', '_')}}/rcrm_cable_agile" %}
+  {% with with_connection_upgrade=true, puma_location="/rcrm_cable_agile", proxy_pass="http://{{ instance_name | replace('-', '_')}}/rcrm_cable_agile" %}
   {% include "puma.inc.j2" %}
   {% endwith %}
   {% endif %}
