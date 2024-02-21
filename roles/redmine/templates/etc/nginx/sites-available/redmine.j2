@@ -116,6 +116,7 @@ server {
   {% include "puma.inc.j2" %}
   {% endwith %}
   {% endif %}
+
   {% if instance.vhost_includes is defined -%}
   {% for include in instance.vhost_includes -%}
   include {{ include }}.conf;
