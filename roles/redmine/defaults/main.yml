@@ -61,6 +61,7 @@ redmine_with_memcache: true
 redmine_memcached_host: '127.0.0.1:11211'
 
 redmine_with_agile: false
+redmine_with_jemalloc: false
 
 account_migrate_to_new_home: true
 

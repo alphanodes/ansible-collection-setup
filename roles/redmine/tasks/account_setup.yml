@@ -11,6 +11,12 @@
     name: '{{ redmine_packages }}'
     state: present
 
+- name: Ensure jemalloc library is installed
+  ansible.builtin.apt:
+    name: libjemalloc2
+    state: present
+  when: redmine_with_jemalloc
+
 - name: Install ruby-dev if required
   ansible.builtin.apt:
     name: ruby-dev
