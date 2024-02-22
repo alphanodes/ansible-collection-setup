@@ -9,6 +9,9 @@ WorkingDirectory={{ redmine_app_dir }}
 Environment="RUBYOPT={{ redmine_ruby_opt }}"
 {% endif %}
 Environment=MALLOC_ARENA_MAX=2
+{% if redmine_with_jemalloc %}
+Environment="LD_PRELOAD=libjemalloc.so.2"
+{% endif %}
 Environment="RAILS_ROOT={{ redmine_app_dir }}"
 Environment="RAILS_ENV={{ redmine_rails_env }}"
 Environment="HOME={{ redmine_home }}"
