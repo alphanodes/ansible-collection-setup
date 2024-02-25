@@ -15,13 +15,11 @@ server {
 
   {% include 'templates/nginx_ssl.inc.j2' with context %}
 
-  # Referrer Policy
+  #  # Referrer Policy
   add_header Referrer-Policy 'no-referrer';
 
-
-  add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload";
-  add_header X-Frame-Options DENY;
-  add_header X-Content-Type-Options nosniff;
+  #  add_header X-Frame-Options DENY;
+  #  add_header X-Content-Type-Options nosniff;
 
   error_page 497  https://$host:$server_port$request_uri;
   location / {
