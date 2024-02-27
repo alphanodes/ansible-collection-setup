@@ -1,0 +1,16 @@
+---
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  when: not element_web_remove | bool
+  tags:
+    - element
+    - matrix
+
+- name: Include remove tasks
+  ansible.builtin.include_tasks: remove.yml
+  when: element_web_remove | bool
+  tags:
+    - element
+    - matrix
+    - remove

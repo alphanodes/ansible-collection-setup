@@ -5,3 +5,15 @@
     name: ethercalc
     state: stopped
     enabled: false
+
+- name: Remove configuration files
+  ansible.builtin.file:
+    name: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/nginx/sites-available/ethercalc.conf
+    - /etc/nginx/sites-enabled/ethercalc.conf
+    - /etc/systemd/system/ethercalc.service
+    - /etc/systemd/system/multi-user.target.wants/ethercalc.service
+  notify:
+    - Restart nginx

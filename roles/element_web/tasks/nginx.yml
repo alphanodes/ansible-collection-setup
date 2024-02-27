@@ -1,0 +1,71 @@
+---
+
+# restart required, because file can be not available before
+- name: Protect element web vhost user
+  community.general.htpasswd:
+    path: /etc/nginx/.htpasswd_element_web
+    name: '{{ item.user }}'
+    password: '{{ item.password }}'
+    owner: root
+    group: '{{ nginx_group }}'
+    mode: 0640
+  loop: '{{ element_web_vhost_users | default([]) }}'
+  when:
+    - element_web_vhost_users is defined
+    - element_web_vhost_users | length > 0
+  notify: Restart nginx
+
+- name: Remove .htpasswd_element_web, if no base auth is in use
+  ansible.builtin.file:
+    path: /etc/nginx/.htpasswd_element_web
+    state: absent
+  when: element_web_vhost_users | length < 1
+  notify: Restart nginx
+
+- name: Enable block
+  when: element_web_enabled
+  block:
+    - name: Set TLS files for letsencrypt
+      ansible.builtin.set_fact:
+        vhost_letsencrypt_cert: "{{ element_web_vhost_letsencrypt_cert }}"
+        vhost_letsencrypt_key: "{{ element_web_vhost_letsencrypt_key }}"
+        force_letsencrypt: true
+      when:
+        - element_web_vhost_letsencrypt is defined
+        - element_web_vhost_letsencrypt
+
+    - name: Check trusted TLS cert
+      ansible.builtin.stat:
+        path: /etc/ssl/certs/{{ element_web_vhost_ssl_cert }}_trusted.crt
+      register: trusted_cert
+      when: element_web_vhost_letsencrypt is undefined or not element_web_vhost_letsencrypt
+
+    - name: Set TLS files
+      ansible.builtin.set_fact:
+        vhost_ssl_cert: "{{ element_web_vhost_ssl_cert }}"
+        vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
+      when: element_web_vhost_letsencrypt is undefined or not element_web_vhost_letsencrypt
+
+    - name: Update element web vhost configuration
+      tags: nginx
+      ansible.builtin.template:
+        src: vhost.j2
+        dest: /etc/nginx/sites-available/element_web.conf
+        mode: 0644
+      notify: Reload nginx
+
+    - name: Enable element web vhost
+      tags: nginx
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/element_web.conf
+        dest: /etc/nginx/sites-enabled/element_web.conf
+        state: link
+      notify: Reload nginx
+
+- name: Disable block
+  when: not element_web_enabled
+  block:
+    - name: Ensure element_web vhost is disabled
+      ansible.builtin.file:
+        path: /etc/nginx/sites-enabled/element_web.conf
+        state: absent
