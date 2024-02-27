@@ -2,6 +2,11 @@
 
 # see https://github.com/matrix-org/dendrite
 
+# create user account with
+# /srv/dendrite/dendrite/bin/create-account --config /etc/dendrite/dendrite.yaml -username alex
+# create admin user account with
+# /srv/dendrite/dendrite/bin/create-account --config /etc/dendrite/dendrite.yaml -username alex -admin
+
 dendrite_repository: https://github.com/matrix-org/dendrite.git
 dendrite_version: 'v0.13.6'
 dendrite_force_rebuild: true
@@ -20,7 +25,8 @@ dendrite_db_name: dendrite
 dendrite_db_user: dendrite
 dendrite_db_password: '{{ [ansible_machine_id, ansible_hostname, "dendrite"] | join | hash("md5") }}'
 dendrite_db_role_flags: CREATEDB
-dendrite_db_host: /run/postgresql
+# dendrite_db_host: /run/postgresql
+dendrite_db_host: localhost
 
 dendrite_vhost_users: []
 dendrite_vhost_for_zabbix: false
@@ -85,6 +91,9 @@ dendrite_client_api_enable_registration_captcha: false
 dendrite_client_api_recaptcha_public_key: ""
 dendrite_client_api_recaptcha_private_key: ""
 dendrite_client_api_recaptcha_bypass_secret: ""
+# Persistent directory to store JetStream streams in. This directory should be
+# preserved across Dendrite restarts.
+dendrite_jetstream_storage_path: "{{ dendrite_home_dir }}/matrix-nats-store"
 # Storage path for uploaded media. May be relative or absolute.
 dendrite_media_api_base_path: "{{ dendrite_home_dir }}/media_store"
 # The maximum allowed file size (in bytes) for media uploads to this homeserver
