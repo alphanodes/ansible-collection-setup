@@ -1,0 +1,45 @@
+---
+
+- name: Include postgresql role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.postgresql
+
+- name: Create dendrite postgresql database user
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_user:
+    name: '{{ dendrite_db_user }}'
+    password: '{{ dendrite_db_password }}'
+    role_attr_flags: "{{ dendrite_db_role_flags | default('CREATEDB') }}"
+    state: present
+  no_log: true
+
+- name: Be sure pg_trgm extension exists
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_ext:
+    name: pg_trgm
+    db: template1
+
+- name: Be sure btree_gist extension exists
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_ext:
+    name: btree_gist
+    db: template1
+
+- name: Be sure plpgsql extension exists
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_ext:
+    name: plpgsql
+    db: template1
+
+- name: Be sure dendrite postgresql databases exists
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_db:
+    name: '{{ dendrite_db_name }}'
+    owner: '{{ dendrite_db_user }}'
+    template: template1
+    state: present

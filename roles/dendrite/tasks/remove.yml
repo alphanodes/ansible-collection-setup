@@ -1,0 +1,23 @@
+---
+
+- name: Remove element-web package
+  ansible.builtin.apt:
+    name: element-web
+    purge: true
+    state: absent
+
+- name: Remove element-web apt repository
+  ansible.builtin.deb822_repository:
+    name: element-web
+    state: absent
+
+- name: Remove configuration files
+  ansible.builtin.file:
+    name: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/nginx/sites-available/element-web.conf
+    - /etc/nginx/sites-enabled/element-web.conf
+    - /etc/element-web
+  notify:
+    - Restart nginx

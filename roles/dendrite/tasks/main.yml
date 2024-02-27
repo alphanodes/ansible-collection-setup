@@ -1,0 +1,24 @@
+---
+
+- name: Include PostgreSQL tasks
+  ansible.builtin.include_tasks: postgresql.yml
+  tags:
+    - dendrite
+    - matrix
+    - postgresql
+  when: not dendrite_remove | bool
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  when: not dendrite_remove | bool
+  tags:
+    - dendrite
+    - matrix
+
+- name: Include remove tasks
+  ansible.builtin.include_tasks: remove.yml
+  when: dendrite_remove | bool
+  tags:
+    - dendrite
+    - matrix
+    - remove

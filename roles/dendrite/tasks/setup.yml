@@ -1,0 +1,28 @@
+---
+
+- name: Ensure required packages are installed
+  ansible.builtin.apt:
+    name: "{{ dendrite_required_packages }}"
+    state: present
+
+- name: Include Go role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.golang
+  vars:
+    golang_version: '{{ dendrite_go_version | default(omit) }}'
+    golang_sha256_checksum: '{{ dendrite_go_sha256_checksum | default(omit) }}'
+
+- name: Ensure Element configuration installed
+  ansible.builtin.template:
+    src: config.json.j2
+    dest: /etc/element-web/config.json
+    mode: 0644
+    owner: root
+    group: root
+
+- name: Include nginx tasks
+  ansible.builtin.include_tasks: nginx.yml
+  when: not dendrite_remove | bool
+  tags:
+    - dendrite
+    - matrix
