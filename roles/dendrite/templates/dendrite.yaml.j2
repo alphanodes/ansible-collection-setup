@@ -112,7 +112,7 @@ global:
 
     # Persistent directory to store JetStream streams in. This directory should be
     # preserved across Dendrite restarts.
-    storage_path: ./
+    storage_path: {{ dendrite_jetstream_storage_path }}
 
     # The prefix to use for stream names for this homeserver - really only useful
     # if you are running more than one Dendrite server on the same NATS deployment.
@@ -162,7 +162,7 @@ client_api:
 
   # If set, allows registration by anyone who knows the shared secret, regardless
   # of whether registration is otherwise disabled.
-  registration_shared_secret: "{{ dendrite_client_api_registration_shared_secret }}"
+  registration_shared_secret: {{ dendrite_client_api_registration_shared_secret | string | to_json }}
 
   # Whether to require reCAPTCHA for registration. If you have enabled registration
   # then this is HIGHLY RECOMMENDED to reduce the risk of your homeserver being used

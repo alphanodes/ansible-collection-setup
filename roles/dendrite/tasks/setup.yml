@@ -29,22 +29,6 @@
     group: "{{ dendrite_service_group }}"
     mode: 0755
 
-- name: Make sure search index directory exists
-  ansible.builtin.file:
-    path: '{{ dendrite_sync_api_search_index_path }}'
-    state: directory
-    mode: 0775
-    owner: "{{ dendrite_service_user }}"
-    group: "{{ dendrite_service_group }}"
-
-- name: Make sure media directory exists
-  ansible.builtin.file:
-    path: '{{ dendrite_media_api_base_path }}'
-    state: directory
-    mode: 0770
-    owner: "{{ dendrite_service_user }}"
-    group: "{{ dendrite_service_group }}"
-
 - name: Make sure configuration directory exists
   ansible.builtin.file:
     path: '{{ dendrite_config_dir }}'
@@ -52,6 +36,18 @@
     mode: 0750
     owner: "{{ dendrite_service_user }}"
     group: "{{ dendrite_service_group }}"
+
+- name: Make sure data directories exist
+  ansible.builtin.file:
+    path: '{{ dendrite_sync_api_search_index_path }}'
+    state: directory
+    mode: 0775
+    owner: "{{ dendrite_service_user }}"
+    group: "{{ dendrite_service_group }}"
+  loop:
+    - '{{ dendrite_sync_api_search_index_path }}'
+    - '{{ dendrite_media_api_base_path }}'
+    - 'dendrite_jetstream_storage_path'
 
 - name: Include Go role
   ansible.builtin.include_role:
