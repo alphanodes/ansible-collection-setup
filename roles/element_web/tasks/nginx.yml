@@ -1,5 +1,14 @@
 ---
 
+- name: Include nginx role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nginx
+    public: true
+
+- name: Include ssl role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.ssl
+
 # restart required, because file can be not available before
 - name: Protect element web vhost user
   community.general.htpasswd:

@@ -2,37 +2,37 @@
 
 - name: Set TLS files for letsencrypt
   ansible.builtin.set_fact:
-    vhost_letsencrypt_cert: "{{ element_web_vhost_letsencrypt_cert }}"
-    vhost_letsencrypt_key: "{{ element_web_vhost_letsencrypt_key }}"
+    vhost_letsencrypt_cert: "{{ dendrite_vhost_letsencrypt_cert }}"
+    vhost_letsencrypt_key: "{{ dendrite_vhost_letsencrypt_key }}"
     force_letsencrypt: true
   when:
-    - element_web_vhost_letsencrypt is defined
-    - element_web_vhost_letsencrypt
+    - dendrite_vhost_letsencrypt is defined
+    - dendrite_vhost_letsencrypt
 
 - name: Check trusted TLS cert
   ansible.builtin.stat:
-    path: /etc/ssl/certs/{{ element_web_vhost_ssl_cert }}_trusted.crt
+    path: /etc/ssl/certs/{{ dendrite_vhost_ssl_cert }}_trusted.crt
   register: trusted_cert
-  when: element_web_vhost_letsencrypt is undefined or not element_web_vhost_letsencrypt
+  when: dendrite_vhost_letsencrypt is undefined or not dendrite_vhost_letsencrypt
 
 - name: Set TLS files
   ansible.builtin.set_fact:
-    vhost_ssl_cert: "{{ element_web_vhost_ssl_cert }}"
+    vhost_ssl_cert: "{{ dendrite_vhost_ssl_cert }}"
     vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
-  when: element_web_vhost_letsencrypt is undefined or not element_web_vhost_letsencrypt
+  when: dendrite_vhost_letsencrypt is undefined or not dendrite_vhost_letsencrypt
 
-- name: Update element web vhost configuration
+- name: Update Dendrite vhost configuration
   tags: nginx
   ansible.builtin.template:
     src: vhost.j2
-    dest: /etc/nginx/sites-available/element_web.conf
+    dest: /etc/nginx/sites-available/dendrite.conf
     mode: 0644
   notify: Reload nginx
 
-- name: Enable element web vhost
+- name: Enable Dendrite vhost
   tags: nginx
   ansible.builtin.file:
-    src: /etc/nginx/sites-available/element_web.conf
-    dest: /etc/nginx/sites-enabled/element_web.conf
+    src: /etc/nginx/sites-available/dendrite.conf
+    dest: /etc/nginx/sites-enabled/dendrite.conf
     state: link
   notify: Reload nginx

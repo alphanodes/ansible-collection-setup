@@ -1,0 +1,5 @@
+---
+
+dendrite_config_dir: /etc/dendrite
+dendrite_config_file: "{{ dendrite_config_dir }}/dendrite.yaml"
+dendrite_private_key_file: "{{ dendrite_config_dir }}/matrix_key.pem"

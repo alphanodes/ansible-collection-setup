@@ -10,41 +10,28 @@ version: 2
 # Global Matrix configuration. This configuration applies to all components.
 global:
   # The domain name of this homeserver.
-  server_name: localhost
+  server_name: {{ dendrite_server_name }}
 
   # The path to the signing private key file, used to sign requests and events.
   # Note that this is NOT the same private key as used for TLS! To generate a
   # signing key, use "./bin/generate-keys --private-key matrix_key.pem".
-  private_key: matrix_key.pem
-
-  # The paths and expiry timestamps (as a UNIX timestamp in millisecond precision)
-  # to old signing keys that were formerly in use on this domain name. These
-  # keys will not be used for federation request or event signing, but will be
-  # provided to any other homeserver that asks when trying to verify old events.
-  old_private_keys:
-  #  If the old private key file is available:
-  #  - private_key: old_matrix_key.pem
-  #    expired_at: 1601024554498
-  #  If only the public key (in base64 format) and key ID are known:
-  #  - public_key: mn59Kxfdq9VziYHSBzI7+EDPDcBS2Xl7jeUdiiQcOnM=
-  #    key_id: ed25519:mykeyid
-  #    expired_at: 1601024554498
+  private_key: {{ dendrite_private_key_file }}
 
   # How long a remote server can cache our server signing key before requesting it
   # again. Increasing this number will reduce the number of requests made by other
   # servers for our key but increases the period that a compromised key will be
   # considered valid by other homeservers.
-  key_validity_period: 168h0m0s
+  key_validity_period: {{ dendrite_key_validity_period }}
 
   # Global database connection pool, for PostgreSQL monolith deployments only. If
   # this section is populated then you can omit the "database" blocks in all other
   # sections. For monolith deployments using SQLite databases,
   # you must configure the "database" block for each component instead.
   database:
-    connection_string: postgresql://username:password@hostname/dendrite?sslmode=disable
-    max_open_conns: 90
-    max_idle_conns: 5
-    conn_max_lifetime: -1
+    connection_string: {{ dendrite_database_connection_string }}
+    max_open_conns: {{ dendrite_database_max_open_conns }}
+    max_idle_conns: {{ dendrite_database_max_idle_conns }}
+    conn_max_lifetime: {{ dendrite_database_conn_max_lifetime }}
 
   # Configuration for in-memory caches. Caches can often improve performance by
   # keeping frequently accessed items (like events, identifiers etc.) in memory
@@ -78,13 +65,11 @@ global:
 
   # Lists of domains that the server will trust as identity servers to verify third
   # party identifiers such as phone numbers and email addresses.
-  trusted_third_party_id_servers:
-    - matrix.org
-    - vector.im
+  trusted_third_party_id_servers: {{ dendrite_trusted_id_servers | to_json }}
 
   # Disables federation. Dendrite will not be able to communicate with other servers
   # in the Matrix federation and the federation API will not be exposed.
-  disable_federation: false
+  disable_federation: {{ (not dendrite_federation_enabled) | to_json }}
 
   # Configures the handling of presence events. Inbound controls whether we receive
   # presence events from other servers, outbound controls whether we send presence
@@ -135,17 +120,17 @@ global:
 
   # Configuration for Prometheus metric collection.
   metrics:
-    enabled: false
+    enabled: {{ 'true' if dendrite_metrics_enabled else 'false' }}
     basic_auth:
-      username: metrics
-      password: metrics
+      username: {{ dendrite_metrics_basic_auth_username }}
+      password: {{ dendrite_metrics_basic_auth_password }}
 
   # Optional DNS cache. The DNS cache may reduce the load on DNS servers if there
   # is no local caching resolver available for use.
   dns_cache:
-    enabled: false
-    cache_size: 256
-    cache_lifetime: "5m" # 5 minutes; https://pkg.go.dev/time@master#ParseDuration
+    enabled: {{ 'true' if dendrite_dns_cache_enabled else 'false' }}
+    cache_size: {{ dendrite_dns_cache_size }}
+    cache_lifetime: "{{ dendrite_cache_lifetime }}" # 5 minutes; https://pkg.go.dev/time@master#ParseDuration
 
 # Configuration for the Appservice API.
 app_service_api:
@@ -169,26 +154,26 @@ app_service_api:
 client_api:
   # Prevents new users from being able to register on this homeserver, except when
   # using the registration shared secret below.
-  registration_disabled: true
+  registration_disabled: {{ dendrite_client_api_registration_disabled | to_json }}
 
   # Prevents new guest accounts from being created. Guest registration is also
   # disabled implicitly by setting 'registration_disabled' above.
-  guests_disabled: true
+  guests_disabled: {{ dendrite_client_api_guests_disabled | to_json }}
 
   # If set, allows registration by anyone who knows the shared secret, regardless
   # of whether registration is otherwise disabled.
-  registration_shared_secret: ""
+  registration_shared_secret: "{{ dendrite_client_api_registration_shared_secret }}"
 
   # Whether to require reCAPTCHA for registration. If you have enabled registration
   # then this is HIGHLY RECOMMENDED to reduce the risk of your homeserver being used
   # for coordinated spam attacks.
-  enable_registration_captcha: false
+  enable_registration_captcha: {{ dendrite_client_api_enable_registration_captcha | to_json }}
 
   # Settings for ReCAPTCHA.
-  recaptcha_public_key: ""
-  recaptcha_private_key: ""
-  recaptcha_bypass_secret: ""
-  
+  recaptcha_public_key: "{{ dendrite_client_api_recaptcha_public_key }}"
+  recaptcha_private_key: "{{ dendrite_client_api_recaptcha_private_key }}"
+  recaptcha_bypass_secret: "{{ dendrite_client_api_recaptcha_bypass_secret }}"
+
   # To use hcaptcha.com instead of ReCAPTCHA, set the following parameters, otherwise just keep them empty.
   # recaptcha_siteverify_api: "https://hcaptcha.com/siteverify"
   # recaptcha_api_js_url: "https://js.hcaptcha.com/1/api.js"
@@ -258,18 +243,18 @@ federation_api:
 # Configuration for the Media API.
 media_api:
   # Storage path for uploaded media. May be relative or absolute.
-  base_path: ./media_store
+  base_path: {{ dendrite_media_api_base_path}}
 
   # The maximum allowed file size (in bytes) for media uploads to this homeserver
   # (0 = unlimited). If using a reverse proxy, ensure it allows requests at least
   #this large (e.g. the client_max_body_size setting in nginx).
-  max_file_size_bytes: 10485760
+  max_file_size_bytes: {{ dendrite_media_api_max_file_size_bytes }}
 
   # Whether to dynamically generate thumbnails if needed.
-  dynamic_thumbnails: false
+  dynamic_thumbnails: {{ dendrite_media_api_dynamic_thumbnails | to_json }}
 
   # The maximum number of simultaneous thumbnail generators to run.
-  max_thumbnail_generators: 10
+  max_thumbnail_generators: {{ dendrite_media_api_max_thumbnail_generators }}
 
   # A list of thumbnail sizes to be generated for media content.
   thumbnail_sizes:
@@ -298,15 +283,15 @@ sync_api:
   # Configuration for the full-text search engine.
   search:
     # Whether or not search is enabled.
-    enabled: false
+    enabled: {{ dendrite_sync_api_search_enabled | to_json }}
 
     # The path where the search index will be created in.
-    index_path: "./searchindex"
+    index_path: "{{ dendrite_sync_api_search_index_path }}"
 
     # The language most likely to be used on the server - used when indexing, to
     # ensure the returned results match expectations. A full list of possible languages
     # can be found at https://github.com/blevesearch/bleve/tree/master/analysis/lang
-    language: "en"
+    language: "{{ dendrite_sync_api_search_language }}"
 
 # Configuration for the User API.
 user_api:
@@ -357,8 +342,4 @@ tracing:
 # the disk. Supported log levels are "debug", "info", "warn", "error".
 logging:
   - type: std
-    level: info
-  - type: file
-    level: info
-    params:
-      path: ./logs
+    level: {{ dendrite_logging_level }}

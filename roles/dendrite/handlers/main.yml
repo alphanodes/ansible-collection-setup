@@ -1,0 +1,7 @@
+---
+# handlers/main.yml: Handlers for Dendrite.Ansible
+
+- name: Restart Dendrite
+  ansible.builtin.systemd:
+    name: dendrite
+    state: restarted

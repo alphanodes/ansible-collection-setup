@@ -1,14 +1,20 @@
 ---
 
-- name: Remove element-web package
-  ansible.builtin.apt:
-    name: element-web
-    purge: true
-    state: absent
+- name: Stop Dendrite, if started
+  ansible.builtin.systemd:
+    name: dendrite
+    state: stopped
+    enabled: false
 
-- name: Remove element-web apt repository
-  ansible.builtin.deb822_repository:
-    name: element-web
+- name: Remove Dendrite user
+  ansible.builtin.user:
+    name: '{{ dendrite_service_user }}'
+    state: absent
+    remove: true
+
+- name: Remove Dendrite group
+  ansible.builtin.group:
+    name: '{{ dendrite_service_group }}'
     state: absent
 
 - name: Remove configuration files
@@ -16,8 +22,15 @@
     name: '{{ item }}'
     state: absent
   loop:
-    - /etc/nginx/sites-available/element-web.conf
-    - /etc/nginx/sites-enabled/element-web.conf
-    - /etc/element-web
+    - /etc/nginx/sites-available/dendrite.conf
+    - /etc/nginx/sites-enabled/dendrite.conf
+    - /etc/systemd/system/dendrite.service
+    - /etc/systemd/system/multi-user.target.wants/dendrite.service
+    - /etc/dendrite
   notify:
     - Restart nginx
+
+- name: Remove Dendrite files
+  ansible.builtin.file:
+    path: '{{ dendrite_home_dir }}'
+    state: absent

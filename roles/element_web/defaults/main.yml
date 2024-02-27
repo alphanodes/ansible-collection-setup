@@ -13,7 +13,7 @@ element_web_apt_components: main
 
 element_web_path: /usr/share/element-web
 
-element_web_vhost_server: element.localhost
+element_web_vhost_server: '{{ ansible_host }}'
 element_web_vhost_users: []
 element_web_vhost_for_zabbix: false
 
@@ -22,6 +22,7 @@ element_web_vhost_ssl_cert: '{{ ssl_certs[0].name }}'
 element_web_vhost_letsencrypt_cert: '{{ letsencrypt_certs[0] | default(omit) }}'
 element_web_vhost_letsencrypt_key: '{{ letsencrypt_keys[0] | default(omit) }}'
 
+element_web_with_vhost: true
 element_web_enabled: true
 
 # do uninstall element web, set it to true
@@ -46,10 +47,10 @@ element_web_branding_welcome_background_url: ~  # noqa var-naming
 # Element public room directory server(s)
 element_web_room_directory_servers: ['matrix.org']
 # Branding of Element
-element_web_brand: 'AlphaNodes Element'
+element_web_brand: 'Matrix AlphaNodes'
 element_web_default_country_code: 'GB'
 element_web_default_theme: 'light'
 element_web_disable_custom_urls: false
-element_web_disable_guests: false
+element_web_disable_guests: true
 element_web_disable_login_language_selector: false
 element_web_disable_3pid_login: false

@@ -2,9 +2,19 @@
 
 # see https://github.com/matrix-org/dendrite
 
+dendrite_repository: https://github.com/matrix-org/dendrite.git
+dendrite_version: 'v0.13.6'
+dendrite_force_rebuild: true
+
 dendrite_required_packages: []
 
-dendrite_remove: false
+dendrite_service_user: dendrite
+dendrite_service_group: dendrite
+dendrite_service_limit_no_file: 65535
+dendrite_service_environment: []
+
+dendrite_home_dir: /srv/dendrite
+dendrite_app_dir: '{{ dendrite_home_dir }}/dendrite'
 
 dendrite_db_name: dendrite
 dendrite_db_user: dendrite
@@ -12,9 +22,76 @@ dendrite_db_password: '{{ [ansible_machine_id, ansible_hostname, "dendrite"] | j
 dendrite_db_role_flags: CREATEDB
 dendrite_db_host: /run/postgresql
 
+dendrite_vhost_users: []
+dendrite_vhost_for_zabbix: false
+
+dendrite_vhost_letsencrypt: false
+dendrite_vhost_ssl_cert: '{{ ssl_certs[0].name }}'
+dendrite_vhost_letsencrypt_cert: '{{ letsencrypt_certs[0] | default(omit) }}'
+dendrite_vhost_letsencrypt_key: '{{ letsencrypt_keys[0] | default(omit) }}'
+
 # see https://docs.gitlab.com/ee/install/installation.html#3-go
 # NOTE: version should be tests in gitlab pipeline
 # SEE https://gitlab.com/gitlab-org/gitlab/-/blob/master/.gitlab/ci/workhorse.gitlab-ci.yml#L30
 # https://go.dev/dl/ -> linux-amd64.tar.gz
 dendrite_go_version: '1.21.7'
 dendrite_go_sha256_checksum: a9bc1ccedbfde059f25b3a2ad81ae4cdf21192ae207dfd3ccbbfe99c3749e233
+
+dendrite_remove: false
+
+# NOTE: use it for element-web
+# dendrite_vhost_root: /usr/share/element-web
+
+# dendrite configuration
+dendrite_server_name: '{{ ansible_host }}'
+dendrite_database_connection_string: postgresql://{{ dendrite_db_name }}:{{ dendrite_db_password }}@{{ dendrite_db_host }}/{{ dendrite_db_name }}?sslmode=disable
+dendrite_database_max_open_conns: 90
+dendrite_database_max_idle_conns: 5
+dendrite_database_conn_max_lifetime: -1
+dendrite_trusted_id_servers:
+  - "matrix.org"
+  - "vector.im"
+dendrite_federation_enabled: true
+# Supported log levels are "debug", "info", "warn", "error".
+dendrite_logging_level: info
+dendrite_sync_api_search_enabled: false
+# The path where the search index will be created in.
+dendrite_sync_api_search_index_path: "{{ dendrite_home_dir }}/searchindex"
+dendrite_sync_api_search_language: en
+dendrite_key_validity_period: '168h0m0s'
+dendrite_metrics_enabled: false
+dendrite_metrics_basic_auth_username: metrics
+dendrite_metrics_basic_auth_password: metrics
+# Optional DNS cache. The DNS cache may reduce the load on DNS servers if there
+# is no local caching resolver available for use.
+dendrite_dns_cache_enabled: false
+dendrite_dns_cache_size: 256
+# 5 minutes; https://pkg.go.dev/time@master#ParseDuration
+dendrite_cache_lifetime: "5m"
+# Prevents new users from being able to register on this homeserver, except when
+# using the registration shared secret below.
+dendrite_client_api_registration_disabled: true
+# Prevents new guest accounts from being created. Guest registration is also
+# disabled implicitly by setting 'registration_disabled' above.
+dendrite_client_api_guests_disabled: true
+# If set, allows registration by anyone who knows the shared secret, regardless
+# of whether registration is otherwise disabled.
+dendrite_client_api_registration_shared_secret: ""
+# Whether to require reCAPTCHA for registration. If you have enabled registration
+# then this is HIGHLY RECOMMENDED to reduce the risk of your homeserver being used
+# for coordinated spam attacks.
+dendrite_client_api_enable_registration_captcha: false
+# Settings for ReCAPTCHA.
+dendrite_client_api_recaptcha_public_key: ""
+dendrite_client_api_recaptcha_private_key: ""
+dendrite_client_api_recaptcha_bypass_secret: ""
+# Storage path for uploaded media. May be relative or absolute.
+dendrite_media_api_base_path: "{{ dendrite_home_dir }}/media_store"
+# The maximum allowed file size (in bytes) for media uploads to this homeserver
+# (0 = unlimited). If using a reverse proxy, ensure it allows requests at least
+#this large (e.g. the client_max_body_size setting in nginx).
+dendrite_media_api_max_file_size_bytes: 10485760
+# Whether to dynamically generate thumbnails if needed.
+dendrite_media_api_dynamic_thumbnails: false
+# The maximum number of simultaneous thumbnail generators to run.
+dendrite_media_api_max_thumbnail_generators: 10

@@ -16,8 +16,9 @@
     name: '{{ item }}'
     state: absent
   loop:
-    - /etc/nginx/sites-available/element-web.conf
-    - /etc/nginx/sites-enabled/element-web.conf
+    - /etc/nginx/sites-available/element_web.conf
+    - /etc/nginx/sites-enabled/element_web.conf
     - /etc/element-web
   notify:
     - Restart nginx
+  ignore_errors: true

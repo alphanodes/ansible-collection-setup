@@ -33,4 +33,13 @@
 
 - name: Include nginx tasks
   ansible.builtin.include_tasks: nginx.yml
-  when: not element_web_remove | bool
+  when: element_web_with_vhost | bool
+
+- name: Remove vhost configuration if not activated
+  ansible.builtin.file:
+    name: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/nginx/sites-available/element_web.conf
+    - /etc/nginx/sites-enabled/element_web.conf
+  when: not element_web_with_vhost | bool
