@@ -1,8 +1,6 @@
 ---
 dependencies:
   - role: alphanodes.setup.common
-  - role: alphanodes.setup.ssl
-  - role: alphanodes.setup.nginx
 
 galaxy_info:
   description: Setup element-web

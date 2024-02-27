@@ -5,6 +5,54 @@
     name: "{{ dendrite_required_packages }}"
     state: present
 
+- name: Ensure the Dendrite service group is present
+  ansible.builtin.group:
+    name: "{{ dendrite_service_group }}"
+    state: present
+    system: true
+
+- name: Ensure the Dendrite service user is present
+  ansible.builtin.user:
+    comment: Dendrite Service User
+    name: "{{ dendrite_service_user }}"
+    group: "{{ dendrite_service_group }}"
+    home: "{{ dendrite_home_dir }}"
+    createhome: true
+    shell: /bin/false
+    state: present
+    system: true
+
+- name: Ensure home directory permission
+  ansible.builtin.file:
+    path: "{{ dendrite_home_dir }}"
+    owner: "{{ dendrite_service_user }}"
+    group: "{{ dendrite_service_group }}"
+    mode: 0755
+
+- name: Make sure search index directory exists
+  ansible.builtin.file:
+    path: '{{ dendrite_sync_api_search_index_path }}'
+    state: directory
+    mode: 0775
+    owner: "{{ dendrite_service_user }}"
+    group: "{{ dendrite_service_group }}"
+
+- name: Make sure media directory exists
+  ansible.builtin.file:
+    path: '{{ dendrite_media_api_base_path }}'
+    state: directory
+    mode: 0770
+    owner: "{{ dendrite_service_user }}"
+    group: "{{ dendrite_service_group }}"
+
+- name: Make sure configuration directory exists
+  ansible.builtin.file:
+    path: '{{ dendrite_config_dir }}'
+    state: directory
+    mode: 0750
+    owner: "{{ dendrite_service_user }}"
+    group: "{{ dendrite_service_group }}"
+
 - name: Include Go role
   ansible.builtin.include_role:
     name: alphanodes.setup.golang
@@ -12,13 +60,74 @@
     golang_version: '{{ dendrite_go_version | default(omit) }}'
     golang_sha256_checksum: '{{ dendrite_go_sha256_checksum | default(omit) }}'
 
-- name: Ensure Element configuration installed
+# see https://github.com/matrix-org/dendrite?tab=readme-ov-file#get-started
+- name: Ensure Dendrite is installed {{ dendrite_version }}
+  ansible.builtin.git:
+    repo: "{{ dendrite_repository }}"
+    dest: "{{ dendrite_app_dir }}"
+    version: "{{ dendrite_version }}"
+    force: true
+  register: dendrite_changed
+
+- name: Stats for dendrite bin
+  ansible.builtin.stat:
+    path: '{{ dendrite_app_dir }}/bin/dendrite'
+  register: dendrite_bin
+
+- name: Rebuild tasks
+  when: >
+    dendrite_changed.changed or
+    dendrite_force_rebuild or
+    not dendrite_bin.stat.exists
+  tags:
+    - skip_ansible_lint
+  block:
+    - name: Remove previous binaries
+      ansible.builtin.file:
+        name: "{{ dendrite_app_dir }}/bin }}"
+        state: absent
+
+    - name: Build Dendrite
+      ansible.builtin.command: go build -o bin/ ./cmd/...
+      retries: 3
+      delay: 5
+      args:
+        chdir: "{{ dendrite_app_dir }}"
+
+- name: Ensure Dendrite configuration installed
   ansible.builtin.template:
-    src: config.json.j2
-    dest: /etc/element-web/config.json
-    mode: 0644
+    src: dendrite.yaml.j2
+    dest: '{{ dendrite_config_file }}'
+    mode: 0640
+    owner: "{{ dendrite_service_user }}"
+    group: "{{ dendrite_service_group }}"
+
+- name: Create private matrix signing key for federation
+  ansible.builtin.command: "{{ dendrite_app_dir }}/bin/generate-keys --private-key {{ dendrite_private_key_file }}"
+  args:
+    creates: "{{ dendrite_private_key_file }}"
+  become_user: "{{ dendrite_service_user }}"
+  become: true
+
+- name: Create Dendrite systemd service
+  ansible.builtin.template:
+    src: dendrite.service.j2
+    dest: /etc/systemd/system/dendrite.service
     owner: root
     group: root
+    mode: 0644
+  notify:
+    - Reload systemd daemon
+    - Restart dendrite
+
+- name: Flush all handlers at this point
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure Dendrite is enabled and started at boot.
+  ansible.builtin.systemd:
+    name: dendrite
+    state: started
+    enabled: true
 
 - name: Include nginx tasks
   ansible.builtin.include_tasks: nginx.yml

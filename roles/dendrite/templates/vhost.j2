@@ -1,0 +1,76 @@
+{{ ansible_managed | comment }}
+# nginx dendrite configuration
+
+upstream dendrite {
+  server 127.0.0.1:8008;
+}
+
+server {
+  listen 443 {{ nginx_ssl_listen_option }};
+{% if nginx_with_ipv6 %}
+  listen [::]:443 {{ nginx_ssl_listen_option }};
+{% endif %}
+  server_name {{ dendrite_server_name }};
+{% if dendrite_vhost_root is defined %}
+  root {{ dendrite_vhost_root }};
+{% endif %}
+
+  {% include 'templates/nginx_ssl.inc.j2' with context %}
+
+  proxy_set_header Host      $host;
+  proxy_set_header X-Real-IP $remote_addr;
+  proxy_read_timeout         600;
+
+  location /.well-known/matrix/server {
+      default_type application/json;
+      return 200 '{ "m.server": "matrix.example.org:443" }';
+  }
+
+  location /.well-known/matrix/client {
+      default_type application/json;
+      return 200 '{ "m.homeserver": { "base_url": "https://matrix.example.org" } }';
+      add_header "Access-Control-Allow-Origin" *;
+  }
+
+  location /_matrix {
+      proxy_pass http://dendrite;
+  }
+
+  {% include 'templates/nginx_error_handler_static.inc.j2' with context %}
+
+  {% if dendrite_vhost_includes is defined -%}
+  {% for include in dendrite_vhost_includes -%}
+  include {{ include }}.conf;
+  {% endfor %}
+  {% endif %}
+
+}
+
+server {
+  listen 80;
+{% if nginx_with_ipv6 %}
+  listen [::]:80;
+{% endif %}
+  server_name {{ dendrite_server_name }};
+  return 301 https://{{ dendrite_server_name }}$request_uri;
+}
+
+{% if dendrite_redirects is defined -%}
+server {
+  server_name {{ dendrite_redirects | join(' ') }};
+  listen 80;
+  listen 443 {{ nginx_ssl_listen_option }};
+{% if nginx_with_ipv6 %}
+  listen [::]:80;
+  listen [::]:443 {{ nginx_ssl_listen_option }};
+{% endif %}
+
+  {% include 'templates/nginx_ssl.inc.j2' with context %}
+
+  return 301 https://{{ dendrite_server_name }}$request_uri;
+}
+{% endif %}
+
+{% if dendrite_vhost_for_zabbix %}
+{% include 'templates/nginx_monitoring.inc.j2' with context %}
+{% endif %}

@@ -1,0 +1,20 @@
+[Unit]
+Description=Dendrite Server
+After=syslog.target
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+SyslogIdentifier=Dendrite
+User={{ dendrite_service_user }}
+Group={{ dendrite_service_group }}
+LimitNOFILE={{ dendrite_service_limit_no_file }}
+{% for item in dendrite_service_environment %}
+Environment={{ item.name }}={{ item.value }}
+{% endfor -%}
+WorkingDirectory={{ dendrite_app_dir }}
+ExecStart={{ dendrite_app_dir }}/bin/dendrite --config {{ dendrite_config_file }}
+
+[Install]
+WantedBy=multi-user.target

@@ -1,11 +1,12 @@
 ---
 dependencies:
   - role: alphanodes.setup.common
+    public: true
   - role: alphanodes.setup.ssl
   - role: alphanodes.setup.nginx
 
 galaxy_info:
-  description: Setup element-web
+  description: Setup matrix homeserver Dendrite
   author: alexandermeindl
   company: AlphaNodes GmbH
   license: Apache License 2.0

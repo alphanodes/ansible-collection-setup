@@ -14,20 +14,6 @@
     state: present
   no_log: true
 
-- name: Be sure pg_trgm extension exists
-  become_user: postgres
-  become: true
-  community.postgresql.postgresql_ext:
-    name: pg_trgm
-    db: template1
-
-- name: Be sure btree_gist extension exists
-  become_user: postgres
-  become: true
-  community.postgresql.postgresql_ext:
-    name: btree_gist
-    db: template1
-
 - name: Be sure plpgsql extension exists
   become_user: postgres
   become: true
