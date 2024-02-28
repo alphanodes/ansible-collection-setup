@@ -5,6 +5,7 @@
 
 unbound_packages:
   - unbound
+  - unbound-anchor
   # for dig
   - bind9-dnsutils
 
