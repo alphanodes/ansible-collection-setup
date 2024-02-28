@@ -63,6 +63,9 @@ dendrite_trusted_id_servers:
 dendrite_federation_enabled: true
 # Supported log levels are "debug", "info", "warn", "error".
 dendrite_logging_level: info
+# Configuration for enabling experimental MSCs on this homeserver.
+#  - msc2836  # (Threading, see https://github.com/matrix-org/matrix-doc/pull/2836)
+dendrite_mscs: []
 dendrite_sync_api_search_enabled: true
 # The path where the search index will be created in.
 dendrite_sync_api_search_index_path: "{{ dendrite_home_dir }}/searchindex"
