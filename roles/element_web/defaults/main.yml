@@ -50,9 +50,9 @@ element_web_features: []
 element_web_map_style_url: "https://api.maptiler.com/maps/streets/style.json?key=fU3vlMsMn4Jb6dnEIFsx"
 # Branding of Element
 element_web_brand: 'Matrix AlphaNodes'
-element_web_default_country_code: 'GB'
+element_web_default_country_code: 'DE'
 element_web_default_theme: 'light'
-element_web_disable_custom_urls: false
+element_web_disable_custom_urls: true
 element_web_disable_guests: true
 element_web_disable_login_language_selector: false
 element_web_disable_3pid_login: false
