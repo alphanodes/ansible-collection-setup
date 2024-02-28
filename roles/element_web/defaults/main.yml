@@ -46,6 +46,8 @@ element_web_branding_auth_header_logo_url: "themes/element/img/logos/element-log
 element_web_branding_welcome_background_url: ~  # noqa var-naming
 # Element public room directory server(s)
 element_web_room_directory_servers: ['matrix.org']
+element_web_features: []
+element_web_map_style_url: "https://api.maptiler.com/maps/streets/style.json?key=fU3vlMsMn4Jb6dnEIFsx"
 # Branding of Element
 element_web_brand: 'Matrix AlphaNodes'
 element_web_default_country_code: 'GB'
