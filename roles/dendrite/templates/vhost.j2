@@ -28,8 +28,8 @@ server {
 
   location /.well-known/matrix/client {
       default_type application/json;
-      return 200 '{ "m.homeserver": { "base_url": "{{ dendrite_server_name }}" } }';
       add_header "Access-Control-Allow-Origin" *;
+      return 200 '{ "m.homeserver": { "base_url": "https://{{ dendrite_server_name }}" } }';
   }
 
   location /_matrix {

@@ -25,6 +25,7 @@ dendrite_db_name: dendrite
 dendrite_db_user: dendrite
 dendrite_db_password: '{{ [ansible_machine_id, ansible_hostname, "dendrite"] | join | hash("md5") }}'
 dendrite_db_role_flags: CREATEDB
+# TODO: socket does not work at the moment
 # dendrite_db_host: /run/postgresql
 dendrite_db_host: localhost
 
@@ -43,6 +44,7 @@ dendrite_vhost_letsencrypt_key: '{{ letsencrypt_keys[0] | default(omit) }}'
 dendrite_go_version: '1.21.7'
 dendrite_go_sha256_checksum: a9bc1ccedbfde059f25b3a2ad81ae4cdf21192ae207dfd3ccbbfe99c3749e233
 
+dendrite_with_validation: true
 dendrite_remove: false
 
 # NOTE: use it for element-web
@@ -50,7 +52,7 @@ dendrite_remove: false
 
 # dendrite configuration
 dendrite_server_name: '{{ ansible_host }}'
-dendrite_database_connection_string: postgresql://{{ dendrite_db_name }}:{{ dendrite_db_password }}@{{ dendrite_db_host }}/{{ dendrite_db_name }}?sslmode=disable
+dendrite_database_connection_string: postgresql://{{ dendrite_db_name }}:{{ dendrite_db_password }}@{{ dendrite_db_host | replace('/', '%2F') }}/{{ dendrite_db_name }}?sslmode=disable
 dendrite_database_max_open_conns: 90
 dendrite_database_max_idle_conns: 5
 dendrite_database_conn_max_lifetime: -1
@@ -63,7 +65,7 @@ dendrite_logging_level: info
 dendrite_sync_api_search_enabled: false
 # The path where the search index will be created in.
 dendrite_sync_api_search_index_path: "{{ dendrite_home_dir }}/searchindex"
-dendrite_sync_api_search_language: en
+dendrite_sync_api_search_language: de
 dendrite_key_validity_period: '168h0m0s'
 dendrite_metrics_enabled: false
 dendrite_metrics_basic_auth_username: metrics
