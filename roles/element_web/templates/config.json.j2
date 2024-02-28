@@ -24,7 +24,7 @@
     ],
     "default_country_code": {{ element_web_default_country_code | string | to_json }},
     "show_labs_settings": {{ element_web_show_lab_settings | to_json }},
-    "features": {},
+    "features": {{ element_web_features | to_json }},
     "default_federate": true,
     "default_theme": {{ element_web_default_theme | string | to_json }},
     "room_directory": {
@@ -50,5 +50,5 @@
         "participant_limit": 8,
         "brand": "Element Call"
     },
-    "map_style_url": "https://api.maptiler.com/maps/streets/style.json?key=fU3vlMsMn4Jb6dnEIFsx"
+    "map_style_url": {{ element_web_map_style_url | to_json }}
 }
