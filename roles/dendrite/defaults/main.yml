@@ -63,6 +63,7 @@ dendrite_trusted_id_servers:
 dendrite_federation_enabled: true
 # Supported log levels are "debug", "info", "warn", "error".
 dendrite_logging_level: info
+dendrite_real_ip_header: "X-Real-IP"
 dendrite_presence_enable_inbound: false
 dendrite_presence_enable_outbound: true
 # Configuration for enabling experimental MSCs on this homeserver.
