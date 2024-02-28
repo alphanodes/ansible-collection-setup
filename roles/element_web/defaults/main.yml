@@ -55,4 +55,4 @@ element_web_default_theme: 'light'
 element_web_disable_custom_urls: false
 element_web_disable_guests: true
 element_web_disable_login_language_selector: false
-element_web_disable_3pid_login: true
+element_web_disable_3pid_login: false
