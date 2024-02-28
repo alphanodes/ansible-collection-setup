@@ -1,0 +1,30 @@
+---
+
+# Use this for a test: https://federationtester.matrix.org/
+
+
+- name: Get API information
+  ansible.builtin.uri:
+    url: 'https://{{ dendrite_server_name }}/_matrix/federation/v1/version'
+    return_content: true
+  register: json_reponse
+
+- name: Output of json_reponse
+  ansible.builtin.debug:
+    var: json_reponse
+
+# if this variables no exists, an error should occur
+- name: Assign variables
+  ansible.builtin.set_fact:
+    found_server: '{{ json_reponse.json.server.name }}'
+    found_version: '{{ json_reponse.json.server.version }}'
+
+- name: Check found_server
+  ansible.builtin.fail:
+    msg: found_server is '{{ found_server }}'', but it should be 'Dendrite'
+  when: found_server != 'Dendrite'
+
+- name: Check found_version
+  ansible.builtin.fail:
+    msg: found_version is empty,but shouldn't
+  when: found_version | length == 0
