@@ -6,7 +6,7 @@
     state: present
 
 - name: Update root anchor
-  ansible.builtin.command: unbound-anchor
+  ansible.builtin.command: unbound-anchor -a /var/lib/unbound/root.key
   register: unbound_anchor_rc
   changed_when: unbound_anchor_rc.rc == 1
   failed_when: unbound_anchor_rc.rc > 1
