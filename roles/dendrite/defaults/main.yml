@@ -59,6 +59,7 @@ dendrite_database_conn_max_lifetime: -1
 dendrite_trusted_id_servers:
   - "matrix.org"
   - "vector.im"
+  - "matrix.alphanodes.com"
 dendrite_federation_enabled: true
 # Supported log levels are "debug", "info", "warn", "error".
 dendrite_logging_level: info
