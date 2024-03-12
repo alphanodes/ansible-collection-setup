@@ -19,11 +19,12 @@ matomo_available_plugins:
     download: https://github.com/matomo-org/plugin-LoginLdap/archive/%%version%%.tar.gz
     version: 5.0.5
     branch: 5.0.5
-  LoginShibboleth:
+  MarketingCampaignsReporting:
     use_git: true
-    repo: https://github.com/uniwue-rz/LoginShibboleth.git
-    download: https://github.com/uniwue-rz/LoginShibboleth/archive/%%version%%.tar.gz
-    version: 1.3.1
+    repo: https://github.com/matomo-org/plugin-MarketingCampaignsReporting.git
+    download: https://github.com/matomo-org/plugin-MarketingCampaignsReporting/archive/%%version%%.tar.gz
+    version: 5.0.2
+    branch: 5.0.2
   Migration:
     use_git: true
     repo: https://github.com/matomo-org/plugin-Migration.git
