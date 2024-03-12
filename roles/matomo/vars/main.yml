@@ -12,7 +12,7 @@ matomo_available_plugins:
     use_git: false
     repo: https://github.com/matomo-org/plugin-QueuedTracking.git
     download: https://github.com/matomo-org/plugin-QueuedTracking/archive/%%version%%.tar.gz
-    version: 5.0.2
+    version: 5.0.3
   LoginLdap:
     use_git: true
     repo: https://github.com/matomo-org/plugin-LoginLdap.git
@@ -28,7 +28,7 @@ matomo_available_plugins:
     use_git: true
     repo: https://github.com/matomo-org/plugin-Migration.git
     download: https://github.com/matomo-org/plugin-Migration/archive/%%version%%.tar.gz
-    version: 5.0.1
+    version: 5.0.2
   Provider:
     use_git: true
     repo: https://github.com/matomo-org/plugin-Provider.git
@@ -38,4 +38,4 @@ matomo_available_plugins:
     use_git: true
     repo: https://github.com/matomo-org/plugin-SecurityInfo.git
     download: https://github.com/matomo-org/plugin-SecurityInfo/archive/%%version%%.tar.gz
-    version: 5.0.1
+    version: 5.0.2
