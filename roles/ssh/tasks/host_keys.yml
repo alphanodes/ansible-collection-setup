@@ -28,21 +28,24 @@
     name: '{{ item }}'
     state: absent
   loop:
-    - '{{ inventory_hostname }}'
-    - "`dig +short {{ inventory_hostname }}`"
+    - '{{ ansible_host }}'
+    - "`dig +short {{ ansible_host }}`"
   delegate_to: localhost
 
-# ip address with custom ssh port is not supported at the moment
-- name: Collect new host entries for known_hosts file
-  ansible.builtin.shell: "ssh-keyscan -t ed25519,rsa {{ inventory_hostname }},`dig +short {{ inventory_hostname }}`"
-  register: ssh_known_host_results
-  ignore_errors: true
-  delegate_to: localhost
+- name: add host keys
+  when: ansible_host != ip_address_v4 and (ext_ip_address_v4 is undefined or ansible_host != ext_ip_address_v4)
+  block:
+    # ip address with custom ssh port is not supported at the moment
+    - name: Collect new host entries for known_hosts file
+      ansible.builtin.shell: "ssh-keyscan -t ed25519,rsa {{ ansible_host }},`dig +short {{ ansible_host }}`"
+      register: ssh_known_host_results
+      ignore_errors: true
+      delegate_to: localhost
 
-- name: Add new host key to known_hosts file
-  ansible.builtin.known_hosts:
-    name: '{{ inventory_hostname }}'
-    key: '{{ ssh_known_host_results.stdout }}'
-    state: present
-  delegate_to: localhost
-  when: ssh_known_host_results.stdout | length > 0
+    - name: Add new host key to known_hosts file
+      ansible.builtin.known_hosts:
+        name: '{{ ansible_host }}'
+        key: '{{ ssh_known_host_results.stdout }}'
+        state: present
+      delegate_to: localhost
+      when: ssh_known_host_results.stdout | length > 0

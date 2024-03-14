@@ -13,7 +13,7 @@ ansible_node_playbook_galaxy_script: "{{ ansible_pip_venv_path + '/bin/ansible-g
 # and all playbooks in files/playbooks/IDENTIFIER/ are copied to /etc/ansible/playbooks.
 # The host file and the playbooks directory has to be exist, if identifier is specified.
 # Default identifier is 'inventory_hostname'
-# Set it to '', if you do not want it (like on pm)
+# Set it to '', if you do not want it (like on alphanodes-pm)
 ansible_node_identifier: '{{ inventory_hostname }}'
 
 # Roles to install (only done, if ansible_node_identifier != '')

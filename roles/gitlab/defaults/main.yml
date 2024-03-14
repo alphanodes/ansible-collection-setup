@@ -292,4 +292,3 @@ gitlab_backup_pg_schema: public
 
 gitlab_monitoring_ip_whitelist:
   - 127.0.0.0/8
-  - '{{ lxc_internal_subnet }}'
