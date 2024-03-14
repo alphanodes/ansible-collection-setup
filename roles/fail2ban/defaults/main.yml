@@ -31,7 +31,7 @@ fail2ban_ignore_ips:
   - '{{ backup_ip_address_v4 }}/32'
   - '{{ ext_ip_address_v4 | default(ip_address_v4) }}/32'
   - '{{ hostvars["alphanodes-broker"].ip_address_v4 }}/32'
-  - '{{ hostvars["alphanodes-git"].ip_address_v4 }}/32'
+  - '{{ hostvars["alphanodes-gitlab"].ip_address_v4 }}/32'
   - '{{ hostvars["alphanodes-monitor"].ip_address_v4 }}/32'
 fail2ban_destemail: "{{ alphanodes_support_mail | default('root@localhost') }}"
 fail2ban_action: "%(action_)s"
