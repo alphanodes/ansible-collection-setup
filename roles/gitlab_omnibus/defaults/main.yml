@@ -1,0 +1,89 @@
+gitlab_required_packages:
+  - gitlab-ee
+
+gitlab_config_file: /etc/gitlab/gitlab.rb
+
+gitlab_vhost_server: git.alphanodes.com
+
+gitlab_external_url: 'https://{{ gitlab_vhost_server }}'
+
+gitlab_email_display_name: Gitlab
+gitlab_email_from: 'git@{{ gitlab_vhost_server }}'
+gitlab_email_reply_to: 'noreply@{{ gitlab_vhost_server }}'
+
+gitlab_default_theme: 2
+
+gitlab_default_projects_features_issues: false
+gitlab_default_projects_features_merge_requests: true
+gitlab_default_projects_features_wiki: false
+gitlab_default_projects_features_snippets: false
+gitlab_default_projects_features_builds: true
+gitlab_default_projects_features_container_registry: true
+
+gitlab_issue_closing_pattern: '\b((?:[Cc]los(?:e[sd]?|ing)|\b[Ff]ix(?:e[sd]|ing)?|\b[Rr]esolv(?:e[sd]?|ing)|\b[Ii]mplement(?:s|ed|ing)?)(:?) +(?:(?:issues? +)?%{issue_ref}(?:(?:, *| +and +)?)|([A-Z][A-Z0-9_]+-\d+))+)'
+
+gitlab_manage_backup_path: true
+gitlab_backup_path: /var/opt/gitlab/backups
+gitlab_backup_pg_schema: public
+gitlab_backup_archive_permissions: '0644'
+gitlab_backup_keep_time: 604800
+
+# Passthrough all downloads via GitLab instead of using Redirects to Object Storage.
+# ? https://docs.gitlab.com/ee/administration/object_storage.html#proxy-download
+gitlab_object_store_proxy_download: true
+
+gitlab_object_store_consolidated: true
+
+gitlab_artifacts_enabled: true
+gitlab_artifacts_object_store: false
+gitlab_artifacts_object_store_bucket: gl-artifacts
+
+gitlab_external_diffs_enabled: false
+gitlab_external_diffs_object_store: false
+gitlab_external_diffs_object_store_bucket: gl-diffs
+
+gitlab_lfs_enabled: true
+gitlab_lfs_storage_path: shared/lfs-objects
+gitlab_lfs_object_store: false
+gitlab_lfs_object_store_bucket: gl-lfs
+
+gitlab_uploads_storage_path: public/
+gitlab_uploads_object_store: false
+gitlab_uploads_object_store_bucket: gl-uploads
+
+gitlab_packages_enabled: false
+gitlab_packages_storage_path: shared/packages
+gitlab_packages_object_store: false
+gitlab_packages_object_store_bucket: gl-packages
+
+gitlab_ci_secure_files_enabled: true
+gitlab_ci_secure_files_storage_path: shared/ci_secure_files
+gitlab_ci_secure_files_object_store: false
+gitlab_ci_secure_files_object_store_bucket: gl-ci-secure-files
+
+gitlab_dependency_proxy_object_store: false
+gitlab_dependency_proxy_object_store_bucket: gl-proxy
+
+gitlab_terraform_state_enabled: true
+gitlab_terraform_object_store: false
+gitlab_terraform_object_store_bucket: gl-terraform
+
+gitlab_pages_enabled: false
+gitlab_pages_storage_path: shared/pages
+gitlab_pages_local_storage: true
+gitlab_pages_repository: https://gitlab.com/gitlab-org/gitlab-pages.git
+gitlab_pages_path: "{{ gitlab_home }}/gitlab-pages"
+gitlab_pages_secret_path: "{{ gitlab_path }}/.gitlab_pages_secret"
+gitlab_pages_domain: ''
+gitlab_pages_domain_ssl_cert: '{{ ssl_certs[1].name | default(ssl_certs[0].name) }}'
+
+gitlab_pages_artifacts_server: true
+gitlab_pages_object_store: false
+gitlab_pages_object_store_bucket: gl-pages
+
+gitlab_ldap_enabled: false
+gitlab_ldap_prevent_ldap_sign_in: false
+gitlab_ldap_server:
+  label: 'LDAP'
+
+gitlab_force_reconfigure: true

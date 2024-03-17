@@ -1,0 +1,25 @@
+---
+
+- name: Set activ_object_store_consolidated
+  ansible.builtin.set_fact:
+    activ_object_store_consolidated: "{{ gitlab_object_store_consolidated and gitlab_object_store_connection | length > 1 }}"
+
+- name: Ensure required packages are installed
+  ansible.builtin.apt:
+    name: "{{ gitlab_required_packages }}"
+    state: present
+  notify: Reconfigure GitLab
+
+- name: Ensure gitlab.rb configuration is latest
+  ansible.builtin.template:
+    src: gitlab.rb.j2
+    dest: "{{ gitlab_config_file }}"
+    owner: root
+    group: root
+    mode: 0600
+  register: config_change
+  notify: Reconfigure GitLab
+
+- name: Force reconfigure GitLab
+  ansible.builtin.command: gitlab-ctl reconfigure
+  when: gitlab_force_reconfigure and not config_change.changed
