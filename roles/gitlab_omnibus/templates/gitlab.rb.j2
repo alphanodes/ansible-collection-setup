@@ -1676,7 +1676,7 @@ gitlab_rails['backup_keep_time'] = {{ gitlab_backup_keep_time }}
 
 # nginx['enable'] = true
 # nginx['client_max_body_size'] = '250m'
-# nginx['redirect_http_to_https'] = false
+nginx['redirect_http_to_https'] = true
 # nginx['redirect_http_to_https_port'] = 80
 
 ##! Most root CA's are included by default
@@ -1695,7 +1695,7 @@ gitlab_rails['backup_keep_time'] = {{ gitlab_backup_keep_time }}
 
 ##! **Recommended by: https://raymii.org/s/tutorials/Strong_SSL_Security_On_nginx.html
 ##!                   https://cipherli.st/**
-# nginx['ssl_protocols'] = "TLSv1.2 TLSv1.3"
+nginx['ssl_protocols'] = "TLSv1.3"
 
 ##! **Recommended in: https://nginx.org/en/docs/http/ngx_http_ssl_module.html**
 # nginx['ssl_session_cache'] = "shared:SSL:10m"
