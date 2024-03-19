@@ -90,4 +90,4 @@ gitlab_ldap_prevent_ldap_sign_in: false
 gitlab_ldap_server:
   label: 'LDAP'
 
-gitlab_force_reconfigure: true
+gitlab_force_reconfigure: false
