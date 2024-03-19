@@ -32,6 +32,8 @@ gitlab_nginx_listen_addresses:
   - '*'
   - '[::]'
 
+gitlab_registry_nginx_listen_addresses: '{{ gitlab_nginx_listen_addresses }}'
+
 # Passthrough all downloads via GitLab instead of using Redirects to Object Storage.
 # ? https://docs.gitlab.com/ee/administration/object_storage.html#proxy-download
 gitlab_object_store_proxy_download: true
