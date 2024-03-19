@@ -2085,6 +2085,8 @@ gitlab_pages['artifacts_server'] = {{ gitlab_pages_artifacts_server | to_json }}
 # `nginx['some_setting']` WILL NOT be automatically replicated as
 # `pages_nginx['some_setting']` and should be set separately.
 
+pages_nginx['listen_addresses'] = {{ gitlab_pages_nginx_listen_addresses | to_json }}
+
 # Below you can find settings that are exclusive to "GitLab Pages NGINX"
 # pages_nginx['enable'] = true
 
