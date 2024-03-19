@@ -28,6 +28,10 @@ gitlab_backup_pg_schema: public
 gitlab_backup_archive_permissions: '0644'
 gitlab_backup_keep_time: 604800
 
+gitlab_nginx_listen_addresses:
+  - '*'
+  - '[::]'
+
 # Passthrough all downloads via GitLab instead of using Redirects to Object Storage.
 # ? https://docs.gitlab.com/ee/administration/object_storage.html#proxy-download
 gitlab_object_store_proxy_download: true

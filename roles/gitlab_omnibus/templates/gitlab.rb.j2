@@ -962,7 +962,7 @@ gitlab_rails['backup_keep_time'] = {{ gitlab_backup_keep_time }}
 ##! Docs: https://docs.gitlab.com/ee/administration/packages/container_registry.html
 ################################################################################
 
-# registry_external_url 'https://registry.example.com'
+#registry_external_url 'https://registry.example.com'
 
 ### Settings used by GitLab application
 # gitlab_rails['registry_enabled'] = true
@@ -1708,7 +1708,7 @@ nginx['ssl_protocols'] = "TLSv1.3"
 
 # nginx['ssl_dhparam'] = nil # Path to dhparams.pem, eg. /etc/gitlab/ssl/dhparams.pem
 # nginx['ssl_password_file'] = nil # Path to file with passphrases for ssl certificate secret keys
-# nginx['listen_addresses'] = ['*', '[::]']
+nginx['listen_addresses'] = {{ gitlab_nginx_listen_addresses | to_json }}
 
 ##! **Defaults to forcing web browsers to always communicate using only HTTPS**
 ##! Docs: https://docs.gitlab.com/omnibus/settings/nginx.html#setting-http-strict-transport-security
