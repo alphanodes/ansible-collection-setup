@@ -2277,6 +2277,8 @@ gitlab_pages['artifacts_server'] = {{ gitlab_pages_artifacts_server | to_json }}
 # `nginx['some_setting']` WILL NOT be automatically replicated as
 # `registry_nginx['some_setting']` and should be set separately.
 
+registry_nginx['listen_addresses'] = {{ gitlab_registry_nginx_listen_addresses | to_json }}
+
 # Below you can find settings that are exclusive to "Registry NGINX"
 # registry_nginx['enable'] = false
 
