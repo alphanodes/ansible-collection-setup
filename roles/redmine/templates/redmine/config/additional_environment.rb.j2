@@ -21,6 +21,11 @@ config.cache_store = :mem_cache_store, '{{ instance.memcached_host | default(red
                                                             compress: true,
                                                             pool_size: {{ instance.db_pool | default(real_redmine_db_pool) }} }
 {% endif %}
+{% if instance.with_dmsf is defined and instance.with_dmsf %}
+# Redmine DMSF's WebDAV
+require File.dirname(__FILE__) + '/plugins/redmine_dmsf/lib/redmine_dmsf/webdav/custom_middleware'
+config.middleware.insert_before ActionDispatch::Cookies, RedmineDmsf::Webdav::CustomMiddleware
+{% endif %}
 {% if redmine_with_nginx and nginx_with_ssl and redmine_rails_env != 'test' %}
 
 config.session_store :cookie_store,
