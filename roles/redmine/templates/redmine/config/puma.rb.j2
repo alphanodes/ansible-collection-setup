@@ -13,6 +13,9 @@ threads {{ instance.puma_min_threads | default(redmine_puma_min_threads) }}, {{ 
 {% if real_redmine_puma_workers | int > 3 %}
 wait_for_less_busy_worker
 {% endif %}
+{% if instance.with_dmsf is defined and instance.with_dmsf %}
+supported_http_methods(Puma::Const::SUPPORTED_HTTP_METHODS + ['PROPFIND', 'PROPPATCH', 'MKCOL', 'COPY', 'MOVE', 'LOCK', 'UNLOCK'])
+{% endif %}
 
 # @see https://www.rubydoc.info/gems/puma/Puma%2FDSL:worker_timeout
 worker_timeout {{ redmine_puma_worker_timeout }}
