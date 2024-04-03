@@ -16,6 +16,12 @@
     name: '{{ nginx_packages }}'
     state: present
 
+- name: Ensure webdav package is installed
+  ansible.builtin.apt:
+    name: libnginx-mod-http-dav-ext
+    state: present
+  when: nginx_with_webdav
+
 - name: Update nginx.conf
   ansible.builtin.template:
     src: nginx.j2

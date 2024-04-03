@@ -111,6 +111,10 @@ vhost_ssl_cert: '{{ ssl_certs[0].name | default(omit) }}'
 
 nginx_with_websocket: false
 
+# see https://github.com/puma/puma/issues/3014
+# https://msp-greg.github.io/puma/Puma/DSL.html#supported_http_methods-instance_method
+nginx_with_webdav: false
+
 nginx_disable_modules: []
 
 # example:
