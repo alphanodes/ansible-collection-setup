@@ -32,7 +32,7 @@
     - "`dig +short {{ ansible_host }}`"
   delegate_to: localhost
 
-- name: add host keys
+- name: Add host keys
   when: ansible_host != ip_address_v4 and (ext_ip_address_v4 is undefined or ansible_host != ext_ip_address_v4)
   block:
     # ip address with custom ssh port is not supported at the moment
