@@ -43,7 +43,7 @@ dendrite_vhost_letsencrypt_key: '{{ letsencrypt_keys[0] | default(omit) }}'
 # https://go.dev/dl/ -> linux-amd64.tar.gz
 dendrite_go_version: '1.21.9'
 # linux-arm64.tar.gz
-dendrite_go_sha256_checksum: f76194c2dc607e0df4ed2e7b825b5847cb37e34fc70d780e2f6c7e805634a7ea
+dendrite_go_sha256_checksum: 4d169d9cf3dde1692b81c0fd9484fa28d8bc98f672d06bf9db9c75ada73c5fbc
 
 dendrite_with_validation: true
 dendrite_remove: false
