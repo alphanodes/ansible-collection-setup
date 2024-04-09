@@ -8,7 +8,7 @@
 # /srv/dendrite/dendrite/bin/create-account --config /etc/dendrite/dendrite.yaml -username alex -admin
 
 dendrite_repository: https://github.com/matrix-org/dendrite.git
-dendrite_version: 'v0.13.6'
+dendrite_version: 'v0.13.7'
 dendrite_force_rebuild: true
 
 dendrite_required_packages: []
