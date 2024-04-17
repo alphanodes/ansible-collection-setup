@@ -9,6 +9,14 @@
     zsh_user_home: '{{ instance.dir }}'
   when: drupal_with_zsh and instance.drupal_user is defined
 
+- name: Set drupal home dir permission - {{ instance.name }}
+  ansible.builtin.file:
+    path: '{{ instance.dir }}{{ item }}'
+    owner: '{{ instance.drupal_user }}'
+    group: '{{ instance.drupal_group | default(nginx_group) }}'
+    state: directory
+  when: instance.drupal_user is defined and instance.drupal_user != 'root'
+
 - name: Include mysql tasks
   ansible.builtin.include_tasks: instance_mysql.yml
   tags: mysql

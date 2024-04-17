@@ -16,3 +16,9 @@
   ignore_errors: true
   become: true
   become_user: '{{ zsh_user }}'
+
+- name: Set zsh as default shell
+  user:
+    name: "{{ ansible_user | default(ansible_env.USER) }}"
+    shell: /usr/bin/zsh
+  when: zsh_default_shell
