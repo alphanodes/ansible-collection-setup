@@ -23,6 +23,8 @@ zsh_user: root
 zsh_global_exports: []
 zsh_local_exports: []
 
+zsh_history_ignore: "(ls|ll|lk|cd|pwd|exit|reboot|history|u|cd ..)"
+
 zsh_global_env:
   - alias df='df -h'
   - alias lsn='ls --color=no'
