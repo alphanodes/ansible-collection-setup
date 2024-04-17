@@ -30,15 +30,18 @@ zsh_local_exports: []
 zsh_history_ignore: "(ls|ll|lk|cd|pwd|exit|reboot|history|u|cd ..)"
 
 zsh_global_env:
+  - alias ch='rm -f ~/.zsh_history && rm -f ~/.bash_history'
   - alias df='df -h'
-  - alias lsn='ls --color=no'
-  - alias ls='ls --color'
+  - alias egrep='egrep --color=auto'
+  - alias free='free -m'
+  - alias grep='grep --color=auto'
   - alias l='ls -lhA'
   - alias lk='apt list --installed "linux*"'
   - alias ll='ls -lah'
+  - alias ls='ls --color'
+  - alias lsn='ls --color=no'
   - alias lss='ls -oaShr'
   - alias lst='ls -oathr'
-  - alias ch='rm -f ~/.zsh_history && rm -f ~/.bash_history'
 
 zsh_histsize: 1000
 
