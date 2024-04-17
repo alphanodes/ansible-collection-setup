@@ -29,7 +29,7 @@ nginx_server_names_hash_bucket_size: 64
 nginx_client_max_body_size: 52M
 nginx_fastcgi_read_timeout: 60
 nginx_fastcgi_send_timeout: 60
-nginx_remove_default_vhost: false
+nginx_remove_default_vhost: true
 
 nginx_vhost_with_access_log: true
 

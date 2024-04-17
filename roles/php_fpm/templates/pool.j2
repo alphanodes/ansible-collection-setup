@@ -2,7 +2,7 @@
 ; Start a new pool named 'www'.
 ; the variable $pool can be used in any directive and will be replaced by the
 ; pool name ('www' here)
-[{{ item.name if item is defined else 'www' }}]
+[{{ item.name if item is defined else php_fpm_pool_name }}]
 
 ; Per pool prefix
 ; It only applies on the following directives:
@@ -21,8 +21,8 @@
 ; Unix user/group of processes
 ; Note: The user is mandatory. If the group is not set, the default user's group
 ;       will be used.
-user = {{ item.user | default(item.name) if item is defined else nginx_user }}
-group = {{ item.user | default(item.name) if item is defined else nginx_group }}
+user = {{ item.user | default(item.name) if item is defined else php_fpm_pool_user }}
+group = {{ item.user | default(item.name) if item is defined else php_fpm_pool_group }}
 
 ; The address on which to accept FastCGI requests.
 ; Valid syntaxes are:
@@ -392,7 +392,7 @@ ping.response = pong
 ; Setting to "no" will make all environment variables available to PHP code
 ; via getenv(), $_ENV and $_SERVER.
 ; Default Value: yes
-;clear_env = no
+clear_env = {{ 'yes 'if php_fpm_pool_clear_env else 'no' }}
 
 ; Limits the extensions of the main script FPM will allow to parse. This can
 ; prevent configuration mistakes on the web server side. You should only limit
@@ -410,13 +410,11 @@ env[PATH] = /usr/local/bin:/usr/bin:/bin
 env[TMP] = /tmp
 env[TMPDIR] = /tmp
 env[TEMP] = /tmp
-{% if php_fpm_environment_variables is defined -%}
-
+{% if php_fpm_environment_variables is defined %}
 {% for environment_variables in php_fpm_environment_variables %}
 env[{{ environment_variables.name }}] = {{ environment_variables.value }}
 {% endfor %}
-
-{% endif -%}
+{% endif %}
 
 ; Additional php.ini defines, specific to this pool of workers. These settings
 ; overwrite the values previously defined in the php.ini. The directives are the

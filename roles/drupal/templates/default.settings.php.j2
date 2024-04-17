@@ -1,0 +1,233 @@
+<?php
+/**
+ * {{ ansible_managed }}
+ */
+
+/**
+ * Database settings:
+ */
+ $databases = array (
+   'default' =>
+   array (
+     'default' =>
+     array (
+       'database' => '{{ instance.db_name | default(instance.name) | replace('-', '_') }}',
+       'username' => '{{ instance.db_user | default(instance.name) | replace('-', '_') }}',
+       'password' => '{{ instance.db_password | default(drupal_db_password) }}',
+       'host' => '{{ instance.db_host | default(drupal_db_host) }}',
+       'port' => '{{ instance.db_port | default(drupal_db_port) }}',
+       'namespace' => 'Drupal\\Core\\Database\\Driver\\{{ instance.db_driver | default(drupal_db_driver) }}',
+       'driver' => '{{ instance.db_driver | default(drupal_db_driver) }}',
+       'prefix' => '{{ instance.db_prefix | default(drupal_db_prefix) }}',
+       'collation' => '{{ instance.db_collation | default(drupal_db_collation) }}',
+     ),
+   ),
+ );
+
+/**
+ * Location of the site configuration files.
+ *
+ * The $config_directories array specifies the location of file system
+ * directories used for configuration data. On install, the "sync" directory is
+ * created. This is used for configuration imports. The "active" directory is
+ * not created by default since the default storage for active configuration is
+ * the database rather than the file system. (This can be changed. See "Active
+ * configuration settings" below).
+ *
+ * The default location for the "sync" directory is inside a randomly-named
+ * directory in the public files path. The setting below allows you to override
+ * the "sync" location.
+ *
+ * If you use files for the "active" configuration, you can tell the
+ * Configuration system where this directory is located by adding an entry with
+ * array key CONFIG_ACTIVE_DIRECTORY.
+ *
+ * Example:
+ * @code
+ *   $config_directories = array(
+ *     CONFIG_SYNC_DIRECTORY => '/directory/outside/webroot',
+ *   );
+ * @endcode
+ */
+$config_directories = array(CONFIG_SYNC_DIRECTORY => '{{ instance.config_sync_directory | default(instance.dir + '/config') }}');
+
+$settings['config_sync_directory'] = '{{ instance.config_sync_directory | default(instance.dir + '/config') }}';
+
+/**
+ * The active installation profile.
+ *
+ * Changing this after installation is not recommended as it changes which
+ * directories are scanned during extension discovery. If this is set prior to
+ * installation this value will be rewritten according to the profile selected
+ * by the user.
+ *
+ * @see install_select_profile()
+ */
+$settings['install_profile'] = 'standard';
+
+/**
+ * Salt for one-time login links, cancel links, form tokens, etc.
+ *
+ * This variable will be set to a random value by the installer. All one-time
+ * login links will be invalidated if the value is changed. Note that if your
+ * site is deployed on a cluster of web servers, you must ensure that this
+ * variable has the same value on each server.
+ *
+ * For enhanced security, you may set this variable to the contents of a file
+ * outside your document root; you should also ensure that this file is not
+ * stored with backups of your database.
+ *
+ * Example:
+ * @code
+ *   $settings['hash_salt'] = file_get_contents('/home/example/salt.txt');
+ * @endcode
+ */
+$settings['hash_salt'] = '{{ instance.hash_salt | default(drupal_hash_salt) }}';
+
+/**
+ * Deployment identifier.
+ *
+ * Drupal's dependency injection container will be automatically invalidated and
+ * rebuilt when the Drupal core version changes. When updating contributed or
+ * custom code that changes the container, changing this identifier will also
+ * allow the container to be invalidated as soon as code is deployed.
+ */
+$settings['deployment_identifier'] = \Drupal::VERSION;
+
+/**
+ * Access control for update.php script.
+ *
+ * If you are updating your Drupal installation using the update.php script but
+ * are not logged in using either an account with the "Administer software
+ * updates" permission or the site maintenance account (the account that was
+ * created during installation), you will need to modify the access check
+ * statement below. Change the FALSE to a TRUE to disable the access check.
+ * After finishing the upgrade, be sure to open this file again and change the
+ * TRUE back to a FALSE!
+ */
+$settings['update_free_access'] = FALSE;
+
+/**
+ * Reverse Proxy Configuration:
+ *
+ * Reverse proxy servers are often used to enhance the performance
+ * of heavily visited sites and may also provide other site caching,
+ * security, or encryption benefits. In an environment where Drupal
+ * is behind a reverse proxy, the real IP address of the client should
+ * be determined such that the correct client IP address is available
+ * to Drupal's logging, statistics, and access management systems. In
+ * the most simple scenario, the proxy server will add an
+ * X-Forwarded-For header to the request that contains the client IP
+ * address. However, HTTP headers are vulnerable to spoofing, where a
+ * malicious client could bypass restrictions by setting the
+ * X-Forwarded-For header directly. Therefore, Drupal's proxy
+ * configuration requires the IP addresses of all remote proxies to be
+ * specified in $settings['reverse_proxy_addresses'] to work correctly.
+ *
+ * Enable this setting to get Drupal to determine the client IP from
+ * the X-Forwarded-For header (or $settings['reverse_proxy_header'] if set).
+ * If you are unsure about this setting, do not have a reverse proxy,
+ * or Drupal operates in a shared hosting environment, this setting
+ * should remain commented out.
+ *
+ * In order for this setting to be used you must specify every possible
+ * reverse proxy IP address in $settings['reverse_proxy_addresses'].
+ * If a complete list of reverse proxies is not available in your
+ * environment (for example, if you use a CDN) you may set the
+ * $_SERVER['REMOTE_ADDR'] variable directly in settings.php.
+ * Be aware, however, that it is likely that this would allow IP
+ * address spoofing unless more advanced precautions are taken.
+ */
+# $settings['reverse_proxy'] = TRUE;
+
+{% if instance.reverse_proxy_addresses is defined -%}
+
+$settings['reverse_proxy'] = TRUE;
+$settings['reverse_proxy_addresses'] = array(
+{% for proxy_address in instance.reverse_proxy_addresses %}
+  '{{ proxy_address }}',
+{% endfor -%}
+);
+
+{% endif -%}
+
+/**
+ * Private file path:
+ *
+ * A local file system path where private files will be stored. This directory
+ * must be absolute, outside of the Drupal installation directory and not
+ * accessible over the web.
+ *
+ * Note: Caches need to be cleared when this value is changed to make the
+ * private:// stream wrapper available to the system.
+ *
+ * See https://www.drupal.org/documentation/modules/file for more information
+ * about securing private files.
+ */
+
+$settings['file_private_path'] = '{{ file_private_path }}';
+
+{% if instance.tmp_dir is defined -%}
+
+$config['system.file']['path']['temporary'] = '{{ instance.dir }}{{ instance.tmp_dir }}';
+
+$settings['file_temp_path'] = '{{ instance.dir }}{{ instance.tmp_dir }}';
+
+{% endif -%}
+
+/**
+ * A custom theme for the offline page:
+ *
+ * This applies when the site is explicitly set to maintenance mode through the
+ * administration page or when the database is inactive due to an error.
+ * The template file should also be copied into the theme. It is located inside
+ * 'core/modules/system/templates/maintenance-page.html.twig'.
+ *
+ * Note: This setting does not apply to installation and update pages.
+ */
+ {% if instance.maintenance_theme is defined and instance.maintenance_theme != '' %}
+ $settings['maintenance_theme'] = '{{ instance.maintenance_theme }}';
+ {% endif %}
+
+/**
+ * Load services definition file.
+ */
+$settings['container_yamls'][] = __DIR__ . '/services.yml';
+
+/**
+ * Override the default service container class.
+ *
+ * This is useful for example to trace the service container for performance
+ * tracking purposes, for testing a service container with an error condition or
+ * to test a service container that throws an exception.
+ */
+# $settings['container_base_class'] = '\Drupal\Core\DependencyInjection\Container';
+
+ {% if instance.trusted_host_patterns is defined %}
+ $settings['trusted_host_patterns'] = array(
+ {% for host_pattern in instance.trusted_host_patterns %}
+   '{{ host_pattern }}',
+ {% endfor %}
+ );
+ {% endif %}
+
+/**
+ * The default list of directories that will be ignored by Drupal's file API.
+ *
+ * By default ignore node_modules and bower_components folders to avoid issues
+ * with common frontend tools and recursive scanning of directories looking for
+ * extensions.
+ *
+ * @see file_scan_directory()
+ * @see \Drupal\Core\Extension\ExtensionDiscovery::scanDirectory()
+ */
+$settings['file_scan_ignore_directories'] = [
+  'node_modules',
+  'bower_components',
+];
+
+{% if instance.custom_conf is defined %}
+{% for custom_conf in instance.custom_conf %}
+{{ custom_conf }}
+{% endfor %}
+{% endif %}
