@@ -34,13 +34,13 @@
     force: true
   when: instance.repo is defined
   become: '{{ true if instance.drupal_user is defined else false }}'
-  become_user: '{{ instance.drupal_user | default('') }}'
+  become_user: '{{ instance.drupal_user | default("") }}'
   register: git_result
 
 - name: Run post commands
   ansible.builtin.command: "{{ item | replace('[drush]', '{{ instance.drush_path | default(drupal_drush_path) }} @{{ instance.name }}') }}"
   become: '{{ true if instance.drupal_user is defined else false }}'
-  become_user: '{{ instance.drupal_user | default('') }}'
+  become_user: '{{ instance.drupal_user | default("") }}'
   loop: "{{ instance.post_commands }}"
   when:
     - git_result.changed
