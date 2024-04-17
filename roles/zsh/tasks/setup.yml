@@ -37,9 +37,3 @@
     src: auto-ls.zsh
     dest: '{{ auto_ls_plugin_file }}'
     mode: 0644
-
-- name: Set zsh as default shell
-  user:
-    name: "{{ ansible_user | default(ansible_env.USER) }}"
-    shell: /usr/bin/zsh
-  when: zsh_default_shell
