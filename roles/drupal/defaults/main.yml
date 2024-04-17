@@ -11,8 +11,6 @@ drupal_vhost_dir: '/htdocs'
 drupal_vhost_for_zabbix: false
 drupal_vhost_default: false
 
-drupal_major_version: 7
-
 # drupal_db_name: item.name
 # drupal_db_user: item.name
 drupal_db_password: '{{ [ansible_machine_id, ansible_hostname, "drupal"] | join | hash("md5") }}'

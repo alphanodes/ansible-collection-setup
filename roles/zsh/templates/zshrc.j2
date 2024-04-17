@@ -88,6 +88,8 @@ eval `dircolors /etc/DIR_COLORS`
 alias u="apt update && apt upgrade"
 {% endif %}
 
+export HISTORY_IGNORE="(ls|lk|cd|pwd|exit|reboot|history|u|cd ..)"
+
 {% if zsh_with_rvm %}
 # Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
 export PATH="$PATH:$HOME/.rvm/bin"

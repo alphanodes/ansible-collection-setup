@@ -12,6 +12,12 @@ php_fpm_pm_max_spare_servers: 5
 php_fpm_pm_status_path: /php_status
 php_fpm_ping_path: /php_ping
 
+php_fpm_pool_name: www
+php_fpm_pool_user: '{{ nginx_user }}'
+php_fpm_pool_group: '{{ nginx_group }}'
+
+php_fpm_pool_clear_env: false
+
 php_date_timezone: '{{ ntp_timezone }}'
 php_disable_functions: "pcntl_alarm,pcntl_fork,pcntl_waitpid,pcntl_wait,pcntl_wifexited,pcntl_wifstopped,pcntl_wifsignaled,pcntl_wexitstatus,pcntl_wtermsig,pcntl_wstopsig,pcntl_signal,pcntl_signal_dispatch,pcntl_get_last_error,pcntl_strerror,pcntl_sigprocmask,pcntl_sigwaitinfo,pcntl_sigtimedwait,pcntl_exec,pcntl_getpriority,pcntl_setpriority"
 php_error_log: syslog
