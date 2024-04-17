@@ -98,7 +98,7 @@ export PATH="$PATH:$HOME/.rvm/bin"
 # Add vendor bin directory with composer usage.
 export PATH="$PATH:$HOME/vendor/bin"
 {% endif %}
-{% for exportwith_composer_info in zsh_global_exports %}
+{% for export_info in zsh_global_exports %}
 export {{ export_info.name }}={{ export_info.value }}
 {% endfor %}
 {% for export_info in zsh_local_exports %}
