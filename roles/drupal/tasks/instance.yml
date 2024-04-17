@@ -85,7 +85,7 @@
     group: '{{ nginx_group }}'
     recurse: true
 
-- name: Update settings.php for Drupal 8 - {{ instance.name }}
+- name: Update settings.php for Drupal - {{ instance.name }}
   ansible.builtin.template:
     src: default.settings.php.j2
     dest: "{{ instance.dir }}{{ instance.vhost_dir | default(drupal_vhost_dir) }}/sites/default/settings.php"
