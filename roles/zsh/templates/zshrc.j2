@@ -94,7 +94,11 @@ export HISTORY_IGNORE="{{ zsh_history_ignore }}"
 # Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
 export PATH="$PATH:$HOME/.rvm/bin"
 {% endif %}
-{% for export_info in zsh_global_exports %}
+{% if zsh_with_composer %}
+# Add vendor bin directory with composer usage.
+export PATH="$PATH:$HOME/vendor/bin"
+{% endif %}
+{% for exportwith_composer_info in zsh_global_exports %}
 export {{ export_info.name }}={{ export_info.value }}
 {% endfor %}
 {% for export_info in zsh_local_exports %}

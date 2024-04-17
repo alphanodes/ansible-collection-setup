@@ -27,6 +27,8 @@ drupal_base_url: ''
 drupal_maintenance_theme: ''
 drupal_fast_404: false
 
+# instance.drupal_user is required for zsh, too
+drupal_with_zsh: true
 drupal_with_memcache: false
 drupal_memcache_module: sites/all/modules/contrib/memcache
 drupal_memcache_prefix: drupal

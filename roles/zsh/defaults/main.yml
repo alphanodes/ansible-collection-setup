@@ -12,12 +12,16 @@ zsh_with_zshrc: true
 zsh_with_ruby: false
 # with active rvm
 zsh_with_rvm: false
+# for composer vendor suport (drupal)
+zsh_with_composer: false
 zsh_with_completions: true
 zsh_with_powerlevel10k: true
 zsh_powerlevel10k_packages:
   - fonts-powerline
 
 zsh_user: root
+
+zsh_default_shell: true
 
 # used in .zshrc
 zsh_global_exports: []
