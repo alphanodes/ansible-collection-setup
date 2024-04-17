@@ -11,7 +11,7 @@
 
 - name: Set drupal home dir permission - {{ instance.name }}
   ansible.builtin.file:
-    path: '{{ instance.dir }}{{ item }}'
+    path: '{{ instance.dir }}'
     owner: '{{ instance.drupal_user }}'
     group: '{{ instance.drupal_group | default(nginx_group) }}'
     state: directory
