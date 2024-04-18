@@ -32,11 +32,23 @@ Environment="{{ item.name }}={{ item.value }}"
 WorkingDirectory={{ timer.working_directory }}
 {% endif %}
 {% if timer.exec_start_pre is defined %}
+{% if timer.exec_start_pre is iterable and timer.exec_start_pre is not string %}
+{% for item in timer.exec_start_pre %}
+ExecStartPre={{ item }}
+{% endfor %}
+{% else %}
 ExecStartPre={{ timer.exec_start_pre }}
+{% endif %}
 {% endif %}
 ExecStart={{ timer.exec_start }}
 {% if timer.exec_start_post is defined %}
+{% if timer.exec_start_post is iterable and timer.exec_start_post is not string %}
+{% for item in timer.exec_start_post %}
+ExecStartPost={{ item }}
+{% endfor %}
+{% else %}
 ExecStartPost={{ timer.exec_start_post }}
+{% endif %}
 {% endif %}
 {% if timer.syslog_identifier is defined %}
 SyslogIdentifier={{ timer.syslog_identifier }}
