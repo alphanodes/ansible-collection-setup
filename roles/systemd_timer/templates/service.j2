@@ -16,7 +16,7 @@ After={{ timer.after_service }}
 {% endif %}
 
 [Service]
-Type=oneshot
+Type={{ timer.type | default('oneshot') }}
 {% if timer.user is defined %}
 User={{ timer.user }}
 {% endif %}
