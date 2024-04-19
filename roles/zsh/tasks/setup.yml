@@ -28,12 +28,8 @@
     state: directory
     recurse: true
 
-- name: Set auto-ls plugin file
-  ansible.builtin.set_fact:
-    auto_ls_plugin_file: '/usr/share/alphanodes/zsh/auto-ls.zsh'
-
 - name: Install auto-ls plugin
   ansible.builtin.copy:
     src: auto-ls.zsh
-    dest: '{{ auto_ls_plugin_file }}'
+    dest: '{{zsh_auto_ls_plugin_file }}'
     mode: 0644
