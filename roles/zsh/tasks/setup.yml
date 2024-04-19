@@ -31,5 +31,5 @@
 - name: Install auto-ls plugin
   ansible.builtin.copy:
     src: auto-ls.zsh
-    dest: '{{zsh_auto_ls_plugin_file }}'
+    dest: '{{ zsh_auto_ls_plugin_file }}'
     mode: 0644

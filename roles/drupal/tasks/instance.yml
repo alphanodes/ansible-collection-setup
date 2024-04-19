@@ -14,6 +14,7 @@
     path: '{{ instance.dir }}'
     owner: '{{ instance.drupal_user }}'
     group: '{{ instance.drupal_group | default(nginx_group) }}'
+    mode: '0755'
     state: directory
   when: instance.drupal_user is defined and instance.drupal_user != 'root'
 
