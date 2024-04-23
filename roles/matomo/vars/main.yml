@@ -12,31 +12,31 @@ matomo_available_plugins:
     use_git: false
     repo: https://github.com/matomo-org/plugin-QueuedTracking.git
     download: https://github.com/matomo-org/plugin-QueuedTracking/archive/%%version%%.tar.gz
-    version: 5.0.3
+    version: 5.0.4
   LoginLdap:
     use_git: true
     repo: https://github.com/matomo-org/plugin-LoginLdap.git
     download: https://github.com/matomo-org/plugin-LoginLdap/archive/%%version%%.tar.gz
-    version: 5.0.5
-    branch: 5.0.5
+    version: 5.0.6
+    branch: 5.0.6
   MarketingCampaignsReporting:
     use_git: true
     repo: https://github.com/matomo-org/plugin-MarketingCampaignsReporting.git
     download: https://github.com/matomo-org/plugin-MarketingCampaignsReporting/archive/%%version%%.tar.gz
-    version: 5.0.2
-    branch: 5.0.2
+    version: 5.0.4
+    branch: 5.0.4
   Migration:
     use_git: true
     repo: https://github.com/matomo-org/plugin-Migration.git
     download: https://github.com/matomo-org/plugin-Migration/archive/%%version%%.tar.gz
-    version: 5.0.2
+    version: 5.0.3
   Provider:
     use_git: true
     repo: https://github.com/matomo-org/plugin-Provider.git
     download: https://github.com/matomo-org/plugin-Provider/archive/%%version%%.tar.gz
-    version: 5.0.2
+    version: 5.0.3
   SecurityInfo:
     use_git: true
     repo: https://github.com/matomo-org/plugin-SecurityInfo.git
     download: https://github.com/matomo-org/plugin-SecurityInfo/archive/%%version%%.tar.gz
-    version: 5.0.2
+    version: 5.0.3
