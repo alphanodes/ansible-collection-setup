@@ -21,7 +21,7 @@ ExecStart={{ gitlab_workhorse_path }}/gitlab-workhorse \
   -authSocket {{ gitlab_auth_socket }} \
   -documentRoot {{ gitlab_path }}/public \
   -secretPath {{ gitlab_path }}/.gitlab_workhorse_secret
-ExecReload=/bin/kill -USR2 $MAINPID
+ExecReload=/usr/bin/kill -USR2 $MAINPID
 Restart=on-failure
 RestartSec={{ gitlab_systemd_restart_sec }}
 SyslogIdentifier=gitlab-workhorse

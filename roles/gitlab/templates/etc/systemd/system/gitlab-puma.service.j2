@@ -29,7 +29,7 @@ ExecStart={{ gitlab_gem_home }}/bin/bundle exec puma --config {{ gitlab_path }}/
 PIDFile={{ gitlab_pid_path }}/puma.pid
 Restart=on-failure
 RestartSec={{ gitlab_systemd_restart_sec }}
-ExecReload=/bin/kill -USR2 $MAINPID
+ExecReload=/usr/bin/kill -USR2 $MAINPID
 SyslogIdentifier=gitlab-puma
 Slice=gitlab.slice
 

@@ -26,10 +26,8 @@ ExecStart={{ redmine_home }}/.rvm/wrappers/default/bundle exec puma --config {{ 
 {% else %}
 Environment="GEM_HOME={{ redmine_ruby_system_gem_home }}"
 ExecStart={{ redmine_ruby_system_gem_home }}/bin/bundle exec puma --config {{ redmine_config_dir }}/puma.rb
-{% if active_puma_worker_killer|bool %}
-ExecReload=/bin/kill -USR2 $MAINPID
 {% endif %}
-{% endif %}
+ExecReload=/usr/bin/kill -USR2 $MAINPID
 SyslogIdentifier={{ puma_service_name }}
 Restart=on-failure
 RestartSec=30
