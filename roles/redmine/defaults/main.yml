@@ -61,7 +61,6 @@ redmine_with_memcache: true
 redmine_memcached_host: '127.0.0.1:11211'
 
 redmine_with_agile: false
-redmine_with_jemalloc: false
 
 account_migrate_to_new_home: true
 
@@ -89,9 +88,12 @@ redmine_puma_max_threads: 5
 
 redmine_puma_worker_timeout: 60
 
+# if true, you should use redmine_puma_worker_killer: false
+redmine_with_jemalloc: true
+
 # @see https://github.com/schneems/puma_worker_killer#configure
 # this is false automatically, if redmine_puma_workers < 2
-redmine_puma_worker_killer: true
+redmine_puma_worker_killer: '{{ false if redmine_with_jemalloc else true }}'
  # mb
 redmine_puma_worker_killer_ram: '{{ ansible_memtotal_mb | int }}'
 # 12 hours in seconds
