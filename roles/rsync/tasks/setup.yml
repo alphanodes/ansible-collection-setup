@@ -19,7 +19,7 @@
 #     dest: /etc/rsyncd.conf
 #     owner: root
 #     group: root
-#     mode: 0640
+#     mode: '0640'
 #   notify: restart rsyncd
 #   when: rsync_service
 

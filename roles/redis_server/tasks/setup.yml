@@ -53,7 +53,7 @@
     dest: /etc/redis/redis.conf
     owner: redis
     group: redis
-    mode: 0640
+    mode: '0640'
   notify: Restart redis
 
 - name: Include systemd tasks

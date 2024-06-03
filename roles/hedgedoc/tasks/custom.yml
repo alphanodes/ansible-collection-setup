@@ -19,7 +19,7 @@
   ansible.builtin.copy:
     src: '{{ privacy_file.stat.path }}'
     dest: '{{ hedgedoc_path }}/public/docs/privacy.md'
-    mode: 0644
+    mode: '0644'
   when: privacy_file.stat.exists
   notify:
     - Restart hedgedoc
@@ -28,7 +28,7 @@
   ansible.builtin.copy:
     src: '{{ privacy_group_file.stat.path }}'
     dest: '{{ hedgedoc_path }}/public/docs/privacy.md'
-    mode: 0644
+    mode: '0644'
   when:
     - not privacy_file.stat.exists
     - privacy_group_file.stat.exists

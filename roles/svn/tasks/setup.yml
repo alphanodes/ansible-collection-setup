@@ -33,7 +33,7 @@
 - name: Ensure directory for repositories exists
   ansible.builtin.file:
     path: '{{ svn_server_repositories }}'
-    mode: 0755
+    mode: '0755'
     owner: '{{ svn_server_user }}'
     group: '{{ svn_server_group }}'
     state: directory
@@ -41,7 +41,7 @@
 - name: Ensure log directory exists
   ansible.builtin.file:
     path: '{{ svn_server_log_dir }}'
-    mode: 0755
+    mode: '0755'
     owner: '{{ svn_server_user }}'
     group: adm
     state: directory
@@ -50,13 +50,13 @@
   ansible.builtin.template:
     src: logrotate.d/svnserve.j2
     dest: /etc/logrotate.d/svnserve
-    mode: 0644
+    mode: '0644'
 
 - name: Install environment configuration
   ansible.builtin.template:
     src: default/svnserve.j2
     dest: /etc/default/svnserve
-    mode: 0644
+    mode: '0644'
 
 - name: Get stat of svnserve.service
   ansible.builtin.stat:
@@ -75,7 +75,7 @@
   ansible.builtin.template:
     src: svnserve.service.j2
     dest: '{{ svn_server_systemd_service_file }}'
-    mode: 0644
+    mode: '0644'
   notify:
     - Reload systemd daemon
 

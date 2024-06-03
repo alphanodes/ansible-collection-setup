@@ -20,4 +20,4 @@
   ansible.builtin.template:
     src: php_ini_custom.j2
     dest: '{{ php_cli_custom_php_ini }}'
-    mode: 0644
+    mode: '0644'

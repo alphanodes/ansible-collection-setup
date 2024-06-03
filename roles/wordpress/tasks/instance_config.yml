@@ -17,4 +17,4 @@
     validate: 'php -l %s'
     owner: '{{ wordpress_user }}'
     group: '{{ wordpress_group }}'
-    mode: 0640
+    mode: '0640'

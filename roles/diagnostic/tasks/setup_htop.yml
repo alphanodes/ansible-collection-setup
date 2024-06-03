@@ -15,7 +15,7 @@
       ansible.builtin.copy:
         src: htoprc
         dest: "{{ '/root' if managing_user == 'root' else user_infos.home }}/.config/htop/"
-        mode: 0644
+        mode: '0644'
         owner: '{{ managing_user }}'
         group: "{{ 'root' if managing_user == 'root' else user_infos.group }}"
 

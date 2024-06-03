@@ -26,7 +26,7 @@
   ansible.builtin.template:
     src: nginx.j2
     dest: /etc/nginx/nginx.conf
-    mode: 0644
+    mode: '0644'
   notify: Reload nginx
 
 - name: Remove nginx.conf.dpkg-dist
@@ -38,7 +38,7 @@
   ansible.builtin.copy:
     src: nginx/conf.d/protection.conf
     dest: /etc/nginx/conf.d/protection.conf
-    mode: 0644
+    mode: '0644'
   when: nginx_with_protection
 
 - name: Remove protection maps because its disabled
@@ -114,7 +114,7 @@
   ansible.builtin.template:
     src: ssl.j2
     dest: /etc/nginx/conf.d/ssl.conf
-    mode: 0644
+    mode: '0644'
   notify: Restart nginx
   when: nginx_with_ssl
 
@@ -142,7 +142,7 @@
   ansible.builtin.copy:
     src: nginx/vcbackups.conf
     dest: /etc/nginx/
-    mode: 0644
+    mode: '0644'
   when: nginx_vcbackups_users | length
 
 - name: Update vcbackups user access
@@ -152,7 +152,7 @@
     password: '{{ item.password }}'
     owner: root
     group: '{{ nginx_group }}'
-    mode: 0640
+    mode: '0640'
   loop: '{{ nginx_vcbackups_users }}'
   when: nginx_vcbackups_users | length
 
@@ -160,7 +160,7 @@
   ansible.builtin.copy:
     src: nginx/software.conf
     dest: /etc/nginx/
-    mode: 0644
+    mode: '0644'
   when: nginx_software_users | length
 
 - name: Update software user access
@@ -170,7 +170,7 @@
     password: '{{ item.password }}'
     owner: root
     group: '{{ nginx_group }}'
-    mode: 0640
+    mode: '0640'
   loop: '{{ nginx_software_users }}'
   when: nginx_software_users | length
 
@@ -195,13 +195,13 @@
   ansible.builtin.file:
     path: '{{ nginx_error_pages_path }}'
     state: directory
-    mode: 0755
+    mode: '0755'
 
 - name: Install html page for status errors
   ansible.builtin.copy:
     src: nginx/error_pages/{{ item }}
     dest: '{{ nginx_error_pages_path }}/'
-    mode: 0644
+    mode: '0644'
     owner: root
     group: root
   loop:

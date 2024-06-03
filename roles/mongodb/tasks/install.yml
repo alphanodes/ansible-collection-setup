@@ -71,7 +71,7 @@
   ansible.builtin.template:
     src: systemd/mongodb.service.j2
     dest: /lib/systemd/system/{{ mongodb_daemon_name }}.service
-    mode: 0644
+    mode: '0644'
   when:
     - mongodb_manage_systemd_unit | bool
   notify:

@@ -97,7 +97,7 @@
   ansible.builtin.template:
     src: etc/nginx/redmine_maps.conf
     dest: /etc/nginx/conf.d/
-    mode: 0644
+    mode: '0644'
   notify: Restart nginx
 
 - name: Remove obsolete configuration files

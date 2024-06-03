@@ -23,7 +23,7 @@
       ansible.builtin.copy:
         src: sudoers.d/postgresql
         dest: /etc/sudoers.d/postgresql
-        mode: 0440
+        mode: '0440'
 
     # [DEPRECATION WARNING]: The connection's stdin object is deprecated. Call display.prompt_until(msg) instead. This feature will be removed in version 2.19.
     - name: Install zabbix sql PostgreSQL files

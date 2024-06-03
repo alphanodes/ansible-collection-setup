@@ -33,7 +33,7 @@
     content: "{{ mongodb_keyfile_content }}"
     owner: "{{ mongodb_user }}"
     group: "root"
-    mode: 0600
+    mode: '0600'
   when: mongodb_replication_replset | length > 0
 
 - name: Create log dir if missing
@@ -42,7 +42,7 @@
     dest: "{{ mongodb_systemlog_path | dirname }}"
     owner: "{{ mongodb_user }}"
     group: "{{ mongodb_user }}"
-    mode: 0755
+    mode: '0755'
   when: mongodb_systemlog_destination == 'file'
 
 - name: Check than logfile exists
@@ -57,7 +57,7 @@
     dest: "{{ mongodb_systemlog_path }}"
     owner: "{{ mongodb_user }}"
     group: "{{ mongodb_user }}"
-    mode: 0644
+    mode: '0644'
   when: ( mongodb_systemlog_destination == "file"
         and logfile_stat is defined
         and not logfile_stat.stat.exists )
@@ -77,7 +77,7 @@
     src: mongod.conf.j2
     dest: /etc/mongod.conf
     backup: true
-    mode: 0644
+    mode: '0644'
   notify:
     - Restart mongodb
     - Wait when mongodb is started

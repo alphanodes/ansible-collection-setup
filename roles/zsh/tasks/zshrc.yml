@@ -4,14 +4,14 @@
   ansible.builtin.template:
     src: zshrc.j2
     dest: /root/.zshrc
-    mode: 0644
+    mode: '0644'
   when: zsh_user == 'root'
 
 - name: Configure .zshrc for user {{ zsh_user }}
   ansible.builtin.template:
     src: zshrc.j2
     dest: '{{ zsh_user_home | default("/home" + zsh_user) }}/.zshrc'
-    mode: 0644
+    mode: '0644'
   when: zsh_user != 'root'
   ignore_errors: true
   become: true

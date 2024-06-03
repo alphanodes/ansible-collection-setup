@@ -4,7 +4,7 @@
   ansible.builtin.template:
     src: pool.j2
     dest: '{{ php_fpm_pool_dir }}/{{ php_fpm_pool_conf }}'
-    mode: 0644
+    mode: '0644'
     owner: root
     group: root
   notify: Restart php-fpm
@@ -22,6 +22,6 @@
   ansible.builtin.template:
     src: pool.j2
     dest: '{{ php_fpm_pool_dir }}/{{ item.name }}.conf'
-    mode: 0644
+    mode: '0644'
   loop: '{{ php_fpm_extra_pools | default([]) }}'
   notify: Restart php-fpm

@@ -7,7 +7,7 @@
     dest: '{{ redmine_app_dir }}/config/initializers/bypass_ssl_verification.rb'
     owner: '{{ redmine_user }}'
     group: '{{ redmine_group }}'
-    mode: 0644
+    mode: '0644'
   notify: Restart puma instance
   when:
     - instance.disable_imap_ssl_verify is defined
@@ -26,7 +26,7 @@
     dest: '{{ redmine_app_dir }}/config/initializers/lograge.rb'
     owner: '{{ redmine_user }}'
     group: '{{ redmine_group }}'
-    mode: 0640
+    mode: '0640'
   notify: Restart puma instance
   when:
     - instance.use_logger is defined

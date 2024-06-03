@@ -46,7 +46,7 @@
       ansible.builtin.template:
         src: etc/apt/openssl-pinning.j2
         dest: /etc/apt/preferences.d/openssl
-        mode: 0644
+        mode: '0644'
 
     # see https://github.com/rvm/rvm/issues/5209#issuecomment-1134927685
     - name: Downgrade libssl-dev

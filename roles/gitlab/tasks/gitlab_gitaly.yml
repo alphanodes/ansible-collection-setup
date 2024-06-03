@@ -55,7 +55,7 @@
     dest: '{{ gitlab_gitaly_path }}/config.toml'
     owner: '{{ gitlab_user }}'
     group: '{{ gitlab_group }}'
-    mode: 0640
+    mode: '0640'
 
 - name: Restrict Gitaly socket access
   ansible.builtin.file:
@@ -63,4 +63,4 @@
     state: directory
     owner: '{{ gitlab_user }}'
     group: '{{ gitlab_group }}'
-    mode: 0700
+    mode: '0700'

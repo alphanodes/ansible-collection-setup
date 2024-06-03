@@ -28,19 +28,19 @@
   ansible.builtin.file:
     state: directory
     dest: /etc/drush
-    mode: 0755
+    mode: '0755'
 
 - name: Drush configuration update
   ansible.builtin.template:
     src: etc/drush/drushrc.j2
     dest: /etc/drush/drushrc.php
-    mode: 0644
+    mode: '0644'
 
 - name: Drush aliases configuration
   ansible.builtin.template:
     src: etc/drush/aliases.drushrc.php.j2
     dest: /etc/drush/aliases.drushrc.php
-    mode: 0644
+    mode: '0644'
 
 - name: Remove obsolete sync configuration
   ansible.builtin.file:
@@ -51,11 +51,11 @@
   ansible.builtin.template:
     src: reset.sh.j2
     dest: /usr/local/bin/reset_{{ drush_reset_script_name }}
-    mode: 0755
+    mode: '0755'
   when: drush_reset_script
 
 - name: Install sudoer access for zabbix
   ansible.builtin.template:
     src: etc/sudoers.d/drush.j2
     dest: /etc/sudoers.d/drush
-    mode: 0440
+    mode: '0440'

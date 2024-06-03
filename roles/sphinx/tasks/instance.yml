@@ -50,7 +50,7 @@
     password: '{{ item.password }}'
     owner: root
     group: '{{ nginx_group }}'
-    mode: 0640
+    mode: '0640'
   loop: '{{ instance.vhost_users | default([]) }}'
   when: instance.vhost_users is defined
   notify: Restart nginx

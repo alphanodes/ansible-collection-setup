@@ -70,7 +70,7 @@
             - name: Create btop source directory
               ansible.builtin.file:
                 path: "{{ btop_source_path }}"
-                mode: "0775"
+                mode: '0775'
                 state: directory
 
             - name: Unpack the binary tarball version {{ btop_static_version }}

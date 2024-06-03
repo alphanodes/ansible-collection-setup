@@ -21,7 +21,7 @@
   ansible.builtin.template:
     src: nftables.conf.j2
     dest: /etc/nftables.conf
-    mode: 0644
+    mode: '0644'
     validate: "nft --check --file %s"
   notify: Reload nftables
   when: netfilter_state == 'active'

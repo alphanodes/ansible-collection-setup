@@ -6,4 +6,3 @@
   ansible.builtin.systemd:
     name: "{{ php_fpm_service | default('php5-fpm') }}"
     state: restarted
-  listen: restart php

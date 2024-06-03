@@ -20,7 +20,7 @@
   ansible.builtin.template:
     src: zshenv.j2
     dest: /etc/zsh/zshenv
-    mode: 0644
+    mode: '0644'
 
 - name: Ensures required alphanodes zsh directory exists
   ansible.builtin.file:
@@ -32,4 +32,4 @@
   ansible.builtin.copy:
     src: auto-ls.zsh
     dest: '{{ zsh_auto_ls_plugin_file }}'
-    mode: 0644
+    mode: '0644'

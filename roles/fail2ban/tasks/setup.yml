@@ -20,14 +20,14 @@
   ansible.builtin.template:
     src: jail.local.j2
     dest: /etc/fail2ban/jail.local
-    mode: 0644
+    mode: '0644'
   notify: Restart fail2ban
 
 - name: Install actions
   ansible.builtin.copy:
     src: action.d/
     dest: '{{ fail2ban_action_path }}'
-    mode: 0644
+    mode: '0644'
   notify: Restart fail2ban
 
 - name: Remove obsolete actions
@@ -39,7 +39,7 @@
   ansible.builtin.copy:
     src: filter.d/
     dest: '{{ fail2ban_filter_path }}'
-    mode: 0644
+    mode: '0644'
   notify: Restart fail2ban
 
 - name: Remove obsolete filters
@@ -51,7 +51,7 @@
   ansible.builtin.copy:
     src: sudoers.d/fail2ban
     dest: /etc/sudoers.d/fail2ban
-    mode: 0440
+    mode: '0440'
 
 - name: Start the fail2ban service
   ansible.builtin.systemd:

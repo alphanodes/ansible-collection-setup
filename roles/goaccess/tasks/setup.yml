@@ -10,7 +10,7 @@
   ansible.builtin.file:
     path: /etc/goaccess
     state: directory
-    mode: 0755
+    mode: '0755'
 
 # see https://github.com/allinurl/goaccess/blob/master/config/goaccess.conf
 - name: Setup configuration
@@ -19,7 +19,7 @@
     dest: /etc/goaccess/goaccess.conf
     owner: root
     group: "{{ nginx_group }}"
-    mode: 0640
+    mode: '0640'
 
 - name: Include nginx tasks
   ansible.builtin.include_tasks: nginx.yml

@@ -27,13 +27,13 @@
     path: "{{ dendrite_home_dir }}"
     owner: "{{ dendrite_service_user }}"
     group: "{{ dendrite_service_group }}"
-    mode: 0755
+    mode: '0755'
 
 - name: Make sure configuration directory exists
   ansible.builtin.file:
     path: '{{ dendrite_config_dir }}'
     state: directory
-    mode: 0750
+    mode: '0750'
     owner: "{{ dendrite_service_user }}"
     group: "{{ dendrite_service_group }}"
 
@@ -41,7 +41,7 @@
   ansible.builtin.file:
     path: '{{ dendrite_sync_api_search_index_path }}'
     state: directory
-    mode: 0775
+    mode: '0775'
     owner: "{{ dendrite_service_user }}"
     group: "{{ dendrite_service_group }}"
   loop:
@@ -94,7 +94,7 @@
   ansible.builtin.template:
     src: dendrite.yaml.j2
     dest: '{{ dendrite_config_file }}'
-    mode: 0640
+    mode: '0640'
     owner: "{{ dendrite_service_user }}"
     group: "{{ dendrite_service_group }}"
 
@@ -111,7 +111,7 @@
     dest: /etc/systemd/system/dendrite.service
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   notify:
     - Reload systemd daemon
     - Restart dendrite

@@ -50,6 +50,6 @@
     dest: '{{ gitlab_pages_path }}/gitlab-pages.conf'
     owner: '{{ gitlab_user }}'
     group: '{{ gitlab_group }}'
-    mode: 0640
+    mode: '0640'
   notify:
     - Restart gitlab pages

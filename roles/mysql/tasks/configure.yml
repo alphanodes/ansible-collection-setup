@@ -17,7 +17,7 @@
     state: directory
     owner: root
     group: root
-    mode: 0755
+    mode: '0755'
 
 - name: Copy my.cnf global MySQL configuration.
   ansible.builtin.template:
@@ -25,7 +25,7 @@
     dest: "{{ mysql_config_file }}"
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
     force: "{{ overwrite_global_mycnf }}"
   notify: Restart mysql
 
@@ -82,7 +82,7 @@
     state: directory
     owner: mysql
     group: '{{ mysql_log_file_group }}'
-    mode: 0750
+    mode: '0750'
 
 - name: Remove log files, if not activated
   when: mysql_log_output != 'FILE'
@@ -107,7 +107,7 @@
     state: directory
     owner: mysql
     group: mysql
-    mode: 0755
+    mode: '0755'
     setype: mysqld_db_t
 
 - name: Set ownership on slow query log file (if configured).
@@ -116,7 +116,7 @@
     state: file
     owner: mysql
     group: "{{ mysql_log_file_group }}"
-    mode: 0640
+    mode: '0640'
   when:
     - mysql_log_output == 'FILE'
     - mysql_slow_query_log_enabled
@@ -138,7 +138,7 @@
         state: file
         owner: mysql
         group: "{{ mysql_log_file_group }}"
-        mode: 0640
+        mode: '0640'
 
 - name: Ensure MySQL is started and enabled on boot.
   ansible.builtin.systemd:

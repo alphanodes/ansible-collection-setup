@@ -16,7 +16,7 @@
     dest: "{{ memcached_config_file }}"
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   notify: Restart memcached
 
 - name: Ensure Memcached is started and set to run on startup.

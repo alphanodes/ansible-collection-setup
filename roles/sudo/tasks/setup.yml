@@ -12,5 +12,5 @@
     validate: "visudo -cf %s"
     owner: root
     group: root
-    mode: 0440
+    mode: '0440'
   when: sudo_manange_sudoers_config

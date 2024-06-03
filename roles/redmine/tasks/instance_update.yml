@@ -96,7 +96,7 @@
         path: '{{ redmine_token_file }}'
         owner: '{{ redmine_user }}'
         group: '{{ redmine_group }}'
-        mode: 0640
+        mode: '0640'
 
     - name: Update redmine core database - {{ instance_name }}
       ansible.builtin.command: bash -lc "{{ instance.update_prefix | default('') }}bundle exec rake db:migrate"

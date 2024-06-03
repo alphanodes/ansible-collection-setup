@@ -49,7 +49,7 @@
       ansible.builtin.get_url:
         url: '{{ download_file }}'
         dest: '{{ software_dir }}/{{ archive_filename }}'
-        mode: 0644
+        mode: '0644'
 
     - name: Stats for plugin directory
       ansible.builtin.stat:

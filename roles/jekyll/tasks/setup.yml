@@ -9,4 +9,4 @@
   ansible.builtin.file:
     path: '{{ jekyll_base_dir }}'
     state: directory
-    mode: 0755
+    mode: '0755'

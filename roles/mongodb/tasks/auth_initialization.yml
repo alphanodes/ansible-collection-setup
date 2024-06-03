@@ -3,7 +3,7 @@
   ansible.builtin.template:
     src: mongod_init.conf.j2
     dest: /etc/mongod.conf
-    mode: 0644
+    mode: '0644'
   notify:
     - Restart mongodb
     - Wait when mongodb is started on localhost
@@ -57,7 +57,7 @@
   ansible.builtin.template:
     src: mongod.conf.j2
     dest: /etc/mongod.conf
-    mode: 0644
+    mode: '0644'
   notify:
     - Restart mongodb
     - Wait when mongodb is started
