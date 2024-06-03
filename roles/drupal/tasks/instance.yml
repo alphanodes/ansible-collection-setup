@@ -115,7 +115,7 @@
     validate: 'php -l %s'
     owner: '{{ instance.drupal_user | default("root") }}'
     group: '{{ instance.drupal_group | default(nginx_group) }}'
-    mode: 0640
+    mode: '0640'
   when:
     - instance.write_settings_file is not defined or instance.write_settings_file
 
@@ -125,7 +125,7 @@
     dest: "{{ instance.dir }}/.env"
     owner: '{{ instance.drupal_user | default("root") }}'
     group: '{{ instance.drupal_group | default(nginx_group) }}'
-    mode: 0640
+    mode: '0640'
 
 - name: Check trusted TLS cert
   ansible.builtin.stat:
@@ -145,7 +145,7 @@
   ansible.builtin.template:
     src: etc/nginx/sites-available/drupal.j2
     dest: /etc/nginx/sites-available/{{ instance.name }}.conf
-    mode: 0644
+    mode: '0644'
   notify: Reload nginx
 
 - name: Ensure drupal vhosts is enabled - {{ instance.name }}
@@ -165,7 +165,7 @@
     password: '{{ item.password }}'
     owner: root
     group: '{{ nginx_group }}'
-    mode: 0640
+    mode: '0640'
   loop: '{{ instance.vhost_users | default([]) }}'
   when: instance.vhost_users is defined
   notify: Restart nginx

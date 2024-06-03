@@ -23,7 +23,7 @@
   ansible.builtin.template:
     src: vhost.j2
     dest: /etc/nginx/sites-available/rocketchat.conf
-    mode: 0644
+    mode: '0644'
   notify: Reload nginx
 
 - name: Ensure Rocket.Chat vhost is enabled

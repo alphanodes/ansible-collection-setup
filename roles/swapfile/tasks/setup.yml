@@ -38,7 +38,7 @@
 - name: Change swap file permissions
   ansible.builtin.file:
     path: "{{ swapfile_path }}"
-    mode: 0600
+    mode: '0600'
     owner: root
     group: root
 

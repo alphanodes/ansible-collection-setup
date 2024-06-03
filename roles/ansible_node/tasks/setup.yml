@@ -49,19 +49,19 @@
   ansible.builtin.file:
     path: '{{ ansible_node_etc_dir }}'
     state: directory
-    mode: 0755
+    mode: '0755'
 
 - name: Check if ansible playbooks directory exist
   ansible.builtin.file:
     path: '{{ ansible_node_playbook_dir }}'
     state: directory
-    mode: 0755
+    mode: '0755'
 
 - name: Ansible configuration
   ansible.builtin.template:
     src: ansible.j2
     dest: /etc/ansible/ansible.cfg
-    mode: 0644
+    mode: '0644'
 
 - name: Install ansible roles
   ansible.builtin.command: "{{ ansible_node_playbook_galaxy_script }} role {{ item.action | default('install') }} {{ item.name }}"

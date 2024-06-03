@@ -15,7 +15,7 @@
   ansible.builtin.template:
     src: php-fpm.j2
     dest: '{{ php_fpm_php_fpm_conf }}'
-    mode: 0644
+    mode: '0644'
     owner: root
     group: root
   notify: Restart php-fpm
@@ -24,7 +24,7 @@
   ansible.builtin.template:
     src: php_ini_custom.j2
     dest: '{{ php_fpm_custom_php_ini }}'
-    mode: 0644
+    mode: '0644'
     owner: root
     group: root
   notify: Restart php-fpm

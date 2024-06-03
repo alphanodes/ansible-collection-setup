@@ -15,7 +15,7 @@
     src: user-my.cnf.j2
     dest: "{{ mysql_user_home }}/.my.cnf"
     owner: "{{ mysql_user_name }}"
-    mode: 0600
+    mode: '0600'
   vars:
     client_user: '{{ mysql_user_name }}'
     client_password: '{{ mysql_user_password }}'
@@ -60,7 +60,7 @@
     dest: "{{ mysql_root_home }}/.my.cnf"
     owner: root
     group: root
-    mode: 0600
+    mode: '0600'
   vars:
     client_user: '{{ mysql_root_username }}'
     client_password: '{{ mysql_root_password }}'

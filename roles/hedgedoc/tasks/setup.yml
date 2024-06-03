@@ -43,7 +43,7 @@
     dest: "{{ hedgedoc_path }}/config.json"
     owner: "{{ hedgedoc_user }}"
     group: "{{ hedgedoc_group }}"
-    mode: 0600
+    mode: '0600'
   notify: Restart hedgedoc
 
 - name: Ensure hedgedoc sequelizerc is latest
@@ -52,7 +52,7 @@
     dest: "{{ hedgedoc_path }}/.sequelizerc"
     owner: "{{ hedgedoc_user }}"
     group: "{{ hedgedoc_group }}"
-    mode: 0600
+    mode: '0600'
   notify: Restart hedgedoc
 
 - name: Run systemd block
@@ -64,7 +64,7 @@
         dest: /etc/systemd/system/hedgedoc.service
         owner: root
         group: root
-        mode: 0644
+        mode: '0644'
       notify:
         - Reload systemd daemon
         - Restart hedgedoc

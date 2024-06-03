@@ -3,7 +3,7 @@
 - name: Make sure composer path exists - {{ instance.name }}
   ansible.builtin.file:
     path: '{{ instance.composer_path }}'
-    mode: 0755
+    mode: '0755'
     state: directory
   when: instance.composer_path is defined
 

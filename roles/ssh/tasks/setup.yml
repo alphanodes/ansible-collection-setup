@@ -38,7 +38,7 @@
     dest: /etc/ssh/sshd_config
     owner: root
     group: root
-    mode: 0600
+    mode: '0600'
     validate: 'sshd -T -f %s -C user=root'
   notify: Restart ssh
 
@@ -54,4 +54,4 @@
   ansible.builtin.template:
     src: ssh_config.j2
     dest: /etc/ssh/ssh_config
-    mode: 0644
+    mode: '0644'

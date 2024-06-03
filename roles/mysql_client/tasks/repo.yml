@@ -13,7 +13,7 @@
       ansible.builtin.copy:
         src: mysql.gpg
         dest: '{{ mysql_apt_repo_key_file }}'
-        mode: 0644
+        mode: '0644'
       when: mysql_apt_key_url is not defined
 
     - name: Remove old apt repository files

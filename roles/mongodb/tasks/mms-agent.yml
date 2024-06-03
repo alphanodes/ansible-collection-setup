@@ -9,7 +9,7 @@
     path: /etc/mongodb-mms
     owner: "{{ mongodb_user }}"
     group: "{{ mongodb_user }}"
-    mode: 0755
+    mode: '0755'
 
 - name: Configure the MMS agent pt. 2
   ansible.builtin.template:
@@ -17,7 +17,7 @@
     dest: /etc/mongodb-mms/monitoring-agent.config
     owner: "{{ mongodb_user }}"
     group: "{{ mongodb_user }}"
-    mode: 0644
+    mode: '0644'
   notify: Restart mongodb-mms-monitoring-agent
 
 - name: Ensure that the MMS agent is started

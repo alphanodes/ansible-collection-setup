@@ -136,7 +136,7 @@
         path: '{{ user_home }}/.ssh/known_hosts'
         owner: '{{ user.name }}'
         group: '{{ user_group }}'
-        mode: 0600
+        mode: '0600'
       when:
         - user.name != 'root'
         - known_hosts_result.stat.exists
@@ -152,7 +152,7 @@
             dest: '{{ user_home }}/.ssh/config'
             owner: '{{ user.name }}'
             group: '{{ user_group }}'
-            mode: 0600
+            mode: '0600'
           when: user.skip_config is undefined or not user.skip_config
 
         - name: Install private keys - {{ user.name }}
@@ -161,7 +161,7 @@
             dest: '{{ user_home }}/.ssh/{{ item.dir }}/'
             owner: '{{ user.name }}'
             group: '{{ user_group }}'
-            mode: 0600
+            mode: '0600'
           loop: '{{ user.private_keys }}'
           when:
             - item.dir is defined
@@ -174,7 +174,7 @@
             dest: '{{ user_home }}/.ssh/id_{{ item.algorithm | default(key_algorithm) }}'
             owner: '{{ user.name }}'
             group: '{{ user_group }}'
-            mode: 0600
+            mode: '0600'
           loop: '{{ user.private_keys }}'
           when:
             - item.dir is defined

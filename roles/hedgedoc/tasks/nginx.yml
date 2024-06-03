@@ -8,7 +8,7 @@
     password: '{{ item.password }}'
     owner: root
     group: '{{ nginx_group }}'
-    mode: 0640
+    mode: '0640'
   loop: '{{ hedgedoc_vhost_users | default([]) }}'
   when:
     - hedgedoc_vhost_users is defined
@@ -51,7 +51,7 @@
       ansible.builtin.template:
         src: vhost.j2
         dest: /etc/nginx/sites-available/hedgedoc.conf
-        mode: 0644
+        mode: '0644'
       notify: Reload nginx
 
     - name: Enable hedgedoc hedgedoc vhost

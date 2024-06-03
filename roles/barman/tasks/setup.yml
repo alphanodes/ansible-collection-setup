@@ -18,7 +18,7 @@
   ansible.builtin.template:
     src: 'barman.conf.j2'
     dest: '/etc/barman.conf'
-    mode: 0644
+    mode: '0644'
 
 - name: Make sure .ssh directory exists
   ansible.builtin.file:
@@ -26,7 +26,7 @@
     state: directory
     owner: '{{ barman_user }}'
     group: '{{ barman_group }}'
-    mode: 0700
+    mode: '0700'
 
 - name: Configure postgres ssh server access
   ansible.posix.authorized_key:
@@ -45,7 +45,7 @@
     dest: '{{ barman_home }}/.ssh/id_rsa'
     owner: '{{ barman_user }}'
     group: '{{ barman_group }}'
-    mode: 0600
+    mode: '0600'
 
 - name: Install .pgpass for barman
   ansible.builtin.template:
@@ -53,14 +53,14 @@
     dest: '{{ barman_home }}/.pgpass'
     owner: '{{ barman_user }}'
     group: '{{ barman_group }}'
-    mode: 0600
+    mode: '0600'
   when: barman_db_servers | length
 
 - name: SSH server configurations
   ansible.builtin.template:
     src: server.conf.j2
     dest: '/etc/barman.d/{{ item.name }}.conf'
-    mode: 0644
+    mode: '0644'
   loop: '{{ barman_db_servers }}'
 
 - name: Connection check (ssh) to DB Server

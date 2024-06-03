@@ -26,7 +26,7 @@
     dest: '/etc/ssl/certs/mysql_ca.crt'
     owner: root
     group: ssl-cert
-    mode: 0644
+    mode: '0644'
 
 - name: Stats for target_key
   ansible.builtin.stat:
@@ -69,7 +69,7 @@
         dest: '{{ target_ssl_key }}'
         owner: root
         group: ssl-cert
-        mode: 0640
+        mode: '0640'
 
     - name: Install target certifiate on server > {{ target_ssl_crt }}
       ansible.builtin.copy:
@@ -77,7 +77,7 @@
         dest: '{{ target_ssl_crt }}'
         owner: root
         group: ssl-cert
-        mode: 0644
+        mode: '0644'
 
     - name: Restart mysql server with server mode
       ansible.builtin.debug:

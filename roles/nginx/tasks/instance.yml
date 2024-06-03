@@ -19,7 +19,7 @@
   ansible.builtin.template:
     src: vhost.j2
     dest: /etc/nginx/sites-available/{{ instance.name }}.conf
-    mode: 0644
+    mode: '0644'
   notify: Restart nginx
 
 - name: Update nginx vhost repo - {{ instance.name }}
@@ -46,7 +46,7 @@
     password: '{{ item.password }}'
     owner: root
     group: '{{ nginx_group }}'
-    mode: 0640
+    mode: '0640'
   loop: '{{ instance.vhost_users | default([]) }}'
   when: instance.vhost_users is defined
   notify: Restart nginx

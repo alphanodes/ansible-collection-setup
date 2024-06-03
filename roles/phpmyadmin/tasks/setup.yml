@@ -13,7 +13,7 @@
   ansible.builtin.apt:
     name: '{{ phpmyadmin_packages }}'
     state: present
-  notify: restart php
+  notify: Restart php-fpm
 
 - name: Include nodejs role
   ansible.builtin.include_role:
@@ -51,7 +51,7 @@
 - name: Make sure nginx directory exists (required for first run after fresh installation)
   ansible.builtin.file:
     path: /etc/nginx
-    mode: 0755
+    mode: '0755'
     owner: root
     group: root
     state: directory
@@ -61,7 +61,7 @@
   ansible.builtin.template:
     src: etc/nginx/phpmyadmin.j2
     dest: /etc/nginx/phpmyadmin.conf
-    mode: 0644
+    mode: '0644'
     owner: root
     group: root
   notify: Reload nginx
@@ -70,13 +70,13 @@
   ansible.builtin.file:
     path: /etc/phpmyadmin
     state: directory
-    mode: 0755
+    mode: '0755'
 
 - name: Provide phpmyadmin configuration
   ansible.builtin.template:
     src: etc/phpmyadmin/config.inc.j2
     dest: /etc/phpmyadmin/config.inc.php
-    mode: 0644
+    mode: '0644'
     validate: 'php -l %s'
 
 - name: Provide tmp directory
@@ -85,4 +85,4 @@
     state: directory
     owner: '{{ phpmyadmin_owner }}'
     group: '{{ phpmyadmin_group }}'
-    mode: 0755
+    mode: '0755'

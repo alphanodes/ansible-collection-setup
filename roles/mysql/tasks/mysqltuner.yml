@@ -8,11 +8,11 @@
   ansible.builtin.get_url:
     url: '{{ mysql_mysqltuner_url }}'
     dest: '{{ tmp_file }}'
-    mode: 0755
+    mode: '0755'
   delegate_to: localhost
 
 - name: Install latest mysqltuner.pl
   ansible.builtin.copy:
     src: '{{ tmp_file }}'
     dest: /usr/local/bin/mysqltuner.pl
-    mode: 0755
+    mode: '0755'

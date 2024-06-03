@@ -57,7 +57,7 @@
     url: https://alphanodes.com/favicon.ico
     dest: '{{ phpmyadmin_dir }}/{{ item }}'
     force: true
-    mode: 0644
+    mode: '0644'
     owner: root
     group: root
   loop:

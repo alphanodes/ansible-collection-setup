@@ -17,7 +17,7 @@
     dest: '/{{ item }}'
     owner: 'root'
     group: 'root'
-    mode: 0644
+    mode: '0644'
   loop:
     - etc/default/nfs-common
     - etc/modprobe.d/nfs-server.conf
@@ -30,7 +30,7 @@
     dest: /etc/default/nfs-kernel-server
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   when: nfs_server
   notify:
     - Restart nfs-kernel-server
@@ -41,7 +41,7 @@
     dest: /etc/exports
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   notify:
     - Reload nfs exports
 

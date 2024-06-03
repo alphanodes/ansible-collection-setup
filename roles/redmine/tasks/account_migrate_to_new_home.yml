@@ -127,6 +127,6 @@
     path: '{{ redmine_plugin_dir }}'
     owner: '{{ redmine_user }}'
     group: '{{ redmine_group }}'
-    mode: 0755
+    mode: '0755'
     recurse: true
     state: directory

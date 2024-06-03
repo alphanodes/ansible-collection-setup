@@ -10,7 +10,7 @@
   ansible.builtin.file:
     path: /etc/postfix/mysql
     state: directory
-    mode: 0750
+    mode: '0750'
     owner: root
     group: postfix
 
@@ -20,7 +20,7 @@
     dest: '/etc/postfix/mysql/{{ item }}'
     owner: root
     group: postfix
-    mode: 0640
+    mode: '0640'
   loop:
     - virtual_alias_maps.cf
     - virtual_domains_maps.cf

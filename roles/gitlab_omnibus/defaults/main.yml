@@ -1,3 +1,5 @@
+---
+
 gitlab_required_packages:
   - gitlab-ee
 

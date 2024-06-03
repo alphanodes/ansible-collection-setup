@@ -19,7 +19,7 @@
         dest: /etc/systemd/system/{{ timer_name }}.service
         owner: root
         group: root
-        mode: 0644
+        mode: '0644'
       notify:
         - Reload systemd daemon
 
@@ -29,7 +29,7 @@
         dest: /etc/systemd/system/{{ timer_name }}.timer
         owner: root
         group: root
-        mode: 0644
+        mode: '0644'
       notify:
         - Reload systemd daemon
 

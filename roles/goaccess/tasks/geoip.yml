@@ -4,7 +4,7 @@
   ansible.builtin.file:
     path: '{{ goaccess_geoip_dir }}'
     state: directory
-    mode: 0755
+    mode: '0755'
 
 - name: Check goaccess_geoip_latest_database exists
   ansible.builtin.stat:
@@ -20,7 +20,7 @@
   ansible.builtin.get_url:
     url: '{{ goaccess_geoip_url }}'
     dest: '{{ goaccess_geoip_latest_database }}'
-    mode: 0644
+    mode: '0644'
   when: not goaccess_geoip_latest_database_exists.stat.exists
 
 - name: Extract geoip database archive

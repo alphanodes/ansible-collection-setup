@@ -9,7 +9,7 @@
   ansible.builtin.apt:
     name: '{{ matomo_packages }}'
     state: present
-  notify: restart php
+  notify: Restart php-fpm
 
 - name: Cleanup obsolete files
   ansible.builtin.file:
@@ -21,10 +21,10 @@
   ansible.builtin.template:
     src: mods-available/geoip.j2
     dest: '{{ matomo_php_mods_available }}/geoip.ini'
-    mode: 0644
+    mode: '0644'
     owner: root
     group: root
-  notify: restart php
+  notify: Restart php-fpm
 
 - name: Check if matomo already exists
   ansible.builtin.stat:
@@ -44,7 +44,7 @@
   ansible.builtin.get_url:
     url: '{{ matomo_source_url }}/matomo-{{ matomo_version }}.tar.gz'
     dest: '{{ software_dir }}/matomo-{{ matomo_version }}.tar.gz'
-    mode: 0644
+    mode: '0644'
     owner: root
     group: root
   when: not matomo_archive_file_exists.stat.exists
@@ -78,7 +78,7 @@
         path: '{{ user_infos.home }}/.ansible'
         owner: '{{ matomo_user }}'
         group: "{{ matomo_group }}"
-        mode: 0755
+        mode: '0755'
         state: directory
 
 # required for mysql mysql_secure_file_priv
@@ -87,7 +87,7 @@
     path: '{{ matomo_dir }}'
     owner: '{{ matomo_user }}'
     group: "{{ 'mysql' if matomo_with_mysql else matomo_group }}"
-    mode: 0750
+    mode: '0750'
 
 - name: Install robots.txt
   ansible.builtin.copy:
@@ -95,7 +95,7 @@
     dest: '{{ matomo_dir }}/'
     owner: '{{ matomo_user }}'
     group: '{{ matomo_user }}'
-    mode: 0644
+    mode: '0644'
   when: matomo_with_robots_txt
 
 - name: Matomo with nginx

@@ -47,4 +47,4 @@
     dest: '{{ gitlab_shell_path }}/config.yml'
     owner: '{{ gitlab_user }}'
     group: '{{ gitlab_group }}'
-    mode: 0644
+    mode: '0644'

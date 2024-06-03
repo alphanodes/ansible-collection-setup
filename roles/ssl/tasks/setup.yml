@@ -26,7 +26,7 @@
     dest: '/usr/local/share/ca-certificates/{{ item }}.crt'
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   loop: '{{ ssl_cas }}'
   notify: Update ca certificates
 
@@ -37,7 +37,7 @@
     dest: '/usr/local/share/ca-certificates/{{ item }}.crt'
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   loop: '{{ ssl_system_certs }}'
   notify: Update ca certificates
 
@@ -71,7 +71,7 @@
         path: '{{ ssl_forward_secrecy_key_path }}'
         owner: root
         group: ssl-cert
-        mode: 0640
+        mode: '0640'
       notify: Restart nginx
       when:
         - nginx_with_ssl is defined

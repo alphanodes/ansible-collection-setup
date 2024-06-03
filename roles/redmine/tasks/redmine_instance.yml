@@ -27,14 +27,14 @@
     dest: '{{ redmine_app_dir }}/.git/info/exclude'
     owner: '{{ redmine_user }}'
     group: '{{ redmine_group }}'
-    mode: 0644
+    mode: '0644'
 
 - name: Ensure files directory exists - {{ instance_name }}
   ansible.builtin.file:
     path: '{{ redmine_files_dir }}'
     owner: '{{ redmine_user }}'
     group: '{{ redmine_group }}'
-    mode: 0750
+    mode: '0750'
     state: directory
 
 - name: Include init tasks
@@ -90,7 +90,7 @@
       ansible.builtin.template:
         src: etc/nginx/sites-available/redmine.j2
         dest: /etc/nginx/sites-available/{{ instance_name }}.conf
-        mode: 0644
+        mode: '0644'
       notify: Reload nginx
 
     # restart required, because file can be not available before
@@ -101,7 +101,7 @@
         password: '{{ item.password }}'
         owner: root
         group: '{{ nginx_group }}'
-        mode: 0640
+        mode: '0640'
       loop: '{{ instance.vhost_users | default([]) }}'
       when: instance.vhost_users is defined
       notify: Restart nginx
@@ -119,7 +119,7 @@
     dest: '{{ redmine_app_dir }}/public/robots.txt'
     owner: '{{ redmine_user }}'
     group: '{{ redmine_group }}'
-    mode: 0644
+    mode: '0644'
   when: instance.use_robots_txt_from_redmine is undefined or not instance.use_robots_txt_from_redmine
 
 - name: Cleanup redmine robots.txt - {{ instance_name }}

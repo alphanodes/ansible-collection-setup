@@ -5,7 +5,7 @@
   ansible.builtin.template:
     src: apt/apt.conf.d/{{ item }}.j2
     dest: /etc/apt/apt.conf.d/{{ item }}
-    mode: 0644
+    mode: '0644'
   loop:
     - 20auto-upgrades
     - 50unattended-upgrades
@@ -24,7 +24,7 @@
     state: directory
     owner: root
     group: root
-    mode: 0755
+    mode: '0755'
   loop:
     - /etc/systemd/system/apt-daily.timer.d
     - /etc/systemd/system/apt-daily-upgrade.timer.d
@@ -36,7 +36,7 @@
     dest: /etc/systemd/system/apt-daily.timer.d/override.conf
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   notify: Restart apt-daily.timer
 
 # to install the upgrades (unattended-upgrade)
@@ -46,5 +46,5 @@
     dest: /etc/systemd/system/apt-daily-upgrade.timer.d/override.conf
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
   notify: Restart apt-daily-upgrade.timer

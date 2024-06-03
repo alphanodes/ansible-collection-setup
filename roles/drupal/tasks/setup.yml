@@ -11,7 +11,7 @@
   ansible.builtin.template:
     src: etc/drush/aliases.drushrc.drupal.j2
     dest: /etc/drush/aliases.drushrc.drupal.php
-    mode: 0644
+    mode: '0644'
   when: >
     drupal_instances | length
     and (instance.state is undefined or instance.state == 'active')

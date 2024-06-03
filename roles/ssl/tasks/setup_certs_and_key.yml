@@ -21,7 +21,7 @@
         group: '{{ ssl_cert_group }}'
         type: '{{ ssl_cert.type | default(omit) }}'
         size: '{{ ssl_cert.size | default(omit) }}'
-        mode: 0640
+        mode: '0640'
 
     # see https://docs.ansible.com/ansible/latest/collections/community/crypto/openssl_csr_module.html
     - name: Generate an OpenSSL CSR
@@ -80,7 +80,7 @@
         content: "{{ ssl_certificate.certificate }}"
         owner: '{{ ssl_cert_owner }}'
         group: '{{ ssl_cert_group }}'
-        mode: 0644
+        mode: '0644'
       when: not ssl_certificate_exists.stat.exists or ssl_certificate is changed
 
 - name: Install ssl certificates - {{ ssl_cert.name }}
@@ -89,7 +89,7 @@
     dest: '{{ cert_path }}'
     owner: '{{ ssl_cert_owner }}'
     group: '{{ ssl_cert_group }}'
-    mode: 0644
+    mode: '0644'
   notify: Restart nginx
   when: ssl_cert.provider is undefined
 
@@ -105,7 +105,7 @@
     dest: /etc/ssl/certs/{{ ssl_cert.name }}_trusted.crt
     owner: '{{ ssl_cert_owner }}'
     group: '{{ ssl_cert_group }}'
-    mode: 0644
+    mode: '0644'
   when:
     - ssl_cert.provider is undefined
     - trusted_cert.stat.exists
@@ -125,6 +125,6 @@
     dest: '{{ key_path }}'
     owner: '{{ ssl_cert_owner }}'
     group: '{{ ssl_cert_group }}'
-    mode: 0640
+    mode: '0640'
   notify: Restart nginx
   when: ssl_cert.provider is undefined

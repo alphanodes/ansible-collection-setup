@@ -25,7 +25,7 @@
   ansible.builtin.file:
     path: '{{ redmine_home }}'
     state: directory
-    mode: 0755
+    mode: '0755'
     owner: '{{ redmine_user }}'
     group: '{{ redmine_group }}'
 
@@ -35,7 +35,7 @@
     dest: '{{ redmine_home }}/'
     owner: '{{ redmine_user }}'
     group: '{{ redmine_group }}'
-    mode: 0644
+    mode: '0644'
   loop: '{{ redmine_user_config_files }}'
 
 - name: Include zsh role
@@ -58,7 +58,7 @@
     dest: '{{ redmine_home }}/{{ item.target }}'
     owner: '{{ instance_name }}'
     group: '{{ instance_name }}'
-    mode: 0644
+    mode: '0644'
   loop: '{{ redmine_user_config_templates }}'
 
 - name: Remove obsolete user configuration
@@ -101,7 +101,7 @@
     path: '{{ redmine_app_dir }}{{ item.path }}'
     owner: root
     group: '{{ redmine_group }}'
-    mode: 0775
+    mode: '0775'
     recurse: '{{ item.recurse | default(False) }}'
   loop: '{{ redmine_write_permission_dirs }}'
 

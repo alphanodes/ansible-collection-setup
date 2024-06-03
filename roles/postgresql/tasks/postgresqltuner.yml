@@ -7,11 +7,11 @@
   ansible.builtin.get_url:
     url: https://raw.githubusercontent.com/jfcoz/postgresqltuner/master/postgresqltuner.pl
     dest: '{{ tmp_file }}'
-    mode: 0755
+    mode: '0755'
   delegate_to: localhost
 
 - name: Install latest postgresqltuner.pl
   ansible.builtin.copy:
     src: '{{ tmp_file }}'
     dest: '/usr/local/bin/postgresqltuner.pl'
-    mode: 0755
+    mode: '0755'

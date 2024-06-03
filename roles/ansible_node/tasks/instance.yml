@@ -37,7 +37,7 @@
       ansible.builtin.template:
         src: playbooks/{{ available_playbook.playbook }}.j2
         dest: '{{ playbook_filename }}'
-        mode: 0640
+        mode: '0640'
 
     - name: Prepare timer - {{ available_playbook_name }}
       ansible.builtin.set_fact:

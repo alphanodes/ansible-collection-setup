@@ -7,7 +7,7 @@
       ansible.builtin.template:
         src: messenger.conf.j2
         dest: '{{ fail2ban_action_path }}/rocketchat.conf'
-        mode: 0644
+        mode: '0644'
         owner: root
         group: root
       notify: Restart fail2ban
@@ -18,7 +18,7 @@
       ansible.builtin.template:
         src: messenger.sh.j2
         dest: '{{ fail2ban_action_path }}/rocketchat.sh'
-        mode: 0644
+        mode: '0644'
         owner: root
         group: root
       notify: Restart fail2ban

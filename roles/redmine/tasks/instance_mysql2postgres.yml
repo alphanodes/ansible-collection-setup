@@ -15,5 +15,5 @@
     dest: '{{ redmine_config_dir }}/mysql2postgres.yml'
     owner: '{{ redmine_user }}'
     group: '{{ redmine_group }}'
-    mode: "0640"
+    mode: '0640'
   when: mysql2postgres_file.stat.exists

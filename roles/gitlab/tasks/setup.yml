@@ -63,7 +63,7 @@
     dest: '{{ gitlab_home + "/.profile" }}'
     owner: '{{ gitlab_user }}'
     group: '{{ gitlab_group }}'
-    mode: 0644
+    mode: '0644'
 
 - name: Include zsh role
   ansible.builtin.include_role:
@@ -152,7 +152,7 @@
     dest: '{{ gitlab_path }}/config/database.yml'
     owner: '{{ gitlab_user }}'
     group: '{{ gitlab_group }}'
-    mode: 0600
+    mode: '0600'
 
 - name: Get secrets file information
   ansible.builtin.stat:
@@ -165,7 +165,7 @@
     dest: '{{ gitlab_path }}/config/secrets.yml'
     owner: '{{ gitlab_user }}'
     group: '{{ gitlab_group }}'
-    mode: 0600
+    mode: '0600'
   when: not gitlab__secrets_exists.stat.exists
 
 - name: Install bundler
@@ -219,7 +219,7 @@
     state: directory
     owner: '{{ gitlab_user }}'
     group: '{{ gitlab_group }}'
-    mode: 0700
+    mode: '0700'
 
 - name: Create ci_secure_files directory
   ansible.builtin.file:
@@ -227,7 +227,7 @@
     state: directory
     owner: '{{ gitlab_user }}'
     group: '{{ gitlab_group }}'
-    mode: 0700
+    mode: '0700'
   when: gitlab_ci_secure_files_enabled
 
 - name: Include backup tasks
@@ -239,7 +239,7 @@
     dest: '{{ gitlab_path }}/config/gitlab.yml'
     owner: '{{ gitlab_user }}'
     group: '{{ gitlab_group }}'
-    mode: 0640
+    mode: '0640'
   notify:
     - Restart gitlab puma
     - Restart gitaly
@@ -252,7 +252,7 @@
     dest: '{{ gitlab_path }}/config/resque.yml'
     owner: '{{ gitlab_user }}'
     group: '{{ gitlab_group }}'
-    mode: 0640
+    mode: '0640'
   notify:
     - Restart gitlab puma
     - Restart gitaly
@@ -265,7 +265,7 @@
     dest: '{{ gitlab_path }}/config/cable.yml'
     owner: '{{ gitlab_user }}'
     group: '{{ gitlab_group }}'
-    mode: 0640
+    mode: '0640'
   notify:
     - Restart gitlab puma
     - Restart gitaly
@@ -291,7 +291,7 @@
     dest: '{{ gitlab_path }}/config/puma.rb'
     owner: '{{ gitlab_user }}'
     group: '{{ gitlab_group }}'
-    mode: 0644
+    mode: '0644'
   notify:
     - Restart gitlab
     - Restart gitlab.slice
@@ -302,7 +302,7 @@
     dest: '{{ gitlab_path }}/config/initializers/rack_attack.rb'
     owner: '{{ gitlab_user }}'
     group: '{{ gitlab_group }}'
-    mode: 0644
+    mode: '0644'
   when: gitlab_initializers_rack_attack
   notify:
     - Restart gitlab
@@ -312,7 +312,7 @@
   ansible.builtin.template:
     src: 'etc/systemd/system/{{ item }}.j2'
     dest: '/etc/systemd/system/{{ item }}'
-    mode: 0644
+    mode: '0644'
   loop:
     - gitlab.target
     - gitlab.slice
@@ -328,7 +328,7 @@
   ansible.builtin.template:
     src: etc/systemd/system/gitlab-pages.service.j2
     dest: /etc/systemd/system/gitlab-pages.service
-    mode: 0644
+    mode: '0644'
   register: gitlab__systemd_page_file
   when: gitlab_pages_enabled
   notify:
@@ -466,7 +466,7 @@
     dest: /etc/logrotate.d/gitlab
     owner: root
     group: root
-    mode: 0644
+    mode: '0644'
 
 - name: Include nginx tasks
   ansible.builtin.include_tasks: nginx.yml

@@ -45,7 +45,7 @@
       ansible.builtin.file:
         path: '{{ golang_install_dir }}'
         state: directory
-        mode: 0755
+        mode: '0755'
         owner: root
         group: root
 
@@ -53,7 +53,7 @@
       ansible.builtin.get_url:
         url: '{{ golang_mirror }}/{{ golang_file }}'
         dest: '{{ software_dir }}/{{ golang_file }}'
-        mode: 0644
+        mode: '0644'
         checksum: "{{ 'sha256:' + golang_sha256_checksum | default(omit) }}"
         force: false
         use_proxy: '{{ golang_mirror_use_proxy }}'

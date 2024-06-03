@@ -5,7 +5,7 @@
     path: '{{ redmine_config_dir }}'
     owner: '{{ instance_name }}'
     group: '{{ instance_name }}'
-    mode: 0755
+    mode: '0755'
     state: directory
 
 - name: Configure Gemfile.local - {{ instance_name }}
@@ -14,7 +14,7 @@
     dest: '{{ redmine_app_dir }}/Gemfile.local'
     owner: '{{ redmine_user }}'
     group: '{{ redmine_group }}'
-    mode: 0644
+    mode: '0644'
     validate: 'ruby -c %s'
   notify: Restart puma instance
 
@@ -22,7 +22,7 @@
   ansible.builtin.template:
     src: etc/sudoers.d/redmine.j2
     dest: /etc/sudoers.d/{{ instance_name }}
-    mode: 0440
+    mode: '0440'
 
 - name: Include redmine configuration file tasks
   ansible.builtin.include_tasks: instance_config_file.yml
@@ -39,7 +39,7 @@
         dest: '{{ redmine_config_dir }}/merge_projects.rb'
         owner: '{{ instance_name }}'
         group: '{{ instance_name }}'
-        mode: 0640
+        mode: '0640'
       notify: Restart puma instance
 
     - name: Get link info - {{ instance_name }}
@@ -72,7 +72,7 @@
         dest: '{{ redmine_config_dir }}/database.yml'
         owner: '{{ redmine_user }}'
         group: '{{ redmine_group }}'
-        mode: 0640
+        mode: '0640'
       notify: Restart puma instance
 
     - name: Get link info - {{ instance_name }}

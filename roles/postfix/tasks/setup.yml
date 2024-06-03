@@ -36,14 +36,14 @@
   ansible.builtin.copy:
     src: submission_header_cleanup
     dest: /etc/postfix/submission_header_cleanup
-    mode: 0644
+    mode: '0644'
   when: postfix_header_cleanup
 
 - name: Configure main.cf
   ansible.builtin.template:
     src: postfix/main.cf.j2
     dest: '{{ postfix_main_cf }}'
-    mode: 0644
+    mode: '0644'
   notify:
     - Restart postfix
     - Build new aliases
@@ -52,7 +52,7 @@
   ansible.builtin.template:
     src: postfix/master.cf.j2
     dest: /etc/postfix/master.cf
-    mode: 0644
+    mode: '0644'
   notify:
     - Restart postfix
 
@@ -60,21 +60,21 @@
   ansible.builtin.template:
     src: mailname.j2
     dest: '{{ postfix_mailname_file }}'
-    mode: 0644
+    mode: '0644'
   notify: Restart postfix
 
 - name: Update aliases
   ansible.builtin.template:
     src: aliases.j2
     dest: '{{ postfix_aliases_file }}'
-    mode: 0644
+    mode: '0644'
   notify: Build new aliases
 
 - name: Install recipient-canonical configuration
   ansible.builtin.template:
     src: postfix/recipient-canonical.j2
     dest: /etc/postfix/recipient-canonical
-    mode: 0644
+    mode: '0644'
   when: postfix_redirect_all_mails_to is defined
   register: canonical_redirect
 
@@ -107,7 +107,7 @@
   ansible.builtin.template:
     src: postfix/sender-canonical.j2
     dest: /etc/postfix/sender-canonical
-    mode: 0644
+    mode: '0644'
   when: postfix_sender_canonicals | length > 0
   register: sender_canonical
 

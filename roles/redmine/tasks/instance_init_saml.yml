@@ -40,7 +40,7 @@
         dest: '{{ redmine_app_dir }}/config/initializers/saml.rb'
         owner: '{{ redmine_user }}'
         group: '{{ redmine_group }}'
-        mode: 0640
+        mode: '0640'
       notify: Restart puma instance
 
 - name: Disable SAML support - {{ instance_name }}

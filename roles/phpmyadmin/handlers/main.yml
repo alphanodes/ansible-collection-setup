@@ -6,7 +6,7 @@
   ansible.builtin.copy:
     src: phpmyadmin.sql
     dest: /tmp
-    mode: 0644
+    mode: '0644'
     owner: root
     group: root
 

@@ -39,7 +39,7 @@
     owner: postgres
     group: postgres
     force: false
-    mode: 0600
+    mode: '0600'
   when: key_by_host.stat.exists
 
 - name: Install ssh private key for barman server by group (if provided)
@@ -49,7 +49,7 @@
     owner: postgres
     group: postgres
     force: false
-    mode: 0600
+    mode: '0600'
   when:
     - not key_by_host.stat.exists
     - key_by_group.stat.exists
