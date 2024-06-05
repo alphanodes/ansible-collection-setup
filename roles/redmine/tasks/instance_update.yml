@@ -57,7 +57,8 @@
     - name: Install latest mailcatcher (cannot use Gemfile) - {{ instance_name }}
       community.general.gem:
         name: mailcatcher
-        state: latest
+        version: '{{ redmine_mailcatcher_version | default(omit) }}'
+        state: "{{ 'present' if redmine_mailcatcher_version is defined else 'latest' }}"
       when:
         - instance.with_mailcatcher is defined
         - instance.with_mailcatcher
