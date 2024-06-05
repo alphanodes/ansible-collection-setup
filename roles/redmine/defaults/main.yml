@@ -66,7 +66,7 @@ account_migrate_to_new_home: true
 
 # use static version, if defined - default: latest (if not defined)
 # https://github.com/sj26/mailcatcher
-# redmine_mailcatcher_version: 'v0.9.1.beta2'
+# redmine_mailcatcher_version: '0.9.1.beta2'
 
 redmine_mailcatcher_ip: ''
 redmine_mailcatcher_smtp_port: 1025
