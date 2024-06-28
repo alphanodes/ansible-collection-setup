@@ -9,7 +9,7 @@ rocketchat_packages:
 rocketchat_dir: /srv/rocketchat
 rocketchat_application_path: '{{ rocketchat_dir }}/bundle'
 # "latest" implies latest stable here, can be "3.3.0", for example
-rocketchat_version: 6.9.2
+rocketchat_version: 6.9.3
 # rocketchat_tarball_remote: https://releases.rocket.chat/{{ rocketchat_version }}/download
 rocketchat_tarball_remote: https://cdn-download.rocket.chat/build/rocket.chat-{{ rocketchat_version }}.tgz
 rocketchat_tarball_fetch_timeout: 100
