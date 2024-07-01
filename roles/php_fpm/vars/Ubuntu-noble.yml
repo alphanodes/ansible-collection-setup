@@ -1,0 +1,23 @@
+---
+php_fpm_listen_base: /run/php/php8.3-fpm
+php_fpm_listen: '{{ php_fpm_listen_base }}.sock'
+php_fpm_php_fpm_conf: /etc/php/8.3/fpm/php-fpm.conf
+php_fpm_custom_php_ini: /etc/php/8.3/fpm/conf.d/custom.ini
+php_fpm_pool_dir: /etc/php/8.3/fpm/pool.d
+php_fpm_pool_conf: www.conf
+php_fpm_service: php8.3-fpm
+php_fpm_pid: /run/php/{{ php_fpm_service }}.pid
+__php_session_save_path: /var/lib/php/sessions
+
+php_fpm_packages:
+  - php8.3-fpm
+  - php8.3-gd
+  - php8.3-readline
+  - php8.3-mbstring
+  - php8.3-xml
+
+php_fpm_remove_packages:
+  - php-fpm
+  - php-gd
+  - php-json
+  - php-readline

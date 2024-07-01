@@ -244,8 +244,8 @@ redmine_packages:
   - subversion
 
 # This should be default, if system ruby version < 2.7
-# e.g. Ubuntu 20.04 or Debian 11 can use system ruby
-# ! all maintained ubuntu versions are focal or newer - set true as default
+# e.g. Ubuntu 20.04 or Debian 11 (or newer) can use system ruby
+# ! all maintained ubuntu versions are jammy or newer - set true as default
 # ! this also requires Redmine 4.2 or newer (because of ruby 2.7)
 redmine_use_rvm_as_default: false
 

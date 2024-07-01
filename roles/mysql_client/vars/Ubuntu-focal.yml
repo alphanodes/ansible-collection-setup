@@ -1,4 +1,0 @@
----
-
-mysql_client_check_php_package: php7.4-common
-mysql_client_php_package: php7.4-mysql
