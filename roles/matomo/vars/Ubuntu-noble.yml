@@ -1,0 +1,10 @@
+---
+
+matomo_packages:
+  # - php-geoip
+  - php8.3-ldap
+  - php8.3-mbstring
+  - php8.3-xml
+  - php8.3-gd
+
+matomo_php_mods_available: /etc/php/8.3/mods-available

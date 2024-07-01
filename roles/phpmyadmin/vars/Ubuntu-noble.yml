@@ -3,6 +3,6 @@
 phpmyadmin_packages:
   - fonts-dejavu
   - gettext
-  - php7.4-mysql
-  - php7.4-xml
-  - php7.4-zip
+  - php8.3-mysql
+  - php8.3-xml
+  - php8.3-zip
