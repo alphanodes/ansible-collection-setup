@@ -23,5 +23,5 @@
             value: '{{ gitlab_rails_env }}'
           - name: USER
             value: '{{ gitlab_user }}'
-        exec_start: "{{ gitlab_rvm_ruby_path if gitlab_rvm_ruby else gitlab_gem_home + '/bin' }}/bundle exec rake gitlab:backup:create"
+        exec_start: "{{ gitlab_rvm_ruby_path if gitlab_rvm_ruby else gitlab_gem_home + '/bin' }}/bundle exec rake gitlab:backup:create {{ gitlab_backup_skip }}"
         syslog_identifier: gitlab-backup
