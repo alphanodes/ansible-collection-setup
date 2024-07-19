@@ -41,9 +41,9 @@ dendrite_vhost_letsencrypt_key: '{{ letsencrypt_keys[0] | default(omit) }}'
 # NOTE: version should be tests in gitlab pipeline
 # SEE https://gitlab.com/gitlab-org/gitlab/-/blob/master/.gitlab/ci/workhorse.gitlab-ci.yml#L30
 # https://go.dev/dl/ -> linux-amd64.tar.gz
-dendrite_go_version: '1.21.12'
+dendrite_go_version: '1.22.5'
 # linux-arm64.tar.gz
-dendrite_go_sha256_checksum: 94cb3ec4a1e08a00da55c33e63f725be91f10ba743907b5615ef34e54675ba2e
+dendrite_go_sha256_checksum: 8d21325bfcf431be3660527c1a39d3d9ad71535fabdf5041c826e44e31642b5a
 
 dendrite_with_validation: true
 dendrite_remove: false
