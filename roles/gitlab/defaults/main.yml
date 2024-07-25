@@ -291,6 +291,7 @@ gitlab_backup_keep_time: 604800
 gitlab_backup_pg_schema: public
 
 # skip these runs for backup
+# see https://docs.gitlab.com/ee/administration/backup_restore/backup_gitlab.html?tab=Self-compiled
 gitlab_backup_skip: 'remote'
 
 gitlab_monitoring_ip_whitelist:
