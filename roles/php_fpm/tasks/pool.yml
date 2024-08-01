@@ -1,0 +1,27 @@
+---
+
+- name: Create group for pool {{ pool.name }}
+  ansible.builtin.group:
+    name: '{{ pool.group }}'
+    state: present
+    system: true
+  when: pool.group is defined
+
+- name: Create system account for pool {{ pool.name }}
+  ansible.builtin.user:
+    name: '{{ pool.user | default(pool.name) }}'
+    home: '{{ pool.home | default(omit) }}'
+    group: "{{ pool.group | default(nginx_group) }}"
+    groups: "{{ pool.groups | default(omit) }}"
+    append: "{{ pool.groups is defined }}"
+    system: true
+  when: pool.skip_user_create is undefined or not pool.skip_user_create
+
+- name: Setup fpm pool {{ pool.name }}
+  ansible.builtin.template:
+    src: pool.j2
+    dest: '{{ php_fpm_pool_dir }}/{{ pool.name }}.conf'
+    mode: '0644'
+    owner: root
+    group: root
+  notify: Restart php-fpm

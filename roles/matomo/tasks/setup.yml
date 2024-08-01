@@ -171,7 +171,7 @@
   ansible.builtin.file:
     path: '{{ matomo_config_file }}'
     owner: '{{ matomo_user }}'
-    group: '{{ matomo_user }}'
+    group: '{{ matomo_group }}'
     mode: '{{ matomo_config_file_mode }}'
   when: matomo_config_file_exists.stat.exists
 

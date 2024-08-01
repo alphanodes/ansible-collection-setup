@@ -36,7 +36,7 @@
   ansible.builtin.file:
     path: '{{ credentials_file }}'
     state: absent
-  when: cifs_mount.credential_user is not defined or cifs_mount.credential_password is not defined
+  when: cifs_mount.credential_user is undefined or cifs_mount.credential_password is undefined
 
 - name: Set fstab entry
   ansible.builtin.lineinfile:

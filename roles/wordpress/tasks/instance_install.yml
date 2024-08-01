@@ -12,7 +12,7 @@
   register: git_result
 
 - name: Without git
-  when: instance.repo is not defined
+  when: instance.repo is undefined
   block:
     - name: Check if WordPress already downloaded
       ansible.builtin.stat:

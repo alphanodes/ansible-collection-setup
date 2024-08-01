@@ -29,8 +29,11 @@
     group: root
   notify: Restart php-fpm
 
-- name: Include pools tasks
-  ansible.builtin.include_tasks: pools.yml
+- name: Include pool tasks
+  ansible.builtin.include_tasks: pool.yml
+  loop: '{{ php_fpm_pools }}'
+  loop_control:
+    loop_var: pool
 
 - name: Start the php-fpm service
   ansible.builtin.systemd:

@@ -33,6 +33,45 @@
     - instance.db_driver == 'pgsql'
     - instance.db_host is undefined or instance.db_host == 'localhost' or instance.db_host == '127.0.0.1'
 
+- name: Set facts
+  ansible.builtin.set_fact:
+    file_private_path: "{{ instance.file_private_path | default(instance.dir + '/private_files') }}"
+    config_sync_directory: "{{ instance.config_sync_directory | default(instance.dir + '/config') }}"
+    sites_default_dir: "{{ instance.dir }}{{ instance.vhost_dir | default(drupal_vhost_dir) }}/sites/default"
+
+- name: Fix owner and permission for settings on checkout
+  when: instance.write_settings_file is defined and not instance.write_settings_file
+  block:
+    - name: Fix sites/default owner and permission
+      ansible.builtin.file:
+        path: "{{ sites_default_dir }}"
+        owner: "{{ instance.drupal_user | default('root') }}"
+        group: "{{ instance.drupal_group | default(nginx_group) | default('root') }}"
+        mode: '0755'
+        state: directory
+
+    - name: Fix settings.php owner and permission
+      ansible.builtin.file:
+        path: "{{ sites_default_dir }}/settings.php"
+        owner: "{{ instance.drupal_user | default('root') }}"
+        group: "{{ instance.drupal_group | default(nginx_group) | default('root') }}"
+        mode: '0644'
+        state: file
+
+    - name: Check for settings.prod.php
+      ansible.builtin.stat:
+        path: "{{ sites_default_dir }}/settings.prod.php"
+      register: prod_php
+
+    - name: Fix settings.prod.php owner and permission
+      ansible.builtin.file:
+        path: "{{ prod_php.stat.path }}"
+        owner: "{{ instance.drupal_user | default('root') }}"
+        group: "{{ instance.drupal_group | default(nginx_group) | default('root') }}"
+        mode: '0644'
+        state: file
+      when: prod_php.stat.exists
+
 - name: Install drupal - {{ instance.name }}
   ansible.builtin.git:
     repo: '{{ instance.repo }}'
@@ -72,7 +111,7 @@
     group: '{{ instance.drupal_group | default(nginx_group) }}'
     recurse: true
   loop: '{{ instance.write_permissions | default([]) }}'
-  when: drupal_user is not defined
+  when: drupal_user is undefined
 
 - name: Make sure tmp directory exists and permissions are correct - {{ instance.name }}
   ansible.builtin.file:
@@ -82,11 +121,6 @@
     state: directory
     recurse: true
   when: instance.tmp_dir is defined
-
-- name: Set facts
-  ansible.builtin.set_fact:
-    file_private_path: "{{ instance.file_private_path | default(instance.dir + '/private_files') }}"
-    config_sync_directory: "{{ instance.config_sync_directory | default(instance.dir + '/config') }}"
 
 - name: Check if private files directory exists - {{ instance.name }}
   ansible.builtin.file:
@@ -111,13 +145,13 @@
 - name: Update settings.php for Drupal - {{ instance.name }}
   ansible.builtin.template:
     src: default.settings.php.j2
-    dest: "{{ instance.dir }}{{ instance.vhost_dir | default(drupal_vhost_dir) }}/sites/default/settings.php"
+    dest: "{{ sites_default_dir }}/settings.php"
     validate: 'php -l %s'
     owner: '{{ instance.drupal_user | default("root") }}'
     group: '{{ instance.drupal_group | default(nginx_group) }}'
     mode: '0640'
   when:
-    - instance.write_settings_file is not defined or instance.write_settings_file
+    - instance.write_settings_file is undefined or instance.write_settings_file
 
 - name: Update .env
   ansible.builtin.template:

@@ -3,7 +3,7 @@
 - name: Define nodejs_install_npm_user
   ansible.builtin.set_fact:
     nodejs_install_npm_user: "{{ ansible_user | default(lookup('env', 'USER')) }}"
-  when: nodejs_install_npm_user is not defined
+  when: nodejs_install_npm_user is undefined
 
 - name: Create npm global directory for {{ nodejs_install_npm_user }}
   ansible.builtin.file:

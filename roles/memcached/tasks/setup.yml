@@ -2,7 +2,7 @@
 - name: Define memcached_user.
   ansible.builtin.set_fact:
     memcached_user: "{{ __memcached_user }}"
-  when: memcached_user is not defined
+  when: memcached_user is undefined
 
 - name: Install Memcached.
   ansible.builtin.apt:

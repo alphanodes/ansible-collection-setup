@@ -2,7 +2,7 @@
 # nginx nextcloud configuration
 
 upstream php-handler {
-  server unix:{{ php_fpm_listen_base + '-' + instance.with_fpm + '.sock' if instance is defined and instance.with_fpm is defined and instance.with_fpm != 'www' else php_fpm_listen | default('/run/php5-fpm.sock') }};
+  server unix:{{ php_fpm_base + '-' + instance.with_fpm + '.sock' if instance is defined and instance.with_fpm is defined and instance.with_fpm != 'www' else php_fpm_listen | default('/run/php/php-fpm.sock') }};
 }
 
 server {
