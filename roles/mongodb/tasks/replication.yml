@@ -51,6 +51,6 @@
     votes: "{{ item.votes | default(omit) }}"
     ssl: "{{ True if mongodb_net_ssl_mode == 'requireSSL' else False }}"
   when: ( mongodb_security_authorization == 'disabled'
-        and ( mongodb_master is not defined or not mongodb_master) )
+        and ( mongodb_master is undefined or not mongodb_master) )
   with_items:
     - "{{ mongodb_replication_params | default([]) }}"

@@ -28,6 +28,8 @@
     src: nginx/sites-available/matomo.j2
     dest: /etc/nginx/sites-available/matomo.conf
     mode: '0644'
+  vars:
+    php_fpm_custom_listen: '{{ matomo_php_fpm_listen_name if matomo_php_fpm_listen_name is defined else php_fpm_listen }}'
   notify: Reload nginx
 
 - name: Ensure matomo vhost is enabled

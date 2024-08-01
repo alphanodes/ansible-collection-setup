@@ -2,7 +2,7 @@
 ; Start a new pool named 'www'.
 ; the variable $pool can be used in any directive and will be replaced by the
 ; pool name ('www' here)
-[{{ item.name if item is defined else php_fpm_pool_name }}]
+[{{ pool.name }}]
 
 ; Per pool prefix
 ; It only applies on the following directives:
@@ -21,8 +21,8 @@
 ; Unix user/group of processes
 ; Note: The user is mandatory. If the group is not set, the default user's group
 ;       will be used.
-user = {{ item.user | default(item.name) if item is defined else php_fpm_pool_user }}
-group = {{ item.user | default(item.name) if item is defined else php_fpm_pool_group }}
+user = {{ pool.user | default(pool.name) }}
+group = {{ pool.group | default(pool.user) | default(pool.name) }}
 
 ; The address on which to accept FastCGI requests.
 ; Valid syntaxes are:
@@ -34,7 +34,7 @@ group = {{ item.user | default(item.name) if item is defined else php_fpm_pool_g
 ;                            (IPv6 and IPv4-mapped) on a specific port;
 ;   '/path/to/unix/socket' - to listen on a unix socket.
 ; Note: This value is mandatory.
-listen = {{ php_fpm_listen_base + '-' + item.name + '.sock' if item is defined else php_fpm_listen }}
+listen = {{ pool.listen_name if pool.listen_name is defined else php_fpm_listen }}
 
 ; Set listen(2) backlog.
 ; Default Value: 511 (-1 on FreeBSD and OpenBSD)
@@ -111,22 +111,22 @@ pm = dynamic
 ; forget to tweak pm.* to fit your needs.
 ; Note: Used when pm is set to 'static', 'dynamic' or 'ondemand'
 ; Note: This value is mandatory.
-pm.max_children = {{ php_fpm_pm_max_children }}
+pm.max_children = {{ pool.pm_max_children | default(php_fpm_pm_max_children) }}
 
 ; The number of child processes created on startup.
 ; Note: Used only when pm is set to 'dynamic'
 ; Default Value: min_spare_servers + (max_spare_servers - min_spare_servers) / 2
-pm.start_servers = {{ php_fpm_pm_start_servers }}
+pm.start_servers = {{ pool.pm_start_servers | default(php_fpm_pm_start_servers) }}
 
 ; The desired minimum number of idle server processes.
 ; Note: Used only when pm is set to 'dynamic'
 ; Note: Mandatory when pm is set to 'dynamic'
-pm.min_spare_servers = {{ php_fpm_pm_min_spare_servers }}
+pm.min_spare_servers = {{ pool.pm_min_spare_servers | default(php_fpm_pm_min_spare_servers) }}
 
 ; The desired maximum number of idle server processes.
 ; Note: Used only when pm is set to 'dynamic'
 ; Note: Mandatory when pm is set to 'dynamic'
-pm.max_spare_servers = {{ php_fpm_pm_max_spare_servers }}
+pm.max_spare_servers = {{ pool.pm_max_spare_servers | default(php_fpm_pm_max_spare_servers) }}
 
 ; The number of seconds after which an idle process will be killed.
 ; Note: Used only when pm is set to 'ondemand'

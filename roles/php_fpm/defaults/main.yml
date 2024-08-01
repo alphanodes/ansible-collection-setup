@@ -1,8 +1,13 @@
 # defaults file for php_fpm
 ---
 
-# add additional pools
-php_fpm_extra_pools: []
+# fpm pools (at least one pool have to exist)
+php_fpm_pools:
+  - name: www
+    user: '{{ nginx_user }}'
+    group: '{{ nginx_group }}'
+    listen_name: '{{ php_fpm_listen }}'
+    skip_user_create: true
 
 php_fpm_listen_allowed_clients: 127.0.0.1
 php_fpm_pm_max_children: 10
@@ -11,10 +16,6 @@ php_fpm_pm_min_spare_servers: 5
 php_fpm_pm_max_spare_servers: 5
 php_fpm_pm_status_path: /php_status
 php_fpm_ping_path: /php_ping
-
-php_fpm_pool_name: www
-php_fpm_pool_user: '{{ nginx_user }}'
-php_fpm_pool_group: '{{ nginx_group }}'
 
 php_fpm_pool_clear_env: false
 

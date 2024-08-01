@@ -11,7 +11,7 @@
 
 - name: Set if playbook is required - {{ available_playbook_name }}
   ansible.builtin.set_fact:
-    required_playbook: "{{ true if ansible_node_timers[available_playbook_name] is not defined and available_playbook_name in ansible_node_playbooks | map(attribute='name') else false }}"
+    required_playbook: "{{ true if ansible_node_timers[available_playbook_name] is undefined and available_playbook_name in ansible_node_playbooks | map(attribute='name') else false }}"
 
 - name: Not required playbook
   when: not required_playbook

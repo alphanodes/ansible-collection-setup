@@ -42,17 +42,14 @@ server {
       try_files $uri $uri/ =404;
   }
 
-  {% if matomo_vhost_includes is defined -%}
-  {% for include in matomo_vhost_includes -%}
+{% if matomo_vhost_includes is defined -%}
+{% for include in matomo_vhost_includes -%}
   include {{ include }}.conf;
-  {% endfor %}
-  {% endif %}
-
-  {% if not matomo_with_access_log -%}
-
+{% endfor %}
+{% endif %}
+{% if not matomo_with_access_log %}
   access_log off;
-
-  {% endif -%}
+{% endif %}
 
   location ~ \.(jpg|jpeg|gif|png|ico)$ {
     access_log off;

@@ -28,7 +28,7 @@
     src: '{{ playbook_dir }}/files/matomo/{{ group_names[0] }}.ini.php.j2'
     dest: '{{ matomo_config_file }}'
     owner: '{{ matomo_user }}'
-    group: '{{ matomo_user }}'
+    group: '{{ matomo_group }}'
     mode: '{{ matomo_config_file_mode }}'
   when:
     - matomo_multi_server_environment

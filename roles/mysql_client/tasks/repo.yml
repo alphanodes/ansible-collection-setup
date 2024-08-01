@@ -14,7 +14,7 @@
         src: mysql.gpg
         dest: '{{ mysql_apt_repo_key_file }}'
         mode: '0644'
-      when: mysql_apt_key_url is not defined
+      when: mysql_apt_key_url is undefined
 
     - name: Remove old apt repository files
       ansible.builtin.file:
