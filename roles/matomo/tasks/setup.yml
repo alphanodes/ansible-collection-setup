@@ -115,7 +115,7 @@
   ansible.builtin.file:
     path: '{{ matomo_dir }}'
     owner: '{{ matomo_user }}'
-    group: "{{ 'mysql' if matomo_with_mysql and not matomo_add_mysql_to_matomo_group else matomo_group }}"
+    group: "{{ 'mysql' if matomo_with_mysql and matomo_add_mysql_to_matomo_group else matomo_group }}"
     mode: '0750'
 
 - name: Install robots.txt
