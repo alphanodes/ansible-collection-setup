@@ -121,7 +121,7 @@ server {
     rewrite ^/(.*)$ /index.php?q=$1;
   }
 
-  # Hide the Drupal 7 header X-Generator.
+  # Hide the Drupal header X-Generator.
   fastcgi_hide_header 'X-Generator';
 
   # Hide PHP
