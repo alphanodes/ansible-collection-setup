@@ -89,7 +89,7 @@ server {
   }
 
   # All static files will be served directly.
-  location ~* ^.+\.(?:{{ drupal_nginx_not_found_regex }})$ {
+  location ~* ^.+\.(?:{{ drupal_nginx_static_files }})$ {
     access_log off;
     expires 30d;
     # No need to bleed constant updates. Send the all shebang in one fell swoop.
