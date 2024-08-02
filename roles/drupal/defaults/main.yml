@@ -55,5 +55,10 @@ drupal_write_permissions:
 # nginx
 drupal_with_hotlink_protection: false
 
+# see https://github.com/wodby/nginx/blob/master/templates/presets/drupal8.conf.tmpl
+# see https://github.com/wodby/nginx/blob/master/templates/presets/drupal10.conf.tmpl
+drupal_nginx_static_files: "css|cur|js|jpe?g|gif|htc|ico|png|xml|otf|ttf|eot|woff|woff2|svg|mp4|svgz|ogg|ogv|pdf|pptx?|zip|tgz|gz|rar|bz2|doc|xls|exe|tar|mid|midi|wav|bmp|rtf|txt|map|webp"
+drupal_nginx_not_found_regex: "\\.(engine|md|txt|inc|install|make|module|profile|po|sh|.*sql|theme|twig|tpl(\\.php)?|xtmpl|yml|yaml)(~|\\.sw[op]|\\.bak|\\.orig|\\.save)?$|^(\\.(?!well-known).*|Entries.*|Repository|Root|Tag|Template)$|(web\\.config|composer\\.(json|lock)|(package|package-lock)\\.json|yarn\\.lock)$|^#.*#$|\\.php(~|\\.sw[op]|\\.bak|\\.orig|\\.save)$"
+
 # instance wide usage (for /etc/nginx/drupal.conf)
 drupal_multilanguage: []
