@@ -1,7 +1,7 @@
 ---
 - name: Secure mysql data directory
   ansible.builtin.file:
-    path: '{{ rmysql_datadir }}'
+    path: '{{ mysql_datadir }}'
     mode: '0700'
     state: directory
   when: mysql_secure_mysql_data_dir
