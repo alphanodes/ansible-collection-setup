@@ -54,16 +54,24 @@ server {
 {% endfor %}
 {% endif %}
 
-  # Drupal 7 or higher generated image handling, i.e., imagecache in core. See:
-  # https://drupal.org/node/371374.
+  # Drupal 7 or higher generated image handling, i.e., imagecache in core.
+  # @see https://drupal.org/node/371374.
   location ~* /files/(css|js|styles)/ {
-{% if drupal_with_hotlink_protection %}
-    # Image hotlinking protection. If you want hotlinking
-    # protection for your images uncomment the following line.
-    include hotlinking_protection.conf;
-{% endif %}
     expires 1y;
     try_files $uri @drupal;
+  }
+
+  location ~* /sites/.+/files/.+\.(?:{{ drupal_nginx_files_dir_static }}) {
+    expires 1y;
+
+    # No need to bleed constant updates. Send the all shebang in one fell swoop.
+    tcp_nodelay off;
+
+    # Set the OS file cache.
+    open_file_cache max=1000 inactive=30s;
+    open_file_cache_valid 30s;
+    open_file_cache_min_uses 2;
+    open_file_cache_errors off;
   }
 
   location ~* /sites/.+/files/optimized/(css|js)/ {
@@ -83,17 +91,23 @@ server {
     }
   }
 
+  location ~* /admin/reports/hacked/.+/diff/ {
+    try_files $uri @drupal;
+  }
+
   # Replica of regex from Drupals core .htaccess.
   location ~* {{ drupal_nginx_not_found_regex }} {
       return 404;
   }
 
   # All static files will be served directly.
-  location ~* ^.+\.(?:{{ drupal_nginx_static_files }})$ {
+  location ~* ^.+\.(?:{{ drupal_nginx_files_static }})$ {
     access_log off;
     expires 30d;
+
     # No need to bleed constant updates. Send the all shebang in one fell swoop.
     tcp_nodelay off;
+
     # Set the OS file cache.
     open_file_cache max=3000 inactive=120s;
     open_file_cache_valid 45s;
