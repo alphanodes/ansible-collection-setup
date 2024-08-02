@@ -87,6 +87,12 @@ http {
 {% if nginx_proxy_busy_buffers_size is defined %}
     proxy_busy_buffers_size {{ nginx_proxy_busy_buffers_size }};
 {% endif %}
+{% if nginx_fastcgi_buffers is defined %}
+    fastcgi_buffers {{ nginx_fastcgi_buffers }};
+{% endif %}
+{% if nginx_fastcgi_buffer_size is defined %}
+    fastcgi_buffer_size {{ nginx_fastcgi_buffer_size }};
+{% endif %}
 
     ## Compression.
     gzip              on;
