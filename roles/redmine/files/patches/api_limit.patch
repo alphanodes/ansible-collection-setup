@@ -8,8 +8,8 @@ index e83e08989..f10f6de6c 100644
        limit = 25
 -    elsif limit > 100
 -      limit = 100
-+    elsif limit > 200
-+      limit = 200
++    elsif limit > 400
++      limit = 400
      end
      if offset.nil? && options[:page].present?
        offset = (options[:page].to_i - 1) * limit
