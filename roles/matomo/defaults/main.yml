@@ -6,9 +6,6 @@ matomo_source_url: https://builds.matomo.org/
 
 matomo_dir: /srv/matomo
 
-# if matomo_vhost is no, subdirectory is used
-matomo_vhost: true
-
 matomo_user: "{{ nginx_user | default(nginx_user) | default('www-data') }}"
 matomo_group: "{{ nginx_group | default(nginx_group) | default('www-data') }}"
 
@@ -47,8 +44,13 @@ matomo_geoip_custom_directory: '{{ matomo_dir }}/misc'
 
 # for cluster you can customize installation
 matomo_with_mysql: true
-# if with nginx, php_fpm will be installed, too. If wihout nginx, php-cli will be installed, only.
+# if with nginx, php_fpm will be installed, too. If without nginx, php-cli will be installed, only.
 matomo_with_nginx: true
+
+# this could be required, if you use non www-data user
+# and want to use mysql_secure_file_priv
+# NOTE: do not activate it, if you use www-data as matomo_user (it should work without)
+matomo_add_mysql_to_matomo_group: false
 
 # see https://matomo.org/faq/new-to-piwik/faq_134/
 # if yes, plugins cannot be enabled by gui

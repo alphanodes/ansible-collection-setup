@@ -1,5 +1,25 @@
 ---
 
+# see php-fpm pool group: settings should not be conflicting
+- name: Ensure Matomo serivce group is present
+  ansible.builtin.group:
+    name: "{{ matomo_group }}"
+    state: present
+    system: true
+  when: matomo_group != nginx_group and matomo_group != 'root'
+
+- name: Ensure Matomo service user is present
+  when: matomo_user != nginx_user and matomo_group != 'root'
+  ansible.builtin.user:
+    comment: Matomo Service User
+    name: "{{ matomo_user }}"
+    group: "{{ matomo_group }}"
+    home: "{{ matomo_dir }}"
+    createhome: false
+    shell: /usr/sbin/nologin
+    system: true
+    state: present
+
 - name: Stats for matomo config file
   ansible.builtin.stat:
     path: '{{ matomo_config_file }}'
@@ -82,6 +102,14 @@
         state: directory
 
 # required for mysql mysql_secure_file_priv
+- name: Add mysql user to matomo group for pool {{ pool.name }}
+  ansible.builtin.user:
+    name: mysql
+    groups: '{{ matomo_group }}'
+    append: true
+  when: matomo_add_mysql_to_matomo_group and matomo_with_mysql
+
+# required for mysql mysql_secure_file_priv
 - name: Secure matomo directory
   ansible.builtin.file:
     path: '{{ matomo_dir }}'
@@ -100,16 +128,9 @@
 
 - name: Matomo with nginx
   when: matomo_with_nginx
-  block:
-    - name: Include set vhost tasks
-      ansible.builtin.include_tasks: setup_vhost.yml
-      tags: nginx
-      when: matomo_vhost
-
-    - name: Include subdirectory tasks
-      ansible.builtin.include_tasks: setup_subdirectory.yml
-      tags: nginx
-      when: not matomo_vhost
+  ansible.builtin.include_tasks: setup_nginx.yml
+  tags:
+    - nginx
 
 - name: Set force_ssl = 1
   ansible.builtin.lineinfile:
