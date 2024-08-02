@@ -1,4 +1,11 @@
 ---
+- name: Secure mysql data directory
+  ansible.builtin.file:
+    path: '{{ rmysql_datadir }}'
+    mode: '0700'
+    state: directory
+  when: mysql_secure_mysql_data_dir
+
 - name: Ensure default user is present.
   community.mysql.mysql_user:
     name: "{{ mysql_user_name }}"
