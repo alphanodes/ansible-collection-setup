@@ -6,7 +6,8 @@ php_fpm_pools:
   - name: www
     user: '{{ nginx_user }}'
     group: '{{ nginx_group }}'
-    listen_name: '{{ php_fpm_listen }}'
+    # this is default (you can skip pool, if it is www)
+    pool: www
     skip_user_create: true
 
 php_fpm_listen_allowed_clients: 127.0.0.1
