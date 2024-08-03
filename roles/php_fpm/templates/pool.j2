@@ -34,7 +34,7 @@ group = {{ pool.group | default(pool.user) | default(pool.name) }}
 ;                            (IPv6 and IPv4-mapped) on a specific port;
 ;   '/path/to/unix/socket' - to listen on a unix socket.
 ; Note: This value is mandatory.
-listen = {{ pool.listen_name if pool.listen_name is defined else php_fpm_listen }}
+listen = {{ active_php_fpm_listen }}
 
 ; Set listen(2) backlog.
 ; Default Value: 511 (-1 on FreeBSD and OpenBSD)
