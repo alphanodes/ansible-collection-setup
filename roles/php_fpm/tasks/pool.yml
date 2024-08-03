@@ -26,4 +26,4 @@
     group: root
   notify: Restart php-fpm
   vars:
-    active_php_fpm_listen: "{{ php_fpm_base + '-' + pool.pool + '.sock' if instance is defined and pool.pool is defined and pool.pool != 'www' else php_fpm_listen }}"
+    active_php_fpm_listen: "{{ php_fpm_base + '-' + pool.pool + '.sock' if pool.pool is defined and pool.pool != 'www' else php_fpm_listen }}"
