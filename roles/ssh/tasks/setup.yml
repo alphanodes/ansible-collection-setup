@@ -34,11 +34,10 @@
     name: ssh.socket
     state: stopped
     enabled: false
-    masked: true
 
 - name: Start ssh service
   ansible.builtin.systemd:
-    name: ssh
+    name: ssh.service
     state: started
     enabled: true
 
