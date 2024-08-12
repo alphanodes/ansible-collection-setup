@@ -5,6 +5,15 @@
     name: '{{ ssh_server_packages }}'
     state: present
 
+# This is not created by dist, because socket is used
+- name: Ensure privilege separation directory exists
+  ansible.builtin.file:
+    path: /run/sshd
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
 - name: Get openssh-version
   ansible.builtin.command: ssh -V
   register: sshd_version_raw
@@ -14,6 +23,18 @@
 - name: Parse openssh-version
   ansible.builtin.set_fact:
     sshd_version: "{{ sshd_version_raw.stderr | regex_replace('.*_([0-9]*.[0-9]).*', '\\1') }}"
+
+- name: Remove ssh service systemd-socket file
+  ansible.builtin.file:
+    path: /etc/systemd/system/ssh.service.d/00-socket.conf
+    state: absent
+
+- name: Disable systemd-socket activation
+  ansible.builtin.systemd:
+    name: ssh.socket
+    state: stopped
+    enabled: false
+    masked: true
 
 - name: Start ssh service
   ansible.builtin.systemd:
