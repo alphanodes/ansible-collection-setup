@@ -5,15 +5,6 @@
     name: '{{ ssh_server_packages }}'
     state: present
 
-# This is not created by dist, because socket is used
-- name: Ensure privilege separation directory exists
-  ansible.builtin.file:
-    path: /run/sshd
-    state: directory
-    owner: root
-    group: root
-    mode: '0755'
-
 - name: Get openssh-version
   ansible.builtin.command: ssh -V
   register: sshd_version_raw
@@ -34,6 +25,15 @@
     name: ssh.socket
     state: stopped
     enabled: false
+
+# This is not created by dist, because socket is used
+- name: Ensure privilege separation directory exists
+  ansible.builtin.file:
+    path: /run/sshd
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
 
 - name: Start ssh service
   ansible.builtin.systemd:
