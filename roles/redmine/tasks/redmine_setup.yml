@@ -80,6 +80,18 @@
     regexp: '<policy domain="resource" name="memory" value="256MiB"/>'
     line: '  <policy domain="resource" name="memory" value="512MiB"/>'
 
+- name: Increase ImageMagick width limit
+  ansible.builtin.lineinfile:
+    dest: /etc/ImageMagick-6/policy.xml
+    regexp: '<policy domain="resource" name="width" value="16KP"/>'
+    line: '  <policy domain="resource" name="width" value="32KP"/>'
+
+- name: Increase ImageMagick height limit
+  ansible.builtin.lineinfile:
+    dest: /etc/ImageMagick-6/policy.xml
+    regexp: '<policy domain="resource" name="height" value="16KP"/>'
+    line: '  <policy domain="resource" name="height" value="32KP"/>'
+
 - name: Increase ImageMagick disk limit
   ansible.builtin.lineinfile:
     dest: /etc/ImageMagick-6/policy.xml
