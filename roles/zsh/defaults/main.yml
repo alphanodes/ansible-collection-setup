@@ -18,6 +18,7 @@ zsh_with_completions: true
 zsh_with_powerlevel10k: true
 zsh_powerlevel10k_packages:
   - fonts-powerline
+zsh_powerlevel10k_update: true
 
 zsh_user: root
 

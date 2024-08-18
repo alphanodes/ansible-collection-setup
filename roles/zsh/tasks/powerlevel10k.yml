@@ -18,5 +18,4 @@
     version: master
     force: true
     accept_hostkey: true
-
-# TODO: provide configution (.zshrc)
+  when: zsh_powerlevel10k_update
