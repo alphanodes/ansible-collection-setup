@@ -284,6 +284,8 @@ redmine_write_permission_dirs:
   # for additional_tags hint file
   - path: /plugins
 
+redmine_plugin_access: readonly
+
 # https://api.rubyonrails.org/classes/ActiveJob/QueueAdapters/AsyncAdapter.html
 redmine_queue_adapter: async
 
