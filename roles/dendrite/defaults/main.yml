@@ -18,7 +18,7 @@ dendrite_service_group: dendrite
 dendrite_service_limit_no_file: 65535
 dendrite_service_environment: []
 
-dendrite_home_dir: /srv/dendrite
+dendrite_home_dir: '{{ srv_path }}/dendrite'
 dendrite_app_dir: '{{ dendrite_home_dir }}/dendrite'
 
 dendrite_db_name: dendrite

@@ -42,13 +42,13 @@
 
     - name: Stats for archive file
       ansible.builtin.stat:
-        path: '{{ software_dir }}/{{ archive_filename }}'
+        path: '{{ software_path }}/{{ archive_filename }}'
       register: archive_file_exists
 
     - name: Download plugin archive file - {{ plugin_name }}
       ansible.builtin.get_url:
         url: '{{ download_file }}'
-        dest: '{{ software_dir }}/{{ archive_filename }}'
+        dest: '{{ software_path }}/{{ archive_filename }}'
         mode: '0644'
 
     - name: Stats for plugin directory
@@ -71,7 +71,7 @@
 
         - name: Extract plugin archive - {{ plugin_name }}
           ansible.builtin.unarchive:
-            src: '{{ software_dir }}/{{ archive_filename }}'
+            src: '{{ software_path }}/{{ archive_filename }}'
             dest: '{{ matomo_plugin_path }}'
             owner: '{{ nginx_user }}'
             group: '{{ nginx_group }}'

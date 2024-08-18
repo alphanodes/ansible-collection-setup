@@ -3,7 +3,7 @@
 
 - name: Set local source file
   ansible.builtin.set_fact:
-    rocketchat_source_file: "{{ software_dir }}/rocket.chat-{{ rocketchat_version }}.tgz"
+    rocketchat_source_file: "{{ software_path }}/rocket.chat-{{ rocketchat_version }}.tgz"
 
 - name: Be sure required rocket.chat packages are installed
   ansible.builtin.apt:

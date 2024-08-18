@@ -19,7 +19,7 @@
 
 - name: Set nextcloud_source_file_path
   ansible.builtin.set_fact:
-    nextcloud_source_file_path: "{{ software_dir }}/{{ nextcloud_source_file }}"
+    nextcloud_source_file_path: "{{ software_path }}/{{ nextcloud_source_file }}"
 
 - name: Stats for nexcloud source file
   ansible.builtin.stat:

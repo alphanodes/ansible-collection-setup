@@ -8,7 +8,6 @@
     owner: '{{ redmine_user }}'
     group: '{{ redmine_group }}'
     mode: '0644'
-  notify: Restart puma instance
   when:
     - instance.disable_imap_ssl_verify is defined
     - instance.disable_imap_ssl_verify
@@ -17,7 +16,6 @@
   ansible.builtin.file:
     path: '{{ redmine_app_dir }}/config/initializers/bypass_ssl_verification.rb'
     state: absent
-  notify: Restart puma instance
   when: instance.disable_imap_ssl_verify is undefined or not instance.disable_imap_ssl_verify
 
 - name: Enable lograte - {{ instance_name }}
@@ -27,7 +25,6 @@
     owner: '{{ redmine_user }}'
     group: '{{ redmine_group }}'
     mode: '0640'
-  notify: Restart puma instance
   when:
     - instance.use_logger is defined
     - instance.use_logger == 'lograge'
@@ -36,7 +33,6 @@
   ansible.builtin.file:
     path: '{{ redmine_app_dir }}/config/initializers/lograte.rb'
     state: absent
-  notify: Restart puma instance
   when: instance.use_logger is undefined or instance.use_logger != 'lograge'
 
 - name: Include init saml tasks

@@ -16,7 +16,6 @@
     group: '{{ redmine_group }}'
     mode: '0644'
     validate: 'ruby -c %s'
-  notify: Restart puma instance
 
 - name: Setup sudoer for zabbix - {{ instance_name }}
   ansible.builtin.template:
@@ -40,7 +39,6 @@
         owner: '{{ instance_name }}'
         group: '{{ instance_name }}'
         mode: '0640'
-      notify: Restart puma instance
 
     - name: Get link info - {{ instance_name }}
       ansible.builtin.stat:
@@ -73,7 +71,6 @@
         owner: '{{ redmine_user }}'
         group: '{{ redmine_group }}'
         mode: '0640'
-      notify: Restart puma instance
 
     - name: Get link info - {{ instance_name }}
       ansible.builtin.stat:
@@ -95,4 +92,3 @@
         state: link
       become: false
       become_user: '{{ redmine_user }}'
-      notify: Restart puma instance

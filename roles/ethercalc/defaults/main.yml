@@ -11,7 +11,7 @@ ethercalc_repository: https://github.com/audreyt/ethercalc.git
 ethercalc_repository_version: master
 ethercalc_user: ethercalc
 ethercalc_group: "{{ ethercalc_user }}"
-ethercalc_home: "/srv/{{ ethercalc_user }}"
+ethercalc_home: "{{ srv_path }}/{{ ethercalc_user }}"
 ethercalc_path: "{{ ethercalc_home }}/ethercalc"
 ethercalc_ip: 0.0.0.0
 ethercalc_port: 8000

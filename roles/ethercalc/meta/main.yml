@@ -1,6 +1,7 @@
 ---
 dependencies:
   - role: alphanodes.setup.common
+    public: true
   - role: alphanodes.setup.ssl
   - role: alphanodes.setup.redis_server
   - role: alphanodes.setup.nginx

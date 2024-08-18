@@ -9,7 +9,7 @@
 
 - name: Set btop_static_path
   ansible.builtin.set_fact:
-    btop_static_source_file_path: '{{ software_dir }}/{{ btop_static_file }}'
+    btop_static_source_file_path: '{{ software_path }}/{{ btop_static_file }}'
 
 - name: Activated btop
   when: diagnostic_with_btop

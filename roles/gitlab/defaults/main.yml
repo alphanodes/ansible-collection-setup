@@ -279,7 +279,7 @@ gitlab_systemd_restart_sec: 60
 gitlab_stop_puma_for_update: true
 
 # Relative paths are relative to Rails.root (default: tmp/backups/)
-gitlab_backup_path: /srv/backups/gitlab
+gitlab_backup_path: '{{ srv_path }}/backups/gitlab'
 gitlab_backup_path_mode: '0750'
 # every day at 2:30 (see systemd timer)
 gitlab_backup_on_calendar: '02:30'

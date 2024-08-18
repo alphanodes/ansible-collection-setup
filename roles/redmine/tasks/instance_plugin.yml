@@ -15,7 +15,6 @@
     state: absent
     path: '{{ redmine_plugin_dir }}/{{ redmine_plugins_available[item]["target_dir"] | default(item) }}'
   loop: '{{ plugin["remove_plugins"] | default([]) }}'
-  notify: Restart puma instance
 
 - name: Remove unwanted plugins assets for {{ plugin_name }}
   ansible.builtin.file:

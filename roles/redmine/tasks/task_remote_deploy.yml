@@ -13,7 +13,6 @@
     accept_hostkey: true
     force: true
   register: repo_info
-  notify: Restart puma instance
   when: deploy_with_ssh
 
 - name: Git https update for {{ repo_dest }}
@@ -28,7 +27,6 @@
   # become_user: '{{ redmine_user }}'
   when: not deploy_with_ssh
   register: repo_info
-  notify: Restart puma instance
 
 # - name: Fix permissions for {{ repo_dest }}
 #  file:

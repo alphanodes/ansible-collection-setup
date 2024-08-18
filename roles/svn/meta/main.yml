@@ -1,6 +1,7 @@
 ---
 dependencies:
   - role: alphanodes.setup.common
+    public: true
 
 galaxy_info:
   description: svnserve service for Debian and Ubuntu.

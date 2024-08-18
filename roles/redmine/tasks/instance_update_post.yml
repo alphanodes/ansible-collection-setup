@@ -14,7 +14,6 @@
   args:
     chdir: '{{ redmine_app_dir }}'
   loop: '{{ instance.post_exec_commands | default([]) }}'
-  notify: Restart puma instance
   register: post_exec_commands_result
   changed_when: "post_exec_commands_result.rc is defined and post_exec_commands_result.rc != 0"
 
@@ -23,7 +22,6 @@
   args:
     chdir: '{{ redmine_app_dir }}'
   loop: '{{ instance.post_commands | default([]) }}'
-  notify: Restart puma instance
   register: redmine_post_commands_result
   changed_when: "redmine_post_commands_result.rc is defined and redmine_post_commands_result.rc != 0"
 

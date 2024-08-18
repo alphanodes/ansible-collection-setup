@@ -1,7 +1,7 @@
 ---
 # defaults file for nextcloud
 
-nextcloud_dir: /srv/nextcloud
+nextcloud_dir: '{{ srv_path }}/nextcloud'
 nextcloud_data: '{{ nextcloud_dir }}/data'
 nextcloud_htdocs: '{{ nextcloud_dir }}/htdocs'
 

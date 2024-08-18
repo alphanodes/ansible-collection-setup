@@ -7,7 +7,6 @@
     owner: '{{ instance_name }}'
     group: '{{ instance_name }}'
     mode: '{{ config_file.mode | default(omit) }}'
-  notify: Restart puma instance
 
 - name: Get link info - {{ instance_name }}
   ansible.builtin.stat:
@@ -29,5 +28,4 @@
     state: link
   become: false
   become_user: '{{ redmine_user }}'
-  notify: Restart puma instance
   when: config_file.link
