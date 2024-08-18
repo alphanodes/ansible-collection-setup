@@ -3,11 +3,14 @@
 ansible_pip_venv: ansible
 python_venv_parent: "{{ ansible_env.HOME }}/.venvs"
 
+# root path of all installations
+srv_path: /srv
+
 # Directory, which is used for downloading software packages
-software_dir: /srv/software
-# software_dir_owner:
-# software_dir_group: "{{ software_dir_owner | omit }}"
-# software_dir_mode:
+software_path: '{{ srv_path }}/software'
+# software_path_owner:
+# software_path_group: "{{ software_path_owner | omit }}"
+# software_path_mode:
 
 nginx_user: www-data
 nginx_group: www-data

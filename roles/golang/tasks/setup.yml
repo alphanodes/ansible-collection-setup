@@ -25,7 +25,7 @@
 
     - name: Check golang_file exists - {{ golang_real_version }}
       ansible.builtin.stat:
-        path: '{{ software_dir }}/{{ golang_file }}'
+        path: '{{ software_path }}/{{ golang_file }}'
       register: golang_file_exists
 
     - name: Check Go exists
@@ -52,7 +52,7 @@
     - name: Download golang_file archive version {{ golang_real_version }}
       ansible.builtin.get_url:
         url: '{{ golang_mirror }}/{{ golang_file }}'
-        dest: '{{ software_dir }}/{{ golang_file }}'
+        dest: '{{ software_path }}/{{ golang_file }}'
         mode: '0644'
         checksum: "{{ 'sha256:' + golang_sha256_checksum | default(omit) }}"
         force: false
@@ -62,7 +62,7 @@
 
     - name: Extract golang_file archive
       ansible.builtin.unarchive:
-        src: '{{ software_dir }}/{{ golang_file }}'
+        src: '{{ software_path }}/{{ golang_file }}'
         dest: '{{ golang_install_dir }}'
         extra_opts: '--strip-components=1'
         owner: root

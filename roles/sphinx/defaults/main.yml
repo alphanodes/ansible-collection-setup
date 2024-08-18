@@ -2,7 +2,7 @@
 ---
 
 # all instances are stored there
-sphinx_base_dir: /srv/sphinx
+sphinx_base_dir: '{{ srv_path }}/sphinx'
 
 sphinx_packages:
   - build-essential

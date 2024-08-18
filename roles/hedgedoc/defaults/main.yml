@@ -13,7 +13,7 @@ hedgedoc_repository_version: '1.9.9'
 
 hedgedoc_user: 'hedgedoc'
 hedgedoc_group: '{{ hedgedoc_user }}'
-hedgedoc_home: '/srv/{{ hedgedoc_user }}'
+hedgedoc_home: '{{ srv_path }}/{{ hedgedoc_user }}'
 hedgedoc_path: '{{ hedgedoc_home }}/hedgedoc'
 hedgedoc_update: true
 

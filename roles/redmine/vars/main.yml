@@ -18,8 +18,6 @@ redmine_config_templates:
   - name: puma.rb
     link: false
 
-# used for creating redmine_home = redmine_base_dir/{{ instance_name }}
-redmine_base_dir: /srv
 # used for creating redmine_app_dir = {{ redmine_home }}/{{ redmine_app_dir_name }}
 redmine_app_dir_name: redmine
 # base directory to store all configuration files

@@ -53,7 +53,7 @@
 
 - name: Set matomo_archive_filename
   ansible.builtin.set_fact:
-    matomo_archive_filename: '{{ software_dir }}/matomo-{{ matomo_version }}.tar.gz'
+    matomo_archive_filename: '{{ software_path }}/matomo-{{ matomo_version }}.tar.gz'
 
 - name: Stats for matomo archice file
   ansible.builtin.stat:
@@ -63,7 +63,7 @@
 - name: Download matomo archive
   ansible.builtin.get_url:
     url: '{{ matomo_source_url }}/matomo-{{ matomo_version }}.tar.gz'
-    dest: '{{ software_dir }}/matomo-{{ matomo_version }}.tar.gz'
+    dest: '{{ software_path }}/matomo-{{ matomo_version }}.tar.gz'
     mode: '0644'
     owner: root
     group: root

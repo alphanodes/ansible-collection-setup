@@ -103,7 +103,6 @@
       ansible.builtin.command: bash -lc "{{ instance.update_prefix | default('') }}bundle exec rake db:migrate"
       args:
         chdir: '{{ redmine_app_dir }}'
-      notify: Restart puma instance
       register: update_redmine_result
       changed_when: "update_redmine_result.rc != 0"
       when: mysql_replication_role is undefined or mysql_replication_role!='slave'
@@ -112,7 +111,6 @@
       ansible.builtin.command: bash -lc "{{ instance.update_prefix | default('') }}bundle exec rake redmine:plugins:migrate"
       args:
         chdir: '{{ redmine_app_dir }}'
-      notify: Restart puma instance
       register: update_redmine_result
       changed_when: "update_redmine_result.rc != 0"
       when: mysql_replication_role is undefined or mysql_replication_role!='slave'
@@ -121,7 +119,6 @@
       ansible.builtin.command: bash -lc "bundle exec rake tmp:cache:clear"
       args:
         chdir: '{{ redmine_app_dir }}'
-      notify: Restart puma instance
       register: update_redmine_result
       changed_when: "update_redmine_result.rc != 0"
 

@@ -41,11 +41,9 @@
         owner: '{{ redmine_user }}'
         group: '{{ redmine_group }}'
         mode: '0640'
-      notify: Restart puma instance
 
 - name: Disable SAML support - {{ instance_name }}
   ansible.builtin.file:
     path: '{{ redmine_app_dir }}/config/initializers/saml.rb'
     state: absent
-  notify: Restart puma instance
   when: instance.with_saml is undefined or not instance.with_saml

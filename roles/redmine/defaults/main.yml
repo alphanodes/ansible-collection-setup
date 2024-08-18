@@ -290,3 +290,6 @@ redmine_queue_adapter: async
 redmine_async_queue_min_threads: 1
 redmine_async_queue_max_threads: 2
 redmine_async_queue_idletime: 600.seconds
+
+# used for creating redmine_home = redmine_base_dir/{{ instance_name }}
+redmine_base_dir: '{{ srv_path }}'

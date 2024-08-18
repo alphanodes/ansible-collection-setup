@@ -2,7 +2,7 @@
 # defaults file for jekyll
 
 # all instances are stored there
-jekyll_base_dir: /srv/jekyll
+jekyll_base_dir: '{{ srv_path }}/jekyll'
 
 jekyll_packages:
   - ruby
