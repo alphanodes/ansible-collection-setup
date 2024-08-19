@@ -28,7 +28,7 @@
       changed_when: false
       register: shell_version
 
-    - name: Ensure gitlab shell version v{{ pages_version.stdout }}
+    - name: Ensure gitlab shell version v{{ shell_version.stdout }}
       ansible.builtin.git:
         repo: "{{ gitlab_shell_repository }}"
         dest: "{{ gitlab_shell_path }}"
