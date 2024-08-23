@@ -444,16 +444,6 @@
     - gitlab-gitaly
     - gitlab-sidekiq
 
-# this is done with gitlab:assets:compile, see https://gitlab.com/gitlab-org/gitlab/-/commit/acde682b867411adf5daaec9c49e7a0186f8b8ef
-# - name: Compile GetText PO files
-#   ansible.builtin.command: bash -lc "bundle exec rake gettext:compile"
-#   args:
-#     chdir: '{{ gitlab_path }}'
-#   become_user: "{{ gitlab_user }}"
-#   become: true
-#   environment:
-#     RAILS_ENV: '{{ gitlab_rails_env }}'
-
 - name: Enable GitLab systemd services
   ansible.builtin.systemd:
     name: gitlab.target
