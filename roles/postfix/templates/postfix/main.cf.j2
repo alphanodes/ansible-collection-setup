@@ -69,7 +69,7 @@ smtp_use_tls = yes
 recipient_canonical_maps = regexp:/etc/postfix/recipient-canonical
 {% endif -%}
 
-{% if postfix_sender_canonicals|length > 0 -%}
+{% if postfix_sender_canonicals | length > 0 -%}
 sender_canonical_maps = hash:/etc/postfix/sender-canonical
 {% endif -%}
 smtpd_relay_restrictions = {{ postfix_relay_restrictions }}
