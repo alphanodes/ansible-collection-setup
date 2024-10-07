@@ -28,7 +28,7 @@
 
 # this is required, because with git you can restore dev/test files
 - name: Remove plugin dir before git fetch for product plugins {{ plugin_name }}
-  file:
+  ansible.builtin.file:
     path: '{{ plugin_target_path }}'
     state: absent
   when:
@@ -43,7 +43,7 @@
     repo_version: '{{ plugin["dev_version"] if instance.plugin_version is defined and instance.plugin_version == "dev" and plugin["dev_version"] is defined else plugin["version"] }}'
 
 - name: Remove test files for {{ plugin_name }}
-  file:
+  ansible.builtin.file:
     path: '{{ plugin_target_path }}/{{ item }}'
     state: absent
   loop: '{{ redmine_plugin_test_files }}'
