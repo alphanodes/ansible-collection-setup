@@ -15,7 +15,7 @@ server {
 	# Make sure to set Content-Security-Policy when this is not aleady done with the default headers.
 	add_header Content-Security-Policy "frame-ancestors 'none'";
 
-  {% if element_web_vhost_users|length > 0 -%}
+  {% if element_web_vhost_users | length > 0 -%}
   # access protection
   auth_basic "Restricted access only";
   auth_basic_user_file /etc/nginx/.htpasswd_element_web;

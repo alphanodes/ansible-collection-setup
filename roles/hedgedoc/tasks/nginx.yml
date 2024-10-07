@@ -19,7 +19,7 @@
   ansible.builtin.file:
     path: /etc/nginx/.htpasswd_hedgedoc
     state: absent
-  when: hedgedoc_vhost_users|length < 1
+  when: hedgedoc_vhost_users | length < 1
   notify: Restart nginx
 
 - name: Enable block
