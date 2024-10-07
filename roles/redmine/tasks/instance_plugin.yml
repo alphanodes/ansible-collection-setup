@@ -22,9 +22,31 @@
     state: absent
   loop: '{{ plugin["remove_plugins"] | default([]) }}'
 
+- name: Set plugin target path for {{ plugin_name }}
+  ansible.builtin.set_fact:
+    plugin_target_path: '{{ redmine_plugin_dir }}/{{ plugin["target_dir"] | default(plugin_name) }}'
+
+# this is required, because with git you can restore dev/test files
+- name: Remove plugin dir before git fetch for product plugins {{ plugin_name }}
+  file:
+    path: '{{ plugin_target_path }}'
+    state: absent
+  when:
+    - redmine_plugin_remove_test_files
+    - plugin["product"] is defined and plugin["product"]
+
 - name: Run remote deploy for plugin - {{ instance_name }}
   ansible.builtin.include_tasks: task_remote_deploy.yml
   vars:
     repo_url: '{{ plugin[preferred_git_url] | default(plugin["url"]) }}'
-    repo_dest: '{{ redmine_plugin_dir }}/{{ plugin["target_dir"] | default(plugin_name) }}'
+    repo_dest: '{{ plugin_target_path }}'
     repo_version: '{{ plugin["dev_version"] if instance.plugin_version is defined and instance.plugin_version == "dev" and plugin["dev_version"] is defined else plugin["version"] }}'
+
+- name: Remove test files for {{ plugin_name }}
+  file:
+    path: '{{ plugin_target_path }}/{{ item }}'
+    state: absent
+  loop: '{{ redmine_plugin_test_files }}'
+  when:
+    - redmine_plugin_remove_test_files
+    - plugin["product"] is defined and plugin["product"]
