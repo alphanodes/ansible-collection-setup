@@ -292,7 +292,7 @@ redmine_plugin_test_files:
   - .gitignore
   - test
   - Gemfile.release
-  - eslint.config.cjs
+  - eslint.config.mjs
   - package.json
   - .flayignore
   - .gitlab-ci.yml
