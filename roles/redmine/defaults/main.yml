@@ -288,19 +288,21 @@ redmine_plugin_access: readonly
 
 redmine_plugin_remove_test_files: false
 redmine_plugin_test_files:
+  - .eslintignore
+  - .eslintrc.yml
+  - .flayignore
   - .git
   - .gitignore
-  - test
-  - Gemfile.release
-  - eslint.config.mjs
-  - package.json
-  - .flayignore
   - .gitlab-ci.yml
+  - .rails_best_practices.yml
   - .reek.yml
   - .rubocop.yml
   - .slim-lint.yml
   - .stylelintrc.json
-  - .rails_best_practices.yml
+  - Gemfile.release
+  - eslint.config.mjs
+  - package.json
+  - test
 
 # https://api.rubyonrails.org/classes/ActiveJob/QueueAdapters/AsyncAdapter.html
 redmine_queue_adapter: async
