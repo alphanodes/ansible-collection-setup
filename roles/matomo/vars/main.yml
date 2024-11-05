@@ -17,8 +17,8 @@ matomo_available_plugins:
     use_git: true
     repo: https://github.com/matomo-org/plugin-LoginLdap.git
     download: https://github.com/matomo-org/plugin-LoginLdap/archive/%%version%%.tar.gz
-    version: 5.0.6
-    branch: 5.0.6
+    version: 5.0.7
+    branch: 5.0.7
   MarketingCampaignsReporting:
     use_git: true
     repo: https://github.com/matomo-org/plugin-MarketingCampaignsReporting.git
