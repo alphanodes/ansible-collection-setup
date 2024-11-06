@@ -7,7 +7,7 @@ matomo_available_plugins:
     use_git: true
     repo: https://github.com/matomo-org/plugin-CustomVariables.git
     download: https://github.com/matomo-org/plugin-CustomVariables/archive/%%version%%.tar.gz
-    version: 5.0.2
+    version: 5.0.3
   QueuedTracking:
     use_git: false
     repo: https://github.com/matomo-org/plugin-QueuedTracking.git
