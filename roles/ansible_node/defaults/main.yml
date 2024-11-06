@@ -50,7 +50,7 @@ ansible_node_disallowed_packages:
 # https://docs.ansible.com/ansible/latest/reference_appendices/release_and_maintenance.html#support-life
 # Debian 11 has python 3.9 -> ansible-core 9.0 requires python 3.10!!!
 # ansible_node_ansible_version: 8.6
-ansible_node_ansible_version: 10.5
+ansible_node_ansible_version: 10.6
 
 # required switching from 2.9 to newer version
 ansible_node_remove_before_install: false

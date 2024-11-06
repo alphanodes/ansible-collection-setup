@@ -12,7 +12,7 @@ Available variables can be found in [defaults/main.yml](defaults/main.yml)
     - hosts: all
 
       vars:
-        ansible_node_ansible_version: 10.5
+        ansible_node_ansible_version: 10.6
 
       roles:
         - alphanodes.setup.ansible_node
