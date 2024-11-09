@@ -48,7 +48,7 @@
     redmine_config_dir: "{{ redmine_global_config_dir }}/{{ instance_name }}"
     redmine_plugin_dir: "{{ redmine_app_dir }}/plugins"
     redmine_plugin_assets_dir: "{{ redmine_app_dir }}/public/plugin_assets"
-    redmine_theme_dir: "{{ redmine_app_dir }}/public/themes"
+    redmine_theme_dir: "{{ redmine_app_dir }}{{ '/themes' if active_redmine_repo_version == '6.0-stable' else '/public/themes' }}"
     puma_service_name: puma-{{ instance_name }}
     active_db_adapter: "{{ instance.adapter | default(redmine_db_adapter) }}"
     active_mysql_socket: "{{ instance.mysql_socket | default(redmine_mysql_socket) }}"
