@@ -281,6 +281,7 @@ redmine_write_permission_dirs:
   - path: /tmp
   - path: /log
   - path: /public/plugin_assets
+  - path: /public/assets
   # for additional_tags hint file
   - path: /plugins
 
