@@ -22,7 +22,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Lint Ansible Playbook
-        # replace "master" with any valid ref
-        uses: ansible/ansible-lint-action@main
+        uses: ansible/ansible-lint@main
         with:
-          path: "roles/"
+          setup_python: "true"
