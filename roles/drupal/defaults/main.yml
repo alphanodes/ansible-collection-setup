@@ -34,6 +34,12 @@ drupal_memcache_module: sites/all/modules/contrib/memcache
 drupal_memcache_prefix: drupal
 drupal_vhost_includes: []
 
+drupal_mysql_packages:
+  - libmysqlclient-dev
+
+drupal_postgresql_packages:
+  - libpq-dev
+
 # if defined, only these users can access vhost
 # if no directory (location) is defined and vhost_users are defined, whole vhost is protected
 drupal_vhost_users: []

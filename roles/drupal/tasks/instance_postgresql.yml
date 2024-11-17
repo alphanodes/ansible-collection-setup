@@ -1,5 +1,10 @@
 ---
 
+- name: Ensure PostgreSQL packages are installed
+  ansible.builtin.apt:
+    name: '{{ drupal_postgresql_packages }}'
+    state: present
+
 - name: Ensure postgresql drupal user is present - {{ instance.name }}
   become_user: postgres
   become: true
