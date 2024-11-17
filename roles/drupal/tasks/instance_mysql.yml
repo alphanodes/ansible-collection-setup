@@ -1,5 +1,10 @@
 ---
 
+- name: Ensure MySQL packages are installed
+  ansible.builtin.apt:
+    name: '{{ drupal_mysql_packages }}'
+    state: present
+
 - name: Be sure drupal databases exists - {{ instance.name }}
   community.mysql.mysql_db:
     name: '{{ instance.db_name | default(instance.name) | replace("-", "_") }}'
