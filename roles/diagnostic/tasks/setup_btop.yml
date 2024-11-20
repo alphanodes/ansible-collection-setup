@@ -62,11 +62,6 @@
             not btop_installed.stat.exists | bool
             or not btop_static_source_file_exists.stat.exists
           block:
-            - name: Be sure build-essential package is installed
-              ansible.builtin.apt:
-                name: build-essential
-                state: present
-
             - name: Remove previous btop source directory
               ansible.builtin.file:
                 path: "{{ btop_source_path }}"
@@ -99,6 +94,11 @@
     - name: Install from source
       when: btop_install_type == 'source'
       block:
+        - name: Be sure build-essential package is installed
+          ansible.builtin.apt:
+            name: build-essential
+            state: present
+
         - name: Get btop sources
           ansible.builtin.git:
             repo: '{{ btop_source_repo }}'
