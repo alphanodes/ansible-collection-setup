@@ -9,4 +9,4 @@
   vars:
     repo_url: '{{ theme[preferred_git_url] | default(theme["url"]) }}'
     repo_dest: '{{ redmine_theme_dir }}/{{ theme["target_dir"] | default(theme_name) }}'
-    repo_version: '{{ theme["version"] | default("main") }}'
+    repo_version: '{{ theme["dev_version"] if instance.plugin_version is defined and instance.plugin_version == "dev" and theme["dev_version"] is defined else theme["version"] }}'
