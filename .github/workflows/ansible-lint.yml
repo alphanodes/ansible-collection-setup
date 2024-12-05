@@ -25,3 +25,4 @@ jobs:
         uses: ansible/ansible-lint@main
         with:
           setup_python: "true"
+          requirements_file: "requirements.yml"
