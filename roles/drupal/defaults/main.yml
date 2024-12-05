@@ -1,5 +1,5 @@
 ---
-# defaults file for drupal
+# defaults for drupal
 
 drupal_instances: []
   # name of instance (is used as drush profile name)
