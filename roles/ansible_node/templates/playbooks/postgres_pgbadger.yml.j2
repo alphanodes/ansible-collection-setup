@@ -9,6 +9,9 @@
     ansible_python_interpreter: {{ ansible_node_playbook_ansible_python_interpreter }}
 {% endif %}
     system_task_name: pgbadger_query
+{% if postgresql_version is defined %}
+    postgresql_version: {{ postgresql_version }}
+{% endif %}
 {% if system_task_pgbadger_query_log is defined %}
     system_task_pgbadger_query_log: {{ system_task_pgbadger_query_log }}
 {% endif %}
