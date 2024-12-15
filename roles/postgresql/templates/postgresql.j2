@@ -639,9 +639,6 @@ cluster_name = '{{ postgresql_cluster_name }}'			# added to process titles if no
 #track_io_timing = off
 #track_wal_io_timing = off
 #track_functions = none			# none, pl, all
-{% if postgresql_version != '15' and postgresql_version != '16' %}
-stats_temp_directory = '/run/postgresql/{{ postgresql_version }}-main.pg_stat_tmp'
-{% endif %}
 #stats_fetch_consistency = cache
 
 
