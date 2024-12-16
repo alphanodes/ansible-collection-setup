@@ -23,6 +23,10 @@
   ansible.builtin.include_tasks: cleanup_pgbadger.yml
   when: not postgresql_with_pgbadger
 
+- name: Include TimescaleDB tasks
+  ansible.builtin.include_tasks: timescaledb.yml
+  when: postgresql_with_timescaledb
+
 - name: Ensure PostgreSQL is started and enabled to start at boot.
   ansible.builtin.systemd:
     name: postgresql

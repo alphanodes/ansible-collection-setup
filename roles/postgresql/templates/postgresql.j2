@@ -763,7 +763,7 @@ default_text_search_config = '{{ postgresql_default_text_search_config }}'
 #session_preload_libraries = ''
 #shared_preload_libraries = ''	# (change requires restart)
 {% if postgresql_shared_preload_libraries is defined and postgresql_shared_preload_libraries != '' %}
-shared_preload_libraries = {{ postgresql_shared_preload_libraries }}
+shared_preload_libraries = '{{ postgresql_shared_preload_libraries }}'
 {% endif %}
 {% if postgresql_pg_stat_statements_max is defined %}
 pg_stat_statements.max = {{ postgresql_pg_stat_statements_max }}

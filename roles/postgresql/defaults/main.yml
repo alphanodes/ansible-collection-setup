@@ -77,6 +77,18 @@ postgresql_checkpoint_completion_target: 0.86
 postgresql_wal_level: replica
 postgresql_wal_buffers: -1
 
+# see https://docs.timescale.com/self-hosted/latest/install/installation-linux/#install-and-configure-timescaledb-on-postgresql
+postgresql_with_timescaledb: false
+
+# deb https://packagecloud.io/timescale/timescaledb/debian/ bookworm main
+postgresql_timescaledb_apt_url: https://packagecloud.io/timescale/timescaledb/{{ ansible_distribution | lower }}
+postgresql_timescaledb_apt_suites: '{{ ansible_distribution_release }}'
+postgresql_timescaledb_apt_components: main
+postgresql_timescaledb_apt_key_url: https://packagecloud.io/timescale/timescaledb/gpgkey
+
+postgresql_timescaledb_packages:
+  - timescaledb-2-postgresql-17
+
 # e.g. for shared_preload_libraries = 'pg_stat_statements'
 # postgresql_shared_preload_libraries: ''
 # postgresql_compute_query_id: auto
