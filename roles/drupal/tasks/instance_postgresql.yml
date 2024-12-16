@@ -23,3 +23,11 @@
     owner: '{{ instance.db_user | default(instance.name) | replace("-", "_") }}'
     state: present
   when: instance.db_skip_db_setup is undefined or not instance.db_skip_db_setup
+
+- name: Add extention pg_stat_statements to gitlab database
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_ext:
+    name: pg_stat_statements
+    db: '{{ instance.db_user | default(instance.name) | replace("-", "_") }}'
+  when: not instance.db_skip_db_setup and postgresql_with_pg_stat_statements

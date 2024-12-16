@@ -65,6 +65,14 @@
   vars:
     ansible_ssh_pipelining: true
 
+- name: Add pg_stat_statements to template1
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_ext:
+    name: pg_stat_statements
+    db: template1
+  when: postgresql_with_pg_stat_statements
+
 - name: Remove log files if syslog is active
   ansible.builtin.file:
     path: /var/log/postgresql
