@@ -65,5 +65,11 @@
   vars:
     ansible_ssh_pipelining: true
 
+- name: Remove log files if syslog is active
+  ansible.builtin.file:
+    path: /var/log/postgresql
+    state: absent
+  when: postgresql_log_destination == 'syslog'
+
 - name: Include postgresqltuner tasks
   ansible.builtin.include_tasks: postgresqltuner.yml
