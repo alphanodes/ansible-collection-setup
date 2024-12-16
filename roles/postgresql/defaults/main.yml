@@ -124,7 +124,7 @@ postgresql_syslog_sequence_numbers: false
 postgresql_syslog_split_messages: false
 
 postgresql_log_statement: none
-postgresql_log_line_prefix_syslog: 'user=%u,db=%d,client=%h,app=%a '
+postgresql_log_line_prefix_syslog: 'user=%u,db=%d,app=%a,client=%h '
 postgresql_log_line_prefix_stderr: '%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '
 # disabled, if -1
 postgresql_log_min_duration_statement: 2000
