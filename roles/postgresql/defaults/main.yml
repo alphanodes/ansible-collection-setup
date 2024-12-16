@@ -79,6 +79,10 @@ postgresql_wal_buffers: -1
 
 # see https://docs.timescale.com/self-hosted/latest/install/installation-linux/#install-and-configure-timescaledb-on-postgresql
 postgresql_with_timescaledb: false
+# see https://docs.timescale.com/self-hosted/latest/configuration/timescaledb-config/#timescaledblicense-string
+postgresql_timescaledb_license: timescale
+# see https://docs.timescale.com/self-hosted/latest/configuration/telemetry/#disabling-telemetry
+postgresql_timescaledb_telemetry_level: false
 
 # deb https://packagecloud.io/timescale/timescaledb/debian/ bookworm main
 postgresql_timescaledb_apt_url: https://packagecloud.io/timescale/timescaledb/{{ ansible_distribution | lower }}
@@ -111,9 +115,14 @@ postgresql_ssl_cert_file: '/etc/ssl/certs/ssl-cert-snakeoil.pem'
 postgresql_ssl_crl_file: ''
 postgresql_ssl_key_file: '/etc/ssl/private/ssl-cert-snakeoil.key'
 
-postgresql_log_destination: stderr
+postgresql_log_destination: syslog
+postgresql_syslog_facility: local0
+postgresql_syslog_ident: postgres
+postgresql_syslog_sequence_numbers: false
+postgresql_syslog_split_messages: false
+
 postgresql_log_statement: none
-postgresql_log_line_prefix_syslog: 'user=%u,db=%d,app=%aclient=%h '
+postgresql_log_line_prefix_syslog: 'user=%u,db=%d,client=%h,app=%a '
 postgresql_log_line_prefix_stderr: '%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '
 # disabled, if -1
 postgresql_log_min_duration_statement: 2000

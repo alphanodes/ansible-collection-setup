@@ -484,20 +484,20 @@ log_destination = '{{ postgresql_log_destination }}'		# Valid values are combina
 					# or size-driven rotation.  Default is
 					# off, meaning append to existing files
 					# in all cases.
-{% if postgresql_log_destination == "syslog" %}
-
-# These are relevant when logging to syslog:
-syslog_facility = 'LOCAL0'
-syslog_ident = 'postgres'
-syslog_sequence_numbers = on
-syslog_split_messages = on
-{% endif %}
 
 # These are relevant when logging to syslog:
 #syslog_facility = 'LOCAL0'
 #syslog_ident = 'postgres'
 #syslog_sequence_numbers = on
 #syslog_split_messages = on
+{% if postgresql_log_destination == "syslog" %}
+
+# These are relevant when logging to syslog:
+syslog_facility = '{{ postgresql_syslog_facility }}'
+syslog_ident = {{ postgresql_syslog_ident }}
+syslog_sequence_numbers = {{ 'on' if postgresql_syslog_sequence_numbers else 'off' }}
+syslog_split_messages = {{ 'on' if postgresql_syslog_split_messages else 'off' }}
+{% endif %}
 
 # This is only relevant when logging to eventlog (Windows):
 # (change requires restart)
@@ -772,6 +772,13 @@ pg_stat_statements.max = {{ postgresql_pg_stat_statements_max }}
 pg_stat_statements.track = {{ postgresql_pg_stat_statements_track }}
 {% endif %}
 #jit_provider = 'llvmjit'		# JIT library to use
+
+{% if postgresql_with_timescaledb %}
+# see https://docs.timescale.com/self-hosted/latest/configuration/timescaledb-config/#timescaledblicense-string
+timescaledb.license = '{{ postgresql_timescaledb_license }}'
+# see https://docs.timescale.com/self-hosted/latest/configuration/telemetry/#disabling-telemetry
+timescaledb.telemetry_level = {{ 'off' if not postgresql_timescaledb_telemetry_level else postgresql_timescaledb_telemetry_level }}
+{% endif %}
 
 # - Other Defaults -
 
