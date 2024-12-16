@@ -94,10 +94,12 @@ postgresql_timescaledb_packages:
   - timescaledb-2-postgresql-17
 
 # e.g. for shared_preload_libraries = 'pg_stat_statements'
-# postgresql_shared_preload_libraries: ''
-# postgresql_compute_query_id: auto
-# postgresql_pg_stat_statements_max:
-# postgresql_pg_stat_statements_track:
+postgresql_shared_preload_libraries: 'pg_stat_statements'
+
+# postgresql_compute_query_id: auto (auto or on is required for pg_stat_statements)
+postgresql_with_pg_stat_statements: true
+postgresql_pg_stat_statements_max: 10000
+postgresql_pg_stat_statements_track: all
 
 # postgresql_seq_page_cost: '1.0'
 # see https://pgtune.leopard.in.ua/#/

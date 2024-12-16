@@ -43,3 +43,11 @@
     owner: '{{ gitlab_db_user }}'
     template: template1
     state: present
+
+- name: Add extention pg_stat_statements to gitlab database
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_ext:
+    name: pg_stat_statements
+    db: '{{ gitlab_db_name }}'
+  when: postgresql_with_pg_stat_statements

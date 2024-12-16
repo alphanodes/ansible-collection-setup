@@ -24,6 +24,14 @@
     owner: '{{ redmine_db_user }}'
     state: present
 
+- name: Add extention pg_stat_statements to Redmine database
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_ext:
+    name: pg_stat_statements
+    db: '{{ redmine_db_name }}'
+  when: postgresql_with_pg_stat_statements
+
 - name: Run postgresql pre commands - {{ instance_name }}
   community.postgresql.postgresql_query:
     db: '{{ redmine_db_name }}'
