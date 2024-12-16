@@ -1,0 +1,31 @@
+---
+
+- name: Remove old source format
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/timescaledb.list
+    state: absent
+
+# see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/deb822_repository_module.html
+# deb https://packagecloud.io/timescale/timescaledb/debian/ bookworm main
+- name: Add TimescaleDB apt repository
+  ansible.builtin.deb822_repository:
+    name: timescaledb
+    uris: '{{ postgresql_timescaledb_apt_url }}'
+    types: deb
+    suites: '{{ postgresql_timescaledb_apt_suites }}'
+    components: '{{ postgresql_timescaledb_apt_components }}'
+    signed_by: '{{ postgresql_timescaledb_apt_key_url }}'
+    state: present
+  register: timescaledb_repo
+
+- name: Update apt cache
+  apt:
+    update_cache: true
+  when: timescaledb_repo.changed
+  tags:
+    - skip_ansible_lint
+
+- name: Be sure TimescaleDB packages are installed
+  ansible.builtin.apt:
+    name: '{{ postgresql_timescaledb_packages }}'
+    state: present
