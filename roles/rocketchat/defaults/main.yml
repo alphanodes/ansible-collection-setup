@@ -9,7 +9,7 @@ rocketchat_packages:
 rocketchat_dir: /srv/rocketchat
 rocketchat_application_path: '{{ rocketchat_dir }}/bundle'
 # "latest" implies latest stable here, can be "3.3.0", for example
-rocketchat_version: 6.13.1
+rocketchat_version: 7.1.0
 # rocketchat_tarball_remote: https://releases.rocket.chat/{{ rocketchat_version }}/download
 rocketchat_tarball_remote: https://cdn-download.rocket.chat/build/rocket.chat-{{ rocketchat_version }}.tgz
 rocketchat_tarball_fetch_timeout: 100
@@ -21,6 +21,7 @@ rocketchat_service_environment: []
 # MongoDB settings
 # mongodb can be disabled for bulleyes update
 rocketchat_with_mongodb: true
+rocketchat_with_init_mongodb_replica: true
 rocketchat_mongodb_server: 127.0.0.1
 rocketchat_mongodb_port: 27017
 rocketchat_mongodb_database: rocketchat
