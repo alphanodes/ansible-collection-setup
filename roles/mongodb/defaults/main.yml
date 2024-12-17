@@ -1,7 +1,20 @@
 ---
 
 mongodb_package: mongodb-org
-mongodb_version: '5.0'
+
+# Update to from 5 to 6
+# 1. Enable the repository for MongoDB-6.0.
+# 2. To ensure 'featureCompatibilityVersion' is set to "5.0":
+#    db.adminCommand({getParameter: 1, featureCompatibilityVersion: 1})
+#  To update 'featureCompatibilityVersion':
+#    db.adminCommand({setFeatureCompatibilityVersion: "5.0"})
+# 3. To shut down MongoDB: rs.stepDown()
+# 4. Stop the service: systemctl stop mongod
+# 5. Update MongoDB: apt upgrade* Ensure the following packages are in the updating list:
+#    mongodb-org mongodb-org-mongos mongodb-org-server mongodb-org-shell mongodb-org-tools
+# 6. Start MongoDB: systemctl start mongod
+
+mongodb_version: '7.0'
 
 mongodb_apt_url: http://repo.mongodb.org/apt/{{ ansible_distribution | lower }}
 mongodb_apt_suites: "{{ ansible_distribution_release }}/mongodb-org/{{ mongodb_version }}"
@@ -72,8 +85,6 @@ mongodb_storage_engine: "wiredTiger"
 mongodb_storage_quota_enforced: false            # Limits each database to a certain number of files
 mongodb_storage_quota_maxfiles: 8                # Number of quota files per DB
 mongodb_storage_smallfiles: false                # Very useful for non-data nodes
-
-mongodb_storage_journal_enabled: true            # Enable journaling
 mongodb_storage_prealloc: true                   # Enable data file preallocation
 
 mongodb_wiredtiger_directory_for_indexes: false

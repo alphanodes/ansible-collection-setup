@@ -7,12 +7,13 @@
 
 - name: Ensure the MongoDB replSets have been initiated
   ansible.builtin.shell: >-
-    mongo --quiet --eval
+    mongosh --quiet --eval
     'JSON.stringify(rs.initiate({_id:"{{ mongodb_replication_replset }}",
     members: [{"_id":1, "host":
     "{{ rocketchat_mongodb_server }}:{{ rocketchat_mongodb_port }}"}]}))'
   become: true
   become_user: "{{ mongodb_user | default('mongodb') }}"
+  when: rocketchat_with_init_mongodb_replica
   args:
     executable: /bin/bash
   register: repl_result
