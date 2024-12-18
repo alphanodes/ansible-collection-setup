@@ -349,7 +349,7 @@ pidfile {{ redis_server_pidfile }}
 # notice (moderately verbose, what you want in production probably)
 # warning (only very important / critical messages are logged)
 # nothing (nothing is logged)
-loglevel notice
+loglevel {{ redis_server_loglevel }}
 
 # Specify the log file name. Also the empty string can be used to force
 # Redis to log on the standard output. Note that if you use standard
@@ -358,13 +358,13 @@ logfile /var/log/redis/redis-server.log
 
 # To enable logging to the system logger, just set 'syslog-enabled' to yes,
 # and optionally update the other syslog parameters to suit your needs.
-# syslog-enabled no
+syslog-enabled {{ 'yes' if redis_server_syslog_enabled else 'no' }}
 
 # Specify the syslog identity.
-# syslog-ident redis
+syslog-ident {{ redis_server_syslog_ident }}
 
 # Specify the syslog facility. Must be USER or between LOCAL0-LOCAL7.
-# syslog-facility local0
+syslog-facility {{ redis_server_syslog_facility }}
 
 # To disable the built in crash log, which will possibly produce cleaner core
 # dumps when they are needed, uncomment the following:
