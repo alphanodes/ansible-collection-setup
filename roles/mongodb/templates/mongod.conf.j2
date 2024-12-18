@@ -80,7 +80,7 @@ storage:
 
 systemLog:
   verbosity: {{ mongodb_systemlog_verbosity }}
-  quiet: {{ mongodb_systemlog_quite | lower }}
+  quiet: {{ mongodb_systemlog_quiet | lower }}
   destination: {{ mongodb_systemlog_destination }}
 {% if mongodb_systemlog_destination == 'file' %}
   logAppend: {{ mongodb_systemlog_logappend | to_nice_json }}
