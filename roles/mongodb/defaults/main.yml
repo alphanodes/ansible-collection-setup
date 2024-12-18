@@ -92,10 +92,12 @@ mongodb_wiredtiger_directory_for_indexes: false
 ## systemLog Options
 ## The destination to which MongoDB sends all log output. Specify either 'file' or 'syslog'.
 ## If you specify 'file', you must also specify mongodb_systemlog_path.
-mongodb_systemlog_destination: "file"
+mongodb_systemlog_destination: syslog
 mongodb_systemlog_logappend: true                                        # Append to logpath instead of over-writing
-mongodb_systemlog_logrotate: "rename"                                    # Logrotation behavior
+mongodb_systemlog_logrotate: rename                                    # Logrotation behavior
 mongodb_systemlog_path: /var/log/mongodb/{{ mongodb_daemon_name }}.log   # Log file to send write to instead of stdout
+# see https://www.mongodb.com/docs/v7.0/reference/configuration-options/#mongodb-setting-systemLog.verbosity
+mongodb_systemlog_verbosity: 0
 
 ## operationProfiling Options
 mongodb_operation_profiling_slow_op_threshold_ms: 100
