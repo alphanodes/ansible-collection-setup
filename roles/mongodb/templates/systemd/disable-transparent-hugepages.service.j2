@@ -7,7 +7,6 @@ Before={{ mongodb_daemon_name }}.service
 Type=oneshot
 ExecStart=-/usr/bin/bash -c 'echo never > /sys/kernel/mm/transparent_hugepage/enabled'
 ExecStart=-/usr/bin/bash -c 'echo never > /sys/kernel/mm/transparent_hugepage/defrag'
-ExecStart=-/usr/bin/bash -c 'echo 0 > /sys/kernel/mm/transparent_hugepage/khugepaged/defrag'
 
 [Install]
-RequiredBy={{ mongodb_daemon_name }}.service
+WantedBy=multi-user.target
