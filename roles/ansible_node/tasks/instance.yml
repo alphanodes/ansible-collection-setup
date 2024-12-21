@@ -5,6 +5,10 @@
     available_playbook: "{{ r_playbook.value }}"
     available_playbook_name: "{{ r_playbook.key }}"
 
+- name: Set playbook_ansible_python_interpreter - {{ available_playbook_name }}
+  ansible.builtin.set_fact:
+    playbook_ansible_python_interpreter: '{{ ansible_python_interpreter if ansible_python_interpreter is defined else ansible_node_playbook_ansible_python_interpreter }}'
+
 - name: Set playbook_filename - {{ available_playbook_name }}
   ansible.builtin.set_fact:
     playbook_filename: '{{ ansible_node_playbook_dir }}/{{ available_playbook.playbook }}'

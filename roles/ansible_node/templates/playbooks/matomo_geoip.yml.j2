@@ -5,8 +5,8 @@
   serial: 1
 
   vars:
-{% if ansible_node_playbook_ansible_python_interpreter != '' %}
-    ansible_python_interpreter: {{ ansible_node_playbook_ansible_python_interpreter }}
+{% if playbook_ansible_python_interpreter != '' %}
+    ansible_python_interpreter: {{ playbook_ansible_python_interpreter }}
 {% endif %}
 {% if matomo_task_become is defined %}
     matomo_task_become: {{ matomo_task_become | bool | lower }}

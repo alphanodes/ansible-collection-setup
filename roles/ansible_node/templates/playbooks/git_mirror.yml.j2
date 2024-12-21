@@ -5,8 +5,8 @@
   serial: 1
 
   vars:
-{% if ansible_node_playbook_ansible_python_interpreter != '' %}
-    ansible_python_interpreter: {{ ansible_node_playbook_ansible_python_interpreter }}
+{% if playbook_ansible_python_interpreter != '' %}
+    ansible_python_interpreter: {{ playbook_ansible_python_interpreter }}
 {% endif %}
     git_mirrors:
       {{ git_mirrors | to_nice_yaml(indent=2) | trim | indent(6) }}
