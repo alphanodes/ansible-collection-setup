@@ -5,10 +5,6 @@
     available_playbook: "{{ r_playbook.value }}"
     available_playbook_name: "{{ r_playbook.key }}"
 
-- name: Set playbook_ansible_python_interpreter - {{ available_playbook_name }}
-  ansible.builtin.set_fact:
-    playbook_ansible_python_interpreter: '{{ ansible_python_interpreter if ansible_python_interpreter is defined else ansible_node_playbook_ansible_python_interpreter }}'
-
 - name: Set playbook_filename - {{ available_playbook_name }}
   ansible.builtin.set_fact:
     playbook_filename: '{{ ansible_node_playbook_dir }}/{{ available_playbook.playbook }}'
@@ -37,6 +33,14 @@
 - name: Required playbook
   when: required_playbook
   block:
+    - name: Get active_playbook for custom settings - {{ available_playbook_name }}
+      ansible.builtin.set_fact:
+        active_playbook: "{{ ansible_node_playbooks | selectattr('name', 'eq', available_playbook_name) | list | first }}"
+
+    - name: Set playbook_ansible_python_interpreter - {{ available_playbook_name }}
+      ansible.builtin.set_fact:
+        playbook_ansible_python_interpreter: '{{ active_playbook.ansible_python_interpreter if active_playbook.ansible_python_interpreter is defined else ansible_node_playbook_ansible_python_interpreter }}'
+
     - name: Setup activated playbook - {{ available_playbook_name }}
       ansible.builtin.template:
         src: playbooks/{{ available_playbook.playbook }}.j2
@@ -46,10 +50,6 @@
     - name: Prepare timer - {{ available_playbook_name }}
       ansible.builtin.set_fact:
         timer: '{{ available_playbook }}'
-
-    - name: Get active_playbook for custom settings - {{ available_playbook_name }}
-      ansible.builtin.set_fact:
-        active_playbook: "{{ ansible_node_playbooks | selectattr('name', 'eq', available_playbook_name) | list | first }}"
 
     - name: Add state to timer - {{ available_playbook_name }}
       ansible.builtin.set_fact:
