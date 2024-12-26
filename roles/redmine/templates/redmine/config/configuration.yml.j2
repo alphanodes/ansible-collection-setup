@@ -39,6 +39,9 @@ default:
 {% if instance.select2_init_entries is defined and instance.select2_init_entries != '' %}
   select2_init_entries: {{ instance.select2_init_entries | int }}
 {% endif %}
+{% if instance.gps_macro_with_bavaria_only is defined and instance.gps_macro_with_bavaria_only != '' %}
+  gps_macro_with_bavaria_only: {{ instance.gps_macro_with_bavaria_only | bool | lower }}
+{% endif %}
 
 {% if active_system_infos_vars | length %}
   system_infos_vars:
