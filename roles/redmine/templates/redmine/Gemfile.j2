@@ -18,6 +18,9 @@ gem 'connection_pool'
 {% if instance.with_mysql2postgres is defined and instance.with_mysql2postgres %}
 gem 'mysql2postgres'
 {% endif %}
+{% if instance.with_pghero is defined and instance.with_pghero %}
+gem 'pghero'
+{% endif %}
 {% if instance.gemfile_extras is defined %}
 {% for extra_line in instance.gemfile_extras %}
 {{ extra_line }}

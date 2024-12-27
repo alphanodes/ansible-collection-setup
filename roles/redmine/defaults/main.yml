@@ -60,6 +60,10 @@ redmine_with_hedgedoc: false
 redmine_with_memcache: true
 redmine_memcached_host: '127.0.0.1:11211'
 
+# if instance.vhost_users is defined, use access protection
+# NOTE: can be disabled to use protection for e.g. pghero only
+redmine_access_protection: true
+
 redmine_with_agile: false
 
 account_migrate_to_new_home: true
