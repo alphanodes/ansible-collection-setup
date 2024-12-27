@@ -57,6 +57,8 @@
     active_agile: "{{ instance.with_agile | default(redmine_with_agile) }}"
     instance: "{{ instance | combine([{'error_404_enabled': true}]) }}"
     queue_adapter: "{{ instance.queue_adapter | default(redmine_queue_adapter) | default('') }}"
+    htpasswd_file: "/etc/nginx/.htpasswd_redmine_{{ instance_name }}"
+    access_protection: "{{ instance.access_protection | default(redmine_access_protection) }}"
 
 - name: Set redmine_theme_dir - {{ instance_name }}
   ansible.builtin.set_fact:
