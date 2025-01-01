@@ -30,7 +30,7 @@
       loop: '{{ instance.dirs | default([]) }}'
 
     - name: Run sphinx build pdf - {{ instance.name }}
-      ansible.builtin.command: make latexpdf
+      ansible.builtin.command: make latexpdf --quiet
       args:
         chdir: '{{ sphinx_dir }}/{{ item.name }}'
       loop: '{{ instance.dirs | default([]) }}'
