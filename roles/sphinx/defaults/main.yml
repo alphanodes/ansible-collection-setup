@@ -12,6 +12,7 @@ sphinx_packages:
   - texlive-lang-german
   - texlive-latex-extra
   - texlive-latex-recommended
+
 sphinx_unwanted_packages:
   - sphinx-common
 
