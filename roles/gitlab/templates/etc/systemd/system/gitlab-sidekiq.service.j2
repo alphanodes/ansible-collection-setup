@@ -20,10 +20,11 @@ Environment=GITLAB_LOG_LEVEL={{ gitlab_log_level }}
 Environment=SIDEKIQ_QUEUES=*
 {% if gitlab_rvm_ruby %}
 Environment="PATH={{ gitlab_rvm_ruby_path }}:/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
+ExecStart={{ gitlab_rvm_ruby_path }}/bundle exec bin/sidekiq-cluster $SIDEKIQ_QUEUES -P {{ gitlab_sidekiq_pidfile }}
 {% else %}
 Environment="PATH={{ gitlab_gem_home }}/bin:/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
-{% endif %}
 ExecStart={{ gitlab_path }}/bin/sidekiq-cluster $SIDEKIQ_QUEUES -P {{ gitlab_sidekiq_pidfile }}
+{% endif %}
 PIDFile={{ gitlab_sidekiq_pidfile }}
 NotifyAccess=all
 Restart=on-failure
