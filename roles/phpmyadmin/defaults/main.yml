@@ -2,7 +2,7 @@
 # defaults file for phpmyadmin
 
 # Has to be a Git branch or tag
-phpmyadmin_git_version: RELEASE_5_2_1
+phpmyadmin_git_version: RELEASE_5_2_2
 phpmyadmin_git_url: https://github.com/phpmyadmin/phpmyadmin
 phpmyadmin_db_host: localhost
 phpmyadmin_db_name: phpmyadmin
