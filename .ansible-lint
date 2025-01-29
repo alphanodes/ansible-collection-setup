@@ -10,3 +10,8 @@ skip_list:
 enable_list:
   # this is used by galaxy
   - empty-string-compare
+
+exclude_paths:
+  - .cache/ # implicit unless exclude_paths is defined in config
+  - .ansible/roles/geerlingguy.composer
+  - .ansible/roles/geerlingguy.certbot
