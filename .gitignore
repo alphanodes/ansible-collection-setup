@@ -4,6 +4,7 @@
 .ruby-lsp
 .venv
 .vscode
+.ansible
 /*.retry
 /*.tar.gz
 /.python-version
