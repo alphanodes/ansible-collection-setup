@@ -96,6 +96,11 @@ postgresql_timescaledb_packages:
 # e.g. for shared_preload_libraries = 'pg_stat_statements'
 postgresql_shared_preload_libraries: 'pg_stat_statements'
 
+# https://www.postgresql.org/docs/current/auto-explain.html
+postgresql_with_auto_explain: false
+postgresql_auto_explain_log_analyze: true
+postgresql_auto_explain_log_min_duration: '200ms'
+
 # postgresql_compute_query_id: auto (auto or on is required for pg_stat_statements)
 postgresql_with_pg_stat_statements: true
 postgresql_pg_stat_statements_max: 10000
@@ -128,7 +133,7 @@ postgresql_log_line_prefix_syslog: 'user=%u,db=%d,app=%a,client=%h '
 postgresql_log_line_prefix_stderr: '%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '
 # disabled, if -1
 postgresql_log_min_duration_statement: 2000
-postgresql_log_checkpoints: false
+postgresql_log_checkpoints: true
 postgresql_log_connections: false
 postgresql_log_disconnections: false
 postgresql_log_lock_waits: false
