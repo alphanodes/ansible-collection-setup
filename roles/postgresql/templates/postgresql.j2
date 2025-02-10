@@ -780,6 +780,11 @@ timescaledb.license = '{{ postgresql_timescaledb_license }}'
 timescaledb.telemetry_level = {{ 'off' if not postgresql_timescaledb_telemetry_level else postgresql_timescaledb_telemetry_level }}
 {% endif %}
 
+{% if postgresql_with_auto_explain %}
+auto_explain.log_analyze = {{ 'on' if postgresql_auto_explain_log_analyze else 'off' }}
+auto_explain.log_min_duration = '{{ postgresql_auto_explain_log_min_duration }}'
+{% endif %}
+
 # - Other Defaults -
 
 #dynamic_library_path = '$libdir'
