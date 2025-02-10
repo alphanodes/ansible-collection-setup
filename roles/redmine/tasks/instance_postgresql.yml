@@ -32,14 +32,6 @@
     db: '{{ redmine_db_name }}'
   when: postgresql_with_pg_stat_statements
 
-- name: Add extention auto_explain to Redmine database
-  become_user: postgres
-  become: true
-  community.postgresql.postgresql_ext:
-    name: auto_explain
-    db: '{{ redmine_db_name }}'
-  when: postgresql_with_pg_stat_statements
-
 - name: Run postgresql pre commands - {{ instance_name }}
   community.postgresql.postgresql_query:
     db: '{{ redmine_db_name }}'
