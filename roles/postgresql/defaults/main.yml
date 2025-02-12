@@ -70,9 +70,12 @@ postgresql_deadlock_timeout: 1s
 postgresql_checkpoint_timeout: 15min
 postgresql_max_wal_size: 2GB
 postgresql_min_wal_size: 80MB
+postgresql_max_worker_processes: 8
+postgresql_max_parallel_workers: '{{ postgresql_max_worker_processes }}'
+
 # (checkpoint_timeout - 2min) / checkpoint_timeout)
 # see https://blog.2ndquadrant.com/basics-of-tuning-checkpoints/
-postgresql_checkpoint_completion_target: 0.86
+postgresql_checkpoint_completion_target: 0.9
 # with barman replica is required, at least
 postgresql_wal_level: replica
 postgresql_wal_buffers: -1
