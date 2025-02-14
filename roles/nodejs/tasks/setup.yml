@@ -34,30 +34,33 @@
     - /etc/apt/sources.list.d/deb_nodesource_com_node_{{ nodejs_version | replace(".", "_") }}.list
     - /etc/apt/trusted.gpg.d/nodejs.asc
 
-# see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/deb822_repository_module.html
-- name: Add nodesource apt repository
-  ansible.builtin.deb822_repository:
-    name: nodesource
-    uris: "{{ nodejs_apt_url }}"
-    types: deb
-    suites: "{{ nodejs_apt_suites }}"
-    components: "{{ nodejs_apt_components }}"
-    signed_by: "{{ nodejs_apt_key_url }}"
-    state: present
-  register: node_repo
+- name: Update node.js apt source
+  when: nodejs_apt_source_update
+  block:
+    # see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/deb822_repository_module.html
+    - name: Add nodesource apt repository
+      ansible.builtin.deb822_repository:
+        name: nodesource
+        uris: "{{ nodejs_apt_url }}"
+        types: deb
+        suites: "{{ nodejs_apt_suites }}"
+        components: "{{ nodejs_apt_components }}"
+        signed_by: "{{ nodejs_apt_key_url }}"
+        state: present
+      register: node_repo
 
-- name: Pinning nodesource repository
-  ansible.builtin.template:
-    src: nodesource-pinning.j2
-    dest: /etc/apt/preferences.d/nodesource
-    mode: '0644'
+    - name: Pinning nodesource repository
+      ansible.builtin.template:
+        src: nodesource-pinning.j2
+        dest: /etc/apt/preferences.d/nodesource
+        mode: '0644'
 
-- name: Update apt cache
-  apt:
-    update_cache: true
-  when: node_repo.changed
-  tags:
-    - skip_ansible_lint
+    - name: Update apt cache
+      apt:
+        update_cache: true
+      when: node_repo.changed
+      tags:
+        - skip_ansible_lint
 
 - name: Ensure Node.js and npm are installed.
   ansible.builtin.apt:

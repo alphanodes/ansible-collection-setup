@@ -8,6 +8,7 @@ nodejs_apt_key_host: deb.nodesource.com
 nodejs_apt_key_url: https://{{ nodejs_apt_key_host }}/gpgkey/nodesource-repo.gpg.key
 nodejs_apt_suites: nodistro
 nodejs_apt_components: main
+nodejs_apt_source_update: true
 
 # The user for whom the npm packages will be installed.
 # nodejs_install_npm_user: username
