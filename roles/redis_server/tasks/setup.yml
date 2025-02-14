@@ -4,7 +4,7 @@
   when: redis_use_redis_io
   block:
     # see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/deb822_repository_module.html
-    - name: Add nodesource apt repository
+    - name: Add redis apt repository
       ansible.builtin.deb822_repository:
         name: redis
         uris: "{{ redis_apt_url }}"
