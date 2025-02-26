@@ -13,8 +13,7 @@ postfix_sasl_packages:
   - sasl2-bin
 
 # Set it to ipv4 for problems with ipv6
-postfix_inet_protocols: "{{ 'ipv4' if server_disable_ipv6 is defined and server_disable_ipv6 else '' }}"
-
+postfix_inet_protocols: "{{ 'ipv4' if server_disable_ipv6 is defined and server_disable_ipv6 else 'all' }}"
 postfix_inet_interfaces: all
 
 postfix_smtpd_banner: '$myhostname ESMTP $mail_name'
@@ -43,9 +42,11 @@ postfix_sasl_password_file_db: '{{ postfix_sasl_password_file }}.db'
 postfix_sasl_password_maps: []
 postfix_sasl_mechanism_filter: ''
 
+postfix_smtpd_tls_security_level: may
+
 # cert file should be with root certificate
-postfix_smtp_ssl_cert_file: /etc/ssl/certs/ssl-cert-snakeoil.pem
-postfix_smtp_ssl_key_file: /etc/ssl/private/ssl-cert-snakeoil.key
+postfix_smtpd_tls_cert_file: /etc/ssl/certs/ssl-cert-snakeoil.pem
+postfix_smtpd_ssl_key_file: /etc/ssl/private/ssl-cert-snakeoil.key
 
 # force tls for clients (to protect passwords on authentification)
 postfix_tls_auth_only: false
@@ -85,8 +86,9 @@ postfix_relayhost_mxlookup: false
 # postfix_relayhost_port: 25
 postfix_relaytls: false
 
+# default: permit_mynetworks permit_sasl_authenticated defer_unauth_destination
 postfix_relay_restrictions: permit_mynetworks permit_sasl_authenticated reject_unauth_destination
-postfix_compatibility_level: 2
+postfix_compatibility_level: '3.6'
 
 postfix_custom_options: []
 postfix_raw_options: []
