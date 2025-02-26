@@ -12,10 +12,10 @@ readme_directory = no
 compatibility_level = {{ postfix_compatibility_level }}
 
 # TLS parameters
-smtpd_use_tls = yes
+smtpd_tls_security_level = {{ postfix_smtpd_tls_security_level }}
 smtpd_tls_session_cache_database = btree:${data_directory}/smtpd_scache
-smtpd_tls_cert_file = {{ postfix_smtp_ssl_cert_file }}
-smtpd_tls_key_file = {{ postfix_smtp_ssl_key_file }}
+smtpd_tls_cert_file = {{ postfix_smtpd_tls_cert_file }}
+smtpd_tls_key_file = {{ postfix_smtpd_tls_key_file }}
 {% if postfix_smtpd_tls_mandatory_protocols is defined %}
 smtpd_tls_mandatory_protocols = {{ postfix_smtpd_tls_mandatory_protocols }}
 {% endif %}
@@ -66,6 +66,8 @@ mynetworks_style = {{ postfix_mynetworks_style }}
 {% if postfix_mynetworks_style != 'host' %}
 mynetworks = {{ postfix_mynetworks | join(' ') }}
 {% endif %}
+default_transport = error
+relay_transport = error
 
 {% if postfix_relayhost != '' %}
 relayhost = {{ real_postfix_relayhost }}
