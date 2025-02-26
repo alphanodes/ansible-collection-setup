@@ -66,8 +66,6 @@ mynetworks_style = {{ postfix_mynetworks_style }}
 {% if postfix_mynetworks_style != 'host' %}
 mynetworks = {{ postfix_mynetworks | join(' ') }}
 {% endif %}
-default_transport = error
-relay_transport = error
 
 {% if postfix_relayhost != '' %}
 relayhost = {{ real_postfix_relayhost }}
