@@ -19,6 +19,9 @@ smtpd_tls_key_file = {{ postfix_smtp_ssl_key_file }}
 
 smtp_tls_CApath = /etc/ssl/certs
 smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
+{% if postfix_smtp_tls_mandatory_protocols is defined %}
+smtp_tls_mandatory_protocols = {{ postfix_smtp_tls_mandatory_protocols }}
+{% endif %}
 {% if postfix_smtp_tls_protocols is defined %}
 smtp_tls_protocols = {{ postfix_smtp_tls_protocols }}
 {% endif %}
@@ -116,16 +119,12 @@ mua_client_restrictions = permit_mynetworks,permit_sasl_authenticated,reject
 ### vimbadmin configuration block
 
 # Disallow SSLv2 and SSLv3, only accept secure ciphers
-smtpd_tls_mandatory_protocols = !SSLv2, !SSLv3
-smtpd_tls_mandatory_ciphers=high
+smtpd_tls_mandatory_protocols = >=TLSv1.3
+smtpd_tls_protocols           = >=TLSv1.3
 
-# A custom list with secure ciphers.
-# tls_high_cipherlist = !aNULL:!eNULL:!CAMELLIA:HIGH:@STRENGTH
-tls_high_cipherlist=EDH+CAMELLIA:EDH+aRSA:EECDH+aRSA+AESGCM:EECDH+aRSA+SHA384:EECDH+aRSA+SHA256:EECDH:+CAMELLIA256:+AES256:+CAMELLIA128:+AES128:+SSLv3:!aNULL:!eNULL:!LOW:!3DES:!MD5:!EXP:!PSK:!DSS:!RC4:!SEED:!ECDSA:CAMELLIA256-SHA:AES256-SHA:CAMELLIA128-SHA:AES128-SHA
-
-# Log TLS handling
-smtpd_tls_loglevel = 1
-smtp_tls_loglevel = 1
+tls_preempt_cipherlist = no
+tls_eecdh_auto_curves = X25519 prime256v1 secp384r1
+tls_ffdhe_auto_groups =
 
 # Sender, recipient, client and data restrictions
 # !! non-FQDN HELOs are rejected on Port 25 only, see master.cf
