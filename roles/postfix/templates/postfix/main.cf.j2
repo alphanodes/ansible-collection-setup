@@ -49,6 +49,10 @@ smtp_sasl_security_options = {{ postfix_sasl_security_options }}
 smtp_sasl_password_maps = hash:{{ postfix_sasl_password_file }}
 {% endif %}
 
+{% if postfix_smtp_dns_support_level is defined -%}
+smtp_dns_support_level = {{ postfix_smtp_dns_support_level }}
+{% endif -%}
+
 myhostname = {{ postfix_myhostname }}
 alias_maps = hash:{{ postfix_aliases_file }}
 alias_database = hash:{{ postfix_aliases_file }}

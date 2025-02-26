@@ -9,6 +9,8 @@ ssl_forward_secrecy_key_length: 4096
 # always generate new key
 ssl_forward_secrecy_key_force: false
 
+ssl_dhparams_force: false
+
 ssl_certs: []
 
 # CA files has to use .crt extention!
