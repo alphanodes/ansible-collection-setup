@@ -229,6 +229,7 @@ smtpd_hard_error_limit = ${stress?1}${stress:5}
 {% if custom_option.comment is defined %}
 # {{ custom_option.comment }}
 {% endif %}
+# @see https://www.postfix.org/postconf.5.html#{{ custom_option.name }}
 {{ custom_option.name }} = {{ custom_option.value }}
 {% endfor %}
 {% for raw_option in postfix_raw_options | default([]) %}
