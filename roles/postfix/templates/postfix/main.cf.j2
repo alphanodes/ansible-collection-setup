@@ -25,6 +25,7 @@ smtpd_tls_protocols = {{ postfix_smtpd_tls_protocols }}
 {% endif %}
 smtpd_tls_auth_only = {{ 'yes' if postfix_tls_auth_only | bool else 'no' }}
 
+smtp_tls_security_level = {{ postfix_smtp_tls_security_level }}
 smtp_tls_CApath = /etc/ssl/certs
 smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
 {% if postfix_smtp_tls_mandatory_protocols is defined %}
@@ -33,11 +34,9 @@ smtp_tls_mandatory_protocols = {{ postfix_smtp_tls_mandatory_protocols }}
 {% if postfix_smtp_tls_protocols is defined %}
 smtp_tls_protocols = {{ postfix_smtp_tls_protocols }}
 {% endif %}
-
 {% if postfix_sasl_auth_enable %}
 # enable SASL authentication
 smtp_sasl_auth_enable = yes
-smtp_tls_security_level = {{ postfix_smtp_tls_security_level }}
 smtp_tls_wrappermode = {{ 'yes' if postfix_smtp_tls_wrappermode | bool else 'no' }}
 smtp_tls_note_starttls_offer = {{ 'yes' if postfix_smtp_tls_note_starttls_offer | bool else 'no' }}
 {% if postfix_sasl_mechanism_filter != '' %}
