@@ -16,6 +16,16 @@ smtpd_use_tls = yes
 smtpd_tls_session_cache_database = btree:${data_directory}/smtpd_scache
 smtpd_tls_cert_file = {{ postfix_smtp_ssl_cert_file }}
 smtpd_tls_key_file = {{ postfix_smtp_ssl_key_file }}
+{% if postfix_smtpd_tls_mandatory_protocols is defined %}
+smtpd_tls_mandatory_protocols = {{ postfix_smtpd_tls_mandatory_protocols }}
+{% endif %}
+{% if postfix_smtpd_tls_protocols is defined %}
+smtpd_tls_protocols = {{ postfix_smtpd_tls_protocols }}
+{% endif %}
+
+tls_preempt_cipherlist = no
+tls_eecdh_auto_curves = X25519 prime256v1 secp384r1
+tls_ffdhe_auto_groups =
 
 smtp_tls_CApath = /etc/ssl/certs
 smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
@@ -118,14 +128,6 @@ mua_client_restrictions = permit_mynetworks,permit_sasl_authenticated,reject
 {% if postfix_with_vimbadmin %}
 ### vimbadmin configuration block
 
-# Disallow SSLv2 and SSLv3, only accept secure ciphers
-smtpd_tls_mandatory_protocols = >=TLSv1.3
-smtpd_tls_protocols           = >=TLSv1.3
-
-tls_preempt_cipherlist = no
-tls_eecdh_auto_curves = X25519 prime256v1 secp384r1
-tls_ffdhe_auto_groups =
-
 # Sender, recipient, client and data restrictions
 # !! non-FQDN HELOs are rejected on Port 25 only, see master.cf
 
@@ -213,16 +215,6 @@ virtual_transport = lmtps:unix:private/dovecot-lmtp
 
 transport_maps = mysql:/etc/postfix/mysql/virtual_transport_maps.cf
 
-## Queue configuration
-# Consider a message as undeliverable, when delivery fails with a temporary error, and the time in the queue has reached this limit.
-maximal_queue_lifetime = 1d
-
-# Consider a bounce message as undeliverable, when delivery fails with a temporary error, and the time in the queue has reached this limit.
-bounce_queue_lifetime = 1d
-
-# The time between deferred queue scans by the queue manager.
-queue_run_delay = 300s
-
 # The maximal/minimal time between attempts to deliver a deferred message.
 maximal_backoff_time = 1800s
 minimal_backoff_time = 300s
@@ -233,6 +225,12 @@ smtpd_error_sleep_time = 10s
 smtpd_hard_error_limit = ${stress?1}${stress:5}
 {% endif %}
 
-{% for raw_option in postfix_raw_options | default([]) -%}
+{% for custom_option in postfix_custom_options | default([]) %}
+{% if custom_option.comment is defined %}
+# {{ custom_option.comment }}
+{% endif %}
+{{ custom_option.name }} = {{ custom_option.value }}
+{% endfor %}
+{% for raw_option in postfix_raw_options | default([]) %}
 {{ raw_option }}
 {% endfor %}

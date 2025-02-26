@@ -88,6 +88,7 @@ postfix_relaytls: false
 postfix_relay_restrictions: permit_mynetworks permit_sasl_authenticated reject_unauth_destination
 postfix_compatibility_level: 2
 
+postfix_custom_options: []
 postfix_raw_options: []
 postfix_aliases: []
 
