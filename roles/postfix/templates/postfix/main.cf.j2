@@ -215,10 +215,6 @@ virtual_transport = lmtps:unix:private/dovecot-lmtp
 
 transport_maps = mysql:/etc/postfix/mysql/virtual_transport_maps.cf
 
-# The maximal/minimal time between attempts to deliver a deferred message.
-maximal_backoff_time = 1800s
-minimal_backoff_time = 300s
-
 # This tarpits a client after 3 erroneous commands for 10s
 smtpd_soft_error_limit = 3
 smtpd_error_sleep_time = 10s
