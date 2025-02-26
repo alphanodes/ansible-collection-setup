@@ -23,10 +23,6 @@ smtpd_tls_mandatory_protocols = {{ postfix_smtpd_tls_mandatory_protocols }}
 smtpd_tls_protocols = {{ postfix_smtpd_tls_protocols }}
 {% endif %}
 
-tls_preempt_cipherlist = no
-tls_eecdh_auto_curves = X25519 prime256v1 secp384r1
-tls_ffdhe_auto_groups =
-
 smtp_tls_CApath = /etc/ssl/certs
 smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
 {% if postfix_smtp_tls_mandatory_protocols is defined %}
@@ -226,7 +222,7 @@ smtpd_hard_error_limit = ${stress?1}${stress:5}
 # {{ custom_option.comment }}
 {% endif %}
 # @see https://www.postfix.org/postconf.5.html#{{ custom_option.name }}
-{{ custom_option.name }} = {{ custom_option.value }}
+{{ custom_option.name }} = {{ custom_option.value | default('') }}
 {% endfor %}
 
 {% for raw_option in postfix_raw_options | default([]) -%}
