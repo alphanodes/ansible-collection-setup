@@ -88,7 +88,7 @@ sender_canonical_maps = hash:/etc/postfix/sender-canonical
 smtpd_relay_restrictions = {{ postfix_relay_restrictions }}
 
 # Disable the SMTP VRFY command. This stops some techniques used to harvest email addresses.
-disable_vrfy_command = {{ 'yes' if postfix_disable_vrfy_command | bool else 'no' }}
+disable_vrfy_command = yes
 
 {% if postfix_with_postscreen %}
 ### postscreen configuration block
@@ -118,7 +118,7 @@ postscreen_cache_map = proxy:btree:$data_directory/postscreen_cache
 {% endif %}
 
 {% if postfix_with_smtps %}
-## Restrictions für MUAs (Mail user agents)
+## Restrictions for MUAs (Mail user agents)
 
 mua_relay_restrictions = reject_non_fqdn_recipient,reject_unknown_recipient_domain,permit_mynetworks,permit_sasl_authenticated,reject
 mua_sender_restrictions = permit_mynetworks,reject_non_fqdn_sender,reject_sender_login_mismatch,permit_sasl_authenticated,reject

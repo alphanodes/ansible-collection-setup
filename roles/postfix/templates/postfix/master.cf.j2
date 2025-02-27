@@ -1,11 +1,4 @@
 {{ ansible_managed | comment }}
-#
-# Postfix master process configuration file.  For details on the format
-# of the file, see the master(5) manual page (command: "man 5 master" or
-# on-line: http://www.postfix.org/master.5.html).
-#
-# Do not forget to execute "postfix reload" after editing this file.
-#
 # ==========================================================================
 # service type  private unpriv  chroot  wakeup  maxproc command + args
 #               (yes)   (yes)   (no)    (never) (100)
@@ -31,11 +24,11 @@ smtps     inet  n       -       y       -       -       smtpd
   -o smtpd_sasl_auth_enable=yes
   -o smtpd_sasl_security_options=noanonymous
   -o smtpd_client_restrictions=$mua_client_restrictions
-  -o smtpd_helo_restrictions=$mua_helo_restrictions
   -o smtpd_sender_restrictions=$mua_sender_restrictions
-  -o smtpd_relay_restrictions=permit_sasl_authenticated,reject
+  -o smtpd_relay_restrictions=$mua_relay_restrictions
   -o milter_macro_daemon_name=ORIGINATING
   -o smtpd_helo_required=no
+  -o smtpd_helo_restrictions=
 {% if postfix_header_cleanup %}
   -o cleanup_service_name=submission-header-cleanup
 {% endif %}
@@ -49,8 +42,8 @@ submission inet n       -       y       -       -       smtpd
   -o syslog_name=postfix/submission
   -o smtpd_client_restrictions=permit_sasl_authenticated,reject
   -o smtpd_client_restrictions=$mua_client_restrictions
-  -o smtpd_helo_restrictions=$mua_helo_restrictions
   -o smtpd_sender_restrictions=$mua_sender_restrictions
+  -o smtpd_relay_restrictions=$mua_relay_restrictions
   -o smtpd_proxy_filter=127.0.0.1:10025
   -o smtpd_client_connection_count_limit=10
   -o smtpd_proxy_options=speed_adjust
@@ -58,11 +51,9 @@ submission inet n       -       y       -       -       smtpd
   -o cleanup_service_name=submission-header-cleanup
 {% endif %}
 {% endif %}
-#628       inet  n       -       y       -       -       qmqpd
 pickup    unix  n       -       y       60      1       pickup
 cleanup   unix  n       -       y       -       0       cleanup
 qmgr      unix  n       -       n       300     1       qmgr
-#qmgr     unix  n       -       n       300     1       oqmgr
 tlsmgr    unix  -       -       y       1000?   1       tlsmgr
 rewrite   unix  -       -       y       -       -       trivial-rewrite
 bounce    unix  -       -       y       -       0       bounce
@@ -75,7 +66,6 @@ proxywrite unix -       -       n       -       1       proxymap
 smtp      unix  -       -       y       -       -       smtp
 relay     unix  -       -       y       -       -       smtp
         -o syslog_name=postfix/$service_name
-#       -o smtp_helo_timeout=5 -o smtp_connect_timeout=5
 showq     unix  n       -       y       -       -       showq
 error     unix  -       -       y       -       -       error
 retry     unix  -       -       y       -       -       error
@@ -97,17 +87,6 @@ maildrop  unix  -       n       n       -       -       pipe
 #
 uucp      unix  -       n       n       -       -       pipe
   flags=Fqhu user=uucp argv=uux -r -n -z -a$sender - $nexthop!rmail ($recipient)
-#
-# Other external delivery methods.
-#
-ifmail    unix  -       n       n       -       -       pipe
-  flags=F user=ftn argv=/usr/lib/ifmail/ifmail -r $nexthop ($recipient)
-bsmtp     unix  -       n       n       -       -       pipe
-  flags=Fq. user=bsmtp argv=/usr/lib/bsmtp/bsmtp -t$nexthop -f$sender $recipient
-scalemail-backend unix -       n       n       -       2       pipe
-  flags=R user=scalemail argv=/usr/lib/scalemail/bin/scalemail-store ${nexthop} ${user} ${extension}
-mailman   unix  -       n       n       -       -       pipe
-  flags=FRX user=list argv=/usr/lib/mailman/bin/postfix-to-mailman.py ${nexthop} ${user}
 
 {% if postfix_with_vimbadmin %}
 # LMTP with STARTTLS support, needs newer Dovecot versions

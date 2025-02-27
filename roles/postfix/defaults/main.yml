@@ -17,7 +17,6 @@ postfix_inet_protocols: "{{ 'ipv4' if server_disable_ipv6 is defined and server_
 postfix_inet_interfaces: all
 
 postfix_smtpd_banner: '$myhostname ESMTP $mail_name'
-postfix_disable_vrfy_command: true
 postfix_header_cleanup: false
 
 # port 465 (TLS, NOT STARTSSL)
