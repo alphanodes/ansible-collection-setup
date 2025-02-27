@@ -97,11 +97,11 @@
 
     - name: Set resolver for non lxc clients
       ansible.builtin.set_fact:
-        nginx_resolver: "{{ ['127.0.0.1'] + hetzner_nameserver_v4 if hoster == 'hetzner' else ['8.8.8.8', '8.8.4.4'] }}"
+        nginx_resolver: "{{ ['127.0.0.1'] }}"
       when: >
         ansible_virtualization_type != 'lxc'
-        and server_hetzner_resolv_conf_with_unbound is defined
-        and server_hetzner_resolv_conf_with_unbound
+        and server_with_unbound is defined
+        and server_with_unbound
 
     - name: Set resolver for non lxc clients
       ansible.builtin.set_fact:
