@@ -20,6 +20,9 @@ smtpd_tls_chain_files =
 {% if postfix_smtpd_tls_mandatory_protocols is defined %}
 smtpd_tls_mandatory_protocols = {{ postfix_smtpd_tls_mandatory_protocols }}
 {% endif %}
+{% if postfix_smtpd_tls_dh1024_param_file is defined %}
+smtpd_tls_dh1024_param_file = {{ postfix_smtpd_tls_dh1024_param_file }}
+{% endif %}
 {% if postfix_smtpd_tls_protocols is defined %}
 smtpd_tls_protocols = {{ postfix_smtpd_tls_protocols }}
 {% endif %}
@@ -172,20 +175,8 @@ smtpd_sender_login_maps = proxy:mysql:/etc/postfix/mysql/virtual_alias_maps.cf
 # Please say hello first...
 smtpd_helo_required = yes
 
-# The SASL plug-in type that the Postfix SMTP server should use for authentication.
-smtpd_sasl_type=dovecot
-
-# Where to passthrough our authentication information for the above plug-in
-smtpd_sasl_path=private/auth_dovecot
-
-# Enable SASL authentication in the Postfix SMTP server.
-smtpd_sasl_auth_enable = yes
-
 # Report the SASL authenticated user name in the smtpd Received message header.
 smtpd_sasl_authenticated_header = yes
-
-# Have Postfix advertise AUTH support in a non-standard way.
-broken_sasl_auth_clients = yes
 
 # The lookup tables that the proxymap server is allowed to access for the read-only service.
 proxy_read_maps = $local_recipient_maps $mydestination $virtual_alias_maps $virtual_alias_domains $virtual_mailbox_maps $virtual_mailbox_domains $relay_recipient_maps $relay_domains $canonical_maps $sender_canonical_maps $recipient_canonical_maps $relocated_maps $transport_maps $mynetworks $smtpd_sender_login_maps
@@ -211,7 +202,7 @@ virtual_uid_maps = static:5000
 virtual_gid_maps = static:5000
 
 # The default mail delivery transport and next-hop destination for final delivery to domains listed with "virtual_mailbox_domains"
-virtual_transport = lmtps:unix:private/dovecot-lmtp
+virtual_transport = lmtp:unix:private/dovecot-lmtp
 
 transport_maps = mysql:/etc/postfix/mysql/virtual_transport_maps.cf
 
