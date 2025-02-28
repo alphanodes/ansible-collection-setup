@@ -194,7 +194,3 @@ milter_default_action = accept
 # @see https://www.postfix.org/postconf.5.html#{{ custom_option.name }}
 {{ custom_option.name }} = {{ custom_option.value | default('') }}
 {% endfor %}
-
-{% for raw_option in postfix_raw_options | default([]) -%}
-{{ raw_option }}
-{% endfor %}
