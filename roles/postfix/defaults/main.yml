@@ -95,6 +95,33 @@ postfix_custom_options: []
 postfix_raw_options: []
 postfix_aliases: []
 
+## Restrictions for MUAs (Mail user agents)
+# only used with postfix_with_vimbadmin
+postfix_mua_relay_restrictions:
+  - reject_non_fqdn_recipient
+  - reject_unknown_recipient_domain
+  - permit_mynetworks
+  - permit_sasl_authenticated
+  - reject
+postfix_mua_sender_restrictions:
+  # Auth. Benutzer dürfen auch innerhalb der "mynetworks" nur von den Adressen senden,
+  # die ihnen zugehörig sind.
+  - reject_authenticated_sender_login_mismatch
+  # Erst jetzt werden "mynetworks" zugelassen
+  # Unauth. Benutzer wie der Cron-Dienst können so weiterhin Mails versenden, etwa
+  # als cron@fqdn
+  - permit_mynetworks
+  - reject_non_fqdn_sender
+  # Anderen unauth. Benutzern das Benutzen jeder Adresse verbieten
+  # -> wird gebraucht, wenn andere Kundenserver unseren Mailserver verwenden
+  # - reject_sender_login_mismatch
+  - permit_sasl_authenticated
+  - reject
+postfix_mua_client_restrictions:
+  - permit_mynetworks
+  - permit_sasl_authenticated
+  - reject
+
 postfix_with_postscreen: false
 # see https://www.linuxbabe.com/mail-server/configure-postscreen-in-postfix-to-block-spambots
 postfix_postscreen_dnsbl_sites:
