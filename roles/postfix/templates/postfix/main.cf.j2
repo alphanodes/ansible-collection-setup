@@ -123,9 +123,9 @@ postscreen_cache_map = proxy:btree:$data_directory/postscreen_cache
 {% if postfix_with_smtps %}
 ## Restrictions for MUAs (Mail user agents)
 
-mua_relay_restrictions = reject_non_fqdn_recipient,reject_unknown_recipient_domain,permit_mynetworks,permit_sasl_authenticated,reject
-mua_sender_restrictions = permit_mynetworks,reject_non_fqdn_sender,reject_sender_login_mismatch,permit_sasl_authenticated,reject
-mua_client_restrictions = permit_mynetworks,permit_sasl_authenticated,reject
+mua_relay_restrictions = {{ postfix_mua_relay_restrictions | join(',') }}
+mua_sender_restrictions = {{ postfix_mua_sender_restrictions | join(',') }}
+mua_client_restrictions = {{ postfix_mua_client_restrictions | join(',') }}
 {% endif %}
 
 {% if postfix_with_vimbadmin %}
