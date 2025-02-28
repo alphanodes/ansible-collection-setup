@@ -131,25 +131,6 @@ mua_client_restrictions = permit_mynetworks,permit_sasl_authenticated,reject
 {% if postfix_with_vimbadmin %}
 ### vimbadmin configuration block
 
-# Sender, recipient, client and data restrictions
-# !! non-FQDN HELOs are rejected on Port 25 only, see master.cf
-
-# Auth. Benutzer dürfen auch innerhalb der "mynetworks" nur von den Adressen senden, die ihnen zugehörig sind.
-smtpd_sender_restrictions = reject_authenticated_sender_login_mismatch,
-# Erst jetzt werden "mynetworks" zugelassen
-# Unauth. Benutzer wie der Cron-Dienst können so weiterhin Mails versenden, etwa
-# als cron@fqdn
-   permit_mynetworks,
-# Anderen unauth. Benutzern das Benutzen jeder Adresse verbieten
-# -> wird gebraucht, wenn andere Kundenserver unseren Mailserver verwenden
-#   reject_sender_login_mismatch,
-# Alle auth. jetzt zulassen.
-   permit_sasl_authenticated,
-# Nicht im System vorhandene Absender jetzt ablehnen
-   reject_unlisted_sender,
-# Ablehnen, wenn die Sender-Domäne nicht existiert
-   reject_unknown_sender_domain
-
 # Akzeptiere alle Empfänger, die ein authentifizierter Absender oder ein Absender aus "mynetworks" angibt
 smtpd_recipient_restrictions = permit_sasl_authenticated,
    permit_mynetworks,
