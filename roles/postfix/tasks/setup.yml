@@ -56,6 +56,14 @@
   notify:
     - Restart postfix
 
+- name: Remove proto config files
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/postfix/main.cf.proto
+    - /etc/postfix/master.cf.proto
+
 - name: Update mailname
   ansible.builtin.template:
     src: mailname.j2
