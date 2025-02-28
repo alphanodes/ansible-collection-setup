@@ -220,8 +220,8 @@ smtpd_soft_error_limit = 3
 smtpd_error_sleep_time = 10s
 smtpd_hard_error_limit = ${stress?1}${stress:5}
 {% endif %}
-
 {% if postfix_with_rspamd %}
+
 ##
 ## Spamfilter und DKIM-Signaturen via Rspamd
 ##
