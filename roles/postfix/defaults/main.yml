@@ -122,6 +122,22 @@ postfix_mua_client_restrictions:
   - permit_sasl_authenticated
   - reject
 
+# only used with postfix_with_vimbadmin
+postfix_smtpd_recipient_restrictions:
+  # Akzeptiere alle Empfänger, die ein authentifizierter Absender oder ein Absender aus "mynetworks" angibt
+  - permit_sasl_authenticated
+  - permit_mynetworks
+  # Schnittstelle zu Dovecot, um die Quota live zu überprüfen (verhindert Bounces)
+  - check_policy_service unix:private/quota-status
+  # Ablehnen, wenn der HELO FQDN nicht aufzulösen ist
+  - reject_unknown_helo_hostname
+  # Ablehnen, wenn KEIN PTR zu dieser IP existiert
+  # Verhindert nicht, dass ein FALSCHER PTR abgelehnt wird!
+  # Hierfür würde "reject_unknown_client_hostname" verwendet.
+  - reject_unknown_reverse_client_hostname
+  # Kein offenes Relay
+  - reject_unauth_destination
+
 postfix_with_postscreen: false
 # see https://www.linuxbabe.com/mail-server/configure-postscreen-in-postfix-to-block-spambots
 postfix_postscreen_dnsbl_sites:

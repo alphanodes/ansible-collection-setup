@@ -131,24 +131,11 @@ mua_client_restrictions = {{ postfix_mua_client_restrictions | join(',') }}
 {% if postfix_with_vimbadmin %}
 ### vimbadmin configuration block
 
-# Akzeptiere alle Empfänger, die ein authentifizierter Absender oder ein Absender aus "mynetworks" angibt
-smtpd_recipient_restrictions = permit_sasl_authenticated,
-   permit_mynetworks,
-# Schnittstelle zu Dovecot, um die Quota live zu überprüfen (verhindert Bounces)
-   check_policy_service unix:private/quota-status,
-# Ablehnen, wenn der HELO FQDN nicht aufzulösen ist
-   reject_unknown_helo_hostname,
-# Ablehnen, wenn KEIN PTR zu dieser IP existiert
-# Verhindert nicht, dass ein FALSCHER PTR abgelehnt wird!
-# Hierfür würde "reject_unknown_client_hostname" verwendet.
-   reject_unknown_reverse_client_hostname,
-# Kein offenes Relay
-   reject_unauth_destination
+smtpd_recipient_restrictions = {{  postfix_smtpd_recipient_restrictions | join(',') }}
 
 # Unauth. Benutzer dürfen ihre Befehle nicht "pipen"
-smtpd_data_restrictions =
-   reject_unauth_pipelining,
-   permit
+# Clients blockieren, wenn sie versuchen zu früh zu senden
+smtpd_data_restrictions = reject_unauth_pipelining
 
 # Eine Art Tabelle mit vorhanden Identitäten und ihren Zugehörigkeiten
 smtpd_sender_login_maps = proxy:mysql:/etc/postfix/mysql/virtual_alias_maps.cf
@@ -186,11 +173,6 @@ virtual_gid_maps = static:5000
 virtual_transport = lmtp:unix:private/dovecot-lmtp
 
 transport_maps = mysql:/etc/postfix/mysql/virtual_transport_maps.cf
-
-# This tarpits a client after 3 erroneous commands for 10s
-smtpd_soft_error_limit = 3
-smtpd_error_sleep_time = 10s
-smtpd_hard_error_limit = ${stress?1}${stress:5}
 {% endif %}
 {% if postfix_with_rspamd %}
 
