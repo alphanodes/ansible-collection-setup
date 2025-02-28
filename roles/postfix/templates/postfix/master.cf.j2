@@ -83,6 +83,19 @@ anvil     unix  -       -       y       -       1       anvil
 scache    unix  -       -       y       -       1       scache
 
 {% if postfix_with_vimbadmin %}
+# LMTP with STARTTLS support, needs newer Dovecot versions
+lmtps     unix  -       -       y       -       -       lmtp
+  -o lmtp_use_tls=yes
+  -o lmtp_tls_loglevel=1
+  -o lmtp_tls_CAfile=/etc/ssl/certs/ca-certificates.crt
+  -o lmtp_enforce_tls=yes
+  -o lmtp_tls_mandatory_protocols=!SSLv2,!SSLv3
+  -o lmtp_tls_protocols=!SSLv2,!SSLv3
+  -o lmtp_tls_mandatory_ciphers=high
+  -o lmtp_tls_ciphers=high
+  -o lmtp_send_xforward_command=yes
+  -o lmtp_tls_security_level=encrypt
+  -o lmtp_tls_note_starttls_offer=yes
 # Amavis reinjection, maximal 5 smtpd Prozesse, muss den Amavis Prozessen entsprechen!
 127.0.0.1:10035 inet    n       -       y       -       5       smtpd
   -o smtpd_authorized_xforward_hosts=127.0.0.0/8
