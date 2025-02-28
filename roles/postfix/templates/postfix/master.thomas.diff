@@ -1,0 +1,61 @@
+--- master.thomas_old.cf	2025-02-28 09:33:07
++++ master.thomas.cf	2025-02-27 17:47:30
+@@ -2,27 +2,34 @@
+ # service type  private unpriv  chroot  wakeup  maxproc command + args
+ #               (yes)   (yes)   (no)    (never) (100)
+ # ==========================================================================
+-
+ ###
+-### Postscreen-Service: Prüft eingehende SMTP-Verbindungen auf Spam-Server
+-###
+-smtp      inet  n       -       y       -       1       postscreen
++### SMTP-Serverbindungen aus dem Internet
++### Authentifizuerung hier nicht erlaubt (Anmeldung nur via smtps/submission!)
++smtp      inet  n       -       y       -       -       smtpd
+     -o smtpd_sasl_auth_enable=no
+ ###
+-### SMTP-Daemon hinter Postscreen.
++### SMTPS Service (Submission mit implizitem TLS - ohne STARTTLS) - Port 465
++### Für Mailclients gelten andere Regeln, als für andere Mailserver (siehe smtpd_ in main.cf)
+ ###
+-smtpd     pass  -       -       y       -       -       smtpd
++smtps     inet  n       -       y       -       -       smtpd
++    -o syslog_name=postfix/smtps
++    -o smtpd_tls_wrappermode=yes
++    -o smtpd_tls_security_level=encrypt
++    -o smtpd_sasl_auth_enable=yes
++    -o smtpd_sasl_type=dovecot
++    -o smtpd_sasl_path=private/auth
++    -o smtpd_sasl_security_options=noanonymous
++    -o smtpd_client_restrictions=$mua_client_restrictions
++    -o smtpd_sender_restrictions=$mua_sender_restrictions
++    -o smtpd_relay_restrictions=$mua_relay_restrictions
++    -o milter_macro_daemon_name=ORIGINATING
++    -o smtpd_sender_login_maps=proxy:mysql:/etc/postfix/sql/sender-login-maps.cf
++    -o smtpd_helo_required=no
++    -o smtpd_helo_restrictions=
++    -o cleanup_service_name=submission-header-cleanup
+ ###
+-### dnsblog führt DNS-Abfragen für Blocklists durch
++### Submission-Zugang für Clients (mit STARTTLS - für Rückwärtskompatibilität) - Port 587
+ ###
+-dnsblog   unix  -       -       y       -       0       dnsblog
+-###
+-### tlsproxy gibt Postscreen TLS support
+-###
+-tlsproxy  unix  -       -       y       -       0       tlsproxy
+-###
+-### Submission-Zugang für Clients: Für Mailclients gelten andere Regeln, als für andere Mailserver (siehe smtpd_ in main.cf)
+-###
+ submission inet n       -       y       -       -       smtpd
+     -o syslog_name=postfix/submission
+     -o smtpd_tls_security_level=encrypt
+@@ -34,7 +41,7 @@
+     -o smtpd_sender_restrictions=$mua_sender_restrictions
+     -o smtpd_relay_restrictions=$mua_relay_restrictions
+     -o milter_macro_daemon_name=ORIGINATING
+-    -o smtpd_sender_login_maps=mysql:/etc/postfix/sql/sender-login-maps.cf
++    -o smtpd_sender_login_maps=proxy:mysql:/etc/postfix/sql/sender-login-maps.cf
+     -o smtpd_helo_required=no
+     -o smtpd_helo_restrictions=
+     -o cleanup_service_name=submission-header-cleanup

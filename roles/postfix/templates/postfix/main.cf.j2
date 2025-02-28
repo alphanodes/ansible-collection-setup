@@ -220,6 +220,18 @@ smtpd_soft_error_limit = 3
 smtpd_error_sleep_time = 10s
 smtpd_hard_error_limit = ${stress?1}${stress:5}
 {% endif %}
+
+{% if postfix_with_rspamd %}
+##
+## Spamfilter und DKIM-Signaturen via Rspamd
+##
+
+smtpd_milters = inet:localhost:11332
+non_smtpd_milters = inet:localhost:11332
+milter_protocol = 6
+milter_mail_macros =  i {mail_addr} {client_addr} {client_name} {auth_authen}
+milter_default_action = accept
+{% endif %}
 {% for custom_option in postfix_custom_options | default([]) %}
 
 {% if custom_option.comment is defined %}

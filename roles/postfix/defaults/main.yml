@@ -19,6 +19,8 @@ postfix_inet_interfaces: all
 postfix_smtpd_banner: '$myhostname ESMTP $mail_name'
 postfix_header_cleanup: false
 
+postfix_with_rspamd: false
+
 # port 465 (TLS, NOT STARTSSL)
 postfix_with_smtps: false
 
