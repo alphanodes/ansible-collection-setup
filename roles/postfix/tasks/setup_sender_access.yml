@@ -1,0 +1,26 @@
+---
+
+- name: Install sender-access
+  ansible.builtin.template:
+    src: postfix/sender-access.j2
+    dest: /etc/postfix/sender-access
+    mode: '0644'
+  when: postfix_sender_access | length > 0
+  register: sender_access
+
+- name: Build sender-access map
+  ansible.builtin.command: postmap regexp:/etc/postfix/sender-access
+  when:
+    - postfix_sender_access | length > 0
+    - sender_access.changed
+  notify: Restart postfix
+
+- name: Remove sender-access map (if unused)
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/postfix/sender-access
+    - /etc/postfix/sender-access.db
+  when: postfix_sender_access | length == 0
+  notify: Restart postfix

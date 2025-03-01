@@ -1,0 +1,34 @@
+---
+
+- name: Install recipient-canonical configuration
+  ansible.builtin.template:
+    src: postfix/recipient-canonical.j2
+    dest: /etc/postfix/recipient-canonical
+    mode: '0644'
+  when: postfix_redirect_all_mails_to is defined
+  register: canonical_redirect
+
+- name: Build recipient-canonical map
+  ansible.builtin.command: postmap /etc/postfix/recipient-canonical
+  when:
+    - postfix_redirect_all_mails_to is defined
+    - canonical_redirect.changed
+  notify: Restart postfix
+
+- name: Remove recipient-canonical map (if unused)
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/postfix/recipient-canonical
+    - /etc/postfix/recipient-canonical.db
+  when: postfix_redirect_all_mails_to is undefined
+  notify: Restart postfix
+
+- name: Remove obsolete canonical-redirect map files
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/postfix/canonical-redirect
+    - /etc/postfix/canonical-redirect.db

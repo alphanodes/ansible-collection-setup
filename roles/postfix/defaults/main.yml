@@ -62,6 +62,9 @@ postfix_vimbadmin_packages:
   - postfix-mysql
   - postfix-pcre
 
+# use it for block email address of sender
+postfix_sender_access: []
+
 postfix_sender_canonicals: []
 
 postfix_myhostname: '{{ mail_hostname | default(hostname) | default(ansible_host) }}'
@@ -87,9 +90,13 @@ postfix_relayhost_mxlookup: false
 # postfix_relayhost_port: 25
 postfix_relaytls: false
 
-# default: permit_mynetworks permit_sasl_authenticated defer_unauth_destination
-postfix_relay_restrictions: permit_mynetworks permit_sasl_authenticated reject_unauth_destination
 postfix_compatibility_level: '3.6'
+
+# default: permit_mynetworks permit_sasl_authenticated defer_unauth_destination
+postfix_smtpd_relay_restrictions:
+  - permit_mynetworks
+  - permit_sasl_authenticated
+  - reject_unauth_destination
 
 postfix_custom_options: []
 postfix_raw_options: []
