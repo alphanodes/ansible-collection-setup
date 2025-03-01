@@ -50,6 +50,15 @@
     mode: '0644'
   when: postfix_header_cleanup
 
+- name: Import recipient-canonical tasks
+  ansible.builtin.import_tasks: setup_recipient_canonical.yml
+
+- name: Import sender-canonical tasks
+  ansible.builtin.import_tasks: setup_sender_canonical.yml
+
+- name: Import sender-access tasks
+  ansible.builtin.import_tasks: setup_sender_access.yml
+
 - name: Configure main.cf
   ansible.builtin.template:
     src: postfix/main.cf.j2
@@ -88,12 +97,3 @@
     dest: '{{ postfix_aliases_file }}'
     mode: '0644'
   notify: Build new aliases
-
-- name: Import recipient-canonical tasks
-  ansible.builtin.import_tasks: setup_recipient_canonical.yml
-
-- name: Import sender-canonical tasks
-  ansible.builtin.import_tasks: setup_sender_canonical.yml
-
-- name: Import sender-access tasks
-  ansible.builtin.import_tasks: setup_sender_access.yml
