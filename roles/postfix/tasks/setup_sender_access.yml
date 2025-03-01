@@ -9,7 +9,7 @@
   register: sender_access
 
 - name: Build sender-access map
-  ansible.builtin.command: postmap regexp:/etc/postfix/sender-access
+  ansible.builtin.command: postmap /etc/postfix/sender-access
   when:
     - postfix_sender_access | length > 0
     - sender_access.changed
