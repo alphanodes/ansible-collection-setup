@@ -80,14 +80,12 @@ relayhost = {{ real_postfix_relayhost }}
 {% if postfix_relaytls %}
 smtp_use_tls = yes
 {% endif %}
-
-{% if postfix_redirect_all_mails_to is defined -%}
+{% if postfix_redirect_all_mails_to is defined %}
 recipient_canonical_maps = regexp:/etc/postfix/recipient-canonical
-{% endif -%}
-
-{% if postfix_sender_canonicals | length > 0 -%}
+{% endif %}
+{% if postfix_sender_canonicals | length > 0 %}
 sender_canonical_maps = hash:/etc/postfix/sender-canonical
-{% endif -%}
+{% endif %}
 smtpd_relay_restrictions = {{ real_smtpd_relay_restrictions | join(',') }}
 
 # Disable the SMTP VRFY command. This stops some techniques used to harvest email addresses.
