@@ -28,7 +28,7 @@
     transaction_isolation: "READ-COMMITTED"
 {% endif %}
 {% endif %}
-{% if instance.db_pool is defined or redmine_puma_workers != 0 %}
+{% if instance.db_pool is defined or real_puma_workers != 0 %}
   pool: {{ instance.db_pool | default(real_redmine_db_pool) }}
 {% endif %}
 {% if instance.merge_projects_db_name is defined %}
