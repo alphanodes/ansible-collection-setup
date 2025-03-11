@@ -96,20 +96,8 @@ redmine_puma_max_threads: 5
 
 redmine_puma_worker_timeout: 60
 
-# if true, you should use redmine_puma_worker_killer: false
+# see https://medium.com/motive-eng/we-solved-our-rails-memory-leaks-with-jemalloc-5c3711326456
 redmine_with_jemalloc: true
-
-# @see https://github.com/schneems/puma_worker_killer#configure
-# this is false automatically, if redmine_puma_workers < 2
-redmine_puma_worker_killer: '{{ false if redmine_with_jemalloc else true }}'
- # mb
-redmine_puma_worker_killer_ram: '{{ ansible_memtotal_mb | int }}'
-# 12 hours in seconds
-redmine_rolling_restart_frequency: "12 * 3600"
-# seconds
-redmine_puma_worker_killer_frequency: 60
-redmine_puma_worker_killer_percent_usage: 0.90
-redmine_puma_worker_killer_status_logs: true
 
 # see https://api.rubyonrails.org/v5.1/classes/ActiveRecord/ConnectionAdapters/ConnectionPool.html
 # and https://github.com/boazsegev/plezi/issues/15

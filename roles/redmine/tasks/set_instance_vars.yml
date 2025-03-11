@@ -5,6 +5,20 @@
     instance: "{{ r_instance.value }}"
     instance_name: "{{ r_instance.key }}"
 
+- name: Set real_puma_workers
+  ansible.builtin.set_fact:
+    real_puma_workers: "{{ instance.puma_workers | default(ansible_processor_nproc if redmine_puma_workers == '' else redmine_puma_workers)"
+
+- name: Set real_redmine_db_pool (cluster mode)
+  ansible.builtin.set_fact:
+    real_redmine_db_pool: "{{ real_puma_workers | int * redmine_puma_max_threads | int if redmine_db_pool == '' else redmine_db_pool }}"
+  when: real_puma_workers != 0
+
+- name: Set real_redmine_db_pool (single mode)
+  ansible.builtin.set_fact:
+    real_redmine_db_pool: "{{ redmine_puma_max_threads | int }}"
+  when: real_puma_workers == 0
+
 - name: Set redmine_user - {{ instance_name }}
   ansible.builtin.set_fact:
     redmine_user: "{{ instance.user | default(instance_name) }}"
@@ -68,7 +82,3 @@
   ansible.builtin.set_fact:
     active_db_host: "{{ instance.db_host if instance.db_host is defined else 'localhost' if active_db_adapter == 'mysql2' else redmine_run_base_path + '/postgresql' }}"
     active_db_encoding: "{{ instance.db_encoding if instance.db_encoding is defined else 'utf8mb4' if active_db_adapter == 'mysql2' else 'unicode' }}"
-
-- name: Set active_puma_worker_killer - {{ instance_name }}
-  ansible.builtin.set_fact:
-    active_puma_worker_killer: '{{ (instance.puma_worker_killer | default(redmine_puma_worker_killer)) and real_redmine_puma_workers | int > 1 }}'
