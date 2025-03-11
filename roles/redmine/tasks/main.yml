@@ -1,8 +1,5 @@
 ---
 
-- name: Include vars
-  ansible.builtin.include_tasks: set_vars.yml
-
 - name: Include account setup tasks
   ansible.builtin.include_tasks: account_setup.yml
   tags:
