@@ -9,7 +9,7 @@
   ansible.builtin.set_fact:
     real_puma_workers: "{{ instance.puma_workers | default(ansible_processor_nproc if redmine_puma_workers == '' else redmine_puma_workers) }}"
 
-- name: Set real_db_pool (cluster mode)
+- name: Set real_db_pool (cluster mode) real_puma_workers = #{real_puma_workers}
   ansible.builtin.set_fact:
     real_db_pool: "{{ real_puma_workers | int * redmine_puma_max_threads | int if redmine_db_pool == '' else redmine_db_pool }}"
   when: real_puma_workers != 0
