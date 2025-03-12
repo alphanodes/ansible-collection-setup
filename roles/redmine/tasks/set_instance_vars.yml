@@ -12,12 +12,12 @@
 - name: Set real_db_pool (cluster mode) real_puma_workers = {{ real_puma_workers }}
   ansible.builtin.set_fact:
     real_db_pool: "{{ real_puma_workers | int * redmine_puma_max_threads | int if redmine_db_pool == '' else redmine_db_pool }}"
-  when: real_puma_workers != 0
+  when: real_puma_workers | int != 0
 
 - name: Set real_db_pool (single mode)
   ansible.builtin.set_fact:
     real_db_pool: "{{ redmine_puma_max_threads | int }}"
-  when: real_puma_workers == 0
+  when: real_puma_workers | int == 0
 
 - name: Set redmine_user - {{ instance_name }}
   ansible.builtin.set_fact:
