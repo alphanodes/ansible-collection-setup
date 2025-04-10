@@ -9,7 +9,7 @@ hedgedoc_vhost_users: []
 hedgedoc_vhost_for_zabbix: false
 
 hedgedoc_repository: https://github.com/hedgedoc/hedgedoc.git
-hedgedoc_repository_version: '1.10.1'
+hedgedoc_repository_version: '1.10.3'
 
 hedgedoc_user: 'hedgedoc'
 hedgedoc_group: '{{ hedgedoc_user }}'
