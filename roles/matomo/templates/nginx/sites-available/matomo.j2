@@ -17,7 +17,7 @@ server {
   root {{ matomo_dir }};
   index index.php;
 
-  {% include 'templates/nginx_ssl.inc.j2' with context %}
+  {% include 'templates/nginx/ssl.inc.j2' with context %}
 
   location  /. { ## Disable .htaccess and other hidden files
     deny all;
@@ -28,7 +28,7 @@ server {
   add_header X-XSS-Protection "1; mode=block" always;
 
   location ~ ^/(index|matomo|piwik|js/index|plugins/HeatmapSessionRecording/configs)\.php$ {
-    {% include 'templates/nginx_fpm.inc.j2' with context %}
+    {% include 'templates/nginx/fpm_location.inc.j2' with context %}
   }
 
   ## deny access to all other .php files
@@ -94,5 +94,5 @@ server {
 {% endif %}
 
 {% if matomo_vhost_for_zabbix %}
-{% include 'templates/nginx_monitoring.inc.j2' with context %}
+{% include 'templates/nginx/monitoring.inc.j2' with context %}
 {% endif %}
