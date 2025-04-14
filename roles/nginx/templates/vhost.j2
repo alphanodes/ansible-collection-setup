@@ -32,7 +32,7 @@ server {
 {% endif %}
 
 {% if nginx_with_protection %}
-{% include 'templates/nginx_protection.inc.j2' with context %}
+{% include 'templates/nginx/protection.inc.j2' with context %}
 {% endif %}
 
 {% if instance.vhost_dnt_private_ip is defined and instance.vhost_dnt_private_ip %}
@@ -44,7 +44,7 @@ server {
 {% endif %}
 
   {% if nginx_with_ssl -%}
-  {% include 'templates/nginx_ssl.inc.j2' with context %}
+  {% include 'templates/nginx/ssl.inc.j2' with context %}
   {% endif %}
 
   {% if nginx_fastcgi_microcache_zone != '' and instance.microcache_zone is defined -%}
@@ -75,7 +75,7 @@ server {
   {% endif -%}
 
   {% if instance.with_fpm is defined -%}
-  {% include 'templates/nginx_fpm.inc.j2' with context %}
+  {% include 'templates/nginx/fpm_location.inc.j2' with context %}
   {% endif %}
 
   {% if instance.vhost_includes is defined -%}
@@ -92,11 +92,11 @@ server {
   return 301 {{ instance.vhost_redirect_to_static }};
   {% endif %}
 
-  {% include 'templates/nginx_location.inc.j2' with context %}
+  {% include 'templates/nginx/location.inc.j2' with context %}
 
-  {% include 'templates/nginx_rewrite_lines.inc.j2' with context %}
+  {% include 'templates/nginx/rewrite_lines.inc.j2' with context %}
 
-  {% include 'templates/nginx_error_handler.inc.j2' with context %}
+  {% include 'templates/nginx/error_handler.inc.j2' with context %}
 
   {% if instance.vhost_users is defined -%}
   # access protection
@@ -107,7 +107,7 @@ server {
 }
 
 {% if nginx_with_ssl and instance.server_port is defined -%}
-{% include 'templates/nginx_port_redirect.inc.j2' with context %}
+{% include 'templates/nginx/port_redirect.inc.j2' with context %}
 {% endif %}
 
 {% if instance.mappings is defined -%}
@@ -115,13 +115,13 @@ server {
 {% endif -%}
 
 {% if instance.redirects is defined -%}
-{% include 'templates/nginx_redirects.inc.j2' with context %}
+{% include 'templates/nginx/redirects.inc.j2' with context %}
 {% endif %}
 
 {% if instance.external_redirects is defined -%}
-{% include 'templates/nginx_external_redirects.inc.j2' with context %}
+{% include 'templates/nginx/external_redirects.inc.j2' with context %}
 {% endif %}
 
 {% if instance.vhost_for_zabbix is defined and instance.vhost_for_zabbix -%}
-{% include 'templates/nginx_monitoring.inc.j2' with context %}
+{% include 'templates/nginx/monitoring.inc.j2' with context %}
 {% endif -%}
