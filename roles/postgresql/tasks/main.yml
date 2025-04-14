@@ -11,12 +11,12 @@
   ansible.builtin.include_tasks: users.yml
   tags: postgresql
 
-- name: Include privileges tasks
-  ansible.builtin.include_tasks: privileges.yml
-  tags: postgresql
-
 - name: Include database tasks
   ansible.builtin.include_tasks: databases.yml
+  tags: postgresql
+
+- name: Include privileges tasks
+  ansible.builtin.include_tasks: privileges.yml
   tags: postgresql
 
 - name: Include barman tasks
