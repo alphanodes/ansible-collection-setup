@@ -10,7 +10,7 @@ server {
   root {{ element_web_path }};
   index index.html;
 
-  {% include 'templates/nginx_ssl.inc.j2' with context %}
+  {% include 'templates/nginx/ssl.inc.j2' with context %}
 
 	# Make sure to set Content-Security-Policy when this is not aleady done with the default headers.
 	add_header Content-Security-Policy "frame-ancestors 'none'";
@@ -21,7 +21,7 @@ server {
   auth_basic_user_file /etc/nginx/.htpasswd_element_web;
   {% endif %}
 
-  {% include 'templates/nginx_error_handler_static.inc.j2' with context %}
+  {% include 'templates/nginx/error_handler_static.inc.j2' with context %}
 
   {% if element_web_vhost_includes is defined -%}
   {% for include in element_web_vhost_includes -%}
@@ -51,12 +51,12 @@ server {
   listen [::]:443 {{ nginx_ssl_listen_option }};
 {% endif %}
 
-  {% include 'templates/nginx_ssl.inc.j2' with context %}
+  {% include 'templates/nginx/ssl.inc.j2' with context %}
 
   return 301 https://{{ element_web_vhost_server }}$request_uri;
 }
 {% endif %}
 
 {% if element_web_vhost_for_zabbix %}
-{% include 'templates/nginx_monitoring.inc.j2' with context %}
+{% include 'templates/nginx/monitoring.inc.j2' with context %}
 {% endif %}

@@ -20,7 +20,7 @@ location ^~ {{ phpmyadmin_location }} {
 
   {% endif -%}
 
-  {% include 'templates/nginx_protection.inc.j2' with context %}
+  {% include 'templates/nginx/protection.inc.j2' with context %}
 
   location ~ {{ phpmyadmin_location }}/\. {
     deny all;
