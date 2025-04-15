@@ -7,7 +7,7 @@ location ^~ {{ phpmyadmin_location }} {
   index index.php;
   location ~ ^{{ phpmyadmin_location }}/(.+.php) {
 
-    {%- include 'templates/fpm.inc.j2' with context %}
+    {%- include 'templates/nginx/fpm.inc.j2' with context %}
 
     fastcgi_index  index.php;
   }
