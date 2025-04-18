@@ -16,7 +16,7 @@ gitlab_with_zsh: true
 gitlab_omniauth_enabled: false
 gitlab_omniauth_providers: []
 
-gitlab_repository_version: '17-10-stable'
+gitlab_repository_version: '17-11-stable'
 gitlab_ce_version: '{{ gitlab_repository_version }}'
 gitlab_ee_version: '{{ gitlab_repository_version }}-ee'
 gitlab_path: "{{ gitlab_home }}/gitlab"
