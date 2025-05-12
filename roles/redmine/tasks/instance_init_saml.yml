@@ -5,35 +5,6 @@
     - instance.with_saml is defined
     - instance.with_saml
   block:
-    - name: Set facts for saml template
-      ansible.builtin.set_fact:
-        saml_idp_cert: "{{ instance.saml_idp_cert | default(redmine_saml_idp_cert) | default('') }}"
-        saml_idp_cert_fingerprint: "{{ instance.saml_idp_cert_fingerprint | default(redmine_saml_idp_cert_fingerprint) | default('') }}"
-        saml_idp_cert_fingerprint_algorithm: "{{ instance.saml_idp_cert_fingerprint_algorithm | default(redmine_saml_idp_cert_fingerprint_algorithm) | default('') }}"
-        saml_attribute_mapping_sep: "{{ instance.saml_attribute_mapping_sep | default(redmine_saml_attribute_mapping_sep) | default('') }}"
-        saml_signout_url: "{{ instance.saml_signout_url | default(redmine_saml_signout_url) | default('') }}"
-        saml_single_logout_service_url: "{{ instance.saml_single_logout_service_url | default(redmine_saml_single_logout_service_url) | default('') }}"
-        saml_idp_slo_service_url: "{{ instance.saml_idp_slo_service_url | default(redmine_saml_idp_slo_service_url) | default('') }}"
-        saml_signature_method: "{{ instance.saml_signature_method | default(redmine_saml_signature_method) | default('') }}"
-        saml_want_assertions_signed: "{{ instance.saml_want_assertions_signed | default(redmine_saml_want_assertions_signed) | default('') }}"
-
-    - name: Check idp cert
-      ansible.builtin.fail:
-        msg: 'saml_idp_cert_fingerprint or saml_idp_cert is required.'
-      when:
-        - saml_idp_cert_fingerprint | length == 0
-        - saml_idp_cert | length == 0
-
-    - name: Check saml_single_logout_service_url
-      ansible.builtin.fail:
-        msg: 'saml_single_logout_service_url is required.'
-      when: saml_single_logout_service_url | length == 0
-
-    - name: Check saml_idp_slo_service_url for redmine_saml plugin
-      ansible.builtin.fail:
-        msg: 'saml_idp_slo_service_url is required.'
-      when: saml_idp_slo_service_url | length == 0
-
     - name: Update saml init script
       ansible.builtin.template:
         src: redmine/config/initializers/saml.rb.j2
