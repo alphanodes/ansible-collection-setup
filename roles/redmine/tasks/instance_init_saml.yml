@@ -7,7 +7,7 @@
   block:
     - name: Update saml init script
       ansible.builtin.copy:
-        src: '{{ redmine_plugin_dir }}/redmine_saml/initializers/saml.rb.j2'
+        src: '{{ redmine_plugin_dir }}/redmine_saml/initializers/saml.rb'
         dest: '{{ redmine_app_dir }}/config/initializers/saml.rb'
         owner: '{{ redmine_user }}'
         group: '{{ redmine_group }}'
