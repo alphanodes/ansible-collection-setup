@@ -6,12 +6,13 @@
     - instance.with_saml
   block:
     - name: Update saml init script
-      ansible.builtin.template:
-        src: redmine/config/initializers/saml.rb.j2
+      ansible.builtin.copy:
+        src: '{{ redmine_plugin_dir }}/redmine_saml/initializers/saml.rb.j2'
         dest: '{{ redmine_app_dir }}/config/initializers/saml.rb'
         owner: '{{ redmine_user }}'
         group: '{{ redmine_group }}'
-        mode: '0640'
+        mode: '0644'
+        remote_src: true
 
 - name: Disable SAML support - {{ instance_name }}
   ansible.builtin.file:
