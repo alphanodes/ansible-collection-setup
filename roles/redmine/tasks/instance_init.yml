@@ -34,6 +34,3 @@
     path: '{{ redmine_app_dir }}/config/initializers/lograte.rb'
     state: absent
   when: instance.use_logger is undefined or instance.use_logger != 'lograge'
-
-- name: Include init saml tasks
-  ansible.builtin.include_tasks: instance_init_saml.yml
