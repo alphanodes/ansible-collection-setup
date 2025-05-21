@@ -295,7 +295,6 @@ redmine_plugin_test_files:
   - Gemfile.release
   - config/brakeman.ignore
   - eslint.config.mjs
-  - eslint.config.mjs
   - package.json
   - test
 
