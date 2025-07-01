@@ -10,6 +10,9 @@ config.logger.level = Logger::{{ instance.log_level | default('warn') | upper }}
 config.logger = ActiveSupport::TaggedLogging.new(Logger::Syslog.new('{{ instance_name }}', Syslog::LOG_LOCAL7))
 config.logger.level = Logger::{{ instance.log_level | default('warn') | upper }}
 {% endif %}
+{% if active_to_time_preserves_timezone %}
+config.active_support.to_time_preserves_timezone = true
+{% endif %}
 {% if instance.prefix is defined %}
 
 config.relative_url_root = '{{ instance.prefix }}'
