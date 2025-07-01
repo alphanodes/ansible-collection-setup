@@ -64,6 +64,11 @@ redmine_memcached_host: '127.0.0.1:11211'
 # NOTE: can be disabled to use protection for e.g. pghero only
 redmine_access_protection: true
 
+# Set Rails 8 default
+# see https://guides.rubyonrails.org/upgrading_ruby_on_rails.html#preserve-timezone-of-the-receiver
+# NOTE: this should be fixed in Redmine 6.2 (with Rails 8 support) and removed here
+redmine_to_time_preserves_timezone: true
+
 redmine_with_agile: false
 
 account_migrate_to_new_home: true
