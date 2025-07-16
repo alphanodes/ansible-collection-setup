@@ -19,21 +19,21 @@
   become: true
   community.postgresql.postgresql_ext:
     name: pg_trgm
-    db: template1
+    login_db: template1
 
 - name: Be sure btree_gist extension exists
   become_user: postgres
   become: true
   community.postgresql.postgresql_ext:
     name: btree_gist
-    db: template1
+    login_db: template1
 
 - name: Be sure plpgsql extension exists
   become_user: postgres
   become: true
   community.postgresql.postgresql_ext:
     name: plpgsql
-    db: template1
+    login_db: template1
 
 - name: Be sure gitlab postgresql databases exists
   become_user: postgres
@@ -49,5 +49,5 @@
   become: true
   community.postgresql.postgresql_ext:
     name: pg_stat_statements
-    db: '{{ gitlab_db_name }}'
+    login_db: '{{ gitlab_db_name }}'
   when: postgresql_with_pg_stat_statements
