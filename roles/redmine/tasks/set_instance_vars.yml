@@ -76,9 +76,12 @@
     access_protection: "{{ instance.access_protection | default(redmine_access_protection) }}"
     with_alphanodes_enterprise_support: "{{ instance.with_alphanodes_enterprise_support | default(redmine_with_alphanodes_enterprise_support) }}"
 
-- name: Set redmine_theme_dir - {{ instance_name }}
+- name: Set enterprise tools - {{ instance_name }}
   ansible.builtin.set_fact:
+    # see https://github.com/ankane/pghero
     active_pghero: "{{ instance.with_pghero | default(with_alphanodes_enterprise_support) }}"
+    # see https://github.com/pawurb/rails-pg-extras
+    active_pg_extras: "{{ instance.with_pg_extras | default(with_alphanodes_enterprise_support) }}"
 
 - name: Set redmine_theme_dir - {{ instance_name }}
   ansible.builtin.set_fact:

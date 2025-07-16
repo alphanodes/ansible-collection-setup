@@ -139,6 +139,16 @@ server {
   }
 {% endif %}
 
+{% if not access_protection and active_pg_extras %}
+  location /pg_extras {
+    # access protection
+    auth_basic "Restricted access only";
+    auth_basic_user_file {{ htpasswd_file }};
+
+    try_files $uri @puma;
+  }
+{% endif %}
+
 {% if access_protection and instance.vhost_users is defined %}
   # access protection
   auth_basic "Restricted access only";
