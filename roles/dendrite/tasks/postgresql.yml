@@ -19,7 +19,7 @@
   become: true
   community.postgresql.postgresql_ext:
     name: plpgsql
-    db: template1
+    login_db: template1
 
 - name: Be sure dendrite postgresql databases exists
   become_user: postgres

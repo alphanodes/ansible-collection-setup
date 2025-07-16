@@ -70,7 +70,7 @@
   become: true
   community.postgresql.postgresql_ext:
     name: pg_stat_statements
-    db: template1
+    login_db: template1
   when: postgresql_with_pg_stat_statements
 
 - name: Remove log files if syslog is active

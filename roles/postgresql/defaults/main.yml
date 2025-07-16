@@ -104,6 +104,8 @@ postgresql_with_auto_explain: false
 postgresql_auto_explain_log_analyze: true
 postgresql_auto_explain_log_min_duration: '200ms'
 
+postgresql_with_pg_buffercache: true
+
 # postgresql_compute_query_id: auto (auto or on is required for pg_stat_statements)
 postgresql_with_pg_stat_statements: true
 postgresql_pg_stat_statements_max: 10000
