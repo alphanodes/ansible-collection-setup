@@ -26,6 +26,12 @@
   ansible.builtin.include_vars: available_plugins.yml
   when: not custom_available_plugins.stat.exists
 
+- name: Include saml plugin tasks
+  ansible.builtin.include_tasks: instance_plugin_saml.yml
+
+- name: Include enterprise plugin tasks
+  ansible.builtin.include_tasks: instance_plugin_enterprise.yml
+
 - name: Include plugin tasks
   ansible.builtin.include_tasks: instance_plugin.yml
   tags:
@@ -34,6 +40,3 @@
   loop: "{{ instance.plugins | default([]) }}"
   loop_control:
     loop_var: plugin_name
-
-- name: Include init saml tasks
-  ansible.builtin.include_tasks: instance_init_saml.yml

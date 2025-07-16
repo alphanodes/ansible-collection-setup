@@ -129,7 +129,7 @@ server {
 
   {% include 'templates/nginx/error_handler.inc.j2' with context %}
 
-{% if not access_protection and instance.with_pghero is defined and instance.with_pghero %}
+{% if not access_protection and active_pghero %}
   location /pghero {
     # access protection
     auth_basic "Restricted access only";

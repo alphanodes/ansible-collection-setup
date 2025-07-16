@@ -71,6 +71,9 @@ redmine_to_time_preserves_timezone: true
 
 redmine_with_agile: false
 
+# this enables pghero, too
+redmine_with_alphanodes_enterprise_support: true
+
 account_migrate_to_new_home: true
 
 # use static version, if defined - default: latest (if not defined)
@@ -140,6 +143,9 @@ redmine_log_level: warn
 
 redmine_user_config_files:
   - .vimrc
+
+redmine_saml_plugin_name: redmine_saml
+redmine_enterprise_support_plugin_name: alphanodes_enterprise_support
 
 # SAML (see https://github.com/omniauth/omniauth-saml)
 
