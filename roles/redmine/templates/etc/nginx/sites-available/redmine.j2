@@ -134,6 +134,8 @@ server {
     # access protection
     auth_basic "Restricted access only";
     auth_basic_user_file {{ htpasswd_file }};
+
+    try_files $uri @puma;
   }
 {% endif %}
 
