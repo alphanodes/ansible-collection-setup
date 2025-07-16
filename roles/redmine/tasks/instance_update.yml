@@ -12,10 +12,10 @@
     DB_STATEMENT_TIMEOUT: '0'
   block:
     # NOTE: this do not install latest version of bundler for user!
-    #- name: Manual install latest bundler
-    #  community.general.gem:
-    #    name: bundler
-    #    state: latest
+    # - name: Manual install latest bundler
+    #   community.general.gem:
+    #     name: bundler
+    #     state: latest
     - name: Manual install latest bundler
       ansible.builtin.command: bash -lc "bundle update --bundler"
       args:
