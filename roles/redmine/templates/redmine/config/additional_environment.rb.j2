@@ -36,7 +36,7 @@ config.middleware.insert_before ActionDispatch::Cookies, RedmineDmsf::Webdav::Cu
 {% if redmine_with_nginx and nginx_with_ssl and redmine_rails_env != 'test' %}
 
 config.session_store :cookie_store,
-  key: '_redmine_session',
+  key: '_{{ instance_name | replace("-", "_") }}_session',
   same_site: :none,
   secure: true,
   path: config.relative_url_root || '/'
