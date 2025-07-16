@@ -97,8 +97,7 @@
       when:
         - not access_protection
         - instance.vhost_users is undefined
-        - instance.with_pghero is defined
-        - instance.with_pghero
+        - active_pghero
       ansible.builtin.fail:
         msg: with_pghero requires to define vhost_users"
 

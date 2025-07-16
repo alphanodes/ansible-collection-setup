@@ -74,6 +74,11 @@
     queue_adapter: "{{ instance.queue_adapter | default(redmine_queue_adapter) | default('') }}"
     htpasswd_file: "/etc/nginx/.htpasswd_redmine_{{ instance_name }}"
     access_protection: "{{ instance.access_protection | default(redmine_access_protection) }}"
+    with_alphanodes_enterprise_support: "{{ instance.with_alphanodes_enterprise_support | default(redmine_with_alphanodes_enterprise_support) }}"
+
+- name: Set redmine_theme_dir - {{ instance_name }}
+  ansible.builtin.set_fact:
+    active_pghero: "{{ instance.with_pghero | default(with_alphanodes_enterprise_support) }}"
 
 - name: Set redmine_theme_dir - {{ instance_name }}
   ansible.builtin.set_fact:

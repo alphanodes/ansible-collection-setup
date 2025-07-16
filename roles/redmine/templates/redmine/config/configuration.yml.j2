@@ -42,6 +42,9 @@ default:
 {% if instance.gps_macro_with_bavaria_only is defined and instance.gps_macro_with_bavaria_only != '' %}
   gps_macro_with_bavaria_only: {{ instance.gps_macro_with_bavaria_only | bool | lower }}
 {% endif %}
+{% if instance.active_enterprise_support is defined and instance.active_enterprise_support %}
+  active_enterprise_support: true
+{% endif %}
 
 {% if active_system_infos_vars | length %}
   system_infos_vars:
