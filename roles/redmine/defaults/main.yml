@@ -62,7 +62,9 @@ redmine_memcached_host: '127.0.0.1:11211'
 
 # if instance.vhost_users is defined, use access protection
 # NOTE: can be disabled to use protection for e.g. pghero only
-redmine_access_protection: true
+redmine_access_protection: false
+
+redmine_default_vhost_users: []
 
 # Set Rails 8 default
 # see https://guides.rubyonrails.org/upgrading_ruby_on_rails.html#preserve-timezone-of-the-receiver
@@ -71,7 +73,7 @@ redmine_to_time_preserves_timezone: true
 
 redmine_with_agile: false
 
-# this enables pghero, too
+# this enables pghero and pg_extras, too
 redmine_with_alphanodes_enterprise_support: true
 
 account_migrate_to_new_home: true
