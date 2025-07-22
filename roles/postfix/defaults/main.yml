@@ -46,8 +46,11 @@ postfix_sasl_mechanism_filter: ''
 postfix_smtpd_tls_security_level: may
 
 # cert file should be with root certificate
-postfix_smtpd_tls_cert_file: /etc/ssl/certs/ssl-cert-snakeoil.pem
-postfix_smtpd_tls_key_file: /etc/ssl/private/ssl-cert-snakeoil.key
+# note: order matters: first the key, that key cert (and chain)
+# see https://www.postfix.org/postconf.5.html#smtpd_tls_chain_files
+postfix_smtpd_tls_chain_files:
+  - /etc/ssl/private/ssl-cert-snakeoil.key
+  - /etc/ssl/certs/ssl-cert-snakeoil.pem
 
 # force tls for clients (to protect passwords on authentification)
 postfix_tls_auth_only: false
