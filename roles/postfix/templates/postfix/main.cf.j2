@@ -14,9 +14,7 @@ compatibility_level = {{ postfix_compatibility_level }}
 # TLS parameters
 smtpd_tls_security_level = {{ postfix_smtpd_tls_security_level }}
 smtpd_tls_session_cache_database = btree:${data_directory}/smtpd_scache
-smtpd_tls_chain_files =
-   {{ postfix_smtpd_tls_key_file }},
-   {{ postfix_smtpd_tls_cert_file }}
+smtpd_tls_chain_files = {{ postfix_smtpd_tls_chain_files | join(',') }}
 {% if postfix_smtpd_tls_mandatory_protocols is defined %}
 smtpd_tls_mandatory_protocols = {{ postfix_smtpd_tls_mandatory_protocols }}
 {% endif %}
