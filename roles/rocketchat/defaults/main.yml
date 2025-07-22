@@ -39,7 +39,7 @@ rocketchat_vhost_server: "{{ ansible_fqdn }}"
 rocketchat_vhost_for_zabbix: false
 
 rocketchat_vhost_letsencrypt: false
-rocketchat_vhost_ssl_cert: '{{ ssl_certs[0].name }}'
+rocketchat_vhost_ssl_cert: '{{ ssl_certs[0].name | default(omit) }}'
 rocketchat_vhost_letsencrypt_cert: '{{ letsencrypt_certs[0] | default(omit) }}'
 rocketchat_vhost_letsencrypt_key: '{{ letsencrypt_keys[0] | default(omit) }}'
 

@@ -18,7 +18,7 @@ element_web_vhost_users: []
 element_web_vhost_for_zabbix: false
 
 element_web_vhost_letsencrypt: false
-element_web_vhost_ssl_cert: '{{ ssl_certs[0].name }}'
+element_web_vhost_ssl_cert: '{{ ssl_certs[0].name | default(omit) }}'
 element_web_vhost_letsencrypt_cert: '{{ letsencrypt_certs[0] | default(omit) }}'
 element_web_vhost_letsencrypt_key: '{{ letsencrypt_keys[0] | default(omit) }}'
 
