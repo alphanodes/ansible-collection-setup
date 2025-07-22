@@ -35,7 +35,7 @@ ethercalc_vhost_users: []
 ethercalc_vhost_for_zabbix: false
 
 ethercalc_vhost_letsencrypt: false
-ethercalc_vhost_ssl_cert: '{{ ssl_certs[0].name }}'
+ethercalc_vhost_ssl_cert: '{{ ssl_certs[0].name | default(omit) }}'
 ethercalc_vhost_letsencrypt_cert: '{{ letsencrypt_certs[0] | default(omit) }}'
 ethercalc_vhost_letsencrypt_key: '{{ letsencrypt_keys[0] | default(omit) }}'
 

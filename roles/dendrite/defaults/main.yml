@@ -33,7 +33,7 @@ dendrite_vhost_users: []
 dendrite_vhost_for_zabbix: false
 
 dendrite_vhost_letsencrypt: false
-dendrite_vhost_ssl_cert: '{{ ssl_certs[0].name }}'
+dendrite_vhost_ssl_cert: '{{ ssl_certs[0].name | default(omit) }}'
 dendrite_vhost_letsencrypt_cert: '{{ letsencrypt_certs[0] | default(omit) }}'
 dendrite_vhost_letsencrypt_key: '{{ letsencrypt_keys[0] | default(omit) }}'
 
