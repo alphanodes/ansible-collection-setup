@@ -109,8 +109,9 @@ gitlab_vhost_for_zabbix: false
 
 gitlab_vhost_letsencrypt: false
 gitlab_vhost_ssl_cert: '{{ ssl_certs[0].name }}'
-gitlab_vhost_letsencrypt_cert: '{{ letsencrypt_certs[0] | default(omit) }}'
-gitlab_vhost_letsencrypt_key: '{{ letsencrypt_keys[0] | default(omit) }}'
+gitlab_vhost_letsencrypt_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/fullchain.pem
+gitlab_vhost_letsencrypt_key: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/privkey.pem
+gitlab_vhost_letsencrypt_trusted_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/chain.pem
 
 gitlab_email_display_name: Gitlab
 gitlab_email_from: '{{ gitlab_user }}@{{ gitlab_vhost_server }}'
