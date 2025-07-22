@@ -39,8 +39,9 @@ nextcloud_default_admin_password: change_this_password
 
 nextcloud_vhost_letsencrypt: false
 nextcloud_vhost_ssl_cert: '{{ ssl_certs[0].name }}'
-nextcloud_vhost_letsencrypt_cert: '{{ letsencrypt_certs[0] | default(omit) }}'
-nextcloud_vhost_letsencrypt_key: '{{ letsencrypt_keys[0] | default(omit) }}'
+nextcloud_vhost_letsencrypt_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/fullchain.pem
+nextcloud_vhost_letsencrypt_key: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/privkey.pem
+nextcloud_vhost_letsencrypt_trusted_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/chain.pem
 
 # managed plugins (with updates)
 nextcloud_plugins:

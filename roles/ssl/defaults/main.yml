@@ -19,9 +19,6 @@ ssl_cas: []
 # ssl certs, which are used from system (in most cases with own ca)
 ssl_system_certs: []
 
-letsencrypt_certs: []
-letsencrypt_keys: []
-
 # Self Signed OpenSSL certificate to create
 # https://docs.ansible.com/ansible/2.9/modules/openssl_certificate_module.html
 ssl_self_signed_certificates: []

@@ -4,6 +4,7 @@
   ansible.builtin.set_fact:
     vhost_letsencrypt_cert: "{{ gitlab_vhost_letsencrypt_cert }}"
     vhost_letsencrypt_key: "{{ gitlab_vhost_letsencrypt_key }}"
+    vhost_letsencrypt_trusted_key: "{{ gitlab_vhost_letsencrypt_trusted_cert }}"
     force_letsencrypt: true
   when:
     - gitlab_vhost_letsencrypt is defined

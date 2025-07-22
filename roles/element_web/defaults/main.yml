@@ -19,8 +19,9 @@ element_web_vhost_for_zabbix: false
 
 element_web_vhost_letsencrypt: false
 element_web_vhost_ssl_cert: '{{ ssl_certs[0].name | default(omit) }}'
-element_web_vhost_letsencrypt_cert: '{{ letsencrypt_certs[0] | default(omit) }}'
-element_web_vhost_letsencrypt_key: '{{ letsencrypt_keys[0] | default(omit) }}'
+element_web_vhost_letsencrypt_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/fullchain.pem
+element_web_vhost_letsencrypt_key: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/privkey.pem
+element_web_vhost_letsencrypt_trusted_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/chain.pem
 
 element_web_with_vhost: true
 element_web_enabled: true

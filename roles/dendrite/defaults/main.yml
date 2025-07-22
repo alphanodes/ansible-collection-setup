@@ -36,6 +36,7 @@ dendrite_vhost_letsencrypt: false
 dendrite_vhost_ssl_cert: '{{ ssl_certs[0].name | default(omit) }}'
 dendrite_vhost_letsencrypt_cert: '{{ letsencrypt_certs[0] | default(omit) }}'
 dendrite_vhost_letsencrypt_key: '{{ letsencrypt_keys[0] | default(omit) }}'
+dendrite_vhost_letsencrypt_trusted_cert: '{{ letsencrypt_trusted_certs[0] | default(omit) }}'
 
 # see https://docs.gitlab.com/ee/install/installation.html#3-go
 # NOTE: version should be tests in gitlab pipeline

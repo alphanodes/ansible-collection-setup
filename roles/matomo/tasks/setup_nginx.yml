@@ -4,6 +4,7 @@
   ansible.builtin.set_fact:
     vhost_letsencrypt_cert: "{{ matomo_vhost_letsencrypt_cert }}"
     vhost_letsencrypt_key: "{{ matomo_vhost_letsencrypt_key }}"
+    vhost_letsencrypt_trusted_key: "{{ matomo_vhost_letsencrypt_trusted_cert }}"
     force_letsencrypt: true
   when:
     - matomo_vhost_letsencrypt is defined
