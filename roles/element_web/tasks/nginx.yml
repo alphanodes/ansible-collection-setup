@@ -37,8 +37,8 @@
     - name: Set TLS files for letsencrypt
       ansible.builtin.set_fact:
         vhost_letsencrypt_cert: "{{ element_web_vhost_letsencrypt_cert }}"
+        vhost_letsencrypt_trusted_cert: "{{ element_web_vhost_letsencrypt_trusted_cert }}"
         vhost_letsencrypt_key: "{{ element_web_vhost_letsencrypt_key }}"
-        vhost_letsencrypt_trusted_key: "{{ element_web_vhost_letsencrypt_trusted_cert }}"
         force_letsencrypt: true
       when:
         - element_web_vhost_letsencrypt is defined

@@ -3,8 +3,8 @@
 - name: Set TLS files for letsencrypt
   ansible.builtin.set_fact:
     vhost_letsencrypt_cert: "{{ rocketchat_vhost_letsencrypt_cert }}"
+    vhost_letsencrypt_trusted_cert: "{{ rocketchat_vhost_letsencrypt_trusted_cert }}"
     vhost_letsencrypt_key: "{{ rocketchat_vhost_letsencrypt_key }}"
-    vhost_letsencrypt_trusted_key: "{{ rocketchat_vhost_letsencrypt_trusted_cert }}"
     force_letsencrypt: true
   when:
     - rocketchat_vhost_letsencrypt is defined
