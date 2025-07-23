@@ -38,7 +38,7 @@ nginx_in_ssl_group: false
 
 nginx_with_ssl: true
 nginx_force_ssl: true
-nginx_with_ssl_stapling: true
+nginx_with_ssl_stapling: false
 
 # protect dot files and block spammers
 nginx_with_protection: true
