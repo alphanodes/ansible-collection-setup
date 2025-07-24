@@ -26,8 +26,8 @@
       ansible.builtin.command: bash -lc "bundle check"
       args:
         chdir: '{{ redmine_app_dir }}'
+        ignore_errors: true
       register: bundler_check_result
-      ignore_errors: true
       changed_when: bundler_check_result.rc != 0
 
     # this is not used anymore, because bundle config is run with every
