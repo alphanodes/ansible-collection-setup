@@ -20,6 +20,7 @@
       ansible.builtin.command: bash -lc "bundle update --bundler"
       args:
         chdir: '{{ redmine_app_dir }}'
+        ignore_errors: true
 
     - name: Run bundler check - {{ instance_name }}
       ansible.builtin.command: bash -lc "bundle check"
