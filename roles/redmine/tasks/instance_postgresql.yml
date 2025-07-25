@@ -42,7 +42,7 @@
 
 - name: Run postgresql pre commands - {{ instance_name }}
   community.postgresql.postgresql_query:
-    db: '{{ redmine_db_name }}'
     query: '{{ item }}'
     login_user: postgres
+    login_db: '{{ redmine_db_name }}'
   loop: '{{ instance.pre_db_commands | default([]) }}'

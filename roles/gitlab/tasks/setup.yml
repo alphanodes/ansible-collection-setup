@@ -339,9 +339,9 @@
 
 - name: Check if setup has already run
   community.postgresql.postgresql_query:
-    db: '{{ gitlab_db_name }}'
     query: SELECT COUNT(*) as id FROM information_schema.tables WHERE table_schema = 'public'
     login_user: '{{ gitlab_user }}'
+    login_db: '{{ gitlab_db_name }}'
   register: gitlab_setup_run
 
 - name: Include gitlab shell tasks
