@@ -20,6 +20,22 @@
 {% if backup_with_postgresql is defined and backup_with_postgresql | bool %}
     backup_with_postgresql: true
 {% endif %}
+
+{% if backup_postgresql_db is defined %}
+backup_postgresql_db: redmine_dev
+{% endif %}
+{% if backup_postgresql_host is defined %}
+backup_postgresql_host: 172.24.40.10
+{% endif %}
+{% if backup_postgresql_user is defined %}
+backup_postgresql_user: redmine
+{% endif %}
+{% if backup_postgresql_password is defined %}
+backup_postgresql_password: '2o0YLUF345L:>AP4'
+{% endif %}
+{% if backup_postgresql_port is defined %}
+backup_postgresql_port: 5432
+{% endif %}
 {% if backup_with_mongodb is defined and backup_with_mongodb | bool %}
     backup_with_mongodb: true
 {% endif %}
