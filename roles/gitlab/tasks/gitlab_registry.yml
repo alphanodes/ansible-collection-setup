@@ -1,0 +1,57 @@
+---
+
+# Install GitLab Container Registry (distribution) via systemd
+
+# see https://docs.gitlab.com/administration/packages/container_registry/
+
+- name: Download registry binary
+  ansible.builtin.get_url:
+    url: "{{ gitlab_registry_download_url }}"
+    dest: "/tmp/registry.tar.gz"
+    mode: '0644'
+
+- name: Extract registry binary
+  ansible.builtin.unarchive:
+    src: "/tmp/registry.tar.gz"
+    dest: "/tmp/"
+    remote_src: yes
+
+- name: Copy registry binary to /usr/local/bin
+  ansible.builtin.copy:
+    src: "/tmp/registry"
+    dest: "{{ gitlab_registry_binary_path }}"
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create registry config dir
+  ansible.builtin.file:
+    path: "{{ gitlab_registry_config_dir }}"
+    state: directory
+    owner: "{{ gitlab_user }}"
+    group: "{{ gitlab_group }}"
+    mode: '0755'
+
+- name: Install registry config file
+  ansible.builtin.template:
+    src: etc/registry/config.yml.j2
+    dest: "{{ gitlab_registry_config_dir }}/{{ gitlab_registry_config_file }}"
+    owner: "{{ gitlab_user }}"
+    group: "{{ gitlab_group }}"
+    mode: '0640'
+
+- name: Install systemd service
+  ansible.builtin.template:
+    src: etc/systemd/system/gitlab-registry.service.j2
+    dest: '/etc/systemd/system/gitlab-registry.service'
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Reload systemd daemon
+
+- name: Enable and start registry service
+  ansible.builtin.systemd:
+    name: gitlab-registry
+    enabled: yes
+    state: started

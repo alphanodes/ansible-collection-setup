@@ -1,0 +1,14 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=GitLab Container Registry
+After=network.target
+
+[Service]
+ExecStart={{ gitlab_registry_binary_path }} serve {{ gitlab_registry_config_dir }}/{{ gitlab_registry_config_file }}
+Restart=always
+User={{ gitlab_user }}
+Group={{ gitlab_group }}
+
+[Install]
+WantedBy=multi-user.target
