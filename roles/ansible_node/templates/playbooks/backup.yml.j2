@@ -26,14 +26,14 @@
 {% if backup_postgresql_host is defined %}
     backup_postgresql_host: {{ backup_postgresql_host }}
 {% endif %}
+{% if backup_postgresql_port is defined %}
+    backup_postgresql_port: {{ backup_postgresql_port }}
+{% endif %}
 {% if backup_postgresql_user is defined %}
     backup_postgresql_user: {{ backup_postgresql_user }}
 {% endif %}
 {% if backup_postgresql_password is defined %}
     backup_postgresql_password: {{ backup_postgresql_password }}
-{% endif %}
-{% if backup_postgresql_port is defined %}
-    backup_postgresql_port: {{ backup_postgresql_port }}
 {% endif %}
 {% if backup_with_mongodb is defined and backup_with_mongodb | bool %}
     backup_with_mongodb: true
