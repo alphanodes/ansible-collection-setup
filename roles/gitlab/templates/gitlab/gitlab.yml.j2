@@ -548,14 +548,13 @@ production: &base
       cron: "*/4 * * * *"
 
   registry:
-    # enabled: true
-    # host: registry.example.com
-    # port: 5005
-    # api_url: http://localhost:5000/ # internal address to the registry, will be used by GitLab to directly communicate with API
-    # key: config/registry.key
-    # path: shared/registry
-    # issuer: gitlab-issuer
-
+    enabled: {{ gitlab_with_registry }}
+    host: {{ gitlab_registry_vhost }}
+    port: {{ gitlab_registry_vhost_port }}
+    api_url: http://localhost:{{ gitlab_registry_internal_port }}/ # internal address to the registry, will be used by GitLab to directly communicate with API
+    key: config/registry.key
+    path: shared/registry
+    issuer: {{ gitlab_registry_token_issuer }}
 
   ## Error Reporting and Logging with Sentry
   sentry:

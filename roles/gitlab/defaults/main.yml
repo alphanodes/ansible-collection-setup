@@ -298,3 +298,30 @@ gitlab_backup_skip: 'remote'
 gitlab_monitoring_ip_whitelist:
   - 127.0.0.0/8
   - '{{ ip_address_v4 }}'
+
+# NOTE: do not enable it, /jwt/auth is not implemented
+gitlab_with_registry: false
+
+# gitlab_registry_vhost: "registry.example.com"
+gitlab_registry_vhost: "{{ gitlab_vhost_server }}"
+# use 443, if registry_host is not same as gitlab
+gitlab_registry_vhost_port: 5005
+
+gitlab_registry_version: "2.8.3"
+gitlab_registry_download_url: "https://github.com/distribution/distribution/releases/download/v{{ gitlab_registry_version }}/registry_{{ gitlab_registry_version }}_linux_amd64.tar.gz"
+
+# see https://docs.gitlab.com/administration/packages/container_registry#self-compiled-installations
+gitlab_registry_config_dir: /etc/gitlab-registry
+gitlab_registry_config_file: "config.yml"
+gitlab_registry_binary_path: "/usr/local/bin/registry"
+gitlab_registry_realm: "https://{{ gitlab_registry_vhost }}/jwt/auth"
+gitlab_registry_cert_bundle: "/etc/gitlab-ssl/registry-auth.crt"
+gitlab_registry_secret: "REPLACE_WITH_LONG_RANDOM_STRING"
+gitlab_registry_internal_port: 5000
+gitlab_registry_token_issuer: gitlab-issuer
+
+gitlab_registry_s3_access_key: "CHANGEME"
+gitlab_registry_s3_secret_key: "CHANGEME"
+gitlab_registry_s3_bucket: "gitlab-registry"
+gitlab_registry_s3_endpoint: "https://s3.example.com"
+gitlab_registry_s3_region: us-east-1
