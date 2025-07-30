@@ -168,6 +168,7 @@ dynamic_shared_memory_type = posix	# the default is usually the first option
 # - Kernel Resources -
 
 #max_files_per_process = 1000		# min 64
+max_files_per_process = {{ postgresql_max_files_per_process }}
 					# (change requires restart)
 
 # - Cost-Based Vacuum Delay -

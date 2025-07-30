@@ -80,6 +80,10 @@ postgresql_checkpoint_completion_target: 0.9
 postgresql_wal_level: replica
 postgresql_wal_buffers: -1
 
+# default: 1000
+# reduce it if error like "Too many open files in system; release and retry"
+postgresql_max_files_per_process: 1000
+
 # see https://docs.timescale.com/self-hosted/latest/install/installation-linux/#install-and-configure-timescaledb-on-postgresql
 postgresql_with_timescaledb: false
 # see https://docs.timescale.com/self-hosted/latest/configuration/timescaledb-config/#timescaledblicense-string
