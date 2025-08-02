@@ -174,3 +174,7 @@ postgresql['effective_io_concurrency'] = {{ gitlab_postgresql_effective_io_concu
 postgresql['work_mem'] = "{{ gitlab_postgresql_work_mem }}"
 postgresql['maintenance_work_mem'] = "{{ gitlab_postgresql_maintenance_work_mem }}"
 postgresql['max_files_per_process'] = {{ gitlab_postgresql_max_files_per_process }}
+
+# KAS
+gitlab_kas['enable'] = {{ gitlab_kas_enable | lower }}
+gitlab_rails['gitlab_kas_enabled'] = {{ gitlab_rails_kas_enabled | lower }}
