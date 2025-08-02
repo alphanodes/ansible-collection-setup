@@ -14,7 +14,6 @@ gitlab_rails['gitlab_default_theme'] = {{ gitlab_default_theme }}
 gitlab_rails['gitlab_default_color_mode'] = {{ gitlab_default_color_mode }}
 gitlab_rails['env'] = {{ gitlab_env }}
 
-
 ### Default project feature settings
 gitlab_rails['gitlab_default_projects_features_issues'] = {{ gitlab_default_projects_features.issues | lower | default(false) }}
 gitlab_rails['gitlab_default_projects_features_merge_requests'] = {{ gitlab_default_projects_features.merge_requests | lower | default(false) }}
@@ -160,4 +159,9 @@ nginx['ssl_protocols'] = "{{ nginx_ssl_protocols }}"
 nginx['listen_addresses'] = {{ gitlab_nginx_listen_addresses | to_json }}
 {% if gitlab_letsencrypt_alt_names is defined %}
 letsencrypt['alt_names'] = {{ gitlab_letsencrypt_alt_names }}
+{% endif %}
+{% if gitlab_alertmanager_flags is defined %}
+
+## alertmanager
+alertmanager['flags'] = {{ gitlab_alertmanager_flags }}
 {% endif %}
