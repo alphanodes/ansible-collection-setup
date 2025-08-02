@@ -133,3 +133,11 @@ gitlab_apt_url: https://packages.gitlab.com/gitlab/gitlab-ee/debian/
 gitlab_apt_suites: '{{ ansible_distribution_release | lower }}'
 gitlab_apt_components: main
 gitlab_apt_key_url: https://packages.gitlab.com/gitlab/gitlab-ee/gpgkey
+
+gitlab_postgresql_max_connections: {{ postgresql_max_connections | default(400) }}
+gitlab_postgresql_random_page_cost: {{ postgresql_random_page_cost | default('2.0') }}
+gitlab_postgresql_effective_io_concurrency: {{ postgresql_effective_io_concurrency | default(2) }}
+gitlab_postgresql_work_mem: {{ postgresql_work_mem | default('16MB') }}
+gitlab_postgresql_maintenance_work_mem: {{ postgresql_maintenance_work_mem | default('16MB') }}
+# NOTE: this is not supported at the moment
+gitlab_postgresql_max_files_per_process: {{ postgresql_max_files_per_process | default(200) }}
