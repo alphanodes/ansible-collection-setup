@@ -141,3 +141,6 @@ gitlab_postgresql_work_mem: "{{ postgresql_work_mem | default('16MB') }}"
 gitlab_postgresql_maintenance_work_mem: "{{ postgresql_maintenance_work_mem | default('16MB') }}"
 # NOTE: this is not supported at the moment
 gitlab_postgresql_max_files_per_process: "{{ postgresql_max_files_per_process | default(200) }}"
+
+gitlab_kas_enable: false
+gitlab_rails_kas_enabled: false
