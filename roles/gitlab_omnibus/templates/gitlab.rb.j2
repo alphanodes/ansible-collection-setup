@@ -173,4 +173,4 @@ postgresql['random_page_cost'] = {{ gitlab_postgresql_random_page_cost }}
 postgresql['effective_io_concurrency'] = {{ gitlab_postgresql_effective_io_concurrency }}
 postgresql['work_mem'] = "{{ gitlab_postgresql_work_mem }}"
 postgresql['maintenance_work_mem'] = "{{ gitlab_postgresql_maintenance_work_mem }}"
-postgresql['max_files_per_process'] = "{{ gitlab_postgresql_max_files_per_process }}"
+postgresql['max_files_per_process'] = {{ gitlab_postgresql_max_files_per_process }}
