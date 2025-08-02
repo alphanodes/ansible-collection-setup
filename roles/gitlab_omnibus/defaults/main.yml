@@ -117,6 +117,9 @@ gitlab_log_level: warn
 gitlab_env:
   GITLAB_LOG_LEVEL: '{{ gitlab_log_level }}'
 
+gitlab_alertmanager_flags:
+  cluster.advertise-address: "127.0.0.1:9093"
+
 gitlab_ldap_enabled: false
 gitlab_ldap_prevent_ldap_sign_in: false
 gitlab_ldap_servers:
