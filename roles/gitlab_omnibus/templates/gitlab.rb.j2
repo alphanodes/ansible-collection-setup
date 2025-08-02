@@ -160,10 +160,13 @@ nginx['listen_addresses'] = {{ gitlab_nginx_listen_addresses | to_json }}
 {% if gitlab_letsencrypt_alt_names is defined %}
 letsencrypt['alt_names'] = {{ gitlab_letsencrypt_alt_names }}
 {% endif %}
-{% if gitlab_alertmanager_flags is defined %}
 
 ## alertmanager
+alertmanager['enable'] = {{ gitlab_alertmanager_enable | lower }}
+{% if gitlab_alertmanager_enable %}
+{% if gitlab_alertmanager_flags is defined %}
 alertmanager['flags'] = {{ gitlab_alertmanager_flags }}
+{% endif %}
 {% endif %}
 
 ## PostgreSQL
