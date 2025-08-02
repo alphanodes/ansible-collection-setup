@@ -12,6 +12,8 @@ gitlab_rails['gitlab_email_reply_to'] = '{{ gitlab_email_reply_to }}'
 ## Gitlab settings
 gitlab_rails['gitlab_default_theme'] = {{ gitlab_default_theme }}
 gitlab_rails['gitlab_default_color_mode'] = {{ gitlab_default_color_mode }}
+gitlab_rails['env'] = {{ gitlab_env }}
+
 
 ### Default project feature settings
 gitlab_rails['gitlab_default_projects_features_issues'] = {{ gitlab_default_projects_features.issues | lower | default(false) }}
