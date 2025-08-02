@@ -93,7 +93,7 @@ gitlab_rails['terraform_state_object_store_connection'] = {{ gitlab_object_store
 
 ### CI Secure Files
 gitlab_rails['ci_secure_files_enabled'] = {{ gitlab_ci_secure_files_enabled | lower }}
-{% if gitlab_terraform_state_object_store and not activ_object_store_consolidated %}
+{% if gitlab_ci_secure_files_object_store and not activ_object_store_consolidated %}
 gitlab_rails['ci_secure_files_object_store_enabled'] = true
 gitlab_rails['ci_secure_files_object_store_proxy_download'] = {{ gitlab_object_store_proxy_download | lower }}
 gitlab_rails['ci_secure_files_object_store_remote_directory'] = "{{ gitlab_ci_secure_files_object_store_bucket }}"
