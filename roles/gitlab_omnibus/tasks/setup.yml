@@ -4,6 +4,16 @@
   ansible.builtin.set_fact:
     activ_object_store_consolidated: "{{ gitlab_object_store_consolidated and gitlab_object_store_connection | length > 1 }}"
 
+- name: Add Gitlab apt repository
+  ansible.builtin.deb822_repository:
+    name: gitlab
+    uris: '{{ gitlab_apt_url }}'
+    types: deb
+    suites: '{{ gitlab_apt_suites }}'
+    components: '{{ gitlab_apt_components }}'
+    signed_by: '{{ gitlab_apt_key_url }}'
+    state: present
+
 - name: Ensure required packages are installed
   ansible.builtin.apt:
     name: "{{ gitlab_required_packages }}"
@@ -17,6 +27,7 @@
     owner: root
     group: root
     mode: '0600'
+    validate: ruby -c %s
   register: config_change
   notify: Reconfigure GitLab
 
