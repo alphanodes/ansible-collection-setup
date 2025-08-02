@@ -112,6 +112,11 @@ gitlab_pages_artifacts_server: true
 gitlab_pages_object_store: false
 gitlab_pages_object_store_bucket: gl-pages
 
+gitlab_log_level: warn
+
+gitlab_env:
+  GITLAB_LOG_LEVEL: '{{ gitlab_log_level }}'
+
 gitlab_ldap_enabled: false
 gitlab_ldap_prevent_ldap_sign_in: false
 gitlab_ldap_servers:
