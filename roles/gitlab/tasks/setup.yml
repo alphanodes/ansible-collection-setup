@@ -292,6 +292,7 @@
     owner: '{{ gitlab_user }}'
     group: '{{ gitlab_group }}'
     mode: '0644'
+    validate: ruby -c %s
   notify:
     - Restart gitlab
     - Restart gitlab.slice
@@ -303,6 +304,7 @@
     owner: '{{ gitlab_user }}'
     group: '{{ gitlab_group }}'
     mode: '0644'
+    validate: ruby -c %s
   when: gitlab_initializers_rack_attack
   notify:
     - Restart gitlab

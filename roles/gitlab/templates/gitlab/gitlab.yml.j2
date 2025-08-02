@@ -302,8 +302,8 @@ production: &base
         enabled: {{ 'true' if gitlab_dependency_proxy_object_store else 'false' }}
         bucket: {{ gitlab_dependency_proxy_object_store_bucket }}
       terraform_state:
-        enabled: {{ 'true' if gitlab_terraform_object_store else 'false' }}
-        bucket: {{ gitlab_terraform_object_store_bucket }}
+        enabled: {{ 'true' if gitlab_terraform_state_object_store else 'false' }}
+        bucket: {{ gitlab_terraform_state_object_store_bucket }}
       pages:
         enabled: {{ 'true' if gitlab_pages_object_store else 'false' }}
         bucket: {{ gitlab_pages_object_store_bucket }}

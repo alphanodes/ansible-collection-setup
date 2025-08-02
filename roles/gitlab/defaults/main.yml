@@ -225,11 +225,13 @@ gitlab_ci_secure_files_storage_path: shared/ci_secure_files
 gitlab_ci_secure_files_object_store: false
 gitlab_ci_secure_files_object_store_bucket: gl-ci-secure-files
 
+gitlab_dependency_proxy_enabled: true
 gitlab_dependency_proxy_object_store: false
 gitlab_dependency_proxy_object_store_bucket: gl-proxy
 
-gitlab_terraform_object_store: false
-gitlab_terraform_object_store_bucket: gl-terraform
+gitlab_terraform_state_enabled: false
+gitlab_terraform_state_object_store: false
+gitlab_terraform_state_object_store_bucket: gl-terraform
 
 gitlab_pages_enabled: false
 gitlab_pages_storage_path: shared/pages

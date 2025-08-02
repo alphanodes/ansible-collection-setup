@@ -25,6 +25,7 @@
     owner: '{{ redmine_user }}'
     group: '{{ redmine_group }}'
     mode: '0640'
+    validate: ruby -c %s
   when:
     - instance.use_logger is defined
     - instance.use_logger == 'lograge'
