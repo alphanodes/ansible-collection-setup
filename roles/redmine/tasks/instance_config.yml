@@ -15,7 +15,7 @@
     owner: '{{ redmine_user }}'
     group: '{{ redmine_group }}'
     mode: '0644'
-    validate: 'ruby -c %s'
+    validate: ruby -c %s
 
 - name: Setup sudoer for zabbix - {{ instance_name }}
   ansible.builtin.template:

@@ -99,18 +99,31 @@ gitlab_terraform_state_object_store_bucket: gl-terraform
 # gitlab_registry_object_store: false
 # gitlab_registry_object_store_bucket: gl-container-registry
 
+# https://docs.gitlab.com/ee/administration/pages/
 gitlab_pages_enabled: false
-gitlab_pages_storage_path: shared/pages
-gitlab_pages_local_storage: true
-gitlab_pages_repository: https://gitlab.com/gitlab-org/gitlab-pages.git
-gitlab_pages_path: "{{ gitlab_home }}/gitlab-pages"
-gitlab_pages_secret_path: "{{ gitlab_path }}/.gitlab_pages_secret"
 gitlab_pages_domain: ''
-gitlab_pages_domain_ssl_cert: '{{ ssl_certs[1].name | default(ssl_certs[0].name) }}'
+
+gitlab_pages_external_http: ["{{ gitlab_pages_domain }}:80"]
+gitlab_pages_external_https: ["{{ gitlab_pages_domain }}:443"]
+
+gitlab_pages_with_tls: true
+gitlab_pages_nginx_ssl_certificate: ''
+gitlab_pages_nginx_ssl_certificate_key: ''
+
+gitlab_pages_external_url: "http{{ 's' if gitlab_pages_with_tls else '' }}://{{ gitlab_pages_domain }}"
 
 gitlab_pages_artifacts_server: true
 gitlab_pages_object_store: false
 gitlab_pages_object_store_bucket: gl-pages
+
+gitlab_pages_access_control: false
+
+## Sidekiq
+## see https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-config-template/gitlab.rb.template#L1381
+# Default: 4
+gitlab_sidekiq_shutdown_timeout: 20
+# Default: 20
+gitlab_sidekiq_concurrency: 25
 
 gitlab_log_level: warn
 
