@@ -1,0 +1,20 @@
+---
+
+- name: Ensures backup path exists
+  ansible.builtin.file:
+    path: '{{ gitlab_backup_path }}'
+    state: directory
+    mode: '{{ gitlab_backup_path_mode }}'
+    owner: '{{ gitlab_backup_owner }}'
+    group: '{{ gitlab_backup_group }}'
+  when: not gitlab_manage_backup_path
+
+- name: Create systemd timer for backup job
+  ansible.builtin.include_role:
+    name: alphanodes.setup.systemd_timer
+  vars:
+    timers:
+      gitlab-backup:
+        on_calendar: '{{ gitlab_backup_on_calendar }}'
+        exec_start: "{{ gitlab_backup_command }}"
+        syslog_identifier: gitlab-backup

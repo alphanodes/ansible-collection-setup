@@ -23,7 +23,7 @@
   tags: nginx
   ansible.builtin.copy:
     src: "ssl/cas/{{ item }}.crt"
-    dest: '/usr/local/share/ca-certificates/{{ item }}.crt'
+    dest: '{{ ssl_cas_dir }}/{{ item }}.crt'
     owner: root
     group: root
     mode: '0644'
@@ -34,7 +34,7 @@
   tags: nginx
   ansible.builtin.copy:
     src: "ssl/system_certs/{{ item }}.crt"
-    dest: '/usr/local/share/ca-certificates/{{ item }}.crt'
+    dest: '{{ ssl_cas_dir }}/{{ item }}.crt'
     owner: root
     group: root
     mode: '0644'

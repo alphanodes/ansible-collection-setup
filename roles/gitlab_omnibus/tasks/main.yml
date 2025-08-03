@@ -4,3 +4,9 @@
   ansible.builtin.include_tasks: setup.yml
   tags:
     - gitlab
+
+- name: Include backup tasks
+  ansible.builtin.include_tasks: backup.yml
+  tags:
+    - gitlab
+    - backup

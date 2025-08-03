@@ -2,9 +2,9 @@
 
 - name: Set files
   ansible.builtin.set_fact:
-    cert_path: /etc/ssl/certs/{{ ssl_cert.name }}.crt
-    key_path: /etc/ssl/private/{{ ssl_cert.name }}.key
-    csr_path: /etc/ssl/certs/{{ ssl_cert.name }}.csr
+    cert_path: '{{ ssl_certs_dir }}/{{ ssl_cert.name }}.crt'
+    key_path: '{{ ssl_keys_dir }}/{{ ssl_cert.name }}.key'
+    csr_path: '{{ ssl_certs_dir }}/{{ ssl_cert.name }}.csr'
     ssl_cert_owner: '{{ ssl_cert.owner | default("root") }}'
     ssl_cert_group: '{{ ssl_cert.group | default("ssl-cert") }}'
 
@@ -102,7 +102,7 @@
 - name: Install trusted ssl certificates - {{ ssl_cert.name }}
   ansible.builtin.copy:
     src: ssl/certs/{{ ssl_cert.name }}_trusted.crt
-    dest: /etc/ssl/certs/{{ ssl_cert.name }}_trusted.crt
+    dest: '{{ ssl_certs_dir }}/{{ ssl_cert.name }}_trusted.crt'
     owner: '{{ ssl_cert_owner }}'
     group: '{{ ssl_cert_group }}'
     mode: '0644'
@@ -113,7 +113,7 @@
 
 - name: Remove obsolete trusted ssl certificates - {{ ssl_cert.name }}
   ansible.builtin.file:
-    path: /etc/ssl/certs/{{ ssl_cert.name }}_trusted.crt
+    path: '{{ ssl_certs_dir }}/{{ ssl_cert.name }}_trusted.crt'
     state: absent
   when:
     - ssl_cert.provider is undefined
