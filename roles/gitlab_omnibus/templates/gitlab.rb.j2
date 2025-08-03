@@ -149,8 +149,19 @@ registry['storage'] = {{ gitlab_registry_storage }}
 ### Pages
 gitlab_pages['enable'] = {{ gitlab_pages_enabled | lower }}
 {% if gitlab_pages_enabled %}
-gitlab_pages['external_http'] = "{{ gitlab_pages_domain }}"
+gitlab_pages['external_http'] = {{ gitlab_pages_external_http }}
+{% if gitlab_pages_with_tls %}
+gitlab_pages['external_https'] = {{ gitlab_pages_external_https }}
+pages_external_url "{{ gitlab_pages_external_url }}"
+# pages_nginx['redirect_http_to_https'] = true
+# pages_nginx['ssl_certificate'] = "{{ gitlab_pages_nginx_ssl_certificate }}"
+# pages_nginx['ssl_certificate_key'] = "{{ gitlab_pages_nginx_ssl_certificate_key }}"
+{% endif %}
 gitlab_pages['artifacts_server'] = {{ gitlab_pages_artifacts_server | lower }}
+gitlab_pages['access_control'] = {{ gitlab_pages_access_control | lower }}
+{% if gitlab_pages_access_control %}
+gitlab_pages['auth_scope'] = 'read_api'
+{% endif %}
 {% endif %}
 
 ## nginx
@@ -178,6 +189,10 @@ postgresql['work_mem'] = "{{ gitlab_postgresql_work_mem }}"
 postgresql['maintenance_work_mem'] = "{{ gitlab_postgresql_maintenance_work_mem }}"
 postgresql['max_files_per_process'] = {{ gitlab_postgresql_max_files_per_process }}
 
-# KAS
+## KAS
 gitlab_kas['enable'] = {{ gitlab_kas_enable | lower }}
 gitlab_rails['gitlab_kas_enabled'] = {{ gitlab_rails_kas_enabled | lower }}
+
+## Sidekiq
+sidekiq['shutdown_timeout'] = {{ gitlab_sidekiq_shutdown_timeout }}
+sidekiq['concurrency'] = {{ gitlab_sidekiq_concurrency }}
