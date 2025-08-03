@@ -17,13 +17,13 @@
     file_req: "{{ lookup('env', 'HOME') }}/tmp_ssl.req"
     file_key: "{{ lookup('env', 'HOME') }}/tmp_ssl.key"
     file_crt: "{{ lookup('env', 'HOME') }}/tmp_ssl.crt"
-    target_ssl_key: '/etc/ssl/private/mysql_{{ ssl_mysql_mode }}.key'
-    target_ssl_crt: '/etc/ssl/certs/mysql_{{ ssl_mysql_mode }}.crt'
+    target_ssl_key: '{{ ssl_keys_dir }}/mysql_{{ ssl_mysql_mode }}.key'
+    target_ssl_crt: '{{ ssl_certs_dir }}/mysql_{{ ssl_mysql_mode }}.crt'
 
 - name: Install CA certificate
   ansible.builtin.copy:
     src: '{{ ca_cert }}'
-    dest: '/etc/ssl/certs/mysql_ca.crt'
+    dest: '{{ ssl_certs_dir }}/mysql_ca.crt'
     owner: root
     group: ssl-cert
     mode: '0644'

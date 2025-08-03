@@ -122,11 +122,8 @@ gitlab_rails['dependency_proxy_object_store_connection'] = {{ gitlab_object_stor
 gitlab_rails['monitoring_whitelist'] = {{ gitlab_monitoring_ip_whitelist }}
 
 ### Backup Settings
-###! Docs: https://docs.gitlab.com/omnibus/settings/backups.html
-###! Docs: https://docs.gitlab.com/ee/administration/backup_restore/backup_gitlab.html#backup-archive-permissions
 gitlab_rails['manage_backup_path'] = {{ gitlab_manage_backup_path | lower }}
 gitlab_rails['backup_path'] = "{{ gitlab_backup_path }}"
-# gitlab_rails['backup_gitaly_backup_path'] = "/opt/gitlab/embedded/bin/gitaly-backup"
 gitlab_rails['backup_archive_permissions'] = {{ gitlab_backup_archive_permissions }}
 gitlab_rails['backup_pg_schema'] = "{{ gitlab_backup_pg_schema }}"
 gitlab_rails['backup_keep_time'] = {{ gitlab_backup_keep_time }}

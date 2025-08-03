@@ -28,10 +28,20 @@ gitlab_default_projects_features:
   builds: true
   container_registry: true
 
+# see https://docs.gitlab.com/omnibus/settings/backups.html
+# see https://docs.gitlab.com/ee/administration/backup_restore/backup_gitlab.html#backup-archive-permissions
+# see https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-config-template/gitlab.rb.template#L663
 gitlab_manage_backup_path: true
 gitlab_backup_path: /var/opt/gitlab/backups
+gitlab_backup_command: /opt/gitlab/bin/gitlab-backup create
+# every day at 2:30 (see systemd timer)
+gitlab_backup_on_calendar: '02:30'
+gitlab_backup_owner: "{{ backup_dir_owner | default('git') }}"
+gitlab_backup_group: "{{ backup_dir_group | default('git') }}"
 gitlab_backup_pg_schema: public
+gitlab_backup_path_mode: '0750'
 gitlab_backup_archive_permissions: '0644'
+# 7 days in seconds
 gitlab_backup_keep_time: 604800
 
 gitlab_nginx_listen_addresses:
