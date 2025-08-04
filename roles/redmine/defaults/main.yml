@@ -6,6 +6,7 @@ redmine_instances: {}
 # redmine_instance: redmine
 
 redmine_with_mysql: false
+# NOTE: if set to false, you have to install libpq-dev manually if you use postgresql server on a remote host
 redmine_with_postgresql: false
 redmine_with_zsh: true
 
