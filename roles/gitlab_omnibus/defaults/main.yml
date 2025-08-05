@@ -158,7 +158,10 @@ gitlab_apt_suites: '{{ ansible_distribution_release | lower }}'
 gitlab_apt_components: main
 gitlab_apt_key_url: https://packages.gitlab.com/gitlab/gitlab-ee/gpgkey
 
+# GitLab default: 400
 gitlab_postgresql_max_connections: "{{ postgresql_max_connections | default(150) }}"
+# GitLab default: 60000 (60 Seconds)
+gitlab_postgresql_idle_in_transaction_session_timeout: "{{ postgresql_idle_in_transaction_session_timeout | default(30000) }}"
 gitlab_postgresql_random_page_cost: "{{ postgresql_random_page_cost | default('2.0') }}"
 gitlab_postgresql_effective_io_concurrency: "{{ postgresql_effective_io_concurrency | default(2) }}"
 gitlab_postgresql_work_mem: "{{ postgresql_work_mem | default('16MB') }}"

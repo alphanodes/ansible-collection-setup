@@ -180,6 +180,7 @@ alertmanager['flags'] = {{ gitlab_alertmanager_flags }}
 ## PostgreSQL
 postgresql['shared_preload_libraries'] = 'pg_stat_statements'
 postgresql['max_connections'] = {{ gitlab_postgresql_max_connections }}
+postgresql['idle_in_transaction_session_timeout'] = "{{ gitlab_postgresql_idle_in_transaction_session_timeout }}"
 postgresql['random_page_cost'] = {{ gitlab_postgresql_random_page_cost }}
 postgresql['effective_io_concurrency'] = {{ gitlab_postgresql_effective_io_concurrency }}
 postgresql['work_mem'] = "{{ gitlab_postgresql_work_mem }}"
