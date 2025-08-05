@@ -133,7 +133,7 @@ gitlab_pages_access_control: false
 # Default: 4
 gitlab_sidekiq_shutdown_timeout: 20
 # Default: 20
-gitlab_sidekiq_concurrency: 25
+gitlab_sidekiq_concurrency: 20
 
 gitlab_log_level: warn
 
@@ -158,7 +158,7 @@ gitlab_apt_suites: '{{ ansible_distribution_release | lower }}'
 gitlab_apt_components: main
 gitlab_apt_key_url: https://packages.gitlab.com/gitlab/gitlab-ee/gpgkey
 
-gitlab_postgresql_max_connections: "{{ postgresql_max_connections | default(400) }}"
+gitlab_postgresql_max_connections: "{{ postgresql_max_connections | default(150) }}"
 gitlab_postgresql_random_page_cost: "{{ postgresql_random_page_cost | default('2.0') }}"
 gitlab_postgresql_effective_io_concurrency: "{{ postgresql_effective_io_concurrency | default(2) }}"
 gitlab_postgresql_work_mem: "{{ postgresql_work_mem | default('16MB') }}"
