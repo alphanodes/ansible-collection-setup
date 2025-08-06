@@ -169,5 +169,19 @@ gitlab_postgresql_maintenance_work_mem: "{{ postgresql_maintenance_work_mem | de
 # NOTE: this is not supported at the moment
 gitlab_postgresql_max_files_per_process: "{{ postgresql_max_files_per_process | default(200) }}"
 
+
+# NOTE: use postgresql_max_connections or gitlab_postgresql_max_connections
+# NOTE: if not defined, no setting is set (default gitlab value is used - 1/4 of the total RAM)
+# postgresql['shared_buffers'] = "256MB"
+
+# see https://docs.gitlab.com/administration/operations/puma/
+# NOTE: use puma_worker_timeout or gitlab_puma_worker_timeout
+# NOTE: if not defined, no setting is set (default gitlab value is used)
+# puma['worker_timeout'] = 60
+# NOTE: on some hosts there are more, if not defined. Why?
+# puma['worker_processes'] = 2
+# puma['min_threads'] = 4
+# puma['max_threads'] = 4
+
 gitlab_kas_enable: false
 gitlab_rails_kas_enabled: false

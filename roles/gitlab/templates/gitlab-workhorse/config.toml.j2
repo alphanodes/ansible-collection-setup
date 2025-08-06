@@ -17,7 +17,7 @@ URL = "{{ gitlab_redis_url }}"
 {% endif %}
 
 [image_resizer]
-  max_scaler_procs = {{ gitlab_puma_workers }} # Recommendation: CPUs / 2
+  max_scaler_procs = {{ gitlab_puma_worker_processes }} # Recommendation: CPUs / 2
   max_filesize = 250000
 
 [[listeners]]

@@ -62,9 +62,10 @@ gitlab_nodejs_npm_global_packages:
 
 gitlab_log_level: warn
 
-gitlab_puma_workers: 3
-gitlab_puma_threads_min: 1
-gitlab_puma_threads_max: 16
+gitlab_puma_worker_timeout: "{{ puma_worker_timeout | default(60) }}"
+gitlab_puma_worker_processes: "{{ puma_worker_processes | default(3) }}"
+gitlab_puma_min_threads: "{{ puma_min_threads | default(1) }}"
+gitlab_puma_max_threads: "{{ puma_max_threads | default(16) }}"
 
 gitlab_rvm_ruby: true
 gitlab_rvm_ruby_apt: false

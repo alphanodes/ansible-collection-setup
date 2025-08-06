@@ -97,22 +97,22 @@ redmine_proxy_busy_buffers_size: '256k'
 
 # Used for puma workers and mem_cache_store pool_size
 # leave empty auto calculation with amount of cpu processors
-redmine_puma_workers: ''
+redmine_puma_worker_processes: "{{ puma_workers | default(ansible_processor_nproc) }}"
 
 redmine_memcache_expires_hours: 6
 
 # @see https://devcenter.heroku.com/articles/deploying-rails-applications-with-the-puma-web-server#workers
-redmine_puma_min_threads: 2
-redmine_puma_max_threads: 5
+redmine_puma_min_threads: "{{ puma_min_threads | default(2) }}"
+redmine_puma_max_threads: "{{ puma_max_threads | default(5) }}"
 
-redmine_puma_worker_timeout: 60
+redmine_puma_worker_timeout: "{{ puma_worker_timeout | default(60) }}"
 
 # see https://medium.com/motive-eng/we-solved-our-rails-memory-leaks-with-jemalloc-5c3711326456
 redmine_with_jemalloc: true
 
 # see https://api.rubyonrails.org/v5.1/classes/ActiveRecord/ConnectionAdapters/ConnectionPool.html
 # and https://github.com/boazsegev/plezi/issues/15
-# should calculated automatically: redmine_puma_workers * redmine_puma_max_threads
+# should calculated automatically: redmine_puma_worker_processes * redmine_puma_max_threads
 # @see https://devcenter.heroku.com/articles/deploying-rails-applications-with-the-puma-web-server#database-connections
 redmine_db_pool: ''
 

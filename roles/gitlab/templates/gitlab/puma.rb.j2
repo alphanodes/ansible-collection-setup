@@ -18,7 +18,7 @@ stdout_redirect '{{ gitlab_path }}/log/puma.stdout.log',
 #
 # The default is "0, 16".
 #
-threads {{ gitlab_puma_threads_min }}, {{ gitlab_puma_threads_max }}
+threads {{ gitlab_puma_min_threads }}, {{ gitlab_puma_max_threads }}
 
 # By default, workers accept all requests and queue them to pass to handlers.
 # When false, workers accept the number of simultaneous requests configured.
@@ -34,7 +34,7 @@ queue_requests false
 # accepted protocols.
 bind 'unix://{{ gitlab_auth_socket }}'
 
-workers {{ gitlab_puma_workers }}
+workers {{ gitlab_puma_worker_processes }}
 
 require_relative "{{ gitlab_path }}/lib/gitlab/cluster/lifecycle_events"
 
@@ -69,7 +69,7 @@ tag 'gitlab-puma-worker'
 # the given timeout. If not the worker process will be restarted. Default
 # value is 60 seconds.
 # @see https://www.rubydoc.info/gems/puma/Puma%2FDSL:worker_timeout
-worker_timeout 60
+worker_timeout {{ gitlab_puma_worker_timeout }}
 
 wait_for_less_busy_worker
 
