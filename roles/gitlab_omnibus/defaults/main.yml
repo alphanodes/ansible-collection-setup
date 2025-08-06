@@ -160,14 +160,21 @@ gitlab_apt_key_url: https://packages.gitlab.com/gitlab/gitlab-ee/gpgkey
 
 # GitLab default: 400
 gitlab_postgresql_max_connections: "{{ postgresql_max_connections | default(150) }}"
-# GitLab default: 60000 (60 Seconds)
-gitlab_postgresql_idle_in_transaction_session_timeout: "{{ postgresql_idle_in_transaction_session_timeout | default(30000) }}"
+# Default: 60000 (60 Seconds)
+gitlab_postgresql_statement_timeout: "{{ postgresql_postgresql_statement_timeout | default(30000) }}"
+# Default: 60000 (60 Seconds)
+gitlab_postgresql_idle_in_transaction_session_timeout: "{{ postgresql_idle_in_transaction_session_timeout | default(gitlab_postgresql_statement_timeout) }}"
 gitlab_postgresql_random_page_cost: "{{ postgresql_random_page_cost | default('2.0') }}"
 gitlab_postgresql_effective_io_concurrency: "{{ postgresql_effective_io_concurrency | default(2) }}"
 gitlab_postgresql_work_mem: "{{ postgresql_work_mem | default('16MB') }}"
 gitlab_postgresql_maintenance_work_mem: "{{ postgresql_maintenance_work_mem | default('16MB') }}"
 # NOTE: this is not supported at the moment
 gitlab_postgresql_max_files_per_process: "{{ postgresql_max_files_per_process | default(200) }}"
+gitlab_postgresql_log_connections: "{{ postgresql_log_connections | default(false) }}"
+gitlab_postgresql_log_disconnections: "{{ postgresql_log_disconnections | default(false) }}"
+
+# postgresql['log_connections'] = "off"
+# postgresql['log_disconnections'] = "off"
 
 # NOTE for memory constrained environments:
 # see https://docs.gitlab.com/omnibus/settings/memory_constrained_envs/
@@ -176,6 +183,7 @@ gitlab_postgresql_max_files_per_process: "{{ postgresql_max_files_per_process | 
 # NOTE: if not defined, no setting is set (default gitlab value is used - 1/4 of the total RAM)
 # postgresql['shared_buffers'] = "256MB"
 
+# see https://docs.gitlab.com/administration/monitoring/prometheus/postgres_exporter/
 # Disable postgresql export (fix open files problem - but no postgres stats metrics)
 # postgres_exporter_enable: false
 
