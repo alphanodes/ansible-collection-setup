@@ -180,12 +180,15 @@ alertmanager['flags'] = {{ gitlab_alertmanager_flags }}
 ## PostgreSQL
 postgresql['shared_preload_libraries'] = 'pg_stat_statements'
 postgresql['max_connections'] = {{ gitlab_postgresql_max_connections }}
+postgresql['statement_timeout'] = "{{ gitlab_postgresql_statement_timeout }}"
 postgresql['idle_in_transaction_session_timeout'] = "{{ gitlab_postgresql_idle_in_transaction_session_timeout }}"
 postgresql['random_page_cost'] = {{ gitlab_postgresql_random_page_cost }}
 postgresql['effective_io_concurrency'] = {{ gitlab_postgresql_effective_io_concurrency }}
 postgresql['work_mem'] = "{{ gitlab_postgresql_work_mem }}"
 postgresql['maintenance_work_mem'] = "{{ gitlab_postgresql_maintenance_work_mem }}"
 postgresql['max_files_per_process'] = {{ gitlab_postgresql_max_files_per_process }}
+postgresql['log_connections'] = "{{ 'on' if gitlab_postgresql_log_connections else 'off' }}"
+postgresql['log_disconnections'] = "{{ 'on' if gitlab_postgresql_log_disconnections else 'off' }}"
 {% if gitlab_postgresql_shared_buffers is defined or postgresql_shared_buffers is defined %}
 postgresql['shared_buffers'] = "{{ gitlab_postgresql_shared_buffers | default(postgresql_shared_buffers) }}"
 {% endif %}
