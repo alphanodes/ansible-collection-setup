@@ -54,7 +54,7 @@
         url: '{{ golang_mirror }}/{{ golang_file }}'
         dest: '{{ software_path }}/{{ golang_file }}'
         mode: '0644'
-        checksum: "{{ 'sha256:' + golang_sha256_checksum | default(omit) }}"
+        checksum: "{{ ('sha256:' + golang_sha256_checksum) | default(omit) }}"
         force: false
         use_proxy: '{{ golang_mirror_use_proxy }}'
         validate_certs: '{{ golang_mirror_validate_certs }}'
