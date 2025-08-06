@@ -186,6 +186,23 @@ postgresql['effective_io_concurrency'] = {{ gitlab_postgresql_effective_io_concu
 postgresql['work_mem'] = "{{ gitlab_postgresql_work_mem }}"
 postgresql['maintenance_work_mem'] = "{{ gitlab_postgresql_maintenance_work_mem }}"
 postgresql['max_files_per_process'] = {{ gitlab_postgresql_max_files_per_process }}
+{% if gitlab_postgresql_shared_buffers is defined or postgresql_shared_buffers is defined %}
+postgresql['shared_buffers'] = "{{ gitlab_postgresql_shared_buffers | default(postgresql_shared_buffers) }}"
+{% endif %}
+
+## Puma
+{% if gitlab_puma_worker_timeout is defined or puma_worker_timeout is defined %}
+puma['worker_timeout'] = {{ gitlab_puma_worker_timeout | default(puma_worker_timeout) }}
+{% endif %}
+{% if gitlab_puma_worker_processes is defined or puma_worker_processes is defined %}
+puma['worker_processes'] = {{ gitlab_puma_worker_processes | default(puma_worker_processes) }}
+{% endif %}
+{% if gitlab_puma_min_threads is defined or puma_min_threads is defined %}
+puma['min_threads'] = {{ gitlab_puma_min_threads | default(puma_min_threads) }}
+{% endif %}
+{% if gitlab_puma_max_threads is defined or puma_max_threads is defined %}
+puma['max_threads'] = {{ gitlab_puma_max_threads | default(puma_max_threads) }}
+{% endif %}
 
 ## KAS
 gitlab_kas['enable'] = {{ gitlab_kas_enable | lower }}

@@ -7,7 +7,7 @@
 
 - name: Set real_puma_workers
   ansible.builtin.set_fact:
-    real_puma_workers: "{{ instance.puma_workers | default(ansible_processor_nproc if redmine_puma_workers == '' else redmine_puma_workers) }}"
+    real_puma_workers: "{{ instance.puma_worker_processes | default(redmine_puma_worker_processes) }}"
 
 - name: Set real_db_pool (cluster mode) real_puma_workers = {{ real_puma_workers }}
   ansible.builtin.set_fact:
