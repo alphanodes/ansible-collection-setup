@@ -190,7 +190,7 @@ postgresql['max_files_per_process'] = {{ gitlab_postgresql_max_files_per_process
 postgresql['shared_buffers'] = "{{ gitlab_postgresql_shared_buffers | default(postgresql_shared_buffers) }}"
 {% endif %}
 {% if postgres_exporter_enable is defined %}
-postgres_exporter_enable: {{ postgres_exporter_enable | lower }}
+postgres_exporter['enable'] = {{ postgres_exporter_enable | lower }}
 {% endif %}
 
 ## Puma
