@@ -184,6 +184,9 @@ postgresql['statement_timeout'] = "{{ gitlab_postgresql_statement_timeout }}"
 postgresql['idle_in_transaction_session_timeout'] = "{{ gitlab_postgresql_idle_in_transaction_session_timeout }}"
 postgresql['random_page_cost'] = {{ gitlab_postgresql_random_page_cost }}
 postgresql['effective_io_concurrency'] = {{ gitlab_postgresql_effective_io_concurrency }}
+{% if gitlab_postgresql_effective_cache_size is defined or postgresql_effective_cache_size is defined %}
+postgresql['effective_cache_size'] = "{{ gitlab_postgresql_effective_cache_size | default(postgresql_effective_cache_size) }}"
+{% endif %}
 postgresql['work_mem'] = "{{ gitlab_postgresql_work_mem }}"
 postgresql['maintenance_work_mem'] = "{{ gitlab_postgresql_maintenance_work_mem }}"
 postgresql['max_files_per_process'] = {{ gitlab_postgresql_max_files_per_process }}
