@@ -169,6 +169,8 @@ gitlab_postgresql_maintenance_work_mem: "{{ postgresql_maintenance_work_mem | de
 # NOTE: this is not supported at the moment
 gitlab_postgresql_max_files_per_process: "{{ postgresql_max_files_per_process | default(200) }}"
 
+# NOTE for memory constrained environments:
+# see https://docs.gitlab.com/omnibus/settings/memory_constrained_envs/
 
 # NOTE: use postgresql_max_connections or gitlab_postgresql_max_connections
 # NOTE: if not defined, no setting is set (default gitlab value is used - 1/4 of the total RAM)
