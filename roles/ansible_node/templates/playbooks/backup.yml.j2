@@ -53,6 +53,9 @@
 {% if backup_dir_group is defined %}
     backup_dir_group: {{ backup_dir_group }}
 {% endif %}
+{% if backup_postgresql_file_owner is defined %}
+    backup_postgresql_file_owner: {{ backup_postgresql_file_owner }}
+{% endif %}
 {% if backup_sets is defined and backup_sets | length > 0 %}
     backup_sets:
       {{ backup_sets | to_nice_yaml(indent=2) | trim | indent(6) }}
