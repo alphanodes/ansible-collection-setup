@@ -97,7 +97,7 @@ redmine_proxy_busy_buffers_size: '256k'
 
 # Used for puma workers and mem_cache_store pool_size
 # leave empty auto calculation with amount of cpu processors
-redmine_puma_worker_processes: "{{ puma_workers | default(ansible_processor_nproc) }}"
+redmine_puma_worker_processes: "{{ puma_worker_processes | default(ansible_processor_nproc) }}"
 
 redmine_memcache_expires_hours: 6
 
