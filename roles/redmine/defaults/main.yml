@@ -296,6 +296,7 @@ redmine_plugin_test_files:
   - .eslintignore
   - .eslintrc.yml
   - .flayignore
+  - .claudeignore
   - .git
   - .gitignore
   - .gitlab-ci.yml
@@ -305,6 +306,7 @@ redmine_plugin_test_files:
   - .rubocop.yml
   - .slim-lint.yml
   - .stylelintrc.json
+  - CLAUDE.md
   - Gemfile.lock
   - Gemfile.release
   - config/brakeman.ignore
