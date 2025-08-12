@@ -273,6 +273,8 @@ redmine_patches:
 #    strip: 1
   - file: allowed_to_condition
     strip: 1
+  - file: watcher_limit
+    strip: 1
 
 # set to yes, if git history for ssh is required on deploy
 redmine_full_remote_deploy: false
