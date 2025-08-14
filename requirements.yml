@@ -1,17 +1,17 @@
 ---
 collections:
   - name: community.general
-    version: 10.3.0
+    version: 10.7.2
   - name: community.crypto
-    version: 2.24.0
+    version: 2.26.3
   - name: community.mongodb
-    version: 1.7.9
+    version: 1.7.10
   - name: community.postgresql
-    version: 3.10.2
+    version: 3.14.2
   - name: community.mysql
-    version: 3.12.0
+    version: 3.14.0
   - name: community.zabbix
-    version: 3.3.0
+    version: 4.1.0
 roles:
   - name: geerlingguy.composer
     src: https://github.com/geerlingguy/ansible-role-composer
