@@ -22,6 +22,7 @@ galaxy_info:
         - buster
         - bullseye
         - bookworm
+        - trixie
   galaxy_tags:
     - ethercalc
     - spreadsheet
