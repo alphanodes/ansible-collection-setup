@@ -19,3 +19,4 @@ galaxy_info:
         - buster
         - bullseye
         - bookworm
+        - trixie

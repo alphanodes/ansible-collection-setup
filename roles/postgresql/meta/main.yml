@@ -20,6 +20,7 @@ galaxy_info:
         - buster
         - bullseye
         - bookworm
+        - trixie
   galaxy_tags:
     - database
     - postgresql
