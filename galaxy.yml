@@ -14,9 +14,6 @@ tags:
   - linux
   - setup
 
-dependencies:
-  ansible.posix: '>=1.4.0'
-
 repository: 'https://github.com/alphanodes/ansible-collection-setup/'
 homepage: 'https://alphanodes.com'
 issues: 'https://github.com/alphanodes/ansible-collection-setup/issues'

@@ -13,6 +13,9 @@ redis_apt_suites: '{{ ansible_distribution_release }}'
 redis_apt_components: main
 redis_apt_key_url: https://packages.redis.io/gpg
 
+# uncomment it, if you want to set it (redis recommend it)
+# redis_vm_overcommit_memory: 1
+
 redis_server_bind: '127.0.0.1 -::1'
 
 # redis_server_logfile: /var/log/redis/redis-server.log
