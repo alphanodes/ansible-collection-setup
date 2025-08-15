@@ -56,6 +56,14 @@
     mode: '0640'
   notify: Restart redis
 
+- name: Setup sysctl vm.overcommit_memory
+  when: redis_vm_overcommit_memory is defined and server_vm_overcommit_memory is undefined
+  ansible.posix.sysctl:
+    name: vm.overcommit_memory
+    value: '{{ redis_vm_overcommit_memory }}'
+    sysctl_set: true
+    reload: true
+
 - name: Include systemd tasks
   ansible.builtin.import_tasks: systemd.yml
 
