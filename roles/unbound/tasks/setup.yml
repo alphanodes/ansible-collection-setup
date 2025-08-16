@@ -6,10 +6,18 @@
     state: present
 
 - name: Update root anchor
-  ansible.builtin.command: unbound-anchor -a /var/lib/unbound/root.key
+  ansible.builtin.command: unbound-anchor -a {{ unbound_root_key_file }}
   register: unbound_anchor_rc
   changed_when: unbound_anchor_rc.rc == 1
   failed_when: unbound_anchor_rc.rc > 1
+
+- name: Set permission for root key file
+  ansible.builtin.file:
+    path: "{{ unbound_root_key_file }}"
+    state: file
+    owner: "{{ unbound_user }}"
+    group: "{{ unbound_group }}"
+    mode: '0644'
 
 - name: Start the unbound service (systemd)
   ansible.builtin.systemd_service:
