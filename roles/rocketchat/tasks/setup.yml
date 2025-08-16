@@ -122,7 +122,7 @@
     - Restart rocketchat
 
 - name: Ensure rocketchat is enabled and started at boot.
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: rocketchat
     state: started
     enabled: true

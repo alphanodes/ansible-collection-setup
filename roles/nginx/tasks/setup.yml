@@ -74,7 +74,7 @@
   notify: Reload nginx
 
 - name: Ensure nginx is started and enabled to start at boot.
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: nginx
     state: started
     enabled: true

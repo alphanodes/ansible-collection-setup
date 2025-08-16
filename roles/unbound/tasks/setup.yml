@@ -12,7 +12,7 @@
   failed_when: unbound_anchor_rc.rc > 1
 
 - name: Start the unbound service (systemd)
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: unbound
     state: started
   register: systemd_rc
@@ -24,11 +24,11 @@
     or (systemd_rc.status.NeedDaemonReload is defined and systemd_rc.status.NeedDaemonReload != 'no')
   block:
     - name: Reload daemon-reload for init script changes (systemd)
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         daemon_reload: true
 
     - name: Start the unbound service (systemd)
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: unbound
         state: started
         enabled: true

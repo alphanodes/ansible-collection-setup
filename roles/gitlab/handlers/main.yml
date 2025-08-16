@@ -1,39 +1,39 @@
 ---
 
 - name: Restart gitlab
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: gitlab-workhorse
     state: restarted
   notify:
     - Restart nginx
 
 - name: Restart gitaly
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: gitlab-gitaly
     state: restarted
 
 - name: Restart gitlab workhorse
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: gitlab-gitaly
     state: restarted
 
 - name: Restart gitlab sidekiq
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: gitlab-sidekiq
     state: restarted
 
 - name: Restart gitlab puma
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: gitlab-gitaly
     state: restarted
 
 - name: Restart gitlab pages
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: gitlab-pages
     state: restarted
 
 - name: Restart gitlab.slice
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: gitlab.slice
     state: restarted
   notify:

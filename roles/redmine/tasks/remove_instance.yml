@@ -4,7 +4,7 @@
   ansible.builtin.include_tasks: set_instance_vars.yml
 
 - name: Ensure puma services stopped and disabled - {{ instance_name }}
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: puma-{{ instance_name }}
     enabled: false
     state: stopped

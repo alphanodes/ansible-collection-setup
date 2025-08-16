@@ -106,7 +106,7 @@
         and mongodb_master is defined and mongodb_master )
 
 - name: Service started
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: "{{ mongodb_daemon_name }}"
     state: started
     enabled: true

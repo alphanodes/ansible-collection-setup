@@ -23,7 +23,7 @@
 
         - name: Enable sysstat service
           when: sysstat_enable_data_collecting
-          ansible.builtin.systemd:
+          ansible.builtin.systemd_service:
             name: sysstat
             state: started
             enabled: true
@@ -39,7 +39,7 @@
 
         - name: Enable sysstat service
           when: sysstat_enable_data_collecting
-          ansible.builtin.systemd:
+          ansible.builtin.systemd_service:
             name: sysstat
             state: stopped
             enabled: false

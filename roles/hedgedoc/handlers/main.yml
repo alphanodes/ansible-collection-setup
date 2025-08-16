@@ -1,7 +1,7 @@
 ---
 
 - name: Restart hedgedoc
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: hedgedoc
     state: restarted
 

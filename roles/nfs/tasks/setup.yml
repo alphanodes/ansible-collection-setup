@@ -46,7 +46,7 @@
     - Reload nfs exports
 
 - name: Start the nfs-kernel-server service
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: nfs-kernel-server
     state: started
     enabled: true
@@ -55,7 +55,7 @@
     - nfs_server_start
 
 - name: Stop the nfs-kernel-server service
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: nfs-kernel-server
     state: stopped
     enabled: false
