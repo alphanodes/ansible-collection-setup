@@ -20,7 +20,9 @@
     mode: '0644'
 
 - name: Configure systemd-resolved for unbound
-  when: server_resolver is defined and server_resolver == 'systemd_resolved'
+  when: >
+    (server_resolver is defined and server_resolver == 'systemd_resolved')
+    or server_resolver is undefined and ansible_distribution == 'Ubuntu'
   ansible.builtin.template:
     src: resolved.conf.j2
     dest: /etc/systemd/resolved.conf.d/unbound.conf
