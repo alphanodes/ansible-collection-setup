@@ -15,3 +15,5 @@ unbound_remove: false
 unbound_root_key_file: /var/lib/unbound/root.key
 unbound_user: unbound
 unbound_group: unbound
+
+unbound_fallback_dns: "{{ server_systemd_resolved_dns_server | default(['8.8.8.8', '8.8.4.4']) }}"
