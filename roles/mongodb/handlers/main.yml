@@ -1,26 +1,26 @@
 ---
 
 - name: Run disable-transparent-hugepages
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: disable-transparent-hugepages
     enabled: true
     state: started
     daemon_reload: true
 
 - name: Run enable-transparent-hugepages
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: disable-transparent-hugepages
     enabled: false
     state: stopped
 
 - name: Restart mongodb
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: "{{ mongodb_daemon_name }}"
     state: restarted
   when: mongodb_manage_service | bool
 
 - name: Restart mongodb-mms-monitoring-agent
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: mongodb-mms-monitoring-agent
     state: restarted
   when: mongodb_manage_service | bool

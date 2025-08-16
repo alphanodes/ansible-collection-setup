@@ -375,7 +375,7 @@
     GITLAB_ROOT_PASSWORD: '{{ gitlab_root_password }}'
   block:
     - name: Make sure gitaly is running - required for gitlab:setup
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: gitlab-gitaly
         state: started
         enabled: true
@@ -398,7 +398,7 @@
         chdir: '{{ gitlab_path }}'
 
 - name: Stop puma on update for more memory if required
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: gitlab-puma
     state: stopped
     enabled: true
@@ -436,7 +436,7 @@
 
 # should stick direct after update (because it is stopped manually)
 - name: Ensure all services are started and enabled
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: '{{ item }}'
     state: started
     enabled: true
@@ -447,7 +447,7 @@
     - gitlab-sidekiq
 
 - name: Enable GitLab systemd services
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: gitlab.target
     enabled: true
     state: started

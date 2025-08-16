@@ -41,7 +41,7 @@
     - Reload systemd daemon
 
 - name: Ensure ethercalc is started and enabled
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: ethercalc
     state: started
     enabled: true

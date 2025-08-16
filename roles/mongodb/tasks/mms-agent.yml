@@ -21,7 +21,7 @@
   notify: Restart mongodb-mms-monitoring-agent
 
 - name: Ensure that the MMS agent is started
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: mongodb-mms-monitoring-agent
     state: started
     enabled: true

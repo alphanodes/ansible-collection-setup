@@ -3,6 +3,6 @@
 # See http://docs.ansible.com/playbooks_intro.html for more information about handlers.
 
 - name: Restart fail2ban
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: fail2ban
     state: restarted

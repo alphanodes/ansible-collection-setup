@@ -26,13 +26,13 @@
 
 # TODO: should be not restart every ansible run
 - name: Start/Restart puma via systemd - {{ instance_name }}
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: puma-{{ instance_name }}
     state: restarted
   when: instance.state is undefined or instance.state=='active'
 
 - name: Shutdown puma via systemd - {{ instance_name }}
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: puma-{{ instance_name }}
     state: stopped
     enabled: false

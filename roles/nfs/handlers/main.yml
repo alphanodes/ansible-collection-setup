@@ -1,12 +1,12 @@
 ---
 
 - name: Restart nfs-common
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: 'nfs-client.target'
     state: 'restarted'
 
 - name: Restart nfs-kernel-server
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: 'nfs-kernel-server'
     state: 'restarted'
 

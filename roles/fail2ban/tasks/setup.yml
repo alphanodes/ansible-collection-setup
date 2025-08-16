@@ -54,7 +54,7 @@
     mode: '0440'
 
 - name: Start the fail2ban service
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: fail2ban
     state: started
     enabled: true

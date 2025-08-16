@@ -21,7 +21,7 @@
     state: absent
 
 - name: Disable systemd-socket activation
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: ssh.socket
     state: stopped
     enabled: false
@@ -36,7 +36,7 @@
     mode: '0755'
 
 - name: Start ssh service
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: ssh.service
     state: started
     enabled: true

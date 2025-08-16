@@ -1,7 +1,7 @@
 ---
 
 - name: Stop unbound, if started
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: unbound
     state: stopped
     enabled: false

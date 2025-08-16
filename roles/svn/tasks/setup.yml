@@ -83,7 +83,7 @@
   ansible.builtin.meta: flush_handlers
 
 - name: Ensure SVN is started
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: svnserve
     state: started
     enabled: true

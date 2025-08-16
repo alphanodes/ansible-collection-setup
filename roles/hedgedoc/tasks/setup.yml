@@ -73,7 +73,7 @@
       ansible.builtin.meta: flush_handlers
 
     - name: Ensure hedgedoc service is running and start after reboot
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: hedgedoc
         state: started
         enabled: true
@@ -85,7 +85,7 @@
       ansible.builtin.meta: flush_handlers
 
     - name: Ensure hedgedoc service is stopped and disable
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: hedgedoc
         state: stopped
         enabled: false

@@ -141,7 +141,7 @@
         mode: '0640'
 
 - name: Ensure MySQL is started and enabled on boot.
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: "{{ mysql_daemon }}"
     state: started
     enabled: "{{ mysql_enabled_on_startup | bool }}"

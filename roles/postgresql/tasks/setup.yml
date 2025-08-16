@@ -28,7 +28,7 @@
   when: postgresql_with_timescaledb
 
 - name: Ensure PostgreSQL is started and enabled to start at boot.
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: postgresql
     state: started
     enabled: true
