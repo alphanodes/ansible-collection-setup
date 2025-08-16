@@ -11,3 +11,7 @@ unbound_packages:
 
 # do uninstall unbound, set it to yes
 unbound_remove: false
+
+unbound_root_key_file: /var/lib/unbound/root.key
+unbound_user: unbound
+unbound_group: unbound
