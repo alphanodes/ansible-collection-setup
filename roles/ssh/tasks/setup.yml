@@ -66,6 +66,7 @@
   ansible.builtin.file:
     path: /etc/ssh/{{ item }}
     state: absent
+  when: ssh_with_config_file_cleanup | bool
   loop:
     - sshd_config.ucf-dist
     - ssh_config.dpkg-dist
