@@ -1,0 +1,9 @@
+---
+
+nextcloud_packages:
+  - php-imagick
+  - php-redis
+  - php8.4-bz2
+  - php8.4-intl
+  - php8.4-mbstring
+  - php8.4-zip

@@ -1,0 +1,6 @@
+---
+
+drupal_packages:
+  - imagemagick-7.q16
+  - php-memcache
+  - php8.4-zip
