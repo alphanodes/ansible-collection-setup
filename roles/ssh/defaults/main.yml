@@ -87,3 +87,5 @@ ssh_users:
 ssh_management_access: []
 ssh_known_hosts: []
 ssh_all_known_hosts: []
+
+ssh_with_config_file_cleanup: true
