@@ -38,7 +38,7 @@ LogLevel VERBOSE
 MaxAuthTries {{ ssh_max_auth_retries }}
 
 # Authentication:
-LoginGraceTime 2m
+LoginGraceTime 120
 PermitRootLogin {{ ssh_server_permit_root_login }}
 {% if ssh_deny_users != '' %}
 DenyUsers {{ ssh_deny_users }}
@@ -72,15 +72,13 @@ PasswordAuthentication {{ 'yes' if ssh_server_password_authentication | bool els
 
 # Kerberos options
 #KerberosAuthentication no
+#KerberosGetAFSToken no
 #KerberosOrLocalPasswd yes
 #KerberosTicketCleanup yes
-#KerberosGetAFSToken no
 
 # GSSAPI options
 #GSSAPIAuthentication no
 #GSSAPICleanupCredentials yes
-#GSSAPIStrictAcceptorCheck yes
-#GSSAPIKeyExchange no
 
 AllowTcpForwarding {{ 'yes' if ssh_server_allow_tcp_forwarding | bool else 'no' }}
 AllowStreamLocalForwarding {{ 'yes' if ssh_server_allow_stream_local_forwarding | bool else 'no' }}

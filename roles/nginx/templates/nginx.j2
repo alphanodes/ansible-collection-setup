@@ -8,6 +8,7 @@ pid /run/nginx.pid;
 include /etc/nginx/modules-enabled/*.conf;
 
 worker_processes {{ real_nginx_worker_processes }};
+worker_cpu_affinity {{ nginx_worker_cpu_affinity }};
 worker_rlimit_nofile 8192;
 
 events {
