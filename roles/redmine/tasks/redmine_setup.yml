@@ -68,40 +68,43 @@
       ansible.builtin.include_role:
         name: alphanodes.setup.postgresql
 
-- name: Fix ImageMagick security policies for PDF preview
-  ansible.builtin.lineinfile:
-    dest: /etc/ImageMagick-6/policy.xml
-    regexp: '<policy domain="coder" rights="none" pattern="PDF" />'
-    line: '  <policy domain="coder" rights="read|write" pattern="PDF" />'
+- name: Fix ImageMagick policy
+  when: desired_distribution_release is defined and desired_distribution_release != 'trixie'
+  block:
+    - name: Fix ImageMagick security policies for PDF preview
+      ansible.builtin.lineinfile:
+        dest: /etc/ImageMagick-6/policy.xml
+        regexp: '<policy domain="coder" rights="none" pattern="PDF" />'
+        line: '  <policy domain="coder" rights="read|write" pattern="PDF" />'
 
-- name: Increase ImageMagick memory limit
-  ansible.builtin.lineinfile:
-    dest: /etc/ImageMagick-6/policy.xml
-    regexp: '<policy domain="resource" name="memory" value="256MiB"/>'
-    line: '  <policy domain="resource" name="memory" value="512MiB"/>'
+    - name: Increase ImageMagick memory limit
+      ansible.builtin.lineinfile:
+        dest: /etc/ImageMagick-6/policy.xml
+        regexp: '<policy domain="resource" name="memory" value="256MiB"/>'
+        line: '  <policy domain="resource" name="memory" value="512MiB"/>'
 
-- name: Increase ImageMagick width limit
-  ansible.builtin.lineinfile:
-    dest: /etc/ImageMagick-6/policy.xml
-    regexp: '<policy domain="resource" name="width" value="16KP"/>'
-    line: '  <policy domain="resource" name="width" value="32KP"/>'
+    - name: Increase ImageMagick width limit
+      ansible.builtin.lineinfile:
+        dest: /etc/ImageMagick-6/policy.xml
+        regexp: '<policy domain="resource" name="width" value="16KP"/>'
+        line: '  <policy domain="resource" name="width" value="32KP"/>'
 
-- name: Increase ImageMagick height limit
-  ansible.builtin.lineinfile:
-    dest: /etc/ImageMagick-6/policy.xml
-    regexp: '<policy domain="resource" name="height" value="16KP"/>'
-    line: '  <policy domain="resource" name="height" value="32KP"/>'
+    - name: Increase ImageMagick height limit
+      ansible.builtin.lineinfile:
+        dest: /etc/ImageMagick-6/policy.xml
+        regexp: '<policy domain="resource" name="height" value="16KP"/>'
+        line: '  <policy domain="resource" name="height" value="32KP"/>'
 
-- name: Increase ImageMagick disk limit
-  ansible.builtin.lineinfile:
-    dest: /etc/ImageMagick-6/policy.xml
-    regexp: '<policy domain="resource" name="disk" value="1GiB"/>'
-    line: '  <policy domain="resource" name="disk" value="2GiB"/>'
+    - name: Increase ImageMagick disk limit
+      ansible.builtin.lineinfile:
+        dest: /etc/ImageMagick-6/policy.xml
+        regexp: '<policy domain="resource" name="disk" value="1GiB"/>'
+        line: '  <policy domain="resource" name="disk" value="2GiB"/>'
 
-- name: Remove policy.xml.dpkg-dist
-  ansible.builtin.file:
-    path: /etc/ImageMagick-6/policy.xml.dpkg-dist
-    state: absent
+    - name: Remove policy.xml.dpkg-dist
+      ansible.builtin.file:
+        path: /etc/ImageMagick-6/policy.xml.dpkg-dist
+        state: absent
 
 - name: Install nginx maps for redmine
   tags:

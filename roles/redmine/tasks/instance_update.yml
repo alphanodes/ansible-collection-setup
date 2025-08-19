@@ -12,11 +12,13 @@
     DB_STATEMENT_TIMEOUT: '0'
   block:
     # NOTE: this do not install latest version of bundler for user!
-    # - name: Manual install latest bundler
-    #   community.general.gem:
-    #     name: bundler
-    #     state: latest
+    # NOTE2: but used as fallback (first installation fails, if this is not used)
     - name: Manual install latest bundler
+      community.general.gem:
+        name: bundler
+        state: latest
+
+    - name: Manual update latest bundler
       ansible.builtin.command: bash -lc "bundle update --bundler"
       args:
         chdir: '{{ redmine_app_dir }}'

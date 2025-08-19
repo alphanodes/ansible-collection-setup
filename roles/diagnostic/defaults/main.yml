@@ -11,8 +11,7 @@ diagnostic_with_htop: false
 diagnostic_with_nmap: false
 diagnostic_with_sysstat: false
 
-diagnostic_packages:
-  - deborphan
+diagnostic_packages: []
 
 # required a lot of packages for glances without pip (e.g. nginx)
 glances_with_pip: true

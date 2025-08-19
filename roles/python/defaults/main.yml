@@ -3,8 +3,6 @@
 python_packages:
   - python3-pip
   - python3-virtualenv
-  # required e.g. for mysqlclient
-  - pkg-config
 
 python_with_dev: false
 
