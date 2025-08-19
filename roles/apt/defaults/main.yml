@@ -23,6 +23,7 @@ unattended_autofix_interrupted_dpkg: true
 unattended_upgrade_minimal_steps: true
 unattended_install_on_shutdown: false
 unattended_upgrade_mail: root
-unattended_upgrade_mail_only_on_error: true
+unattended_upgrade_mail_report: only-on-error
 unattended_upgrade_remove_unused_kernel_packages: true
-unattended_upgrade_remove_unused_dependencies: true
+unattended_upgrade_remove_new_unused_dependencies: true
+unattended_upgrade_remove_unused_dependencies: false

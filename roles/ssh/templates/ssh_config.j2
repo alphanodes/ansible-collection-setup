@@ -18,7 +18,7 @@
 # ssh_config(5) man page.
 
 Host *
-    SendEnv LANG LC_*
+    SendEnv LANG LC_* COLORTERM NO_COLOR
     HashKnownHosts {{ 'yes' if ssh_client_hash_known_hosts | bool else 'no' }}
     GSSAPIAuthentication yes
 {% if ssh_max_secure %}
