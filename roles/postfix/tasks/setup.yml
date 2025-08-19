@@ -11,11 +11,19 @@
     state: started
     enabled: true
 
+- name: Check if ssl-cert group exists
+  ansible.builtin.getent:
+    database: group
+    key: ssl-cert
+  register: ssl_cert_group
+  ignore_errors: true
+
 - name: Add postfix user to ssl-cert group
   ansible.builtin.user:
     name: postfix
     groups: ssl-cert
     append: true
+  when: ssl_cert_group is succeeded
 
 - name: Set relayhost with mxlookup
   ansible.builtin.set_fact:
