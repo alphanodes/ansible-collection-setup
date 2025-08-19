@@ -1,0 +1,24 @@
+{{ ansible_managed | comment }}
+# btrbk configuration file
+#
+#
+# Please refer to the btrbk.conf(5) man-page for a complete
+# description of all configuration options.
+# For more examples, see README.md included with this package.
+#
+#   btrbk.conf(5): <https://digint.ch/btrbk/doc/btrbk.conf.5.html>
+#   README.md:     <https://digint.ch/btrbk/doc/readme.html>
+
+timestamp_format        {{ btrbk_timestamp_format }}
+preserve_day_of_week    {{ btrbk_preserve_day_of_week }}
+preserve_hour_of_day    {{ btrbk_preserve_hour_of_day }}
+
+# Retention Policy
+snapshot_preserve_min   {{ btrbk_snapshot_preserve_min }}
+snapshot_preserve       {{ btrbk_snapshot_preserve }}
+
+{% for volume in btrbk_volumes %}
+volume {{ volume.volume }}
+  subvolume: {{ volume.subvolume }}
+    snapshot_dir: {{ volume.snapshot_dir }}
+{% endfor %}

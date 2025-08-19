@@ -1,0 +1,12 @@
+---
+
+- name: Remove btrbk package
+  ansible.builtin.apt:
+    name: btrbk
+    purge: true
+    state: absent
+
+- name: Remove configuration directory
+  ansible.builtin.file:
+    path: /etc/btrbk
+    state: absent

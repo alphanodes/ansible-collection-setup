@@ -1,0 +1,14 @@
+---
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  when: not btrbk_remove | bool
+  tags:
+    - btrbk
+
+- name: Include remove tasks
+  ansible.builtin.include_tasks: remove.yml
+  when: btrbk_remove | bool
+  tags:
+    - btrbk
+    - remove
