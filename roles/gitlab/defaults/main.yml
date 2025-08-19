@@ -169,7 +169,7 @@ gitlab_packages:
   - libyaml-dev
   - libz-dev
   - logrotate
-  - pkg-config
+  - pkgconf
   - python3-docutils
   - zlib1g-dev
 
