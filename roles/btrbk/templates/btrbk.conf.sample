@@ -1,0 +1,199 @@
+#
+# btrbk configuration file
+#
+#
+# Please refer to the btrbk.conf(5) man-page for a complete
+# description of all configuration options.
+# For more examples, see README.md included with this package.
+#
+#   btrbk.conf(5): <https://digint.ch/btrbk/doc/btrbk.conf.5.html>
+#   README.md:     <https://digint.ch/btrbk/doc/readme.html>
+
+# Enable transaction log
+transaction_log            /var/log/btrbk.log
+
+# Specify SSH private key for remote connections
+ssh_identity               /etc/btrbk/ssh/id_ed25519
+ssh_user                   root
+
+# Use sudo if btrbk or lsbtr is run by regular user
+backend_local_user         btrfs-progs-sudo
+
+# Enable stream buffer. Adding a buffer between the sending and
+# receiving side is generally a good idea.
+# NOTE: If enabled, make sure to install the "mbuffer" package!
+stream_buffer              256m
+
+# Directory in which the btrfs snapshots are created. Relative to
+# <volume-directory> of the volume section.
+# If not set, the snapshots are created in <volume-directory>.
+#
+# If you want to set a custom name for the snapshot (and backups),
+# use the "snapshot_name" option within the subvolume section.
+#
+# NOTE: btrbk does not automatically create this directory, and the
+# snapshot creation will fail if it is not present.
+#
+snapshot_dir               _btrbk_snap
+
+# Always create snapshots. Set this to "ondemand" to only create
+# snapshots if the target volume is reachable. Set this to "no" if
+# snapshot creation is done by another instance of btrbk.
+#snapshot_create            always
+
+# Perform incremental backups (set to "strict" if you want to prevent
+# creation of non-incremental backups if no parent is found).
+#incremental                yes
+
+# Specify after what time (in full hours after midnight) backups/
+# snapshots are considered as a daily backup/snapshot
+#preserve_hour_of_day       0
+
+# Specify on which day of week weekly/monthly backups are to be
+# preserved.
+#preserve_day_of_week       sunday
+
+# Preserve all snapshots for a minimum period of time.
+#snapshot_preserve_min      1d
+
+# Retention policy for the source snapshots.
+#snapshot_preserve          <NN>h <NN>d <NN>w <NN>m <NN>y
+
+# Preserve all backup targets for a minimum period of time.
+#target_preserve_min        no
+
+# Retention policy for backup targets:
+#target_preserve            <NN>h <NN>d <NN>w <NN>m <NN>y
+
+# Retention policy for archives ("btrbk archive" command):
+#archive_preserve_min       no
+#archive_preserve           <NN>h <NN>d <NN>w <NN>m <NN>y
+
+# Enable compression for remote btrfs send/receive operations:
+#stream_compress            no
+#stream_compress_level      default
+#stream_compress_threads    default
+
+# Enable lock file support: Ensures that only one instance of btrbk
+# can be run at a time.
+#lockfile                   /var/lock/btrbk.lock
+
+# Don't wait for transaction commit on deletion. Enable this to make
+# sure the deletion of subvolumes is committed to disk when btrbk
+# terminates.
+#btrfs_commit_delete no
+
+
+#
+# Volume section (optional): "volume <volume-directory>"
+#
+#   <volume-directory>  Base path within a btrfs filesystem
+#                       containing the subvolumes to be backuped
+#                       (usually the mount-point of a btrfs filesystem
+#                       mounted with subvolid=5 option).
+#
+# Subvolume section: "subvolume <subvolume-name>"
+#
+#   <subvolume-name>    Subvolume to be backuped, relative to
+#                       <volume-directory> in volume section.
+#
+# Target section: "target <type> <volume-directory>"
+#
+#   <type>              (optional) type, defaults to "send-receive".
+#   <volume-directory>  Directory within a btrfs filesystem
+#                       receiving the backups.
+#
+# NOTE: The parser does not care about indentation, this is only for
+# human readability. All options apply to the last section
+# encountered, overriding the corresponding option of the upper
+# section. This means that the global options must be set on top,
+# before any "volume", "subvolume" or "target section.
+#
+
+
+#
+# Example retention policy:
+#
+snapshot_preserve_min   2d
+snapshot_preserve       14d
+
+target_preserve_min     no
+target_preserve         20d 10w *m
+
+
+#
+# Simple setup: Backup root and home to external disk
+#
+snapshot_dir /btrbk_snapshots
+target       /mnt/btr_backup
+subvolume    /
+subvolume    /home
+
+
+#
+# Complex setup
+#
+# In order to keep things organized, it is recommended to use "volume"
+# sections and mount the top-level subvolume (subvolid=5):
+#
+#  $ mount -o subvolid=5 /dev/sda1 /mnt/btr_pool
+#
+# Backup to external disk mounted on /mnt/btr_backup
+volume /mnt/btr_pool
+  # Create snapshots in /mnt/btr_pool/btrbk_snapshots
+  snapshot_dir btrbk_snapshots
+
+  # Target for all subvolume sections:
+  target /mnt/btr_backup
+
+  # Some default btrfs installations (e.g. Ubuntu) use "@" for rootfs
+  # (mounted at "/") and "@home" (mounted at "/home"). Note that this
+  # is only a naming convention.
+  #subvolume @
+  subvolume root
+  subvolume home
+  subvolume kvm
+    # Use different retention policy for kvm backups:
+    target_preserve 7d 4w
+
+
+# Backup data to external disk as well as remote host
+volume /mnt/btr_data
+  subvolume  data
+    # Always create snapshot, even if targets are unreachable
+    snapshot_create always
+    target /mnt/btr_backup
+    target ssh://backup.my-remote-host.com/mnt/btr_backup
+
+
+# Backup from remote host, with different naming
+volume ssh://my-remote-host.com/mnt/btr_pool
+  subvolume data_0
+    snapshot_dir   snapshots/btrbk
+    snapshot_name  data_main
+    target /mnt/btr_backup/my-remote-host.com
+
+
+# Backup on demand (noauto) to remote host running busybox, login as
+# regular user using ssh-agent with current user name (ssh_user no)
+# and default credentials (ssh_identity no).
+volume /home
+  noauto  yes
+  compat  busybox
+  backend_remote  btrfs-progs-sudo
+  ssh_user      no
+  ssh_identity  no
+
+  target ssh://my-user-host.com/mnt/btr_backup/home
+  subvolume  alice
+  subvolume  bob
+
+
+# Resume backups from remote host which runs its own btrbk instance
+# creating snapshots for "home" in "/mnt/btr_pool/btrbk_snapshots".
+volume ssh://my-remote-host.com/mnt/btr_pool
+  snapshot_dir           btrbk_snapshots
+  snapshot_create        no
+  snapshot_preserve_min  all
+  subvolume home
+    target /mnt/btr_backup/my-remote-host.com

@@ -1,0 +1,12 @@
+---
+
+- name: Ensure required packages are installed
+  ansible.builtin.apt:
+    name: "{{ btrbk_required_packages }}"
+    state: present
+
+- name: Ensure Btrbk configuration installed
+  ansible.builtin.template:
+    src: btrbk.config.j2
+    dest: /etc/btrbk/btrbk.conf
+    mode: '0640'

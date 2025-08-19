@@ -1,0 +1,28 @@
+---
+
+# see https://github.com/digint/btrbk
+
+btrbk_required_packages:
+ - btrbk
+
+# Timestamp format used as postfix for new snapshot subvolume names
+btrbk_timestamp_format: long
+# Defines on what day a snapshot/backup is considered to be a "weekly" backup
+btrbk_preserve_day_of_week: monday
+# Defines after what time (in full hours since midnight) a snapshot/backup
+# is considered to be a "daily" backup
+btrbk_preserve_hour_of_day: 1
+
+btrbk_snapshot_preserve_min: 18h
+btrbk_snapshot_preserve: 48h
+
+# do uninstall btrbk, set it to yes
+btrbk_remove: false
+
+# btrbk_volumes:
+#   files:
+#     volume: /mnt/btr_pool
+#     snapshot_dir: btrbk_snapshots
+#     subvolume: home
+
+btrbk_volumes: {}
