@@ -22,7 +22,7 @@ jobs:
 
     steps:
       # Important: This sets up your GITHUB_WORKSPACE environment variable
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: 'Yamllint'
         uses: karancode/yamllint-github-action@master
