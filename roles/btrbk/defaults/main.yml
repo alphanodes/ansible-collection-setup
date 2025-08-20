@@ -19,8 +19,21 @@ btrbk_preserve_day_of_week: monday
 # is considered to be a "daily" backup
 btrbk_preserve_hour_of_day: 1
 
+# Preserve all snapshots for a minimum period of time.
 btrbk_snapshot_preserve_min: 18h
-btrbk_snapshot_preserve: 48h
+# Retention policy for the source snapshots.
+#snapshot_preserve          <NN>h <NN>d <NN>w <NN>m <NN>y
+btrbk_snapshot_preserve: "48h"
+
+# Preserve all backup targets for a minimum period of time.
+btrbk_target_preserve_min: false
+# Retention policy for backup targets:
+#target_preserve            <NN>h <NN>d <NN>w <NN>m <NN>y
+btrbk_target_preserve: "14d 4w 24m"
+
+# Specify SSH private key for remote connections
+btrbk_ssh_identity: /etc/btrbk/ssh/id_ed25519
+btrbk_ssh_user: root
 
 # do uninstall btrbk, set it to yes
 btrbk_remove: false
