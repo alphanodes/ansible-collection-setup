@@ -35,12 +35,15 @@ btrbk_target_preserve: "14d 4w 24m"
 btrbk_ssh_identity: /etc/btrbk/ssh/id_ed25519
 btrbk_ssh_user: root
 
+btrbk_snapshot_owner: root
+btrbk_snapshot_group: root
+btrbk_snapshot_mode: '0775'
+
 # do uninstall btrbk, set it to yes
 btrbk_remove: false
 
 # btrbk_volumes:
-#   files:
-#     volume: /mnt/btr_pool
+#   - volume: /mnt/btr_pool
 #     snapshot_dir: btrbk_snapshots
 #     subvolume: home
 

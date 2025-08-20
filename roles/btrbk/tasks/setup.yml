@@ -10,3 +10,12 @@
     src: btrbk.conf.j2
     dest: /etc/btrbk/btrbk.conf
     mode: '0640'
+
+- name: Create snapshot directories
+  ansible.builtin.file:
+    path: '{{ item.snapshot_dir }}'
+    state: directory
+    owner: '{{ btrbk_snapshot_owner }}'
+    group: '{{ btrbk_snapshot_group }}'
+    mode: '{{ btrbk_snapshot_mode }}'
+  loop: '{{ btrbk_volumes }}'
