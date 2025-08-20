@@ -7,6 +7,6 @@
 
 - name: Ensure Btrbk configuration installed
   ansible.builtin.template:
-    src: btrbk.config.j2
+    src: btrbk.conf.j2
     dest: /etc/btrbk/btrbk.conf
     mode: '0640'
