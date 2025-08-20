@@ -18,17 +18,23 @@ snapshot_preserve_min   {{ btrbk_snapshot_preserve_min }}
 snapshot_preserve       {{ btrbk_snapshot_preserve }}
 
 # Specify SSH private key for remote connections
-btrbk_ssh_identity:     {{ btrbk_ssh_identity }}
-btrbk_ssh_user          {{ btrbk_ssh_user }}
+ssh_identity      {{ btrbk_ssh_identity }}
+ssh_user          {{ btrbk_ssh_user }}
+{% if btrbk_backend_remote is defined %}
+backend_remote   {{ btrbk_backend_remote }}
+{% endif %}
 
 target_preserve_min     {{ 'no' if not btrbk_target_preserve_min | bool else btrbk_target_preserve_min }}
 target_preserve         {{ btrbk_target_preserve }}
 
 {% for volume in btrbk_volumes %}
 volume {{ volume.volume }}
-{% if volume.target is defined %}
-  target: {{ volume.target }}
+  snapshot_dir {{ volume.snapshot_dir }}
+  subvolume {{ volume.subvolume }}
+{% if volume.target_local is defined %}
+    target {{ volume.target_local }}
 {% endif %}
-  subvolume: {{ volume.subvolume }}
-    snapshot_dir: {{ volume.snapshot_dir }}
+{% if volume.target_ssh is defined %}
+    target {{ volume.target_ssh }}
+{% endif %}
 {% endfor %}
