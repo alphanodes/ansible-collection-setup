@@ -1,6 +1,12 @@
 ---
 
+# for Btrbk:
 # see https://github.com/digint/btrbk
+
+# for BTRFS:
+# see https://de.wikipedia.org/wiki/Btrfs
+# see https://wiki.archlinux.org/title/Btrfs
+# see https://btrfs.readthedocs.io/en/latest/
 
 btrbk_required_packages:
  - btrbk
