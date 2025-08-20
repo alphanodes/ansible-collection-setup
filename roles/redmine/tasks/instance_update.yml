@@ -17,6 +17,7 @@
       community.general.gem:
         name: bundler
         state: latest
+      ignore_errors: true
 
     - name: Manual update latest bundler
       ansible.builtin.command: bash -lc "bundle update --bundler"

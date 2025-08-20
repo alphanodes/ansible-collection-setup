@@ -17,8 +17,18 @@ preserve_hour_of_day    {{ btrbk_preserve_hour_of_day }}
 snapshot_preserve_min   {{ btrbk_snapshot_preserve_min }}
 snapshot_preserve       {{ btrbk_snapshot_preserve }}
 
+# Specify SSH private key for remote connections
+btrbk_ssh_identity:     {{ btrbk_ssh_identity }}
+btrbk_ssh_user          {{ btrbk_ssh_user }}
+
+target_preserve_min     {{ 'no' if not btrbk_target_preserve_min | bool else btrbk_target_preserve_min }}
+target_preserve         {{ btrbk_target_preserve }}
+
 {% for volume in btrbk_volumes %}
 volume {{ volume.volume }}
+{% if volume.target is defined %}
+  target: {{ volume.target }}
+{% endif %}
   subvolume: {{ volume.subvolume }}
     snapshot_dir: {{ volume.snapshot_dir }}
 {% endfor %}
