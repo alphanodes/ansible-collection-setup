@@ -120,7 +120,6 @@ table ip nat {
     {% for postrouting in netfilter_postrouting %}
     oifname "{{ postrouting.oifname }}" ip saddr {{ postrouting.saddr }} counter packets 0 bytes 0 snat to {{ postrouting.snat_to }}
     {% endfor %}
-    # ip saddr {{ lxc_internal_subnet }} ip daddr != {{ lxc_internal_subnet }}4 counter packets 0 bytes 0 masquerade'
 	}
 }
 {% endif %}

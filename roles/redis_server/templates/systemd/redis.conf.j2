@@ -5,25 +5,3 @@
 Type=notify
 {% endif %}
 PIDFile={{ redis_server_pidfile }}
-{% if ansible_virtualization_type == 'lxc' %}
-CapabilityBoundingSet=
-# MemoryDenyWriteExecute=
-# NoNewPrivileges=
-PrivateDevices=no
-# PrivateTmp=
-# ProtectControlGroups=
-# ProtectHome=
-# ProtectKernelModules=
-# ProtectKernelTunables=
-# ProtectSystem=
-ReadOnlyDirectories=
-ReadWriteDirectories=
-ReadWriteDirectories=
-ReadWriteDirectories=
-ReadWriteDirectories=
-RestrictAddressFamilies=
-RestrictNamespaces=
-# RestrictRealtime=
-# RuntimeDirectoryMode=
-# UMask=
-{% endif %}

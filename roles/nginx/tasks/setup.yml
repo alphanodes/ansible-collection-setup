@@ -1,15 +1,8 @@
 ---
 
-# ansible_processor_vcpus and nginx auto is broken for lxc
-- name: Set real_nginx_worker_processes (LXC)
-  ansible.builtin.set_fact:
-    real_nginx_worker_processes: "{{ ansible_processor_nproc if nginx_worker_processes == '' else nginx_worker_processes }}"
-  when: ansible_virtualization_type == 'lxc'
-
-- name: Set real_nginx_worker_processes (non LXC)
+- name: Set real_nginx_worker_processes
   ansible.builtin.set_fact:
     real_nginx_worker_processes: "{{ 'auto' if nginx_worker_processes == '' else nginx_worker_processes }}"
-  when: ansible_virtualization_type != 'lxc'
 
 - name: Ensure nginx is installed
   ansible.builtin.apt:
@@ -89,25 +82,17 @@
 - name: Calc resolver if not specified
   when: nginx_resolver | length < 1
   block:
-    - name: Set resolver for lxc clients
-      ansible.builtin.set_fact:
-        nginx_resolver:
-          - '{{ server_lxc_nameserver_ip }}'
-      when: ansible_virtualization_type == 'lxc'
-
-    - name: Set resolver for non lxc clients
+    - name: Set resolver
       ansible.builtin.set_fact:
         nginx_resolver: "{{ ['127.0.0.1'] }}"
       when: >
-        ansible_virtualization_type != 'lxc'
-        and server_with_unbound is defined
+        server_with_unbound is defined
         and server_with_unbound
 
-    - name: Set resolver for non lxc clients
+    - name: Set default resolver, if no resolver defined before
       ansible.builtin.set_fact:
         nginx_resolver: "{{ hetzner_nameserver_v4 if hoster == 'hetzner' else ['8.8.8.8', '8.8.4.4'] }}"
       when:
-        - ansible_virtualization_type != 'lxc'
         - nginx_resolver | length < 1
 
 - name: Setup SSL configuration
