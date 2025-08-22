@@ -25,7 +25,7 @@ fail2ban_sshd_ddos: false
 fail2ban_roundcube_auth: false
 fail2ban_roundcube_auth_log: '{{ srv_path }}/roundcube/logs/errors.log'
 
-fail2ban_ignoreip_global: '127.0.0.1/8{{ " " + lxc_internal_subnet if ansible_virtualization_type == "lxc" }}'
+fail2ban_ignoreip_global: '127.0.0.1/8'
 
 fail2ban_ignore_ips:
   - '{{ backup_ip_address_v4 }}/32'

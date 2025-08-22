@@ -7,7 +7,7 @@ nginx_packages:
 nginx_worker_connections: 1024
 nginx_worker_cpu_affinity: auto
 
-# leave empty, ansible_processor_nproc is used  with lxc containers)
+# leave empty, ansible_processor_nproc is used
 nginx_worker_processes: ''
 
 nginx_user: www-data
