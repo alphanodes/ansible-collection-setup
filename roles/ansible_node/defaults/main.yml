@@ -38,6 +38,7 @@ ansible_node_packages:
   - libssl-dev
   - libxml2-dev
   - libxslt1-dev
+  - pkg-config
   - python3-cffi
   - python3-dev
 
