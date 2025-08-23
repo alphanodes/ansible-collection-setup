@@ -10,6 +10,7 @@ server {
   root {{ element_web_path }};
   index index.html;
 
+  {% include 'templates/nginx/http2.inc.j2' with context %}
   {% include 'templates/nginx/ssl.inc.j2' with context %}
 
 	# Make sure to set Content-Security-Policy when this is not aleady done with the default headers.
@@ -51,6 +52,7 @@ server {
   listen [::]:443 {{ nginx_ssl_listen_option }};
 {% endif %}
 
+  {% include 'templates/nginx/http2.inc.j2' with context %}
   {% include 'templates/nginx/ssl.inc.j2' with context %}
 
   return 301 https://{{ element_web_vhost_server }}$request_uri;

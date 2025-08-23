@@ -15,6 +15,7 @@ server {
   root {{ dendrite_vhost_root }};
 {% endif %}
 
+  {% include 'templates/nginx/http2.inc.j2' with context %}
   {% include 'templates/nginx/ssl.inc.j2' with context %}
 
   proxy_set_header Host      $host;
@@ -65,6 +66,7 @@ server {
   listen [::]:443 {{ nginx_ssl_listen_option }};
 {% endif %}
 
+  {% include 'templates/nginx/http2.inc.j2' with context %}
   {% include 'templates/nginx/ssl.inc.j2' with context %}
 
   return 301 https://{{ dendrite_server_name }}$request_uri;

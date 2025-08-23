@@ -13,6 +13,7 @@ server {
   server_name {{ rocketchat_vhost_server }};
   root {{ rocketchat_application_path }};
 
+  {% include 'templates/nginx/http2.inc.j2' with context %}
   {% include 'templates/nginx/ssl.inc.j2' with context %}
 
   #  # Referrer Policy
@@ -71,6 +72,7 @@ server {
   listen [::]:443 {{ nginx_ssl_listen_option }};
 {% endif %}
 
+  {% include 'templates/nginx/http2.inc.j2' with context %}
   {% include 'templates/nginx/ssl.inc.j2' with context %}
 
   return 301 https://{{ rocketchat_vhost_server }}$request_uri;
