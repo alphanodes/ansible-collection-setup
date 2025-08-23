@@ -143,7 +143,7 @@ server {
   listen [::]:80;
 {% endif %}
 {% endif %}
-{% include 'templates/nginx/http2.inc.j2' with context %}
+  {% include 'templates/nginx/http2.inc.j2' with context %}
   server_name {{ m.server }};
 
   {% if m.port == 80 -%}

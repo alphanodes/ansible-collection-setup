@@ -16,7 +16,7 @@ server {
 {% endif %}
 {% endif %}
 {% endif %}
-{% include 'templates/nginx/http2.inc.j2' with context %}
+  {% include 'templates/nginx/http2.inc.j2' with context %}
 {% if instance.server_name is defined %}
   server_name {{ instance.server_name }}{{ ' ' + instance.server_alias if instance.server_alias is defined else '' }};
 {% endif %}
@@ -32,9 +32,9 @@ server {
   index {{ instance.index }};
 {% endif %}
 
-{% if nginx_with_protection %}
-{% include 'templates/nginx/protection.inc.j2' with context %}
-{% endif %}
+  {% if nginx_with_protection %}
+  {% include 'templates/nginx/protection.inc.j2' with context %}
+  {% endif %}
 
 {% if instance.vhost_dnt_private_ip is defined and instance.vhost_dnt_private_ip %}
   set $dnt_header $http_dnt;
