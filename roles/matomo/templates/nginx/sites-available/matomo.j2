@@ -17,6 +17,7 @@ server {
   root {{ matomo_dir }};
   index index.php;
 
+  {% include 'templates/nginx/http2.inc.j2' with context %}
   {% include 'templates/nginx/ssl.inc.j2' with context %}
 
   location  /. { ## Disable .htaccess and other hidden files

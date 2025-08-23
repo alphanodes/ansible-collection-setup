@@ -1,2 +1,2 @@
 ---
-nginx_ssl_listen_option: 'ssl http2'
+nginx_ssl_listen_option: "ssl{{ ' http2' if ansible_distribution != 'Debian' or ansible_distribution_major_version != '13' else '}}"

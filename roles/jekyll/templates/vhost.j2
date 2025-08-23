@@ -10,6 +10,7 @@ server {
   root {{ jekyll_dir }}/{{ jekyll_site_prod }};
   index index.html index.html;
 
+  {% include 'templates/nginx/http2.inc.j2' with context %}
   {% if nginx_with_ssl %}
   {% include 'templates/nginx/ssl.inc.j2' with context %}
   {% endif %}
