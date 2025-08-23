@@ -24,9 +24,7 @@
 {% else %}
   variables:
     max_execution_time: <%= ENV["DB_STATEMENT_TIMEOUT"] || {{ instance.db_statement_timeout | default(redmine_db_statement_timeout) }} %>
-{% if active_redmine_repo_version == '5.1-stable' or redmine_5_1_repo_version is defined and redmine_5_1_repo_version == active_redmine_repo_version %}
     transaction_isolation: "READ-COMMITTED"
-{% endif %}
 {% endif %}
 {% if instance.db_pool is defined or real_db_pool != 0 %}
   pool: {{ instance.db_pool | default(real_db_pool) }}
