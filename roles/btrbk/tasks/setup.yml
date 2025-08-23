@@ -13,7 +13,7 @@
 
 - name: Create snapshot directories
   ansible.builtin.file:
-    path: '{{ item.snapshot_dir }}'
+    path: "{{ item.volume }}/{{ item.subvolume }}/{{ item.snapshot_dir | default('.snapshots') }}"
     state: directory
     owner: '{{ btrbk_snapshot_owner }}'
     group: '{{ btrbk_snapshot_group }}'
