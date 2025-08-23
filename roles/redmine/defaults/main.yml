@@ -220,8 +220,6 @@ redmine_write_permission_dirs:
   - path: /db
   - path: /tmp
   - path: /log
-  # for additional_tags hint file
-  - path: /plugins
 
 redmine_plugin_access: readonly
 
