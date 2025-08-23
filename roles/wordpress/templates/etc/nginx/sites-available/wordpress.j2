@@ -20,7 +20,7 @@ server {
   server_name {{ instance.server_name }}{{ ' ' + instance.server_alias if instance.server_alias is defined else '' }};
   root {{ wordpress_dir }};
 
-{% include 'templates/nginx/http2.inc.j2' with context %}
+  {% include 'templates/nginx/http2.inc.j2' with context %}
 {% if nginx_with_ssl %}
 {% if instance.server_port is undefined or instance.server_port == 443 %}
   {% include 'templates/nginx/ssl.inc.j2' with context %}
