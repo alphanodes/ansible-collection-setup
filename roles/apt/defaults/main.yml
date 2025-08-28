@@ -27,3 +27,7 @@ unattended_upgrade_mail_report: only-on-error
 unattended_upgrade_remove_unused_kernel_packages: true
 unattended_upgrade_remove_new_unused_dependencies: true
 unattended_upgrade_remove_unused_dependencies: false
+
+unattended_upgrade_dpkg_options:
+  - "--force-confdef"
+  - "--force-confold"
