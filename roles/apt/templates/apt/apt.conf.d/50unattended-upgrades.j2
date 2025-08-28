@@ -92,11 +92,11 @@ Unattended-Upgrade::Automatic-Reboot-Time "{{ apt_automatic_reboot_time }}";
 
 // Download and install upgrades only on AC power
 // (i.e. skip or gracefully stop updates on battery)
-// Unattended-Upgrade::OnlyOnACPower "true";
+Unattended-Upgrade::OnlyOnACPower "false";
 
 // Download and install upgrades only on non-metered connection
 // (i.e. skip or gracefully stop updates on a metered connection)
-// Unattended-Upgrade::Skip-Updates-On-Metered-Connections "true";
+Unattended-Upgrade::Skip-Updates-On-Metered-Connections "false";
 
 // Verbose logging
 // Unattended-Upgrade::Verbose "false";
@@ -119,3 +119,12 @@ Unattended-Upgrade::Automatic-Reboot-Time "{{ apt_automatic_reboot_time }}";
 // uninstallable packages at the expense of rarely keeping back packages which
 // could be upgraded or installed.
 // Unattended-Upgrade::Allow-APT-Mark-Fallback "true";
+
+{% for minio_bucket in docker_minio_buckets %}
+{% if unattended_upgrade_dpkg_options | length %}
+Dpkg::Options {
+{% for dpkg_option in unattended_upgrade_dpkg_options %}
+  "{{ dpkg_option }}";
+{% endfor %}
+};
+{% endif %}
