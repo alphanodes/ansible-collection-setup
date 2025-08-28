@@ -120,7 +120,6 @@ Unattended-Upgrade::Skip-Updates-On-Metered-Connections "false";
 // could be upgraded or installed.
 // Unattended-Upgrade::Allow-APT-Mark-Fallback "true";
 
-{% for minio_bucket in docker_minio_buckets %}
 {% if unattended_upgrade_dpkg_options | length %}
 Dpkg::Options {
 {% for dpkg_option in unattended_upgrade_dpkg_options %}
