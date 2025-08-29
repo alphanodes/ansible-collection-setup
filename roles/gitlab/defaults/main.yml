@@ -16,7 +16,7 @@ gitlab_with_zsh: true
 gitlab_omniauth_enabled: false
 gitlab_omniauth_providers: []
 
-gitlab_repository_version: '18-2-stable'
+gitlab_repository_version: '18-3-stable'
 gitlab_ce_version: '{{ gitlab_repository_version }}'
 gitlab_ee_version: '{{ gitlab_repository_version }}-ee'
 gitlab_path: "{{ gitlab_home }}/gitlab"
@@ -78,7 +78,7 @@ gitlab_rvm_ruby_path: '{{ gitlab_home }}/.rvm/wrappers/default'
 # This Version is fixed in .ruby_version
 # gitaly ruby should be rerun (on version change, manually is required - see gitlab_gitaly.yml)
 # ruby 3.2 or newer uses openssl 3, which comes with ubuntu 22.04
-gitlab_ruby_version: 3.3.8
+gitlab_ruby_version: 3.3.9
 
 gitlab_mail_room_enabled: true
 
