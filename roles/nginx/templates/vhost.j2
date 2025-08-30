@@ -107,22 +107,18 @@ server {
 
 }
 
-{% if nginx_with_ssl and instance.server_port is defined -%}
+{% if nginx_with_ssl and instance.server_port is defined %}
 {% include 'templates/nginx/port_redirect.inc.j2' with context %}
 {% endif %}
-
-{% if instance.mappings is defined -%}
+{% if instance.mappings is defined %}
 {% include 'mappings.inc.j2' with context %}
-{% endif -%}
-
-{% if instance.redirects is defined -%}
+{% endif %}
+{% if instance.redirects is defined %}
 {% include 'templates/nginx/redirects.inc.j2' with context %}
 {% endif %}
-
-{% if instance.external_redirects is defined -%}
+{% if instance.external_redirects is defined %}
 {% include 'templates/nginx/external_redirects.inc.j2' with context %}
 {% endif %}
-
-{% if instance.vhost_for_zabbix is defined and instance.vhost_for_zabbix -%}
+{% if instance.vhost_for_zabbix is defined and instance.vhost_for_zabbix %}
 {% include 'templates/nginx/monitoring.inc.j2' with context %}
-{% endif -%}
+{% endif %}

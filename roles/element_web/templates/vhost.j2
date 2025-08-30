@@ -58,7 +58,7 @@ server {
   return 301 https://{{ element_web_vhost_server }}$request_uri;
 }
 {% endif %}
-
 {% if element_web_vhost_for_zabbix %}
+
 {% include 'templates/nginx/monitoring.inc.j2' with context %}
 {% endif %}

@@ -70,14 +70,12 @@ server {
   return 301 https://{{ instance.server_name }}$request_uri;
 }
 
-{% if instance.redirects is defined -%}
+{% if instance.redirects is defined %}
 {% include 'templates/nginx/redirects.inc.j2' with context %}
 {% endif %}
-
-{% if instance.external_redirects is defined -%}
+{% if instance.external_redirects is defined %}
 {% include 'templates/nginx/external_redirects.inc.j2' with context %}
 {% endif %}
-
-{% if instance.vhost_for_zabbix is defined and instance.vhost_for_zabbix -%}
+{% if instance.vhost_for_zabbix is defined and instance.vhost_for_zabbix %}
 {% include 'templates/nginx/monitoring.inc.j2' with context %}
-{% endif -%}
+{% endif %}

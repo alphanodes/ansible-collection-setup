@@ -78,7 +78,7 @@ server {
   return 301 https://{{ rocketchat_vhost_server }}$request_uri;
 }
 {% endif %}
-
 {% if rocketchat_vhost_for_zabbix %}
+
 {% include 'templates/nginx/monitoring.inc.j2' with context %}
 {% endif %}

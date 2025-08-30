@@ -38,8 +38,11 @@ nginx_vhost_with_access_log: true
 nginx_in_ssl_group: false
 
 nginx_with_ssl: true
-nginx_force_ssl: true
 nginx_with_ssl_stapling: false
+
+# see https://gist.github.com/plentz/6737338 (1 year caching)
+# check: https://hstspreload.appspot.com/
+nginx_force_ssl: true
 
 # protect dot files and block spammers
 nginx_with_protection: true
