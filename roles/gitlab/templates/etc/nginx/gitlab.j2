@@ -114,8 +114,8 @@ server {
     internal;
   }
 }
-
 {% if gitlab_vhost_for_zabbix %}
+
 {% include 'templates/nginx/monitoring.inc.j2' with context %}
 {% endif %}
 

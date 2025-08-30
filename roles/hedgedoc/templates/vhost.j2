@@ -77,7 +77,7 @@ server {
   return 301 https://{{ hedgedoc_vhost_server }}$request_uri;
 }
 {% endif %}
-
 {% if hedgedoc_vhost_for_zabbix %}
+
 {% include 'templates/nginx/monitoring.inc.j2' with context %}
 {% endif %}

@@ -72,7 +72,7 @@ server {
   return 301 https://{{ dendrite_server_name }}$request_uri;
 }
 {% endif %}
-
 {% if dendrite_vhost_for_zabbix %}
+
 {% include 'templates/nginx/monitoring.inc.j2' with context %}
 {% endif %}
