@@ -14,7 +14,7 @@
   ansible.builtin.unarchive:
     src: "/tmp/registry.tar.gz"
     dest: "/tmp/"
-    remote_src: yes
+    remote_src: true
 
 - name: Copy registry binary to /usr/local/bin
   ansible.builtin.copy:
@@ -53,5 +53,5 @@
 - name: Enable and start registry service
   ansible.builtin.systemd_service:
     name: gitlab-registry
-    enabled: yes
+    enabled: true
     state: started
