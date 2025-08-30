@@ -22,13 +22,13 @@ btrbk_preserve_hour_of_day: 1
 # Preserve all snapshots for a minimum period of time.
 btrbk_snapshot_preserve_min: 18h
 # Retention policy for the source snapshots.
-#snapshot_preserve          <NN>h <NN>d <NN>w <NN>m <NN>y
+# snapshot_preserve          <NN>h <NN>d <NN>w <NN>m <NN>y
 btrbk_snapshot_preserve: "48h"
 
 # Preserve all backup targets for a minimum period of time.
 btrbk_target_preserve_min: false
 # Retention policy for backup targets:
-#target_preserve            <NN>h <NN>d <NN>w <NN>m <NN>y
+# target_preserve            <NN>h <NN>d <NN>w <NN>m <NN>y
 btrbk_target_preserve: "14d 4w 24m"
 
 # Specify SSH private key for remote connections
