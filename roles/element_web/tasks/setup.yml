@@ -7,7 +7,7 @@
     types: deb
     suites: '{{ element_web_apt_suites }}'
     components: '{{ element_web_apt_components }}'
-    signed_by: '{{ element_web_apt_key_url }}'
+    signed_by: '{{ element_web_apt_signed_by }}'
     state: present
   register: element_web_repo
 

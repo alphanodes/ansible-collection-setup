@@ -5,7 +5,7 @@ nodejs_version: '18.x'
 
 nodejs_apt_url: https://deb.nodesource.com/node_{{ nodejs_version }}
 nodejs_apt_key_host: deb.nodesource.com
-nodejs_apt_key_url: https://{{ nodejs_apt_key_host }}/gpgkey/nodesource-repo.gpg.key
+nodejs_apt_signed_by: https://{{ nodejs_apt_key_host }}/gpgkey/nodesource-repo.gpg.key
 nodejs_apt_suites: nodistro
 nodejs_apt_components: main
 nodejs_apt_source_update: true

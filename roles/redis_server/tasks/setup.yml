@@ -11,7 +11,7 @@
         types: deb
         suites: "{{ redis_apt_suites }}"
         components: "{{ redis_apt_components }}"
-        signed_by: "{{ redis_apt_key_url }}"
+        signed_by: "{{ redis_apt_signed_by }}"
         state: present
       register: redis_repo
 

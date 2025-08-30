@@ -7,8 +7,8 @@ mysql_apt_repo_version: '8.0'
 
 mysql_apt_url: https://repo.mysql.com/apt/debian/
 # if not specified, local key is used
-# mysql_apt_key_url: https://url_to_gpg_key
-mysql_apt_suites: '{{ ansible_distribution_release | lower }}'
+# mysql_apt_signed_by: https://url_to_gpg_key
+mysql_apt_suites: '{{ ansible_distribution_release }}'
 mysql_apt_components: 'mysql-{{ mysql_apt_repo_version }}'
 
 mysql_client_packages:

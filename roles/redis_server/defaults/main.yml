@@ -11,7 +11,7 @@ redis_use_redis_io: true
 redis_apt_url: https://packages.redis.io/deb
 redis_apt_suites: '{{ ansible_distribution_release }}'
 redis_apt_components: main
-redis_apt_key_url: https://packages.redis.io/gpg
+redis_apt_signed_by: https://packages.redis.io/gpg
 
 # uncomment it, if you want to set it (redis recommend it)
 # redis_vm_overcommit_memory: 1

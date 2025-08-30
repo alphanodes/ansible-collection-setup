@@ -154,9 +154,9 @@ gitlab_force_reconfigure: false
 
 # https://packages.gitlab.com/gitlab/gitlab-ee/debian/ bookworm main
 gitlab_apt_url: https://packages.gitlab.com/gitlab/gitlab-ee/debian/
-gitlab_apt_suites: '{{ ansible_distribution_release | lower }}'
+gitlab_apt_suites: '{{ ansible_distribution_release }}'
 gitlab_apt_components: main
-gitlab_apt_key_url: https://packages.gitlab.com/gitlab/gitlab-ee/gpgkey
+gitlab_apt_signed_by: https://packages.gitlab.com/gitlab/gitlab-ee/gpgkey
 
 # GitLab default: 400
 gitlab_postgresql_max_connections: "{{ postgresql_max_connections | default(150) }}"

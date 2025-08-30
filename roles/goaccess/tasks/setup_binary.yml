@@ -18,7 +18,7 @@
         types: deb
         suites: '{{ goaccess_apt_suites }}'
         components: '{{ goaccess_apt_components }}'
-        signed_by: '{{ goaccess_apt_key_url }}'
+        signed_by: '{{ goaccess_apt_signed_by }}'
         state: present
       register: goaccess_repo
 

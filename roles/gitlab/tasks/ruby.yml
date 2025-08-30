@@ -31,7 +31,7 @@
         types: deb
         suites: '{{ gitlab_rvm_ruby_apt_suites }}'
         components: '{{ gitlab_rvm_ruby_apt_components }}'
-        signed_by: '{{ gitlab_rvm_ruby_apt_key_url }}'
+        signed_by: '{{ gitlab_rvm_ruby_apt_signed_by }}'
         state: present
       register: rvm_repo
 
