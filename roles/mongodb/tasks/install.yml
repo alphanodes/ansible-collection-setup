@@ -22,7 +22,7 @@
         types: deb
         suites: '{{ mongodb_apt_suites }}'
         components: '{{ mongodb_apt_components }}'
-        signed_by: '{{ mongodb_apt_key_url }}'
+        signed_by: '{{ mongodb_apt_signed_by }}'
         state: present
       register: mongo_repo
 

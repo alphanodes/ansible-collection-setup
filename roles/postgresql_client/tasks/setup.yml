@@ -20,7 +20,7 @@
     types: deb
     suites: '{{ postgresql_apt_suites }}'
     components: '{{ postgresql_apt_components }}'
-    signed_by: '{{ postgresql_apt_key_url }}'
+    signed_by: '{{ postgresql_apt_signed_by }}'
     state: present
   register: postgres_repo
 

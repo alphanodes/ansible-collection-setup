@@ -70,9 +70,9 @@ gitlab_puma_max_threads: "{{ puma_max_threads | default(16) }}"
 gitlab_rvm_ruby: true
 gitlab_rvm_ruby_apt: false
 gitlab_rvm_ruby_apt_url: https://ppa.launchpadcontent.net/rael-gc/rvm/ubuntu
-gitlab_rvm_ruby_apt_suites: '{{ ansible_distribution_release | lower }}'
+gitlab_rvm_ruby_apt_suites: '{{ ansible_distribution_release }}'
 gitlab_rvm_ruby_apt_components: main
-gitlab_rvm_ruby_apt_key_url: https://keyserver.ubuntu.com/pks/lookup?op=get&fingerprint=on&search=0x8094BB14F4E3FBBE
+gitlab_rvm_ruby_apt_signed_by: https://keyserver.ubuntu.com/pks/lookup?op=get&fingerprint=on&search=0x8094BB14F4E3FBBE
 
 gitlab_rvm_ruby_path: '{{ gitlab_home }}/.rvm/wrappers/default'
 # This Version is fixed in .ruby_version

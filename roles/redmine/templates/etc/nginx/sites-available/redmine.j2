@@ -124,9 +124,7 @@ server {
   {% endif %}
 
   {% include 'templates/nginx/location.inc.j2' with context %}
-
   {% include 'templates/nginx/rewrite_lines.inc.j2' with context %}
-
   {% include 'templates/nginx/error_handler.inc.j2' with context %}
 
 {% if not access_protection and active_pghero %}

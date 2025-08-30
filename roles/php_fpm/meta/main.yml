@@ -17,8 +17,10 @@ galaxy_info:
         - noble
     - name: Debian
       versions:
-        - buster
         - bullseye
+        - bookworm
+        - trixie
+
   galaxy_tags:
     - php
     - fpm

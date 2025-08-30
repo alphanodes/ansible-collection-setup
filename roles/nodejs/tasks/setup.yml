@@ -45,7 +45,7 @@
         types: deb
         suites: "{{ nodejs_apt_suites }}"
         components: "{{ nodejs_apt_components }}"
-        signed_by: "{{ nodejs_apt_key_url }}"
+        signed_by: "{{ nodejs_apt_signed_by }}"
         state: present
       register: node_repo
 

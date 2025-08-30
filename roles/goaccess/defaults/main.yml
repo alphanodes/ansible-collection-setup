@@ -5,7 +5,7 @@ goaccess_packages:
   - goaccess
 
 goaccess_apt_url: http://deb.goaccess.io/
-goaccess_apt_key_url: https://deb.goaccess.io/gnugpg.key
+goaccess_apt_signed_by: https://deb.goaccess.io/gnugpg.key
 goaccess_apt_suites: "{{ ansible_distribution_release }}"
 goaccess_apt_components: main
 

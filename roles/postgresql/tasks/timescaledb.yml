@@ -14,7 +14,7 @@
     types: deb
     suites: '{{ postgresql_timescaledb_apt_suites }}'
     components: '{{ postgresql_timescaledb_apt_components }}'
-    signed_by: '{{ postgresql_timescaledb_apt_key_url }}'
+    signed_by: '{{ postgresql_timescaledb_apt_signed_by }}'
     state: present
   register: timescaledb_repo
 

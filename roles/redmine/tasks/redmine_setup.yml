@@ -19,7 +19,7 @@
         types: deb
         suites: '{{ redmine_rvm_apt_suites }}'
         components: '{{ redmine_rvm_apt_components }}'
-        signed_by: '{{ redmine_rvm_apt_key_url }}'
+        signed_by: '{{ redmine_rvm_apt_signed_by }}'
         state: present
       register: rvm_repo
 
