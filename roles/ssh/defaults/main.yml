@@ -11,6 +11,10 @@ ssh_server_password_authentication: false
 ssh_server_challenge_response_authentication: false
 ssh_server_use_pam: true
 
+# see https://manpages.debian.org/testing/manpages-de/sshd_config.5.de.html#LogLevel
+# default: VERBOSE
+ssh_server_log_level: INFO
+
 ssh_server_allow_tcp_forwarding: false
 ssh_server_allow_stream_local_forwarding: false
 
