@@ -9,7 +9,7 @@
   ansible.builtin.apt:
     name: python3-openssl
     state: present
-  when: ssl_certs | length
+  when: ssl_certs | length > 0
 
 - name: Include certs and keys tasks
   ansible.builtin.include_tasks: setup_certs_and_key.yml
@@ -17,7 +17,7 @@
   loop_control:
     loop_var: ssl_cert
   tags: nginx
-  when: ssl_certs | length
+  when: ssl_certs | length > 0
 
 - name: Install custom CA certificates
   tags: nginx

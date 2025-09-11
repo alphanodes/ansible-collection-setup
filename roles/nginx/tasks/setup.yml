@@ -128,7 +128,7 @@
     src: nginx/vcbackups.conf
     dest: /etc/nginx/
     mode: '0644'
-  when: nginx_vcbackups_users | length
+  when: nginx_vcbackups_users | length > 0
 
 - name: Update vcbackups user access
   community.general.htpasswd:
@@ -139,14 +139,14 @@
     group: '{{ nginx_group }}'
     mode: '0640'
   loop: '{{ nginx_vcbackups_users }}'
-  when: nginx_vcbackups_users | length
+  when: nginx_vcbackups_users | length > 0
 
 - name: Install nginx software.conf configuration
   ansible.builtin.copy:
     src: nginx/software.conf
     dest: /etc/nginx/
     mode: '0644'
-  when: nginx_software_users | length
+  when: nginx_software_users | length > 0
 
 - name: Update software user access
   community.general.htpasswd:
@@ -157,7 +157,7 @@
     group: '{{ nginx_group }}'
     mode: '0640'
   loop: '{{ nginx_software_users }}'
-  when: nginx_software_users | length
+  when: nginx_software_users | length > 0
 
 - name: Ensure custom vhosts are enabled
   ansible.builtin.file:
@@ -165,7 +165,7 @@
     dest: /etc/nginx/sites-enabled/{{ item }}.conf
     state: link
   loop: '{{ nginx_custom_vhosts }}'
-  when: nginx_custom_vhosts | length
+  when: nginx_custom_vhosts | length > 0
   notify: Reload nginx
 
 - name: Ensure disabled custom vhosts are removed
@@ -173,7 +173,7 @@
     path: /etc/nginx/sites-enabled/{{ item }}.conf
     state: absent
   loop: '{{ nginx_custom_vhosts }}'
-  when: nginx_custom_vhosts_disabled | length
+  when: nginx_custom_vhosts_disabled | length > 0
   notify: Reload nginx
 
 - name: Setup error_pages directory

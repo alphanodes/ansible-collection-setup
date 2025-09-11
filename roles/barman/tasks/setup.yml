@@ -37,7 +37,7 @@
         {{ lookup('file', 'barman_access/' + server.name + '_id_rsa.pub') }}
         {% endfor %}
     state: present
-  when: barman_db_servers | length
+  when: barman_db_servers | length > 0
 
 - name: Install private ssh key for barman
   ansible.builtin.copy:
@@ -54,7 +54,7 @@
     owner: '{{ barman_user }}'
     group: '{{ barman_group }}'
     mode: '0600'
-  when: barman_db_servers | length
+  when: barman_db_servers | length > 0
 
 - name: SSH server configurations
   ansible.builtin.template:

@@ -6,7 +6,7 @@
 {% for blocked_address in netfilter_blocked_addresses_v6 %}
 -A INPUT -s {{ blocked_address }} -j DROP
 {% endfor %}
-{% if netfilter_honeypot_tcp_ports | length or netfilter_honeypot_udp_ports | length %}
+{% if netfilter_honeypot_tcp_ports | length > 0 or netfilter_honeypot_udp_ports | length > 0 %}
 # Protecting portscans (attacking IP will be removed after 10 minutes)
 -N HONEYPOT
 -A HONEYPOT -m recent --update --seconds 600 --name HONEYPOT --reap --rttl -j DROP

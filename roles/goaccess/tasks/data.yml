@@ -10,11 +10,11 @@
     var: result.stdout_lines
   when:
     - result is defined
-    - result.stdout_lines | length
+    - result.stdout_lines | length > 0
 
 - name: Script errors
   ansible.builtin.debug:
     var: result.stderr_lines
   when:
     - result is defined
-    - result.stderr_lines | length
+    - result.stderr_lines | length > 0

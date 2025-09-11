@@ -7,7 +7,7 @@ default:
 {% if active_delivery_method  == ':sendmail' %}
     sendmail_settings:
       location: {{ redmine_sendmail_settings_location }}
-{% if redmine_sendmail_settings_arguments | length %}
+{% if redmine_sendmail_settings_arguments | length > 0 %}
       arguments:
 {% for sendmail_arg in redmine_sendmail_settings_arguments %}
         - "{{ sendmail_arg }}"
@@ -46,14 +46,14 @@ default:
   active_enterprise_support: true
 {% endif %}
 
-{% if active_system_infos_vars | length %}
+{% if active_system_infos_vars | length > 0 %}
   system_infos_vars:
 {% for info_var in active_system_infos_vars %}
     - {{ info_var }}
 {% endfor %}
 {% endif %}
 
-{% if active_system_infos_bool_vars | length %}
+{% if active_system_infos_bool_vars | length > 0 %}
   system_infos_bool_vars:
 {% for info_bool_var in active_system_infos_bool_vars %}
     - {{ info_bool_var }}

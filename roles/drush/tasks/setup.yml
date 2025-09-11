@@ -12,7 +12,7 @@
     - name: Output of drush
       ansible.builtin.debug:
         var: drush_result
-    #  when: drush_install.stdout_lines | length
+    #  when: drush_install.stdout_lines | length > 0
 
     - name: Update composer packages to latest required version
       ansible.builtin.command: '{{ composer_path }} global update'
@@ -22,7 +22,7 @@
     - name: Output of composer update
       ansible.builtin.debug:
         var: composer_result
-    #  when: composer_result.stdout_lines | length
+    #  when: composer_result.stdout_lines | length > 0
 
 - name: Install drush configuration directory
   ansible.builtin.file:
