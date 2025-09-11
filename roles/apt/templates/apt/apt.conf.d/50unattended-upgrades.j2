@@ -119,7 +119,7 @@ Unattended-Upgrade::Skip-Updates-On-Metered-Connections "false";
 // uninstallable packages at the expense of rarely keeping back packages which
 // could be upgraded or installed.
 // Unattended-Upgrade::Allow-APT-Mark-Fallback "true";
-{% if unattended_upgrade_dpkg_options | length %}
+{% if unattended_upgrade_dpkg_options | length > 0 %}
 
 Dpkg::Options {
 {% for dpkg_option in unattended_upgrade_dpkg_options %}

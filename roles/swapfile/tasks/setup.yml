@@ -88,5 +88,5 @@
 - name: Output swap information
   ansible.builtin.debug:
     var: swapon_info.stdout_lines
-  when: swapon_info.stdout_lines | length
+  when: swapon_info.stdout_lines | length > 0
   changed_when: false

@@ -144,7 +144,7 @@
     - name: Manage private ssh keys and config file
       when:
         - user.private_keys is defined
-        - user.private_keys
+        - user.private_keys | length > 0
       block:
         - name: Setup .ssh/config - home {{ user_home }}
           ansible.builtin.template:

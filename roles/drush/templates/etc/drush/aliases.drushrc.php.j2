@@ -25,6 +25,6 @@ $aliases['{{ item.name }}'] = array(
 );
 {% endfor %}
 
-{% if drupal_instances is defined and drupal_instances | length %}
+{% if drupal_instances is defined and drupal_instances | length > 0 %}
 include 'aliases.drushrc.drupal.php';
 {% endif %}
