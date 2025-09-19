@@ -117,7 +117,9 @@ gitlab_vhost_letsencrypt_trusted_cert: /etc/letsencrypt/live/{{ letsencrypt_defa
 gitlab_email_display_name: Gitlab
 gitlab_email_from: '{{ gitlab_user }}@{{ gitlab_vhost_server }}'
 gitlab_email_reply_to: 'noreply@{{ gitlab_vhost_server }}'
+
 gitlab_default_theme: 2
+gitlab_default_color_mode: 3
 
 gitlab_default_projects_features:
   builds: true

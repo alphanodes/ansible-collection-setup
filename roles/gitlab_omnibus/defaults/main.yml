@@ -18,7 +18,7 @@ gitlab_email_from: 'git@{{ gitlab_vhost_server }}'
 gitlab_email_reply_to: 'noreply@{{ gitlab_vhost_server }}'
 
 gitlab_default_theme: 2
-gitlab_default_color_mode: 1
+gitlab_default_color_mode: 3
 
 gitlab_default_projects_features:
   issues: false

@@ -99,12 +99,14 @@ production: &base
     ##   3 - Neutral
     ##   4 - Blue
     ##   5 - Green
-    ##   6 - Light Indigo
-    ##   7 - Light Blue
-    ##   8 - Light Green
     ##   9 - Red
-    ##   10 - Light Red
     default_theme: {{ gitlab_default_theme }}
+
+    ## Default color mode ID
+    ##   1 - Light
+    ##   2 - Dark
+    ##   3 - Automatic
+    default_color_mode: {{ gitlab_default_color_mode }}
 
     ## Custom html header tags
     # In some cases some custom header tags are needed
