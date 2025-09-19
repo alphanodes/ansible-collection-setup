@@ -32,9 +32,9 @@
   vars:
     client_user: '{{ mysql_user_name }}'
     client_password: '{{ mysql_user_password }}'
-  when: >
-    mysql_user_name != mysql_root_username
-    and (mysql_install_packages | bool or mysql_user_password_update)
+  when:
+    - mysql_user_name != mysql_root_username
+    - mysql_install_packages | bool or mysql_user_password_update
 
 - name: Disallow root login remotely
   ansible.builtin.command: 'mysql -NBe "{{ item }}"'
@@ -53,18 +53,16 @@
   check_mode: false
   when: mysql_install_packages | bool or mysql_root_password_update
 
-# Note: We do not use mysql_user for this operation, as it doesn't always update
-# the root password correctly. See: https://goo.gl/MSOejW
-# Set root password for MySQL >= 5.7.x.
-- name: Update MySQL root password for localhost root account (5.7.x).
-  ansible.builtin.shell: >
-    mysql -u root -NBe
-    "ALTER USER '{{ mysql_root_username }}'@'{{ item }}'
-     IDENTIFIED WITH mysql_native_password BY '{{ mysql_root_password }}'; FLUSH PRIVILEGES;"
-  with_items: "{{ mysql_root_hosts.stdout_lines | default([]) }}"
-  when: >
-    ((mysql_install_packages | bool) or mysql_root_password_update)
-    and ('5.7.' in mysql_cli_version.stdout or '8.0.' in mysql_cli_version.stdout)
+- name: Update MySQL root passwords
+  when: mysql_install_packages | bool or mysql_root_password_update
+  community.mysql.mysql_user:
+    name: "{{ mysql_root_username }}"
+    host: "{{ item | default('localhost') }}"
+    plugin: caching_sha2_password
+    plugin_auth_string: "{{ item.password }}"
+    salt: "{{ [ansible_machine_id, ansible_hostname, 'mysqlroot'] | join | hash('sha1') | truncate(20, true, '') }}"
+  loop: "{{ mysql_root_hosts.stdout_lines | default([]) }}"
+  no_log: true
 
 # Has to be after the root password assignment, for idempotency.
 - name: Copy .my.cnf file with root password credentials.
@@ -90,7 +88,7 @@
     name: ""
     host: "{{ item }}"
     state: absent
-  with_items: "{{ mysql_anonymous_hosts.stdout_lines | default([]) }}"
+  loop: "{{ mysql_anonymous_hosts.stdout_lines | default([]) }}"
 
 - name: Remove MySQL test database.
   community.mysql.mysql_db:

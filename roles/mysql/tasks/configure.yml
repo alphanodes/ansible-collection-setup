@@ -154,7 +154,7 @@
     encoding: "{{ item.encoding | default('utf8') }}"
     state: "{{ item.state | default('present') }}"
     target: "{{ item.target | default(omit) }}"
-  with_items: "{{ mysql_databases }}"
+  loop: "{{ mysql_databases }}"
 
 - name: Update debian-sys-maint mysql account for debian maintenance
   community.mysql.mysql_user:
@@ -179,5 +179,5 @@
     state: "{{ item.state | default('present') }}"
     append_privs: "{{ item.append_privs | default('no') }}"
     encrypted: "{{ item.encrypted | default('no') }}"
-  with_items: "{{ mysql_users }}"
+  loop: "{{ mysql_users }}"
   no_log: true

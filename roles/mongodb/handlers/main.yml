@@ -30,7 +30,7 @@
     host: "{{ item }}"
     port: "{{ mongodb_net_port }}"
     timeout: 120
-  with_items: "{{ mongodb_net_bindip.split(',') | map('replace', '0.0.0.0', '127.0.0.1') | list }}"
+  loop: "{{ mongodb_net_bindip.split(',') | map('replace', '0.0.0.0', '127.0.0.1') | list }}"
 
 - name: Wait when mongodb is started on localhost
   ansible.builtin.wait_for:

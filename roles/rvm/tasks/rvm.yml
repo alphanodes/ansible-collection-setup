@@ -27,7 +27,7 @@
   ansible.builtin.command: 'gpg --batch --keyserver {{ item }} --recv-keys {{ rvm1_gpg_keys }}'
   changed_when: false
   check_mode: false
-  with_items: '{{ rvm1_gpg_key_servers }}'
+  loop: '{{ rvm1_gpg_key_servers }}'
   register: gpg_import
   when: not ansible_check_mode and rvm1_gpg_keys | length > 0 and (gpg_import is undefined or gpg_import.rc != 0)
   ignore_errors: true
@@ -36,13 +36,13 @@
   ansible.builtin.set_fact:
     gpg_imported_from: '{{ item.item }}'
   when: "'rc' in item and item.rc == 0"
-  with_items: "{{ gpg_import.results }}"
+  loop: "{{ gpg_import.results }}"
 
 - name: Import GPG keys from rvm.io, if keyservers failed
   ansible.builtin.shell: >
     set -o pipefail &&
     curl -sSL https://rvm.io/{{ item }} | gpg --batch --import -
-  with_items:
+  loop:
     - mpapis.asc
     - pkuczynski.asc
   when: not ansible_check_mode and rvm1_gpg_keys | length > 0 and gpg_imported_from is undefined

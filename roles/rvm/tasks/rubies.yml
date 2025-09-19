@@ -25,7 +25,7 @@
     {{ rvm1_rvm }} list strings |
     grep {{ item }} |
     tail -n 1
-  with_items: '{{ rvm1_rubies }}'
+  loop: '{{ rvm1_rubies }}'
   changed_when: false
   register: ruby_patch
   # Run in normal mode when in --check mode (http://docs.ansible.com/ansible/playbooks_checkmode.html)
@@ -38,7 +38,7 @@
     if ! grep "^bundler " ; then {{ rvm1_install_path }}/wrappers/{{ item.stdout }}/gem install bundler ; fi
   args:
     creates: '{{ rvm1_install_path }}/wrappers/{{ item.stdout }}/bundler'
-  with_items: '{{ ruby_patch.results }}'
+  loop: '{{ ruby_patch.results }}'
   when: rvm1_bundler_install
   register: bundler_install
   changed_when: '"Successfully installed bundler" in bundler_install.stdout'
@@ -51,7 +51,7 @@
     owner: '{{ root_user }}'
     group: '{{ root_group }}'
   when: not '--user-install' in rvm1_install_flags and rvm1_symlink
-  with_items: '{{ rvm1_symlink_binaries }}'
+  loop: '{{ rvm1_symlink_binaries }}'
 
 - name: Symlink bundler binaries on the system path
   ansible.builtin.file:
@@ -61,7 +61,7 @@
     owner: '{{ root_user }}'
     group: '{{ root_group }}'
   when: not '--user-install' in rvm1_install_flags and rvm1_bundler_install and rvm1_symlink
-  with_items: '{{ rvm1_symlink_bundler_binaries }}'
+  loop: '{{ rvm1_symlink_bundler_binaries }}'
 
 - name: Delete ruby if relevant
   ansible.builtin.command: '{{ rvm1_rvm }} remove {{ rvm1_delete_ruby }}'
