@@ -35,7 +35,7 @@
     - /etc/apt/trusted.gpg.d/nodejs.asc
 
 - name: Update node.js apt source
-  when: nodejs_apt_source_update
+  when: nodejs_apt_source_update | bool
   block:
     # see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/deb822_repository_module.html
     - name: Add nodesource apt repository
@@ -95,4 +95,4 @@
     path: "{{ nodejs_package_json_path }}"
   when:
     - nodejs_package_json_path is defined
-    - nodejs_package_json_path
+    - nodejs_package_json_path | length > 0
