@@ -43,6 +43,7 @@
   changed_when: false
 
 - name: Get list of hosts for the root user.
+  when: mysql_install_packages | bool or mysql_root_password_update
   ansible.builtin.command: mysql -NBe
     "SELECT Host
     FROM mysql.user
@@ -51,31 +52,34 @@
   register: mysql_root_hosts
   changed_when: false
   check_mode: false
-  when: mysql_install_packages | bool or mysql_root_password_update
 
 - name: Update MySQL root passwords
-  when: mysql_install_packages | bool or mysql_root_password_update
+  when:
+    - mysql_root_password is defined
+    - mysql_install_packages | bool or mysql_root_password_update
   community.mysql.mysql_user:
     name: "{{ mysql_root_username }}"
     host: "{{ item | default('localhost') }}"
     plugin: caching_sha2_password
-    plugin_auth_string: "{{ item.password }}"
+    plugin_auth_string: "{{ mysql_root_password | default('') }}"
     salt: "{{ [ansible_machine_id, ansible_hostname, 'mysqlroot'] | join | hash('sha1') | truncate(20, true, '') }}"
   loop: "{{ mysql_root_hosts.stdout_lines | default([]) }}"
   no_log: true
 
 # Has to be after the root password assignment, for idempotency.
 - name: Copy .my.cnf file with root password credentials.
+  when:
+    - mysql_root_password is defined
+    - mysql_install_packages | bool or mysql_root_password_update
+  vars:
+    client_user: '{{ mysql_root_username }}'
+    client_password: "{{ mysql_root_password | default('') }}"
   ansible.builtin.template:
     src: user-my.cnf.j2
     dest: "{{ mysql_root_home }}/.my.cnf"
     owner: root
     group: root
     mode: '0600'
-  vars:
-    client_user: '{{ mysql_root_username }}'
-    client_password: '{{ mysql_root_password }}'
-  when: mysql_install_packages | bool or mysql_root_password_update
 
 - name: Get list of hosts for the anonymous user.
   ansible.builtin.command: mysql -NBe "SELECT Host FROM mysql.user WHERE User = ''"
