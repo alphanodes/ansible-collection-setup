@@ -3,7 +3,9 @@
   community.mysql.mysql_user:
     name: "{{ mysql_replication_user.name }}"
     host: "{{ mysql_replication_user.host | default('%') }}"
-    password: "{{ mysql_replication_user.password }}"
+    plugin: caching_sha2_password
+    plugin_auth_string: "{{ mysql_replication_user.password }}"
+    salt: "{{ [ansible_machine_id, ansible_hostname, 'mysqlreplication'] | join | hash('sha1') | truncate(20, true, '') }}"
     priv: "{{ mysql_replication_user.priv | default('*.*:REPLICATION SLAVE,REPLICATION CLIENT') }}"
     column_case_sensitive: true
     state: present

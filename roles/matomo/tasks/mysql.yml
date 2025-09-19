@@ -8,7 +8,9 @@
 - name: Create matomo mysql user
   community.mysql.mysql_user:
     name: '{{ matomo_db_user }}'
-    password: '{{ matomo_db_password }}'
+    plugin: caching_sha2_password
+    plugin_auth_string: "{{ matomo_db_password }}"
+    salt: "{{ [ansible_machine_id, ansible_hostname, 'matomo'] | join | hash('sha1') | truncate(20, true, '') }}"
     host: '{{ matomo_db_host }}'
     priv: '{{ matomo_db_name }}.*:ALL/*.*:FILE'
     column_case_sensitive: true

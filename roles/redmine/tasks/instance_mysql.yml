@@ -15,7 +15,9 @@
 - name: Create redmine mysql database users - {{ instance_name }}
   community.mysql.mysql_user:
     name: '{{ redmine_db_user }}'
-    password: '{{ instance.db_password | default(redmine_db_password) }}'
+    plugin: caching_sha2_password
+    plugin_auth_string: "{{ instance.db_password | default(redmine_db_password) }}"
+    salt: "{{ [ansible_machine_id, ansible_hostname, 'redmine'] | join | hash('sha1') | truncate(20, true, '') }}"
     host: '{{ active_db_host }}'
     priv: '{{ redmine_db_name }}.*:ALL'
     column_case_sensitive: true
