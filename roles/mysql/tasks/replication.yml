@@ -18,7 +18,7 @@
   community.mysql.mysql_replication:
     mode: getreplica
     login_user: "{{ mysql_root_username }}"
-    login_password: "{{ mysql_root_password }}"
+    login_password: "{{ mysql_root_password | default('') }}"
   ignore_errors: true
   register: slave
   when:
