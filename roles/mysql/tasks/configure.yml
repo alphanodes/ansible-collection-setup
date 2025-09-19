@@ -159,7 +159,9 @@
 - name: Update debian-sys-maint mysql account for debian maintenance
   community.mysql.mysql_user:
     name: debian-sys-maint
-    password: "{{ mysql_server_debian_sys_maint_password }}"
+    plugin: caching_sha2_password
+    plugin_auth_string: "{{ mysql_server_debian_sys_maint_password }}"
+    salt: "{{ [ansible_machine_id, ansible_hostname, 'debian-sys-maint'] | join | hash('sha1') | truncate(20, true, '') }}"
     host: localhost
     priv: '*.*:ALL,GRANT'
     column_case_sensitive: true
@@ -170,7 +172,9 @@
   community.mysql.mysql_user:
     name: "{{ item.name }}"
     host: "{{ item.host | default('localhost') }}"
-    password: "{{ item.password }}"
+    plugin: caching_sha2_password
+    plugin_auth_string: "{{ item.password }}"
+    salt: "{{ [ansible_machine_id, ansible_hostname, 'mysqlusers'] | join | hash('sha1') | truncate(20, true, '') }}"
     priv: "{{ item.priv | default('*.*:USAGE') }}"
     state: "{{ item.state | default('present') }}"
     append_privs: "{{ item.append_privs | default('no') }}"

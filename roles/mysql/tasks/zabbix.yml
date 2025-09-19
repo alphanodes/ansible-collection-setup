@@ -16,7 +16,9 @@
         - name: Create zabbix monitoring mysql user
           community.mysql.mysql_user:
             name: '{{ mysql_zabbix_user }}'
-            password: '{{ mysql_zabbix_password }}'
+            plugin: caching_sha2_password
+            plugin_auth_string: "{{ mysql_zabbix_password }}"
+            salt: "{{ [ansible_machine_id, ansible_hostname, 'zabbix'] | join | hash('sha1') | truncate(20, true, '') }}"
             host: '{{ mysql_zabbix_host }}'
             # USAGE,REPLICATION CLIENT,PROCESS,SHOW DATABASES,SHOW VIEW
             priv: '*.*:SUPER,PROCESS,RELOAD,SELECT'

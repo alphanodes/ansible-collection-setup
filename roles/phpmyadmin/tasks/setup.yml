@@ -38,7 +38,9 @@
 - name: Create phpmyadmin user
   community.mysql.mysql_user:
     name: '{{ phpmyadmin_db_user }}'
-    password: '{{ phpmyadmin_db_password }}'
+    plugin: caching_sha2_password
+    plugin_auth_string: "{{ phpmyadmin_db_password }}"
+    salt: "{{ [ansible_machine_id, ansible_hostname, 'phpmyadmin'] | join | hash('sha1') | truncate(20, true, '') }}"
     host: '{{ phpmyadmin_db_host }}'
     login_host: "{{ phpmyadmin_db_host if phpmyadmin_db_host != 'localhost' else omit }}"
     login_user: "{{ phpmyadmin_db_user if phpmyadmin_db_host != 'localhost' else omit }}"

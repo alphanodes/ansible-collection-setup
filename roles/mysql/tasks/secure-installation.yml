@@ -14,7 +14,9 @@
   community.mysql.mysql_user:
     name: "{{ mysql_user_name }}"
     host: 'localhost'
-    password: "{{ mysql_user_password }}"
+    plugin: caching_sha2_password
+    plugin_auth_string: "{{ mysql_user_password }}"
+    salt: "{{ [ansible_machine_id, ansible_hostname, 'mysqlsecure'] | join | hash('sha1') | truncate(20, true, '') }}"
     priv: '*.*:ALL,GRANT'
     column_case_sensitive: true
     state: present
