@@ -10,7 +10,7 @@
     - matomo_vhost_letsencrypt is defined
     - matomo_vhost_letsencrypt
 
-- name: Check trusted TLS cert - {{ matomo_vhost_ssl_cert }}
+- name: Check trusted TLS cert
   ansible.builtin.stat:
     path: /etc/ssl/certs/{{ matomo_vhost_ssl_cert }}_trusted.crt
   register: trusted_cert
