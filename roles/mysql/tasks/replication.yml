@@ -1,5 +1,5 @@
 ---
-- name: Ensure replication user exists on master.
+- name: Ensure replication user exists on master
   community.mysql.mysql_user:
     name: "{{ mysql_replication_user.name }}"
     host: "{{ mysql_replication_user.host | default('%') }}"
@@ -14,7 +14,7 @@
     - mysql_replication_user.name is defined
     - (mysql_replication_master | length) > 0
 
-- name: Check slave replication status.
+- name: Check slave replication status
   community.mysql.mysql_replication:
     mode: getreplica
     login_user: "{{ mysql_root_username }}"
@@ -25,7 +25,7 @@
     - mysql_replication_role == 'slave'
     - (mysql_replication_master | length) > 0
 
-- name: Check master replication status.
+- name: Check master replication status
   community.mysql.mysql_replication:
     mode: getprimary
   # see https://github.com/ansible/ansible/issues/82264
@@ -37,7 +37,7 @@
     - mysql_replication_role == 'slave'
     - (mysql_replication_master | length) > 0
 
-- name: Configure replication on the slave.
+- name: Configure replication on the slave
   community.mysql.mysql_replication:
     mode: changeprimary
     master_host: "{{ mysql_replication_master }}"
@@ -52,7 +52,7 @@
     - mysql_replication_user.name is defined
     - (mysql_replication_master | length) > 0
 
-- name: Start replication.
+- name: Start replication
   community.mysql.mysql_replication:
     mode: startreplica
   when:

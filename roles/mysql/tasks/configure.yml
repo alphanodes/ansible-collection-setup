@@ -1,11 +1,18 @@
 ---
-- name: Get MySQL version.
-  ansible.builtin.command: 'mysql --version'
-  register: mysql_cli_version
-  changed_when: false
-  check_mode: false
+- name: Get MySQL version
+  block:
+    - name: Run mysql --version
+      ansible.builtin.command: '{{ mysql_daemon }} --version'
+      register: mysql_cli_version
+      changed_when: false
+      check_mode: false
 
-- name: Verify mysql include directories exist.
+    - name: Extract MySQL version
+      ansible.builtin.set_fact:
+        mysql_cli_version: >-
+          {{ (mysql_cli_version.stdout | split(' '))[('mariadb' in (mysql_cli_version.stdout | lower)) | ternary(5, 3)][:-1] }}
+
+- name: Verify mysql include directories exist
   when:
     - mysql_with_includedirs
     - not mysql_remove_unused_includedirs
@@ -19,7 +26,7 @@
     group: root
     mode: '0755'
 
-- name: Copy my.cnf global MySQL configuration.
+- name: Copy my.cnf global MySQL configuration
   ansible.builtin.template:
     src: my.cnf.j2
     dest: "{{ mysql_config_file }}"
@@ -93,7 +100,7 @@
     - /var/log/mysql
     - /var/log/mysql.log
 
-- name: Create slow query log file (if configured).
+- name: Create slow query log file (if configured)
   ansible.builtin.command: "touch {{ mysql_slow_query_log_file }}"
   args:
     creates: "{{ mysql_slow_query_log_file }}"
@@ -107,10 +114,10 @@
     state: directory
     owner: mysql
     group: mysql
-    mode: '0755'
+    mode: '0700'
     setype: mysqld_db_t
 
-- name: Set ownership on slow query log file (if configured).
+- name: Set ownership on slow query log file (if configured)
   ansible.builtin.file:
     path: "{{ mysql_slow_query_log_file }}"
     state: file
@@ -140,14 +147,14 @@
         group: "{{ mysql_log_file_group }}"
         mode: '0640'
 
-- name: Ensure MySQL is started and enabled on boot.
+- name: Ensure MySQL is started and enabled on boot
   ansible.builtin.systemd_service:
     name: "{{ mysql_daemon }}"
     state: started
     enabled: "{{ mysql_enabled_on_startup | bool }}"
   register: mysql_service_configuration
 
-- name: Ensure MySQL databases are present.
+- name: Ensure MySQL databases are present
   community.mysql.mysql_db:
     name: "{{ item.name }}"
     collation: "{{ item.collation | default('utf8_general_ci') }}"
@@ -168,7 +175,7 @@
     state: present
   no_log: true
 
-- name: Ensure MySQL users are present.
+- name: Ensure MySQL users are present
   community.mysql.mysql_user:
     name: "{{ item.name }}"
     host: "{{ item.host | default('localhost') }}"
