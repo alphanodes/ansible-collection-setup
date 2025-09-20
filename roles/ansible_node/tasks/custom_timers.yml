@@ -2,10 +2,10 @@
 
 - name: Add exec_start for playbooks to ansible_node_timers
   ansible.builtin.set_fact:
-    ansible_node_timers: "{{ ansible_node_timers | combine(playbook, recursive=true) }}"
+    ansible_node_timers: "{{ ansible_node_timers | combine({item.key: {'exec_start': exec_start_path}}, recursive=true) }}"
   vars:
-    playbook: "{ '{{ item.key }}': { 'exec_start': '{{ ansible_node_playbook_script }} {{ ansible_node_playbook_dir }}/{{ item.value.playbook }}' } }"
-  with_dict: '{{ ansible_node_timers }}'
+    exec_start_path: "{{ ansible_node_playbook_script }} {{ ansible_node_playbook_dir }}/{{ item.value.playbook }}"
+  with_dict: "{{ ansible_node_timers }}"
 
 - name: Setup systemd timers
   ansible.builtin.include_role:
