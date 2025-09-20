@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ managed_by_ansible | comment }}
 
 [client]
 {% if client_host is defined and client_host != '' %}

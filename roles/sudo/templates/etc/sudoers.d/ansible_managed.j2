@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ managed_by_ansible | comment }}
 {% for sudo_default in sudo_defaults %}
 Defaults{{ sudo_default }}
 {% endfor %}

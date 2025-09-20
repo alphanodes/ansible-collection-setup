@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ managed_by_ansible | comment }}
 
 [Service]
 {% if redis_server_supervised == 'systemd' %}

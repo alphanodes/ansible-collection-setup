@@ -1,5 +1,5 @@
 #!/usr/bin/env puma
-{{ ansible_managed | comment }}
+{{ managed_by_ansible | comment }}
 
 environment '{{ redmine_rails_env }}'
 
