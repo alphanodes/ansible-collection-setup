@@ -13,4 +13,4 @@ mysql_apt_components: 'mysql-{{ mysql_apt_repo_version }}'
 
 mysql_client_packages:
  - mysql-client
- - python3-mysqldb
+ - python3-pymysql
