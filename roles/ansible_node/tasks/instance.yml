@@ -59,7 +59,7 @@
 
     - name: Add exec_start to timer - {{ available_playbook_name }}
       ansible.builtin.set_fact:
-        timer: "{{ timer | combine({'exec_start': '{{ ansible_node_playbook_script }} {{ playbook_filename }}'}) }}"
+        timer: "{{ timer | combine({'exec_start': ansible_node_playbook_script + ' ' + playbook_filename}) }}"
 
     - name: Add env to timer if available - {{ available_playbook_name }}
       ansible.builtin.set_fact:
