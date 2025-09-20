@@ -27,12 +27,6 @@
             state: present
           no_log: true
 
-        # @TODO: this task should be remove, if was run on all hosts
-        - name: Remove obsolete stat user for monitoring
-          community.mysql.mysql_user:
-            name: stat
-            state: absent
-
         - name: MySQL client configuration for zabbix agent
           ansible.builtin.template:
             src: user-my.cnf.j2
