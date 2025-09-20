@@ -1,3 +1,3 @@
-{{ ansible_managed | comment }}
+{{ managed_by_ansible | comment }}
 # svnserve options
 DAEMON_ARGS="--daemon --pid-file {{ svn_server_pid_file }} --root {{ svn_server_repositories }} --log-file {{ svn_server_log_dir }}/svnserve.log"

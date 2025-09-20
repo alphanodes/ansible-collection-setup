@@ -1,5 +1,5 @@
 <?php
-// {{ ansible_managed }}
+// {{ managed_by_ansible }}
 
 {% for instance in drupal_instances %}
 $aliases['{{ instance.name }}'] = array(

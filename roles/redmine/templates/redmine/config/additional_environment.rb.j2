@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ managed_by_ansible | comment }}
 
 # Use a different logger to use syslog
 config.log_level = :{{ instance.log_level | default('warn') }}

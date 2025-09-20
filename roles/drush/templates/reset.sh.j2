@@ -1,5 +1,5 @@
 #!/bin/bash
-{{ ansible_managed | comment }}
+{{ managed_by_ansible | comment }}
 
 echo "Sync database..."
 mysqladmin -f drop {{ drush_reset_script_db }}

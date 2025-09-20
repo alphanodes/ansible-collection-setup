@@ -1,4 +1,4 @@
-{{ ansible_managed | comment }}
+{{ managed_by_ansible | comment }}
 
 {% if ssh_server_include_sshd_config_d %}
 Include /etc/ssh/sshd_config.d/*.conf
