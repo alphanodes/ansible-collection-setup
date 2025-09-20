@@ -16,7 +16,7 @@
   register: trusted_cert
   when:
     - matomo_vhost_ssl_cert is defined
-    - matomo_vhost_ssl_cert | length > 0
+    - matomo_vhost_ssl_cert | default('') | length > 0
 
 - name: Set TLS files
   ansible.builtin.set_fact:
