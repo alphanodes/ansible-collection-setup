@@ -138,7 +138,6 @@ mysql_zabbix_password: '{{ [ansible_machine_id, ansible_hostname, mysql_server_p
 mysql_replication_with_write: false
 mysql_secure_file_priv: ''
 mysql_server_with_local_infile: false
-mysql_secure_mysql_data_dir: true
 
 # use server as multi-source replication slave
 mysql_server_gtid_mode: false

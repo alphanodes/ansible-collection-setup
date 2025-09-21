@@ -1,14 +1,4 @@
 ---
-- name: Secure mysql directories
-  ansible.builtin.file:
-    path: '{{ item }}'
-    mode: '0700'
-    state: directory
-  when: mysql_secure_mysql_data_dir
-  loop:
-    - /var/lib/mysql-files
-    - /var/lib/mysql-keyring
-
 - name: Ensure default user is present
   community.mysql.mysql_user:
     name: "{{ mysql_user_name }}"
