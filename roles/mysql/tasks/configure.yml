@@ -166,7 +166,7 @@
 
 - name: Update debian-sys-maint mysql account for debian maintenance
   community.mysql.mysql_user:
-    login_unix_socket: "{{ mysql_socket }}"
+    login_unix_socket: mysql_socket if mysql_root_plugin == 'auth_socket' or mysql_socket_force else omit }}"
     name: debian-sys-maint
     plugin: caching_sha2_password
     plugin_auth_string: "{{ mysql_server_debian_sys_maint_password }}"
@@ -179,7 +179,7 @@
 
 - name: Ensure MySQL users are present
   community.mysql.mysql_user:
-    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
+    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' or mysql_socket_force else omit }}"
     name: "{{ item.name }}"
     host: "{{ item.host | default('localhost') }}"
     plugin: "{{ item.plugin | default('caching_sha2_password') }}"
