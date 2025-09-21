@@ -10,6 +10,8 @@ mysql_user_password: root
 # The default root user installed by mysql - almost always root
 mysql_root_home: /root
 mysql_root_username: root
+# mysql_root_plugin: caching_sha2_password
+mysql_root_plugin: auth_socket
 # overwrite it, if you want to set it
 # mysql_root_password: ''
 
