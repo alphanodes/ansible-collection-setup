@@ -37,6 +37,8 @@ mysql_sql_mode: ~
 mysql_pid_file: /run/mysqld/mysqld.pid
 mysql_socket: /run/mysqld/mysqld.sock
 
+mysql_socket_force: true
+
 mysql_character_set_server: utf8mb4
 mysql_collation_server: utf8mb4_unicode_ci
 

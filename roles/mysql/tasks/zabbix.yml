@@ -15,7 +15,7 @@
       block:
         - name: Create zabbix monitoring mysql user
           community.mysql.mysql_user:
-            login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
+            login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' or mysql_socket_force else omit }}"
             name: '{{ mysql_zabbix_user }}'
             plugin: caching_sha2_password
             plugin_auth_string: "{{ mysql_zabbix_password }}"
@@ -45,7 +45,7 @@
       block:
         - name: Remove mysql user
           community.mysql.mysql_user:
-            login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
+            login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' or mysql_socket_force else omit }}"
             name: '{{ mysql_zabbix_user }}'
             state: absent
 
