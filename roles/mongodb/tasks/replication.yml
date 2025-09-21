@@ -16,7 +16,7 @@
     votes: "{{ item.votes | default(omit) }}"
     ssl: "{{ True if mongodb_net_ssl_mode == 'requireSSL' else False }}"
   when: mongodb_security_authorization == 'enabled'
-  loop:
+  with_items:
     - "{{ mongodb_replication_params | default([]) }}"
 
 - name: Replication configuration without auth on master
@@ -34,7 +34,7 @@
     ssl: "{{ True if mongodb_net_ssl_mode == 'requireSSL' else False }}"
   when: ( mongodb_security_authorization == 'disabled'
         and mongodb_master is defined and mongodb_master )
-  loop:
+  with_items:
     - "{{ mongodb_replication_params | default([]) }}"
 
 - name: Replication configuration without auth on replicas and arbiters
@@ -52,5 +52,5 @@
     ssl: "{{ True if mongodb_net_ssl_mode == 'requireSSL' else False }}"
   when: ( mongodb_security_authorization == 'disabled'
         and ( mongodb_master is undefined or not mongodb_master) )
-  loop:
+  with_items:
     - "{{ mongodb_replication_params | default([]) }}"
