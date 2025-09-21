@@ -7,6 +7,7 @@
 
 - name: Be sure redmine mysql databases exists - {{ instance_name }}
   community.mysql.mysql_db:
+    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
     name: '{{ redmine_db_name }}'
     collation: utf8_general_ci
     encoding: utf8
@@ -14,6 +15,7 @@
 
 - name: Create redmine mysql database users - {{ instance_name }}
   community.mysql.mysql_user:
+    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
     name: '{{ redmine_db_user }}'
     plugin: caching_sha2_password
     plugin_auth_string: "{{ instance.db_password | default(redmine_db_password) }}"
@@ -26,6 +28,7 @@
 
 - name: Run mysql pre commands - {{ instance_name }}
   community.mysql.mysql_query:
+    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
     login_db: '{{ redmine_db_name }}'
     query: '{{ item }}'
   loop: '{{ instance.pre_db_commands | default([]) }}'

@@ -15,6 +15,7 @@
       block:
         - name: Create zabbix monitoring mysql user
           community.mysql.mysql_user:
+            login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
             name: '{{ mysql_zabbix_user }}'
             plugin: caching_sha2_password
             plugin_auth_string: "{{ mysql_zabbix_password }}"
@@ -25,7 +26,7 @@
             update_password: always
             column_case_sensitive: true
             state: present
-          no_log: true
+          no_log: '{{ hide_sensitive_data }}'
 
         - name: MySQL client configuration for zabbix agent
           ansible.builtin.template:
@@ -44,6 +45,7 @@
       block:
         - name: Remove mysql user
           community.mysql.mysql_user:
+            login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
             name: '{{ mysql_zabbix_user }}'
             state: absent
 

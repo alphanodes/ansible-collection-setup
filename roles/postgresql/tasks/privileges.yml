@@ -10,4 +10,4 @@
     type: "{{ item.type }}"
     grant_option: "{{ item.grant_option | default(omit) }}"
   loop: "{{ postgresql_privileges }}"
-  no_log: false
+  no_log: '{{ hide_sensitive_data }}'
