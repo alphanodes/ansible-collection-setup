@@ -39,7 +39,7 @@
   block:
     - name: Get list of hosts for the root user
       community.mysql.mysql_query:
-        login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
+        login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' or mysql_socket_force else omit }}"
         query: "SELECT Host FROM mysql.user WHERE User = %s ORDER BY Host"
         positional_args:
           - "{{ mysql_root_username }}"
