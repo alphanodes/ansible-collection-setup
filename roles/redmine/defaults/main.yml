@@ -178,6 +178,7 @@ redmine_packages:
   - libssl-dev
   - libsystemd-dev
   - libyaml-dev
+  - libzstd-dev
   - sqlite3
   - subversion
 
