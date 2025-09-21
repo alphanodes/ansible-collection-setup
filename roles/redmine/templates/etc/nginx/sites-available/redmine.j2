@@ -107,12 +107,12 @@ server {
     try_files $uri @puma;
   }
 
-  {% with puma_location="@puma", proxy_pass="http://{{ instance_name | replace('-', '_')}}" -%}
+  {% with puma_location="@puma", proxy_pass=("http://" + (instance_name | replace('-', '_'))) -%}
   {% include "puma.inc.j2" %}
   {% endwith %}
 
   {% if active_agile -%}
-  {% with with_connection_upgrade=true, puma_location="/rcrm_cable_agile", proxy_pass="http://{{ instance_name | replace('-', '_')}}/rcrm_cable_agile" %}
+  {% with with_connection_upgrade=true, puma_location="/rcrm_cable_agile", proxy_pass=("http://" + (instance_name | replace('-', '_')) + "/rcrm_cable_agile") %}
   {% include "puma.inc.j2" %}
   {% endwith %}
   {% endif %}
