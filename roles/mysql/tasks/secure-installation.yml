@@ -45,12 +45,14 @@
       check_mode: false
 
     - name: Update MySQL root password
+      vars:
+        db_salt: "{{ [ansible_machine_id, ansible_hostname, 'mysqlroot'] | join | hash('sha1') | truncate(20, true, '') }}"
       community.mysql.mysql_user:
         name: "{{ mysql_root_username }}"
         host: "{{ item | default('localhost') }}"
         plugin: "{{ mysql_root_plugin if item | string == 'localhost' else 'caching_sha2_password' }}"
         plugin_auth_string: "{{ mysql_root_password | default('') }}"
-        salt: "{{ [ansible_machine_id, ansible_hostname, 'mysqlroot'] | join | hash('sha1') | truncate(20, true, '') }}"
+        salt: "{{ db_salt if item | string != 'localhost' or mysql_root_plugin !== 'auth_socket' else default(omit) }}"
         column_case_sensitive: true
       loop: "{{ mysql_root_hosts.stdout_lines | default([]) }}"
       no_log: true
