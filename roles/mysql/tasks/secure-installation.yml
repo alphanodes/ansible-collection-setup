@@ -1,6 +1,7 @@
 ---
 - name: Ensure default user is present
   community.mysql.mysql_user:
+    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
     name: "{{ mysql_user_name }}"
     host: 'localhost'
     plugin: caching_sha2_password
@@ -36,26 +37,30 @@
     - mysql_root_password is defined
     - mysql_install_packages | bool or mysql_root_password | length > 0 or mysql_root_password_update
   block:
-    - name: Get list of hosts for the root user {{ mysql_install_packages }}
-      ansible.builtin.command: >
-        {{ mysql_daemon }} -NBe
-        "SELECT Host FROM mysql.user WHERE User = '{{ mysql_root_username }}' ORDER BY Host"
-      register: mysql_root_hosts
+    - name: Get list of hosts for the root user
+      community.mysql.mysql_query:
+        login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
+        query: "SELECT Host FROM mysql.user WHERE User = %s ORDER BY Host"
+        positional_args:
+          - "{{ mysql_root_username }}"
+      register: mysql_root_hosts_query
       changed_when: false
       check_mode: false
 
     - name: Update MySQL root password
       vars:
         db_salt: "{{ [ansible_machine_id, ansible_hostname, 'mysqlroot'] | join | hash('sha1') | truncate(20, true, '') }}"
+        with_password: "{{ item.Host | string != 'localhost' or mysql_root_plugin != 'auth_socket' }}"
       community.mysql.mysql_user:
+        login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
         name: "{{ mysql_root_username }}"
-        host: "{{ item | default('localhost') }}"
-        plugin: "{{ mysql_root_plugin if item | string == 'localhost' else 'caching_sha2_password' }}"
-        plugin_auth_string: "{{ mysql_root_password | default('') }}"
-        salt: "{{ db_salt if item | string != 'localhost' or mysql_root_plugin != 'auth_socket' else omit }}"
+        host: "{{ item.Host | default('localhost') }}"
+        plugin: "{{ mysql_root_plugin if item.Host | string == 'localhost' else 'caching_sha2_password' }}"
+        plugin_auth_string: "{{ mysql_root_password | default('') if with_password else omit }}"
+        salt: "{{ db_salt if with_password else omit }}"
         column_case_sensitive: true
-      loop: "{{ mysql_root_hosts.stdout_lines | default([]) }}"
-      no_log: true
+      loop: "{{ mysql_root_hosts_query.query_result[0] | default([]) }}"
+      no_log: '{{ hide_sensitive_data }}'
 
     # Has to be after the root password assignment, for idempotency.
     - name: Copy .my.cnf file with root password credentials
@@ -77,20 +82,23 @@
         state: absent
 
 - name: Get list of hosts for the anonymous user
-  ansible.builtin.command: >
-    {{ mysql_daemon }} -NBe "SELECT Host FROM mysql.user WHERE User = ''"
-  register: mysql_anonymous_hosts
+  community.mysql.mysql_query:
+    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
+    query: "SELECT Host FROM mysql.user WHERE User = ''"
+  register: mysql_anonymous_hosts_query
   changed_when: false
   check_mode: false
 
 - name: Remove anonymous MySQL users
   community.mysql.mysql_user:
+    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
     name: ""
-    host: "{{ item }}"
+    host: "{{ item.Host }}"
     state: absent
-  loop: "{{ mysql_anonymous_hosts.stdout_lines | default([]) }}"
+  loop: "{{ mysql_anonymous_hosts_query.query_result[0] | default([]) }}"
 
 - name: Remove MySQL test database
   community.mysql.mysql_db:
+    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
     name: 'test'
     state: absent

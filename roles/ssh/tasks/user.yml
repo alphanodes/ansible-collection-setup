@@ -37,7 +37,7 @@
         home: '{{ user.home | default(omit) }}'
         shell: "{{ user.shell | default('/bin/bash') }}"
         comment: '{{ user.comment | default(omit) }}'
-      no_log: false
+      no_log: '{{ hide_sensitive_data }}'
       when: user.active is undefined or user.active
 
     - name: Disable user accounts - {{ user.name }}
@@ -66,7 +66,7 @@
         update_password: on_create
         state: present
       register: user_infos
-      no_log: true
+      no_log: '{{ hide_sensitive_data }}'
       when: user.name != 'root'
 
     - name: Set home directory for non-root - {{ user.name }}

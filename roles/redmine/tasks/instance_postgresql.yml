@@ -13,7 +13,7 @@
     password: '{{ instance.db_password | default(redmine_db_password) }}'
     role_attr_flags: "{{ instance.rb_role_flags | default('NOSUPERUSER,CREATEDB') }}"
     state: present
-  no_log: true
+  no_log: '{{ hide_sensitive_data }}'
   when: instance.db_skip_user_setup is undefined or not instance.db_skip_user_setup
 
 - name: Be sure redmine postgresql databases exists - {{ instance_name }}

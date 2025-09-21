@@ -12,7 +12,7 @@
     password: '{{ dendrite_db_password }}'
     role_attr_flags: "{{ dendrite_db_role_flags | default('CREATEDB') }}"
     state: present
-  no_log: true
+  no_log: '{{ hide_sensitive_data }}'
 
 - name: Be sure plpgsql extension exists
   become_user: postgres

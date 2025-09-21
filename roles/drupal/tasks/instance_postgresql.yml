@@ -12,7 +12,7 @@
     name: '{{ instance.db_user | default(instance.name) | replace("-", "_") }}'
     password: "{{ instance.db_password }}"
     role_attr_flags: "{{ instance.db_role_flags | default('NOSUPERUSER,CREATEDB') }}"
-  # no_log: true
+  no_log: '{{ hide_sensitive_data }}'
   when: instance.db_skip_user_setup is undefined or not instance.db_skip_user_setup
 
 - name: Ensure postgreSQL drupal database is present - {{ instance.name }}

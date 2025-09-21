@@ -7,6 +7,7 @@
 
 - name: Be sure drupal databases exists - {{ instance.name }}
   community.mysql.mysql_db:
+    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
     name: '{{ instance.db_name | default(instance.name) | replace("-", "_") }}'
     collation: utf8_general_ci
     encoding: utf8
@@ -15,6 +16,7 @@
 
 - name: Create drupal database users - {{ instance.name }}
   community.mysql.mysql_user:
+    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
     name: '{{ instance.db_user | default(instance.name) | replace("-", "_") }}'
     plugin: caching_sha2_password
     plugin_auth_string: "{{ instance.db_password | default(drupal_db_password) }}"

@@ -11,7 +11,7 @@
     password: '{{ nextcloud_db_password }}'
     role_attr_flags: '{{ nextcloud_db_role_flags }}'
     state: present
-  no_log: true
+  no_log: '{{ hide_sensitive_data }}'
 
 - name: Be sure nextcloud postgresql databases exists
   become_user: postgres

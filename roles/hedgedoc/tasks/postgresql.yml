@@ -8,7 +8,7 @@
     password: '{{ hedgedoc_db_password }}'
     role_attr_flags: '{{ hedgedoc_db_role_flags | default(omit) }}'
     state: present
-  no_log: true
+  no_log: '{{ hide_sensitive_data }}'
 
 - name: Be sure hedgedoc postgresql databases exists
   become_user: postgres

@@ -2,11 +2,13 @@
 
 - name: Be sure matomo database exists
   community.mysql.mysql_db:
+    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
     name: '{{ matomo_db_name }}'
     state: present
 
 - name: Create matomo mysql user
   community.mysql.mysql_user:
+    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
     name: '{{ matomo_db_user }}'
     plugin: caching_sha2_password
     plugin_auth_string: "{{ matomo_db_password }}"
