@@ -179,8 +179,8 @@
   community.mysql.mysql_user:
     name: "{{ item.name }}"
     host: "{{ item.host | default('localhost') }}"
-    plugin: caching_sha2_password
-    plugin_auth_string: "{{ item.password }}"
+    plugin: "{{ item.plugin | default('caching_sha2_password') }}"
+    plugin_auth_string: "{{ item.plugin_auth_string | default(item.password) }}"
     salt: "{{ [ansible_machine_id, ansible_hostname, 'mysqlusers'] | join | hash('sha1') | truncate(20, true, '') }}"
     priv: "{{ item.priv | default('*.*:USAGE') }}"
     state: "{{ item.state | default('present') }}"
