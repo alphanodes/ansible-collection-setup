@@ -29,8 +29,8 @@ mysql_socket: /run/mysqld/mysqld.sock
 # Nginx Template Variables
 # These can be used in any role that depends on alphanodes.setup.common
 
+# Creates default server blocks that redirect all traffic to the main instance
 nginx_template_default_host_redirect: |
-  # Default host redirect
   server {
     listen 80 default_server;
   {% if nginx_with_ipv6 %}
@@ -53,8 +53,8 @@ nginx_template_default_host_redirect: |
   }
   {% endif %}
 
+# Static error pages for 403 and 502 errors
 nginx_template_error_handler_static: |
-  # Error handler static
   error_page 403 /403.html;
   location = /403.html {
     root {{ nginx_error_pages_path }};
@@ -64,8 +64,8 @@ nginx_template_error_handler_static: |
     root {{ nginx_error_pages_path }};
   }
 
+# Complex error handling with multi-language support and custom 404 pages
 nginx_template_error_handler: |
-  # Error handler
   {% if instance.error_404_page is defined -%}
     {% if instance.error_404_multi_root is defined -%}
       error_page 404 {{ instance.error_404_page }};
@@ -107,8 +107,8 @@ nginx_template_error_handler: |
     root {{ nginx_error_pages_path }};
   }
 
+# External redirect server blocks for additional domains
 nginx_template_external_redirects: |
-  # External redirects for {{ instance_name | default(instance.name) }}
   {% for ex in instance.external_redirects %}
   server {
     server_name {{ ex.server_name | join(' ') }};
@@ -127,8 +127,8 @@ nginx_template_external_redirects: |
   }
   {% endfor %}
 
+# PHP-FMP location block with security restrictions
 nginx_template_fpm_location: |
-  # php-fpm configuration
   location ~ \.php$ {
   {{ nginx_template_fpm | indent(4) }}
   }
@@ -136,6 +136,7 @@ nginx_template_fpm_location: |
     deny all;
   }
 
+# FastCGI configuration for PHP processing
 nginx_template_fpm: |
   fastcgi_split_path_info ^(.+\.php)(/.+)$;
   include fastcgi_params;
@@ -146,11 +147,13 @@ nginx_template_fpm: |
   fastcgi_send_timeout {{ nginx_fastcgi_send_timeout | default(60) }};
   fastcgi_pass unix:{{ php_fpm_base + '-' + instance.with_fpm + '.sock' if instance is defined and instance.with_fpm is defined and instance.with_fpm != 'www' else php_fpm_custom_listen | default(php_fpm_listen) }};
 
+# HTTP/2 configuration for Debian 13+
 nginx_template_http2: |
   {% if ansible_distribution == 'Debian' and ansible_distribution_major_version == '13' %}
   http2 on;
   {% endif %}
 
+# Standard locations for favicon, robots.txt, and custom instance locations
 nginx_template_location: |
   location = /favicon.ico {
     log_not_found off;
@@ -191,8 +194,8 @@ nginx_template_location: |
   {% endfor %}
   {% endif %}
 
+# Zabbix monitoring server block
 nginx_template_monitoring: |
-  # Server monitoring
   server {
     listen 80;
   {% if nginx_with_ipv6 %}
@@ -202,8 +205,8 @@ nginx_template_monitoring: |
     include {{ zabbix_addons_dir }}/conf/nginx-server-status.conf;
   }
 
+# Port redirect server (HTTP to HTTPS or vice versa)
 nginx_template_port_redirect: |
-  # Port redirect for {{ instance.server_name if instance.server_name is defined else 'default host' }}
   server {
   {% if instance.server_port == 443 %}
     listen 80;
@@ -226,18 +229,17 @@ nginx_template_port_redirect: |
     return 301 {{ 'https' if instance.server_port == 443 else 'http' }}://$host$request_uri;
   }
 
+# Protection against bad bots and unwanted requests
 nginx_template_protection: |
-  # Deny access based on the User-Agent header
   if ($bad_bot) {
     return 444;
   }
-  # Block unwanted url requests
   if ($bad_locations) {
     return 404;
   }
 
+# Redirect server blocks for alternative domains
 nginx_template_redirects: |
-  # Redirects for {{ instance_name | default(instance.name) }}
   server {
     server_name {{ instance.redirects | join(' ') }};
     listen 80;
@@ -266,6 +268,7 @@ nginx_template_redirects: |
   {% endif %}
   }
 
+# Dynamic rewrite rules from instance configuration
 nginx_template_rewrite_lines: |
   {% if instance.rewrite_lines is defined %}
   {% for rewrite_line in instance.rewrite_lines %}
@@ -273,24 +276,13 @@ nginx_template_rewrite_lines: |
   {% endfor %}
   {% endif %}
 
+# Security headers for XSS protection and clickjacking prevention
 nginx_template_security_headers: |
-  ## Enable clickjacking protection in modern browsers. Available in
-  ## IE8 also. See
-  ## https://developer.mozilla.org/en/The_X-FRAME-OPTIONS_response_header
   add_header X-Frame-Options "SAMEORIGIN";
-  # when serving user-supplied content, include a X-Content-Type-Options: nosniff header along with the Content-Type: header,
-  # to disable content-type sniffing on some browsers.
-  # https://www.owasp.org/index.php/List_of_useful_HTTP_headers
-  # currently suppoorted in IE > 8 http://blogs.msdn.com/b/ie/archive/2008/09/02/ie8-security-part-vi-beta-2-update.aspx
-  # http://msdn.microsoft.com/en-us/library/ie/gg622941(v=vs.85).aspx
-  # 'soon' on Firefox https://bugzilla.mozilla.org/show_bug.cgi?id=471020
   add_header X-Content-Type-Options nosniff;
-  # This header enables the Cross-site scripting (XSS) filter built into most recent web browsers.
-  # It's usually enabled by default anyway, so the role of this header is to re-enable the filter for
-  # this particular website if it was disabled by the user.
-  # https://www.owasp.org/index.php/List_of_useful_HTTP_headers
   add_header X-XSS-Protection "1; mode=block";
 
+# SSL certificate configuration with Let's Encrypt or custom certificates
 nginx_template_ssl: |
   {% if instance is defined and instance.letsencrypt is defined and instance.letsencrypt or force_letsencrypt is defined and force_letsencrypt %}
   ssl_certificate {{ instance.letsencrypt_cert | default(vhost_letsencrypt_cert) }};
