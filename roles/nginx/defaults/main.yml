@@ -76,7 +76,6 @@ nginx_ssl_prefer_server_ciphers: false
 nginx_ssl_session_cache: 'shared:SSL:10m'
 nginx_ssl_session_timeout: '1d'
 
-nginx_hotlinking_valid_referers: '*.google.de *.google.com alphanodes.com *.alphanodes.com'
 nginx_custom_vhosts: []
 nginx_custom_vhosts_disabled: []
 
