@@ -23,18 +23,18 @@ server {
   proxy_read_timeout         600;
 
   location /.well-known/matrix/server {
-      default_type application/json;
-      return 200 '{ "m.server": "{{ dendrite_server_name }}:443" }';
+    default_type application/json;
+    return 200 '{ "m.server": "{{ dendrite_server_name }}:443" }';
   }
 
   location /.well-known/matrix/client {
-      default_type application/json;
-      add_header "Access-Control-Allow-Origin" *;
-      return 200 '{ "m.homeserver": { "base_url": "https://{{ dendrite_server_name }}" } }';
+    default_type application/json;
+    add_header "Access-Control-Allow-Origin" *;
+    return 200 '{ "m.homeserver": { "base_url": "https://{{ dendrite_server_name }}" } }';
   }
 
   location /_matrix {
-      proxy_pass http://dendrite;
+    proxy_pass http://dendrite;
   }
 
   {% include 'templates/nginx/error_handler_static.inc.j2' with context %}
