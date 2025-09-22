@@ -67,27 +67,14 @@ nginx_template_error_handler_static: |
 # Complex error handling with multi-language support and custom 404 pages
 nginx_template_error_handler: |
   {% if instance.error_404_page is defined -%}
-    {% if instance.error_404_multi_root is defined -%}
-      error_page 404 {{ instance.error_404_page }};
-      location {{ instance.error_404_page }} {
-      # redirect server error pages to the static page with multi language support
-      root {{ instance.dir | default(srv_path + "/" + instance_name) | default(srv_path + "/" + instance.name) }}/{{ instance.error_404_multi_root }};
-      set $error404 /404.html;
-      if ($request_uri ~ ^/de/(.+)) {
-        set $error404 /404_de.html;
-      }
-      rewrite ^(.*)$ $error404 break;
+  error_page 404 {{ instance.error_404_page }};
+  location {{ instance.error_404_page }} {
+    set $error404 /404.html;
+    if ($request_uri ~ ^/de/(.+)) {
+      set $error404 /de/404.html;
     }
-    {% else %}
-      error_page 404 {{ instance.error_404_page }};
-      location {{ instance.error_404_page }} {
-      set $error404 /404.html;
-      if ($request_uri ~ ^/de/(.+)) {
-        set $error404 /de/404.html;
-      }
-      rewrite ^(.*)$ $error404 break;
+    rewrite ^(.*)$ $error404 break;
     }
-    {% endif %}
   {% else %}
   {% if instance.error_404_enabled is defined and instance.error_404_enabled -%}
   error_page 404 /404.html;
