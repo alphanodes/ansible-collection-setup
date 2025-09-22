@@ -40,6 +40,8 @@ nginx_in_ssl_group: false
 nginx_with_ssl: true
 nginx_with_ssl_stapling: false
 
+nginx_ssl_listen_option: "ssl{{ ' http2' if ansible_distribution != 'Debian' or ansible_distribution_major_version != '13' else '' }}"
+
 nginx_with_reuseport: false
 nginx_with_http3: false
 

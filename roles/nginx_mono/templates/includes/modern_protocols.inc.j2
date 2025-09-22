@@ -1,0 +1,8 @@
+{% if ansible_distribution == 'Debian' and ansible_distribution_major_version == '13' %}
+  http2 on;
+{% if nginx_with_http3 %}
+  http3 on;
+  quic_gso on;
+  ssl_early_data on;
+{% endif %}
+{% endif %}

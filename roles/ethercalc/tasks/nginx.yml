@@ -1,26 +1,6 @@
 ---
 
-# restart required, because file can be not available before
-- name: Protect ethercalc vhost user
-  community.general.htpasswd:
-    path: /etc/nginx/.htpasswd_ethercalc
-    name: '{{ item.user }}'
-    password: '{{ item.password }}'
-    owner: root
-    group: '{{ nginx_group }}'
-    mode: '0640'
-  loop: '{{ ethercalc_vhost_users | default([]) }}'
-  when:
-    - ethercalc_vhost_users is defined
-    - ethercalc_vhost_users | length > 0
-  notify: Restart nginx
-
-- name: Remove .htpasswd_ethercalc, if no base auth is in use
-  ansible.builtin.file:
-    path: /etc/nginx/.htpasswd_ethercalc
-    state: absent
-  when: ethercalc_vhost_users | length < 1
-  notify: Restart nginx
+# Basic Auth handled by nginx_mono service.yml
 
 - name: Enable block
   when: ethercalc_enabled
@@ -47,21 +27,24 @@
         vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
       when: ethercalc_vhost_letsencrypt is undefined or not ethercalc_vhost_letsencrypt
 
-    - name: Update ethercalc vhost configuration
+    - name: Configure ethercalc nginx vhost via nginx_mono
       tags: nginx
-      ansible.builtin.template:
-        src: vhost.j2
-        dest: /etc/nginx/sites-available/ethercalc.conf
-        mode: '0644'
-      notify: Reload nginx
-
-    - name: Enable ethercalc vhost
-      tags: nginx
-      ansible.builtin.file:
-        src: /etc/nginx/sites-available/ethercalc.conf
-        dest: /etc/nginx/sites-enabled/ethercalc.conf
-        state: link
-      notify: Reload nginx
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+        tasks_from: service
+      vars:
+        nginx_mono_service_name: ethercalc
+        nginx_mono_service_enabled: "{{ ethercalc_enabled }}"
+        nginx_mono_service_config:
+          server_name: "{{ ethercalc_vhost_server }}"
+          root: "{{ ethercalc_path }}"
+          index: "index.html"
+          proxy_pass: "http://{{ ethercalc_ip }}:{{ ethercalc_port }}"
+          proxy_location: "/"
+          proxy_websocket: true
+          vhost_users: "{{ ethercalc_vhost_users | default([]) }}"
+          vhost_for_zabbix: "{{ ethercalc_vhost_for_zabbix | default(false) }}"
+          letsencrypt: "{{ ethercalc_vhost_letsencrypt | default(false) }}"
 
 - name: Disable block
   when: not ethercalc_enabled

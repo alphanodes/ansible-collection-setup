@@ -1,0 +1,9 @@
+
+  fastcgi_split_path_info ^(.+\.php)(/.+)$;
+  include fastcgi_params;
+  fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+  fastcgi_param SERVER_NAME $host;
+  fastcgi_intercept_errors on;
+  fastcgi_read_timeout {{ nginx_fastcgi_read_timeout | default(60) }};
+  fastcgi_send_timeout {{ nginx_fastcgi_send_timeout | default(60) }};
+  fastcgi_pass unix:{{ php_fpm_base + '-' + instance.with_fpm + '.sock' if instance is defined and instance.with_fpm is defined and instance.with_fpm != 'www' else php_fpm_custom_listen | default(php_fpm_listen) }};

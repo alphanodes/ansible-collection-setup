@@ -1,0 +1,56 @@
+---
+# nginx_mono service configuration tasks
+# This file handles individual service integration
+
+- name: Set service-specific variables
+  ansible.builtin.set_fact:
+    nginx_mono_instance: "{{ nginx_mono_instance_defaults | combine(nginx_mono_service_config | default({})) }}"
+
+- name: Setup Basic Auth for service
+  community.general.htpasswd:
+    path: "/etc/nginx/.htpasswd_{{ nginx_mono_service_name }}"
+    name: '{{ item.user }}'
+    password: '{{ item.password }}'
+    owner: root
+    group: '{{ nginx_group }}'
+    mode: '0640'
+  loop: '{{ nginx_mono_instance.vhost_users | default([]) }}'
+  when:
+    - nginx_mono_instance.vhost_users is defined
+    - nginx_mono_instance.vhost_users | length > 0
+  notify: Restart nginx
+
+- name: Remove Basic Auth file if not used
+  ansible.builtin.file:
+    path: "/etc/nginx/.htpasswd_{{ nginx_mono_service_name }}"
+    state: absent
+  when:
+    - nginx_mono_instance.vhost_users is undefined or nginx_mono_instance.vhost_users | length < 1
+  notify: Restart nginx
+
+- name: Create service vhost configuration
+  tags: nginx
+  ansible.builtin.template:
+    src: vhost.j2
+    dest: "/etc/nginx/sites-available/{{ nginx_mono_service_name }}.conf"
+    mode: '0644'
+  vars:
+    instance: "{{ nginx_mono_instance }}"
+  notify: Reload nginx
+
+- name: Enable service vhost
+  tags: nginx
+  ansible.builtin.file:
+    src: "/etc/nginx/sites-available/{{ nginx_mono_service_name }}.conf"
+    dest: "/etc/nginx/sites-enabled/{{ nginx_mono_service_name }}.conf"
+    state: link
+  notify: Reload nginx
+  when: nginx_mono_service_enabled | default(true)
+
+- name: Disable service vhost
+  tags: nginx
+  ansible.builtin.file:
+    path: "/etc/nginx/sites-enabled/{{ nginx_mono_service_name }}.conf"
+    state: absent
+  notify: Reload nginx
+  when: not (nginx_mono_service_enabled | default(true))

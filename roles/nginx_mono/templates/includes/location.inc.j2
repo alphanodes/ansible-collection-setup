@@ -1,0 +1,43 @@
+
+  location = /favicon.ico {
+    log_not_found off;
+    access_log off;
+  }
+{% if instance is defined and instance.use_robots_txt_from_redmine is undefined or not instance.use_robots_txt_from_redmine %}
+
+  location = /robots.txt {
+    log_not_found off;
+    access_log off;
+  }
+{% endif %}
+
+  location = /humans.txt {
+    log_not_found off;
+    access_log off;
+  }
+
+  location ~* ^/(apple\-touch\-icon\.png|apple\-touch\-icon\-precomposed\.png) {
+    log_not_found off;
+    access_log off;
+  }
+{% if instance.locations is defined %}
+{% for location in instance.locations %}
+
+  location {{ location.name }} {
+{% if location.rewrite is defined %}
+    rewrite {{ location.rewrite }} permanent;
+{% endif %}
+{% if location.action is defined %}
+    {{ location.action }};
+{% endif %}
+{% if location.actions is defined %}
+{% for action in location.actions %}
+    {{ action }};
+{% endfor %}
+{% endif %}
+{% if location.return is defined %}
+    return {{ location.return }};
+{% endif %}
+  }
+{% endfor %}
+{% endif %}

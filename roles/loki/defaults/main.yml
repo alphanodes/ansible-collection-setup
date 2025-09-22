@@ -1,0 +1,75 @@
+---
+
+# Reset all data
+#
+# systemctl stop loki
+# rm -rf /var/lib/loki/*
+# rm -rf /tmp/loki/*
+# systemctl start loki
+
+loki_packages:
+  - loki
+
+loki_auth_enabled: false
+loki_data_dir: /var/lib/loki
+
+loki_http_listen_port: 3100
+loki_grpc_listen_port: 9096
+loki_log_level: info
+loki_grpc_server_max_concurrent_streams: 1000
+
+loki_instance_addr: 127.0.0.1
+
+loki_schema_from: '2025-01-01'
+loki_schema_store: tsdb
+loki_schema_object_store: filesystem
+loki_schema_schema: v13
+loki_schema_index_prefix: index_
+loki_schema_index_period: 24h
+
+loki_pattern_ingester_enabled: true
+loki_pattern_ingester_loki_address: localhost:3100
+
+# loki_storage_config_boltdb_shipper_shared_store: filesystem
+
+# loki_ruler_alertmanager_url: http://localhost:9093
+loki_frontend_encoding: protobuf
+loki_limits_metric_aggregation_enabled: true
+loki_limits_reject_old_samples: false
+loki_limits_reject_old_samples_max_age: "24h"
+# 3 Monate (90 Tage * 24h)
+loki_limits_retention_period: "2160h"
+
+loki_compactor_working_directory: /var/lib/loki/compactor
+loki_compactor_compaction_interval: 10m
+loki_compactor_retention_enabled: true
+loki_compactor_retention_delete_delay: 2h
+loki_compactor_retention_delete_worker_count: 150
+
+# see https://github.com/grafana/loki/blob/main/pkg/analytics/stats.go
+loki_reporting_enabled: false
+
+loki_remove: false
+
+loki_vhost_server: loki.local
+loki_vhost_location: /
+
+loki_vhost_letsencrypt: false
+loki_vhost_ssl_cert: '{{ ssl_certs[0].name | default(omit) }}'
+loki_vhost_letsencrypt_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/fullchain.pem
+loki_vhost_letsencrypt_key: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/privkey.pem
+loki_vhost_letsencrypt_trusted_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/chain.pem
+loki_vhost_for_zabbix: false
+
+# required!
+loki_web_user: shipper
+# required!
+loki_web_password: 'top_secret_but_change_it'
+
+# optional
+# loki_customer_web_user: customer
+# loki_customer_web_password: 'top_secret_too_but_change_it'
+
+loki_with_test: false
+loki_test_url: "https://{{ loki_vhost_server }}"
+loki_test_job: "ansible-test"

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>502 Service</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="description" content="Improvement in professional development through the introduction of important methods, open source software and monitoring." />
+  <meta name="robots" content="noarchive" />
+  <style>
+    * {
+        transition: all 0.6s;
+    }
+
+    html {
+        height: 100%;
+    }
+
+    body {
+        font-family: 'Lato', sans-serif;
+        color: #006400;
+        margin: 0;
+    }
+
+    #main {
+        display: table;
+        width: 100%;
+        height: 100vh;
+        text-align: center;
+    }
+
+    .fof {
+        display: table-cell;
+        vertical-align: middle;
+    }
+
+    .fof h1 {
+        font-size: 40px;
+        display: inline-block;
+        padding-right: 12px;
+        animation: type .5s alternate infinite;
+    }
+
+    .icon {
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      stroke-width: 0;
+      stroke: currentColor;
+      fill: currentColor;
+    }
+
+    .info {
+      font-size: 20px;
+    }
+
+    @keyframes type {
+        from{box-shadow: inset -3px 0px 0px #888;}
+        to{box-shadow: inset -3px 0px 0px transparent;}
+    }
+  </style>
+</head>
+
+<body>
+  <svg style="position: absolute; width: 0; height: 0; overflow: hidden" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <defs>
+      <symbol id="icon-wrench" viewBox="0 0 48 48">
+        <path d="M47.013 38.338l-21.588-18.504c1.005-1.889 1.576-4.044 1.576-6.334 0-7.456-6.044-13.5-13.5-13.5-1.364 0-2.68 0.203-3.921 0.579l7.8 7.8c1.167 1.167 1.167 3.076 0 4.243l-4.757 4.757c-1.167 1.167-3.076 1.167-4.243 0l-7.8-7.8c-0.376 1.241-0.579 2.557-0.579 3.921 0 7.456 6.044 13.5 13.5 13.5 2.289 0 4.445-0.57 6.334-1.576l18.504 21.588c1.074 1.253 2.907 1.323 4.074 0.156l4.757-4.757c1.167-1.167 1.096-3-0.156-4.074z"></path>
+      </symbol>
+    </defs>
+  </svg>
+
+  <div id="main">
+    <div class="fof">
+      <h1>
+        <svg class="icon icon-wrench"><use xlink:href="#icon-wrench"></use></svg>
+        Maintenance mode / Wartungsarbeiten
+      </h1>
+      <p class="info">
+        We are back again, shortly. / Wir sind bald wieder für Sie da.
+      </p>
+    </div>
+  </div>
+</body>
+</html>

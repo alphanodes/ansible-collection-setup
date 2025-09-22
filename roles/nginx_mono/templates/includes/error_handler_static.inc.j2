@@ -1,0 +1,10 @@
+
+  # Error handler static
+  error_page 403 /403.html;
+  location = /403.html {
+    root {{ nginx_error_pages_path }};
+  }
+  error_page 502 /502.html;
+  location = /502.html {
+    root {{ nginx_error_pages_path }};
+  }

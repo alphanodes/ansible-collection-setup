@@ -1,0 +1,54 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+
+    - name: Add python3-debian for deb822 support
+      ansible.builtin.apt:
+        name: python3-debian
+        state: present
+
+    - name: Install required packages for nginx and nodejs
+      ansible.builtin.apt:
+        name:
+          - curl
+          - git
+          - redis-server
+        state: present
+
+  vars:
+    # nodejs configuration (fix for Docker container)
+    nodejs_install_npm_user: root
+    npm_config_prefix: /root/.npm-global
+    npm_config_unsafe_perm: "true"
+
+    # nginx_mono configuration
+    nginx_with_ssl: false  # Disable SSL for testing
+    nginx_with_ipv6: false
+    nginx_force_ssl: false
+    nginx_resolver: ['8.8.8.8', '8.8.4.4']  # Fix undefined hoster variable
+    hoster: 'local'  # Define hoster for testing
+
+    # ethercalc configuration
+    ethercalc_enabled: true
+    ethercalc_vhost_server: test.local
+    ethercalc_ip: 127.0.0.1
+    ethercalc_port: 8000
+    ethercalc_redis_enabled: true
+    ethercalc_vhost_users: []  # No auth for testing
+    ethercalc_vhost_for_zabbix: false
+    ethercalc_vhost_letsencrypt: false
+
+    # No SSL certs needed for testing
+    ssl_certs: []
+
+  roles:
+    - role: alphanodes.setup.nodejs
+    - role: alphanodes.setup.nginx_mono
+    - role: alphanodes.setup.ethercalc

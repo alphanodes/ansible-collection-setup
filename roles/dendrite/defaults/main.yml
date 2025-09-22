@@ -9,7 +9,7 @@
 
 dendrite_repository: https://github.com/matrix-org/dendrite.git
 dendrite_version: 'v0.13.8'
-dendrite_force_rebuild: true
+dendrite_force_rebuild: false
 
 dendrite_required_packages: []
 
