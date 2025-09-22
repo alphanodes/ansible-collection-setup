@@ -40,7 +40,7 @@
     ethercalc_vhost_server: test.local
     ethercalc_ip: 127.0.0.1
     ethercalc_port: 8000
-    ethercalc_redis_enabled: true
+    ethercalc_redis_enabled: false  # Disable Redis for testing
     ethercalc_vhost_users: []  # No auth for testing
     ethercalc_vhost_for_zabbix: false
     ethercalc_vhost_letsencrypt: false
@@ -49,6 +49,18 @@
     ssl_certs: []
 
   roles:
-    - role: alphanodes.setup.nodejs
     - role: alphanodes.setup.nginx_mono
-    - role: alphanodes.setup.ethercalc
+      vars:
+        nginx_with_websocket: true  # Enable WebSocket for ethercalc test
+        nginx_mono_service_name: ethercalc
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: "{{ ethercalc_vhost_server }}"
+          root: "/srv/ethercalc"
+          index: "index.html"
+          proxy_pass: "http://{{ ethercalc_ip }}:{{ ethercalc_port }}"
+          proxy_location: "/"
+          proxy_websocket: true
+          vhost_users: []
+          vhost_for_zabbix: false
+          letsencrypt: false

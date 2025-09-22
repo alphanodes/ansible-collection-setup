@@ -16,3 +16,10 @@
   loop_control:
     loop_var: instance
   when: nginx_vhosts | length > 0
+
+- name: Include service integration tasks
+  ansible.builtin.include_tasks: service.yml
+  tags: nginx
+  when:
+    - nginx_mono_service_name is defined
+    - nginx_mono_service_config is defined
