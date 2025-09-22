@@ -27,12 +27,12 @@
         vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
       when: ethercalc_vhost_letsencrypt is undefined or not ethercalc_vhost_letsencrypt
 
-    - name: Configure ethercalc nginx vhost via nginx_mono
+    - name: Setup nginx_mono and configure ethercalc vhost
       tags: nginx
       ansible.builtin.include_role:
         name: alphanodes.setup.nginx_mono
-        tasks_from: service
       vars:
+        nginx_with_websocket: true  # Enable WebSocket support for ethercalc
         nginx_mono_service_name: ethercalc
         nginx_mono_service_enabled: "{{ ethercalc_enabled }}"
         nginx_mono_service_config:

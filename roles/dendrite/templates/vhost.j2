@@ -15,8 +15,8 @@ server {
   root {{ dendrite_vhost_root }};
 {% endif %}
 
-  {% include 'templates/nginx/modern_protocols.inc.j2' with context %}
-  {% include 'templates/nginx/ssl.inc.j2' with context %}
+{% include 'templates/nginx/modern_protocols.inc.j2' with context %}
+{% include 'templates/nginx/ssl.inc.j2' with context %}
 
   proxy_set_header Host      $host;
   proxy_set_header X-Real-IP $remote_addr;

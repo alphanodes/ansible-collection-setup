@@ -4,7 +4,6 @@ dependencies:
     public: true
   - role: alphanodes.setup.ssl
   - role: alphanodes.setup.redis_server
-  - role: alphanodes.setup.nginx
 
 galaxy_info:
   description: Setup ethercalc
