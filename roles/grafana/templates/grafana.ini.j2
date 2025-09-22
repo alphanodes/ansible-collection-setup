@@ -1,0 +1,24 @@
+; Ansible-managed
+
+[server]
+# Listen-Port (default 3000)
+http_port = {{ grafana_listen_port }}
+
+[security]
+# Admin bootstrap
+admin_user = {{ grafana_admin_user }}
+admin_password = {{ grafana_admin_password }}
+
+[analytics]
+reporting_enabled = false
+check_for_updates = false
+
+[users]
+allow_sign_up = false
+
+[log]
+mode = console
+level = info
+
+[paths]
+provisioning = /etc/grafana/provisioning

@@ -1,0 +1,12 @@
+---
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  tags:
+    - loki
+
+- name: Include test tasks
+  ansible.builtin.include_tasks: test.yml
+  when: loki_with_test
+  tags:
+    - loki

@@ -1,0 +1,61 @@
+---
+
+- name: Download Grafana GPG key
+  ansible.builtin.get_url:
+    url: "{{ grafana_apt_url }}/gpg.key"
+    dest: "{{ grafana_apt_signed_by }}"
+    mode: "0644"
+
+# see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/deb822_repository_module.html
+- name: Add Grafana APT repo
+  ansible.builtin.deb822_repository:
+    name: grafana
+    uris: '{{ grafana_apt_url }}'
+    types: deb
+    suites: '{{ grafana_apt_suites }}'
+    components: '{{ grafana_apt_components }}'
+    signed_by: '{{ grafana_apt_signed_by }}'
+    state: present
+  register: grafana_repo
+
+- name: Update apt cache
+  apt:
+    update_cache: true
+  when: grafana_repo.changed
+  tags:
+    - skip_ansible_lint
+
+- name: Install required packages
+  ansible.builtin.apt:
+    name: '{{ grafana_packages }}'
+    state: present
+
+- name: Deploy grafana.ini
+  ansible.builtin.template:
+    src: grafana.ini.j2
+    dest: /etc/grafana/grafana.ini
+    mode: "0644"
+    owner: root
+    group: grafana
+  notify: Restart grafana
+
+- name: Provision Loki datasource
+  ansible.builtin.template:
+    src: datasource-loki.yaml.j2
+    dest: /etc/grafana/provisioning/datasources/loki.yaml
+    owner: root
+    group: grafana
+    mode: "0640"
+  when: grafana_provision_loki | bool
+  notify: Restart grafana
+
+- name: Enable and start grafana-server
+  ansible.builtin.systemd:
+    name: grafana-server
+    enabled: true
+    state: started
+
+- name: Include nginx tasks
+  ansible.builtin.include_tasks: nginx.yml
+  tags:
+    - nginx

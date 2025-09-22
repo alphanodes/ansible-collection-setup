@@ -22,6 +22,15 @@
     vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
   when: dendrite_vhost_letsencrypt is undefined or not dendrite_vhost_letsencrypt
 
+- name: Symlink nginx macros into dendrite role templates
+  ansible.builtin.file:
+    src: "{{ role_path | regex_replace('/roles/[^/]+$', '/roles/nginx/templates/_macros.j2') }}"
+    dest: "{{ role_path }}/templates/_nginx_macros.j2"
+    state: link
+    force: true
+  delegate_to: localhost
+  run_once: true
+
 - name: Update Dendrite vhost configuration
   tags: nginx
   ansible.builtin.template:

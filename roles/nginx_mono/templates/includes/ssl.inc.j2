@@ -1,0 +1,21 @@
+
+{% if instance is defined and instance.letsencrypt is defined and instance.letsencrypt or force_letsencrypt is defined and force_letsencrypt %}
+  ssl_certificate {{ instance.letsencrypt_cert | default(vhost_letsencrypt_cert) }};
+  ssl_certificate_key {{ instance.letsencrypt_key | default(vhost_letsencrypt_key) }};
+{% if nginx_with_ssl_stapling is undefined or nginx_with_ssl_stapling %}
+  ssl_trusted_certificate {{ instance.letsencrypt_trusted_cert | default(vhost_letsencrypt_trusted_cert) }};
+{% endif %}
+{% if (instance.ssl_trusted_certificate is defined or vhost_ssl_trusted_certificate is defined) and (nginx_with_ssl_stapling is undefined or nginx_with_ssl_stapling) %}
+  ssl_trusted_certificate {{ instance.ssl_trusted_certificate | default(vhost_ssl_trusted_certificate) }};
+{% endif %}
+{% else %}
+  ssl_certificate /etc/ssl/certs/{{ instance.vhost_ssl_cert | default(vhost_ssl_cert) }}.crt;
+  ssl_certificate_key /etc/ssl/private/{{ instance.vhost_ssl_cert | default(vhost_ssl_cert) }}.key;
+{% if vhost_ssl_with_trusted_cert is defined and vhost_ssl_with_trusted_cert and (nginx_with_ssl_stapling is undefined or nginx_with_ssl_stapling) %}
+  ssl_trusted_certificate /etc/ssl/certs/{{ instance.vhost_ssl_cert | default(vhost_ssl_cert) }}_trusted.crt;
+{% endif %}
+{% endif %}
+{% if nginx_force_ssl %}
+
+  add_header Strict-Transport-Security 'max-age=31536000; includeSubDomains; preload';
+{% endif %}

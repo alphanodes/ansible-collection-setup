@@ -50,7 +50,7 @@ server {
 {% endif %}
   server_name {{ gitlab_vhost_server }}{{ ' ' + hostname if hostname is defined and gitlab_vhost_server != hostname else '' }}{{ ' ' + gitlab_vhost_aliases if gitlab_vhost_aliases != '' else '' }};
 
-  {% include 'templates/nginx/http2.inc.j2' with context %}
+  {% include 'templates/nginx/modern_protocols.inc.j2' with context %}
   {% include 'templates/nginx/ssl.inc.j2' with context %}
 
   ## See app/controllers/application_controller.rb for headers set
@@ -132,7 +132,7 @@ server {
 {% endif %}
   server_name _;
 
-  {% include 'templates/nginx/http2.inc.j2' with context %}
+  {% include 'templates/nginx/modern_protocols.inc.j2' with context %}
   {% include 'templates/nginx/ssl.inc.j2' with context %}
   return 301 https://{{ gitlab_vhost_server }}$request_uri;
 

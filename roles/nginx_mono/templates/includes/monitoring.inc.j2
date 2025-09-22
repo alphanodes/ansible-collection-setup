@@ -1,0 +1,10 @@
+
+# Server monitoring
+server {
+  listen 80;
+{% if nginx_with_ipv6 %}
+  listen [::]:80;
+{% endif %}
+  server_name localhost;
+  include {{ zabbix_addons_dir }}/conf/nginx-server-status.conf;
+}

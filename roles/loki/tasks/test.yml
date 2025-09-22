@@ -1,0 +1,80 @@
+---
+
+- name: Build nanosecond timestamp for Loki push
+  ansible.builtin.set_fact:
+    loki_ts_ns: "{{ (ansible_date_time.epoch | int) ~ '000000000' }}"
+    loki_msg: "hello from ansible at {{ ansible_date_time.iso8601 }}"
+
+- name: GET /ready should return 200
+  ansible.builtin.uri:
+    url: "{{ loki_test_url }}/ready"
+    method: GET
+    force_basic_auth: true
+    url_username: "{{ loki_web_user }}"
+    url_password: "{{ loki_web_password }}"
+    status_code: 200
+    return_content: true
+    validate_certs: true
+  register: loki_ready
+
+- name: Assert /ready contains 'ready'
+  ansible.builtin.assert:
+    that:
+      - "'ready' in loki_ready.content | lower"
+    fail_msg: "/ready did not return expected content"
+
+- name: POST one test log line to /loki/api/v1/push
+  ansible.builtin.uri:
+    url: "{{ loki_test_url }}/loki/api/v1/push"
+    method: POST
+    headers:
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      streams:
+        - stream:
+            job: "{{ loki_test_job }}"
+            source: "ansible"
+          values:
+            - ["{{ loki_ts_ns }}", "{{ loki_msg }}"]
+    force_basic_auth: true
+    url_username: "{{ loki_web_user }}"
+    url_password: "{{ loki_web_password }}"
+    status_code: 204
+    validate_certs: true
+
+- name: Wait briefly to ensure ingestion completed
+  ansible.builtin.pause:
+    seconds: 1
+
+- name: Build range window and query
+  ansible.builtin.set_fact:
+    loki_start_ns: "{{ ((ansible_date_time.epoch | int) - 300) ~ '000000000' }}"
+    loki_end_ns: "{{ (ansible_date_time.epoch | int) ~ '000000000' }}"
+    loki_q_expr: "{job=\"{{ loki_test_job }}\"}"
+
+- name: GET /loki/api/v1/query_range for the test stream
+  ansible.builtin.uri:
+    url: >-
+      {{ loki_test_url }}/loki/api/v1/query_range?query={{ loki_q_expr | urlencode }}&limit=10&direction=BACKWARD&start={{ loki_start_ns }}&end={{ loki_end_ns }}&step=1s
+    method: GET
+    force_basic_auth: true
+    url_username: "{{ loki_web_user }}"
+    url_password: "{{ loki_web_password }}"
+    status_code: 200
+    return_content: true
+    validate_certs: true
+  register: loki_query
+
+- name: Assert query_range returned at least one result
+  ansible.builtin.assert:
+    that:
+      - "(loki_query.json.data.result | length) > 0"
+    fail_msg: "No results returned for the test range query."
+
+- name: Assert query returned at least one result
+  ansible.builtin.assert:
+    that:
+      - "(loki_query.json.data.result | length) > 0"
+    fail_msg: "No results returned for the test query."
+    success_msg: "Proxy OK: test log was ingested and is queryable."

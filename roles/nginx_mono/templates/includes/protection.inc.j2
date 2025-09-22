@@ -1,0 +1,10 @@
+
+    # Deny access based on the User-Agent header
+    if ($bad_bot) {
+      return 444;
+    }
+
+    # Block unwanted url requests
+    if ($bad_locations) {
+      return 404;
+    }

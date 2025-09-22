@@ -1,0 +1,11 @@
+
+  # php-fpm configuration
+  location ~ \.php$ {
+
+    {%- include 'templates/nginx/fpm.inc.j2' with context %}
+
+  }
+
+  location ~ \..*/.*\.php$ {
+    deny all;
+  }

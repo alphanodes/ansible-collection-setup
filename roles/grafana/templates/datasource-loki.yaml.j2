@@ -1,0 +1,17 @@
+# Ansible-managed
+apiVersion: 1
+datasources:
+  - name: {{ grafana_datasource_name }}
+    type: loki
+    access: proxy
+    url: {{ grafana_loki_url }}
+{% if grafana_loki_basic_auth_user is truthy and grafana_loki_basic_auth_pass is truthy %}
+    basicAuth: true
+    basicAuthUser: {{ grafana_loki_basic_auth_user }}
+    secureJsonData:
+      basicAuthPassword: "{{ grafana_loki_basic_auth_pass }}"
+    jsonData:
+      timeout: 30
+      tlsSkipVerify: false
+{% endif %}
+    isDefault: {{ grafana_datasource_is_default | bool | lower }}

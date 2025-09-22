@@ -1,0 +1,37 @@
+---
+
+grafana_apt_url: https://apt.grafana.com
+grafana_apt_signed_by: /etc/apt/keyrings/grafana.gpg
+grafana_apt_suites: stable
+grafana_apt_components: main
+
+grafana_packages:
+  - grafana
+
+grafana_remove: false
+
+grafana_vhost_server: grafana.local
+
+grafana_vhost_letsencrypt: false
+grafana_vhost_ssl_cert: '{{ ssl_certs[0].name | default(omit) }}'
+grafana_vhost_letsencrypt_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/fullchain.pem
+grafana_vhost_letsencrypt_key: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/privkey.pem
+grafana_vhost_letsencrypt_trusted_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/chain.pem
+grafana_vhost_for_zabbix: false
+
+# nginx base auth user
+grafana_web_user: grafana
+# nginx base auth passwords (leave empty, if you do not want base auth protection)
+grafana_web_password: ''
+
+grafana_admin_user: admin
+grafana_admin_password: changeMe123!
+grafana_listen_port: 3000
+
+# Datasource: Loki
+grafana_provision_loki: true
+grafana_loki_url: "{{ alloy_loki_url | default('https://' + grafana_vhost_server) }}"
+grafana_loki_basic_auth_user: "{{ alloy_basic_user | default('shipper') }}"
+grafana_loki_basic_auth_pass: "{{ alloy_basic_pass | default('SuperSecret-ChangeMe....') }}"
+grafana_datasource_name: "Loki"
+grafana_datasource_is_default: true

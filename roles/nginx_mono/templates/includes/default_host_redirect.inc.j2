@@ -1,0 +1,25 @@
+
+# Default host redirect
+server {
+  listen 80 default_server;
+{% if nginx_with_ipv6 %}
+  listen [::]:80;
+{% endif %}
+{% include 'templates/nginx/modern_protocols.inc.j2' with context %}
+  server_name _;
+  return 301 {{ 'https' if nginx_with_ssl else 'http' }}://{{ instance.server_name }}$request_uri;
+}
+
+{% if nginx_with_ssl %}
+server {
+  listen {{ instance.server_port | default('443') }} {{ nginx_ssl_listen_option }} default_server;
+{% if nginx_with_ipv6 %}
+  listen [::]:{{ instance.server_port | default('443') }} {{ nginx_ssl_listen_option }} default_server;
+{% endif %}
+{% include 'templates/nginx/modern_protocols.inc.j2' with context %}
+  server_name _;
+  return 301 https://{{ instance.server_name }}$request_uri;
+
+  {% include 'templates/nginx/ssl.inc.j2' with context %}
+}
+{% endif %}

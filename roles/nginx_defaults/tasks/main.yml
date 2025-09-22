@@ -1,0 +1,20 @@
+# roles/nginx_defaults/tasks/main.yml
+
+- name: Compute collection root
+  ansible.builtin.set_fact:
+    _coll_root: "{{ role_path | regex_replace('/roles/[^/]+$', '') }}"
+
+- name: Load nginx defaults from collection (controller path)
+  ansible.builtin.include_vars:
+    file: "{{ _coll_root }}/roles/nginx/defaults/main.yml"
+    name: _nginx_defaults
+
+- name: Export nginx defaults into host scope (keep existing)
+  ansible.builtin.set_fact:
+    "{{ item.key }}": "{{ item.value }}"
+  loop: "{{ _nginx_defaults | dict2items }}"
+  when:
+    - item.value is defined
+    - hostvars[inventory_hostname][item.key] is not defined
+  loop_control:
+    label: "{{ item.key }}"

@@ -1,0 +1,63 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check if nginx is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+      check_mode: true
+      register: nginx_service
+      failed_when: nginx_service.changed
+
+    - name: Check nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax
+      changed_when: false
+
+    - name: Check if ethercalc vhost config exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/ethercalc.conf
+      register: ethercalc_vhost
+
+    - name: Verify ethercalc vhost is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/ethercalc.conf
+      register: ethercalc_enabled
+
+    - name: Check if ethercalc service is running
+      ansible.builtin.service:
+        name: ethercalc
+        state: started
+      check_mode: true
+      register: ethercalc_service
+      failed_when: ethercalc_service.changed
+
+    - name: Test nginx proxy to ethercalc
+      ansible.builtin.uri:
+        url: http://localhost/
+        method: GET
+        status_code: 200
+      register: proxy_test
+      retries: 3
+      delay: 5
+
+    - name: Verify nginx_mono templates are self-contained
+      ansible.builtin.find:
+        paths: /etc/nginx/sites-available/
+        patterns: "*.conf"
+        contains: "templates/nginx/"
+      register: external_refs
+      failed_when: external_refs.matched > 0
+
+    - name: Display test results
+      ansible.builtin.debug:
+        msg:
+          - "Nginx service: {{ 'OK' if not nginx_service.changed else 'FAILED' }}"
+          - "Nginx syntax: {{ 'OK' if nginx_syntax.rc == 0 else 'FAILED' }}"
+          - "Ethercalc vhost exists: {{ 'OK' if ethercalc_vhost.stat.exists else 'FAILED' }}"
+          - "Ethercalc enabled: {{ 'OK' if ethercalc_enabled.stat.exists else 'FAILED' }}"
+          - "Ethercalc service: {{ 'OK' if not ethercalc_service.changed else 'FAILED' }}"
+          - "Proxy response: {{ 'OK' if proxy_test.status == 200 else 'FAILED' }}"
+          - "No external refs: {{ 'OK' if external_refs.matched == 0 else 'FAILED' }}"

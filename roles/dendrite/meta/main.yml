@@ -2,8 +2,10 @@
 dependencies:
   - role: alphanodes.setup.common
     public: true
-  - role: alphanodes.setup.ssl
+  - role: alphanodes.setup.nginx_defaults
   - role: alphanodes.setup.nginx
+    public: true
+  - role: alphanodes.setup.ssl
 
 galaxy_info:
   description: Setup matrix homeserver Dendrite

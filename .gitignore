@@ -2,6 +2,8 @@
 *~
 .DS_Store
 .ruby-lsp
+CLAUDE.md
+.claude/
 .venv
 .vscode
 .ansible

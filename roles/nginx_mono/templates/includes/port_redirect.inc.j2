@@ -1,0 +1,25 @@
+
+# Port redirect for {{ instance.server_name if instance.server_name is defined else 'default host' }}
+server {
+{% if instance.server_port == 443 %}
+  listen 80;
+{% if nginx_with_ipv6 %}
+  listen [::]:80;
+{% endif %}
+{% else %}
+  listen [::]:443 {{ nginx_ssl_listen_option }};
+{% if nginx_with_ipv6 %}
+  listen [::]:443 {{ nginx_ssl_listen_option }};
+{% endif %}
+{% endif %}
+{% if instance.server_name is defined %}
+  server_name {{ instance.server_name }};
+{% endif %}
+
+  {% include 'templates/nginx/modern_protocols.inc.j2' with context %}
+{% if instance.server_port != 443 -%}
+  {% include 'templates/nginx/ssl.inc.j2' with context %}
+{% endif %}
+
+  return 301 {{ 'https' if instance.server_port == 443 else 'http' }}://$host$request_uri;
+}

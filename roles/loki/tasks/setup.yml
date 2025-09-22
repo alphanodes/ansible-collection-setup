@@ -1,0 +1,26 @@
+---
+
+- name: Install required packages
+  ansible.builtin.apt:
+    name: '{{ loki_packages }}'
+    state: present
+
+- name: Deploy /etc/loki/config.yml
+  ansible.builtin.template:
+    src: config.yml.j2
+    dest: /etc/loki/config.yml
+    owner: loki
+    group: root
+    mode: "0644"
+  notify: Restart loki
+
+- name: Enable and start Loki
+  ansible.builtin.systemd:
+    name: loki
+    enabled: true
+    state: started
+
+- name: Include nginx tasks
+  ansible.builtin.include_tasks: nginx.yml
+  tags:
+    - nginx

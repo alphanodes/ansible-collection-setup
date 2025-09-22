@@ -1,0 +1,78 @@
+auth_enabled: {{ loki_auth_enabled | bool | lower }}
+
+server:
+  http_listen_port: {{ loki_http_listen_port }}
+  grpc_listen_port: {{ loki_grpc_listen_port }}
+  log_level: {{ loki_log_level }}
+  grpc_server_max_concurrent_streams: {{ loki_grpc_server_max_concurrent_streams }}
+
+common:
+  instance_addr: {{ loki_instance_addr }}
+  path_prefix: /tmp/loki
+  storage:
+    filesystem:
+      chunks_directory: /tmp/loki/chunks
+      rules_directory: /tmp/loki/rules
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+query_range:
+  results_cache:
+    cache:
+      embedded_cache:
+        enabled: true
+        max_size_mb: 100
+
+limits_config:
+  metric_aggregation_enabled: {{ loki_limits_metric_aggregation_enabled | bool | lower }}
+  reject_old_samples: {{ loki_limits_reject_old_samples | bool | lower }}
+  reject_old_samples_max_age: {{ loki_limits_reject_old_samples_max_age }}
+  retention_period: {{ loki_limits_retention_period }}
+{% if loki_compactor_retention_enabled %}
+
+compactor:
+  working_directory: {{ loki_compactor_working_directory }}
+  delete_request_store: filesystem
+  compaction_interval: {{ loki_compactor_compaction_interval }}
+  retention_enabled: true
+  retention_delete_delay: {{ loki_compactor_retention_delete_delay }}
+  retention_delete_worker_count: {{ loki_compactor_retention_delete_worker_count }}
+{% endif %}
+
+schema_config:
+  configs:
+    - from: {{ loki_schema_from }}
+      store: {{ loki_schema_store }}
+      object_store: {{ loki_schema_object_store }}
+      schema: {{ loki_schema_schema }}
+      index:
+        prefix: {{ loki_schema_index_prefix }}
+        period: {{ loki_schema_index_period }}
+
+storage_config:
+{% if loki_storage_config_boltdb_shipper_shared_store is defined %}
+  boltdb_shipper:
+    active_index_directory: {{ loki_data_dir }}/index
+    cache_location: {{ loki_data_dir }}/cache
+    shared_store: {{ loki_storage_config_boltdb_shipper_shared_store }}
+{% endif %}
+  filesystem:
+    directory: {{ loki_data_dir }}/chunks
+
+pattern_ingester:
+  enabled: {{ loki_pattern_ingester_enabled | bool | lower }}
+  metric_aggregation:
+    loki_address: {{ loki_instance_addr }}:{{ loki_http_listen_port }}
+
+{% if loki_ruler_alertmanager_url is defined %}
+ruler:
+  alertmanager_url: {{ loki_ruler_alertmanager_url }}
+
+{% endif %}
+frontend:
+  encoding: {{ loki_frontend_encoding }}
+
+analytics:
+  reporting_enabled: {{ loki_reporting_enabled | bool | lower }}
