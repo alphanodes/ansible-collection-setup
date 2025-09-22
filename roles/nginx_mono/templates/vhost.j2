@@ -2,18 +2,30 @@
 # nginx vhost configuration
 
 server {
-{% if instance.server_port is undefined or instance.server_port == 80 %}
-  listen 80{{ ' default_server' if instance.vhost_default is defined and instance.vhost_default else '' }}{{ ' reuseport' if instance.reuseport is defined and instance.reuseport else '' }};
-{% if nginx_with_ipv6 %}
-  listen [::]:80{{ ' default_server' if instance.vhost_default is defined and instance.vhost_default else '' }}{{ ' reuseport' if instance.reuseport is defined and instance.reuseport else '' }};
+{# Clean listen configuration using pre-calculated variables #}
+{% set default_server_flag = ' default_server' if nginx_listen_config.default_server else '' -%}
+{% set reuseport_flag = ' reuseport' if nginx_listen_config.use_reuseport else '' -%}
+
+{# SSL Configuration (443) #}
+{% if nginx_listen_config.use_ssl %}
+  listen 443 {{ nginx_ssl_listen_option }}{{ default_server_flag }}{{ reuseport_flag }};
+{% if nginx_listen_config.use_ipv6 %}
+  listen [::]:443 {{ nginx_ssl_listen_option }}{{ default_server_flag }}{{ reuseport_flag }};
+{% endif %}
+{# HTTP/3 QUIC support #}
+{% if nginx_listen_config.use_http3 %}
+  listen 443 quic{{ reuseport_flag }}{{ default_server_flag }};
+{% if nginx_listen_config.use_ipv6 %}
+  listen [::]:443 quic{{ reuseport_flag }}{{ default_server_flag }};
 {% endif %}
 {% endif %}
-{% if nginx_with_ssl %}
-{% if instance.server_port is undefined or instance.server_port == 443 %}
-  listen 443 {{ nginx_ssl_listen_option }}{{ ' default_server' if instance.vhost_default is defined and instance.vhost_default else '' }}{{ ' reuseport' if instance.reuseport is defined and instance.reuseport else '' }};
-{% if nginx_with_ipv6 %}
-  listen [::]:443 {{ nginx_ssl_listen_option }}{{ ' default_server' if instance.vhost_default is defined and instance.vhost_default else '' }}{{ ' reuseport' if instance.reuseport is defined and instance.reuseport else '' }};
 {% endif %}
+
+{# HTTP Configuration (80) - only if not SSL-only #}
+{% if nginx_listen_config.use_http and not nginx_listen_config.ssl_only %}
+  listen 80{{ default_server_flag }}{{ reuseport_flag }};
+{% if nginx_listen_config.use_ipv6 %}
+  listen [::]:80{{ default_server_flag }}{{ reuseport_flag }};
 {% endif %}
 {% endif %}
   {% include 'includes/modern_protocols.inc.j2' %}

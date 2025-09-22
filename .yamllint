@@ -2,8 +2,9 @@
 # see default: https://github.com/adrienverge/yamllint/blob/master/yamllint/conf/default.yaml
 extends: default
 
-ignore: |
-  roles/alphanodes.mongodb/
+ignore:
+  - roles/alphanodes.mongodb/
+  - '.ansible'
 
 rules:
   line-length: disable

@@ -20,10 +20,12 @@
     npm_config_prefix: /root/.npm-global
     npm_config_unsafe_perm: "true"
 
-    # nginx_mono configuration (defaults)
+    # nginx_mono configuration (defaults + testing new features)
     nginx_with_ssl: false  # Disable SSL for testing
     nginx_with_ipv6: false
     nginx_force_ssl: false
+    nginx_with_http3: false  # Test with HTTP/3 disabled (would need SSL)
+    nginx_with_reuseport: true  # Test reuseport optimization
     nginx_resolver: ['8.8.8.8', '8.8.4.4']
     hoster: 'local'
 
@@ -69,6 +71,7 @@
         nginx_mono_service_enabled: true
         nginx_mono_service_config:
           server_name: "{{ ethercalc_vhost_server }}"
+          server_port: 80  # HTTP-only for testing
           root: "/srv/ethercalc"
           index: "index.html"
           proxy_pass: "http://{{ ethercalc_ip }}:{{ ethercalc_port }}"

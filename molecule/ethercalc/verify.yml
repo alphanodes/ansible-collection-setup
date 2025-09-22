@@ -71,6 +71,36 @@
       changed_when: false
       failed_when: false
 
+    - name: Check if nginx has HTTP/3 QUIC listeners configured
+      ansible.builtin.command: grep -q "listen.*quic" /etc/nginx/sites-available/ethercalc.conf
+      register: http3_quic_listeners
+      changed_when: false
+      failed_when: false
+
+    - name: Check if nginx has reuseport configured (when enabled)
+      ansible.builtin.command: grep -q "listen.*reuseport" /etc/nginx/sites-available/ethercalc.conf
+      register: reuseport_config
+      changed_when: false
+      failed_when: false
+
+    - name: Verify HTTP/3 Alt-Svc header in SSL config (when HTTP/3 enabled)
+      ansible.builtin.command: grep -q "Alt-Svc.*h3" /etc/nginx/sites-available/ethercalc.conf
+      register: http3_alt_svc_header
+      changed_when: false
+      failed_when: false
+
+    - name: Check listen configuration syntax (should have proper listen directives)
+      ansible.builtin.command: grep -c "listen " /etc/nginx/sites-available/ethercalc.conf
+      register: listen_directives_count
+      changed_when: false
+      failed_when: false
+
+    - name: Verify modern protocols include (HTTP/2 and HTTP/3 support)
+      ansible.builtin.command: grep -q "http2\|http3" /etc/nginx/sites-available/ethercalc.conf
+      register: modern_protocols
+      changed_when: false
+      failed_when: false
+
     - name: Display comprehensive test results
       ansible.builtin.debug:
         msg:
@@ -85,4 +115,9 @@
           - "WebSocket support enabled: {{ 'OK' if websocket_support.rc == 0 else 'FAILED' }}"
           - "Proxy config present: {{ 'OK' if proxy_config.rc == 0 else 'FAILED' }}"
           - "WebSocket headers present: {{ 'OK' if websocket_headers.rc == 0 else 'FAILED' }}"
+          - "HTTP/3 QUIC listeners: {{ 'DISABLED' if http3_quic_listeners.rc != 0 else 'ENABLED' }} (expected: DISABLED - needs SSL)"
+          - "Reuseport optimization: {{ 'ENABLED' if reuseport_config.rc == 0 else 'DISABLED' }} (expected: ENABLED in test)"
+          - "HTTP/3 Alt-Svc header: {{ 'DISABLED' if http3_alt_svc_header.rc != 0 else 'ENABLED' }} (expected: DISABLED - needs SSL)"
+          - "Listen directives count: {{ listen_directives_count.stdout | default('0') }}"
+          - "Modern protocols support: {{ 'OK' if modern_protocols.rc == 0 else 'BASIC' }}"
           - "=== nginx_mono INTEGRATION SUCCESS ==="
