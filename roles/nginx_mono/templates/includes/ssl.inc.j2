@@ -19,3 +19,8 @@
 
   add_header Strict-Transport-Security 'max-age=31536000; includeSubDomains; preload';
 {% endif %}
+{% if nginx_with_http3 | default(false) %}
+
+  # HTTP/3 Alt-Svc header for client discovery
+  add_header Alt-Svc 'h3=":443"; ma=86400';
+{% endif %}
