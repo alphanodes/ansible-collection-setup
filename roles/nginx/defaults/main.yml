@@ -40,6 +40,9 @@ nginx_in_ssl_group: false
 nginx_with_ssl: true
 nginx_with_ssl_stapling: false
 
+nginx_with_reuseport: false
+nginx_with_http3: false
+
 # see https://gist.github.com/plentz/6737338 (1 year caching)
 # check: https://hstspreload.appspot.com/
 nginx_force_ssl: true

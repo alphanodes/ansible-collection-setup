@@ -25,3 +25,289 @@ hide_sensitive_data: true
 # caching_sha2_password or auth_socket
 mysql_root_plugin: caching_sha2_password
 mysql_socket: /run/mysqld/mysqld.sock
+
+# Nginx Template Variables
+# These can be used in any role that depends on alphanodes.setup.common
+
+nginx_template_default_host_redirect: |
+  # Default host redirect
+  server {
+    listen 80 default_server;
+  {% if nginx_with_ipv6 %}
+    listen [::]:80;
+  {% endif %}
+  {{ nginx_template_http2 }}
+    server_name _;
+    return 301 {{ 'https' if nginx_with_ssl else 'http' }}://{{ instance.server_name }}$request_uri;
+  }
+  {% if nginx_with_ssl %}
+  server {
+    listen {{ instance.server_port | default('443') }} {{ nginx_ssl_listen_option }} default_server;
+  {% if nginx_with_ipv6 %}
+    listen [::]:{{ instance.server_port | default('443') }} {{ nginx_ssl_listen_option }} default_server;
+  {% endif %}
+  {{ nginx_template_http2 }}
+    server_name _;
+    return 301 https://{{ instance.server_name }}$request_uri;
+  {{ nginx_template_ssl | indent(2) }}
+  }
+  {% endif %}
+
+nginx_template_error_handler_static: |
+  # Error handler static
+  error_page 403 /403.html;
+  location = /403.html {
+    root {{ nginx_error_pages_path }};
+  }
+  error_page 502 /502.html;
+  location = /502.html {
+    root {{ nginx_error_pages_path }};
+  }
+
+nginx_template_error_handler: |
+  # Error handler
+  {% if instance.error_404_page is defined -%}
+    {% if instance.error_404_multi_root is defined -%}
+      error_page 404 {{ instance.error_404_page }};
+      location {{ instance.error_404_page }} {
+      # redirect server error pages to the static page with multi language support
+      root {{ instance.dir | default(srv_path + "/" + instance_name) | default(srv_path + "/" + instance.name) }}/{{ instance.error_404_multi_root }};
+      set $error404 /404.html;
+      if ($request_uri ~ ^/de/(.+)) {
+        set $error404 /404_de.html;
+      }
+      rewrite ^(.*)$ $error404 break;
+    }
+    {% else %}
+      error_page 404 {{ instance.error_404_page }};
+      location {{ instance.error_404_page }} {
+      set $error404 /404.html;
+      if ($request_uri ~ ^/de/(.+)) {
+        set $error404 /de/404.html;
+      }
+      rewrite ^(.*)$ $error404 break;
+    }
+    {% endif %}
+  {% else %}
+  {% if instance.error_404_enabled is defined and instance.error_404_enabled -%}
+  error_page 404 /404.html;
+  location = /404.html {
+    root {{ nginx_error_pages_path }};
+  }
+  {% endif %}
+  {% endif %}
+  {% if instance.error_403_disabled is undefined or not instance.error_403_disabled -%}
+  error_page 403 /403.html;
+  location = /403.html {
+    root {{ nginx_error_pages_path }};
+  }
+  {% endif %}
+  error_page 502 /502.html;
+  location = /502.html {
+    root {{ nginx_error_pages_path }};
+  }
+
+nginx_template_external_redirects: |
+  # External redirects for {{ instance_name | default(instance.name) }}
+  {% for ex in instance.external_redirects %}
+  server {
+    server_name {{ ex.server_name | join(' ') }};
+    listen 80;
+  {% if nginx_with_ipv6 %}
+    listen [::]:80;
+  {% endif %}
+  {% if nginx_with_ssl %}
+    listen 443 {{ nginx_ssl_listen_option }};
+  {% if nginx_with_ipv6 %}
+    listen [::]:443;
+  {% endif %}
+  {{ nginx_template_ssl | indent(2) }}
+  {% endif %}
+    return 301 {{ ex.rewrite }};
+  }
+  {% endfor %}
+
+nginx_template_fpm_location: |
+  # php-fpm configuration
+  location ~ \.php$ {
+  {{ nginx_template_fpm | indent(4) }}
+  }
+  location ~ \..*/.*\.php$ {
+    deny all;
+  }
+
+nginx_template_fpm: |
+  fastcgi_split_path_info ^(.+\.php)(/.+)$;
+  include fastcgi_params;
+  fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+  fastcgi_param SERVER_NAME $host;
+  fastcgi_intercept_errors on;
+  fastcgi_read_timeout {{ nginx_fastcgi_read_timeout | default(60) }};
+  fastcgi_send_timeout {{ nginx_fastcgi_send_timeout | default(60) }};
+  fastcgi_pass unix:{{ php_fpm_base + '-' + instance.with_fpm + '.sock' if instance is defined and instance.with_fpm is defined and instance.with_fpm != 'www' else php_fpm_custom_listen | default(php_fpm_listen) }};
+
+nginx_template_http2: |
+  {% if ansible_distribution == 'Debian' and ansible_distribution_major_version == '13' %}
+  http2 on;
+  {% endif %}
+
+nginx_template_location: |
+  location = /favicon.ico {
+    log_not_found off;
+    access_log off;
+  }
+  {% if instance is defined and instance.use_robots_txt_from_redmine is undefined or not instance.use_robots_txt_from_redmine %}
+  location = /robots.txt {
+    log_not_found off;
+    access_log off;
+  }
+  {% endif %}
+  location = /humans.txt {
+    log_not_found off;
+    access_log off;
+  }
+  location ~* ^/(apple\-touch\-icon\.png|apple\-touch\-icon\-precomposed\.png) {
+    log_not_found off;
+    access_log off;
+  }
+  {% if instance.locations is defined %}
+  {% for location in instance.locations %}
+  location {{ location.name }} {
+  {% if location.rewrite is defined %}
+    rewrite {{ location.rewrite }} permanent;
+  {% endif %}
+  {% if location.action is defined %}
+    {{ location.action }};
+  {% endif %}
+  {% if location.actions is defined %}
+  {% for action in location.actions %}
+    {{ action }};
+  {% endfor %}
+  {% endif %}
+  {% if location.return is defined %}
+    return {{ location.return }};
+  {% endif %}
+  }
+  {% endfor %}
+  {% endif %}
+
+nginx_template_monitoring: |
+  # Server monitoring
+  server {
+    listen 80;
+  {% if nginx_with_ipv6 %}
+    listen [::]:80;
+  {% endif %}
+    server_name localhost;
+    include {{ zabbix_addons_dir }}/conf/nginx-server-status.conf;
+  }
+
+nginx_template_port_redirect: |
+  # Port redirect for {{ instance.server_name if instance.server_name is defined else 'default host' }}
+  server {
+  {% if instance.server_port == 443 %}
+    listen 80;
+  {% if nginx_with_ipv6 %}
+    listen [::]:80;
+  {% endif %}
+  {% else %}
+    listen [::]:443 {{ nginx_ssl_listen_option }};
+  {% if nginx_with_ipv6 %}
+    listen [::]:443 {{ nginx_ssl_listen_option }};
+  {% endif %}
+  {% endif %}
+  {% if instance.server_name is defined %}
+    server_name {{ instance.server_name }};
+  {% endif %}
+  {{ nginx_template_http2 | indent(2) }}
+  {% if instance.server_port != 443 -%}
+  {{ nginx_template_ssl | indent(2) }}
+  {% endif %}
+    return 301 {{ 'https' if instance.server_port == 443 else 'http' }}://$host$request_uri;
+  }
+
+nginx_template_protection: |
+  # Deny access based on the User-Agent header
+  if ($bad_bot) {
+    return 444;
+  }
+  # Block unwanted url requests
+  if ($bad_locations) {
+    return 404;
+  }
+
+nginx_template_redirects: |
+  # Redirects for {{ instance_name | default(instance.name) }}
+  server {
+    server_name {{ instance.redirects | join(' ') }};
+    listen 80;
+  {% if nginx_with_ipv6 %}
+    listen [::]:80;
+  {% endif %}
+  {% if nginx_with_ssl %}
+    listen 443 {{ nginx_ssl_listen_option }};
+  {% if nginx_with_ipv6 %}
+    listen [::]:443 {{ nginx_ssl_listen_option }};
+  {% endif %}
+  {{ nginx_template_http2 | indent(2) }}
+  {% if instance.redirects_ssl_cert is defined %}
+    ssl_certificate /etc/ssl/certs/{{ instance.redirects_ssl_cert }}.crt;
+    ssl_certificate_key /etc/ssl/private/{{ instance.redirects_ssl_cert }}.key;
+  {% else %}
+  {{ nginx_template_ssl | indent(2) }}
+  {% endif %}
+  {% endif %}
+  {% if instance.server_port is defined and instance.server_port == 80 %}
+    return 301 http://{{ instance.server_name }}$request_uri;
+  {% elif instance.server_port is defined and instance.server_port == 443 %}
+    return 301 https://{{ instance.server_name }}$request_uri;
+  {% else %}
+    return 301 $scheme://{{ instance.server_name }}$request_uri;
+  {% endif %}
+  }
+
+nginx_template_rewrite_lines: |
+  {% if instance.rewrite_lines is defined %}
+  {% for rewrite_line in instance.rewrite_lines %}
+  rewrite {{ rewrite_line }};
+  {% endfor %}
+  {% endif %}
+
+nginx_template_security_headers: |
+  ## Enable clickjacking protection in modern browsers. Available in
+  ## IE8 also. See
+  ## https://developer.mozilla.org/en/The_X-FRAME-OPTIONS_response_header
+  add_header X-Frame-Options "SAMEORIGIN";
+  # when serving user-supplied content, include a X-Content-Type-Options: nosniff header along with the Content-Type: header,
+  # to disable content-type sniffing on some browsers.
+  # https://www.owasp.org/index.php/List_of_useful_HTTP_headers
+  # currently suppoorted in IE > 8 http://blogs.msdn.com/b/ie/archive/2008/09/02/ie8-security-part-vi-beta-2-update.aspx
+  # http://msdn.microsoft.com/en-us/library/ie/gg622941(v=vs.85).aspx
+  # 'soon' on Firefox https://bugzilla.mozilla.org/show_bug.cgi?id=471020
+  add_header X-Content-Type-Options nosniff;
+  # This header enables the Cross-site scripting (XSS) filter built into most recent web browsers.
+  # It's usually enabled by default anyway, so the role of this header is to re-enable the filter for
+  # this particular website if it was disabled by the user.
+  # https://www.owasp.org/index.php/List_of_useful_HTTP_headers
+  add_header X-XSS-Protection "1; mode=block";
+
+nginx_template_ssl: |
+  {% if instance is defined and instance.letsencrypt is defined and instance.letsencrypt or force_letsencrypt is defined and force_letsencrypt %}
+  ssl_certificate {{ instance.letsencrypt_cert | default(vhost_letsencrypt_cert) }};
+  ssl_certificate_key {{ instance.letsencrypt_key | default(vhost_letsencrypt_key) }};
+  {% if nginx_with_ssl_stapling is undefined or nginx_with_ssl_stapling %}
+  ssl_trusted_certificate {{ instance.letsencrypt_trusted_cert | default(vhost_letsencrypt_trusted_cert) }};
+  {% endif %}
+  {% if (instance.ssl_trusted_certificate is defined or vhost_ssl_trusted_certificate is defined) and (nginx_with_ssl_stapling is undefined or nginx_with_ssl_stapling) %}
+  ssl_trusted_certificate {{ instance.ssl_trusted_certificate | default(vhost_ssl_trusted_certificate) }};
+  {% endif %}
+  {% else %}
+  ssl_certificate /etc/ssl/certs/{{ instance.vhost_ssl_cert | default(vhost_ssl_cert) }}.crt;
+  ssl_certificate_key /etc/ssl/private/{{ instance.vhost_ssl_cert | default(vhost_ssl_cert) }}.key;
+  {% if vhost_ssl_with_trusted_cert is defined and vhost_ssl_with_trusted_cert and (nginx_with_ssl_stapling is undefined or nginx_with_ssl_stapling) %}
+  ssl_trusted_certificate /etc/ssl/certs/{{ instance.vhost_ssl_cert | default(vhost_ssl_cert) }}_trusted.crt;
+  {% endif %}
+  {% endif %}
+  {% if nginx_force_ssl %}
+  add_header Strict-Transport-Security 'max-age=31536000; includeSubDomains; preload';
+  {% endif %}
