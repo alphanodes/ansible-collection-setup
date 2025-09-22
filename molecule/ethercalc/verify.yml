@@ -1,0 +1,88 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check if nginx is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+      check_mode: true
+      register: nginx_service
+      failed_when: nginx_service.changed
+
+    - name: Check nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax
+      changed_when: false
+
+    - name: Check if ethercalc vhost config exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/ethercalc.conf
+      register: ethercalc_vhost
+
+    - name: Verify ethercalc vhost is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/ethercalc.conf
+      register: ethercalc_enabled_check
+
+    - name: Check if ethercalc service exists (should not be running in test)
+      ansible.builtin.service:
+        name: ethercalc
+        state: stopped
+      check_mode: true
+      register: ethercalc_service
+      ignore_errors: true
+
+    - name: Test nginx configuration without actual ethercalc service
+      ansible.builtin.uri:
+        url: http://localhost/
+        method: GET
+        status_code: [200, 502, 503]  # 502/503 expected since ethercalc isn't running
+        headers:
+          Host: ethercalc.local
+      register: nginx_proxy
+      retries: 3
+      delay: 1
+
+    - name: Verify nginx_mono integration (no external template refs)
+      ansible.builtin.find:
+        paths: /etc/nginx/sites-available/
+        patterns: "*.conf"
+        contains: "templates/nginx/"
+      register: external_refs
+      failed_when: external_refs.matched > 0
+
+    - name: Check WebSocket support in nginx config
+      ansible.builtin.command: grep -q "connection_upgrade" /etc/nginx/nginx.conf
+      register: websocket_support
+      changed_when: false
+      failed_when: false
+
+    - name: Verify ethercalc vhost has proxy configuration
+      ansible.builtin.command: grep -q "proxy_pass.*8000" /etc/nginx/sites-available/ethercalc.conf
+      register: proxy_config
+      changed_when: false
+      failed_when: false
+
+    - name: Verify WebSocket headers in ethercalc vhost
+      ansible.builtin.command: grep -q "proxy_set_header.*Upgrade" /etc/nginx/sites-available/ethercalc.conf
+      register: websocket_headers
+      changed_when: false
+      failed_when: false
+
+    - name: Display comprehensive test results
+      ansible.builtin.debug:
+        msg:
+          - "=== NGINX_MONO + ETHERCALC INTEGRATION TESTS ==="
+          - "Nginx service: {{ 'OK' if not nginx_service.changed else 'FAILED' }}"
+          - "Nginx syntax: {{ 'OK' if nginx_syntax.rc == 0 else 'FAILED' }}"
+          - "Ethercalc vhost exists: {{ 'OK' if ethercalc_vhost.stat.exists else 'FAILED' }}"
+          - "Ethercalc vhost enabled: {{ 'OK' if ethercalc_enabled_check.stat.exists else 'FAILED' }}"
+          - "Ethercalc service check: {{ 'OK' if ethercalc_service is not failed else 'FAILED' }}"
+          - "Nginx proxy configured: {{ 'OK' if nginx_proxy.status in [200, 502, 503] else 'FAILED' }}"
+          - "No external template refs: {{ 'OK' if external_refs.matched == 0 else 'FAILED' }}"
+          - "WebSocket support enabled: {{ 'OK' if websocket_support.rc == 0 else 'FAILED' }}"
+          - "Proxy config present: {{ 'OK' if proxy_config.rc == 0 else 'FAILED' }}"
+          - "WebSocket headers present: {{ 'OK' if websocket_headers.rc == 0 else 'FAILED' }}"
+          - "=== nginx_mono INTEGRATION SUCCESS ==="

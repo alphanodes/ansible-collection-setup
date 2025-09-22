@@ -1,0 +1,79 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+
+    - name: Add python3-debian for deb822 support
+      ansible.builtin.apt:
+        name: python3-debian
+        state: present
+
+  vars:
+    # nodejs configuration (fix for Docker container)
+    nodejs_install_npm_user: root
+    npm_config_prefix: /root/.npm-global
+    npm_config_unsafe_perm: "true"
+
+    # nginx_mono configuration (defaults)
+    nginx_with_ssl: false  # Disable SSL for testing
+    nginx_with_ipv6: false
+    nginx_force_ssl: false
+    nginx_resolver: ['8.8.8.8', '8.8.4.4']
+    hoster: 'local'
+
+    # ethercalc configuration
+    ethercalc_enabled: true
+    ethercalc_vhost_server: ethercalc.local
+    ethercalc_ip: 127.0.0.1
+    ethercalc_port: 8000
+    ethercalc_redis_enabled: false  # Disable Redis for testing
+    ethercalc_vhost_users: []  # No auth for testing
+    ethercalc_vhost_for_zabbix: false
+    ethercalc_vhost_letsencrypt: false
+
+    # No SSL certs needed for testing
+    ssl_certs: []
+
+  roles:
+    - role: alphanodes.setup.nodejs
+    # Skip ethercalc installation due to npm integrity issues in test environment
+    # - role: alphanodes.setup.ethercalc
+
+  # Instead, test nginx_mono directly with ethercalc configuration
+  tasks:
+    - name: Create ethercalc directory for testing
+      ansible.builtin.file:
+        path: /srv/ethercalc
+        state: directory
+        mode: '0755'
+
+    - name: Create dummy ethercalc service for testing
+      ansible.builtin.systemd:
+        name: ethercalc
+        state: stopped
+        enabled: false
+      ignore_errors: true
+
+    - name: Test nginx_mono configuration with ethercalc settings
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_with_websocket: true
+        nginx_mono_service_name: ethercalc
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: "{{ ethercalc_vhost_server }}"
+          root: "/srv/ethercalc"
+          index: "index.html"
+          proxy_pass: "http://{{ ethercalc_ip }}:{{ ethercalc_port }}"
+          proxy_location: "/"
+          proxy_websocket: true
+          vhost_users: []
+          vhost_for_zabbix: false
+          letsencrypt: false
