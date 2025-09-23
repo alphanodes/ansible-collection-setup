@@ -1,0 +1,110 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  vars:
+    ntp_timezone: Europe/Berlin
+    php_fpm_base: /run/php/php-fpm
+    nextcloud_version: '29.0.8'
+    nextcloud_htdocs: /var/www/nextcloud
+    nextcloud_vhost_server: nextcloud.test.local
+    nextcloud_with_fmp: nextcloud
+    nextcloud_vhost_letsencrypt: false
+    nextcloud_vhost_for_zabbix: false
+    nextcloud_redirects: []
+    nextcloud_vhost_includes: []
+    ssl_certs: []
+    nextcloud_vhost_ssl_cert: ""
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_os_family == 'Debian'
+
+    - name: Add python3-debian for deb822 support
+      ansible.builtin.apt:
+        name: python3-debian
+        state: present
+      when: ansible_os_family == 'Debian'
+
+    - name: Create nextcloud directory
+      ansible.builtin.file:
+        path: "{{ nextcloud_htdocs }}"
+        state: directory
+        mode: '0755'
+
+    - name: Create dummy index.php for testing
+      ansible.builtin.copy:
+        content: |
+          <?php
+          echo "Nextcloud test installation";
+          ?>
+        dest: "{{ nextcloud_htdocs }}/index.php"
+        mode: '0644'
+
+  roles:
+    - role: alphanodes.setup.common
+    - role: alphanodes.setup.ssl
+    - role: alphanodes.setup.php_cli
+    - role: alphanodes.setup.php_fpm
+      vars:
+        php_fpm_pools:
+          - name: www
+            user: www-data
+            group: www-data
+            pool: www
+            skip_user_create: true
+    - role: alphanodes.setup.redis_server
+    - role: alphanodes.setup.nextcloud
+      vars:
+        nextcloud_enabled: true
+      tags:
+        - "!nginx"
+
+  tasks:
+    - name: Setup nginx_mono and configure nextcloud vhost (manual call for testing)
+      tags: nginx
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: nextcloud
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: "{{ nextcloud_vhost_server }}"
+          root: "{{ nextcloud_htdocs }}"
+          index: "index.php index.html /index.php$request_uri"
+          with_fmp: "{{ nextcloud_with_fmp | default('nextcloud') }}"
+          fastcgi_buffers: "64 8K"
+          fastcgi_buffer_size: "4k"
+          fastcgi_busy_buffers_size: "8k"
+          fastcgi_params:
+            - "SCRIPT_FILENAME $document_root$fastcgi_script_name"
+            - "PATH_INFO $path_info"
+            - "HTTPS on"
+            - "modHeadersAvailable true"
+            - "front_controller_active true"
+          additional_headers:
+            - 'Referrer-Policy "no-referrer" always'
+            - 'X-Content-Type-Options "nosniff" always'
+            - 'X-Download-Options "noopen" always'
+            - 'X-Frame-Options "SAMEORIGIN" always'
+            - 'X-Permitted-Cross-Domain-Policies "none" always'
+            - 'X-Robots-Tag "noindex, nofollow" always'
+            - 'X-XSS-Protection "1; mode=block" always'
+          locations:
+            - name: "= /"
+              actions:
+                - 'if ( $http_user_agent ~ ^DavClnt ) { return 302 /remote.php/webdav/$is_args$args; }'
+            - name: '~ ^/(?:build|tests|config|lib|3rdparty|templates|data)(?:$|/)'
+              return: "404"
+            - name: '~ ^/(?:\.|autotest|occ|issue|indie|db_|console)'
+              return: "404"
+          redirects: "{{ nextcloud_redirects | default([]) }}"
+          vhost_for_zabbix: "{{ nextcloud_vhost_for_zabbix | default(false) }}"
+          letsencrypt: "{{ nextcloud_vhost_letsencrypt | default(false) }}"
+          letsencrypt_cert: "{{ nextcloud_vhost_letsencrypt_cert | default('') }}"
+          letsencrypt_key: "{{ nextcloud_vhost_letsencrypt_key | default('') }}"
+          letsencrypt_trusted_cert: "{{ nextcloud_vhost_letsencrypt_trusted_cert | default('') }}"
+          ssl_cert: "{{ nextcloud_vhost_ssl_cert | default('') }}"
+          vhost_includes: "{{ nextcloud_vhost_includes | default([]) }}"

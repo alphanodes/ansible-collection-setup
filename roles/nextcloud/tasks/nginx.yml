@@ -1,0 +1,51 @@
+---
+
+- name: Setup nginx_mono and configure nextcloud vhost
+  tags: nginx
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nginx_mono
+  vars:
+    nginx_mono_service_name: nextcloud
+    nginx_mono_service_enabled: true
+    nginx_mono_service_config:
+      server_name: "{{ nextcloud_vhost_server }}"
+      root: "{{ nextcloud_htdocs }}"
+      index: "index.php index.html /index.php$request_uri"
+      with_fmp: "{{ nextcloud_with_fmp | default('nextcloud') }}"
+      fastcgi_buffers: "64 8K"
+      fastcgi_buffer_size: "4k"
+      fastcgi_busy_buffers_size: "8k"
+      fastcgi_params:
+        - "SCRIPT_FILENAME $document_root$fastcgi_script_name"
+        - "PATH_INFO $path_info"
+        - "HTTPS on"
+        - "modHeadersAvailable true"
+        - "front_controller_active true"
+      additional_headers:
+        - 'Referrer-Policy "no-referrer" always'
+        - 'X-Content-Type-Options "nosniff" always'
+        - 'X-Download-Options "noopen" always'
+        - 'X-Frame-Options "SAMEORIGIN" always'
+        - 'X-Permitted-Cross-Domain-Policies "none" always'
+        - 'X-Robots-Tag "noindex, nofollow" always'
+        - 'X-XSS-Protection "1; mode=block" always'
+      locations:
+        - name: "= /"
+          actions:
+            - 'if ( $http_user_agent ~ ^DavClnt ) { return 302 /remote.php/webdav/$is_args$args; }'
+        - name: '~ ^/(?:build|tests|config|lib|3rdparty|templates|data)(?:$|/)'
+          return: "404"
+        - name: '~ ^/(?:\.|autotest|occ|issue|indie|db_|console)'
+          return: "404"
+      redirects: "{{ nextcloud_redirects | default([]) }}"
+      vhost_for_zabbix: "{{ nextcloud_vhost_for_zabbix | default(false) }}"
+      letsencrypt: "{{ nextcloud_vhost_letsencrypt | default(false) }}"
+      letsencrypt_cert: "{{ nextcloud_vhost_letsencrypt_cert | default('') }}"
+      letsencrypt_key: "{{ nextcloud_vhost_letsencrypt_key | default('') }}"
+      letsencrypt_trusted_cert: "{{ nextcloud_vhost_letsencrypt_trusted_cert | default('') }}"
+      ssl_cert: "{{ nextcloud_vhost_ssl_cert | default('') }}"
+      vhost_includes: "{{ nextcloud_vhost_includes | default([]) }}"
+
+- name: Include ssl role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.ssl
