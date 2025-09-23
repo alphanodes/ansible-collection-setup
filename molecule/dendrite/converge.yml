@@ -1,0 +1,91 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+
+    - name: Add python3-debian for deb822 support
+      ansible.builtin.apt:
+        name: python3-debian
+        state: present
+
+  vars:
+    # nginx_mono configuration (defaults + testing new features)
+    nginx_with_ssl: false  # Disable SSL for testing
+    nginx_with_ipv6: false
+    nginx_force_ssl: false
+    nginx_with_http3: false  # Test with HTTP/3 disabled (would need SSL)
+    nginx_with_reuseport: true  # Test reuseport optimization
+    nginx_resolver: ['8.8.8.8', '8.8.4.4']
+    hoster: 'local'
+
+    # dendrite configuration
+    dendrite_enabled: true
+    dendrite_server_name: dendrite.local
+    dendrite_db_name: dendrite_test
+    dendrite_db_user: dendrite_test
+    dendrite_db_password: test_password
+    dendrite_db_host: localhost
+    dendrite_vhost_users: []  # No auth for testing
+    dendrite_vhost_for_zabbix: false
+    dendrite_vhost_letsencrypt: false
+    dendrite_redirects: []
+    dendrite_vhost_includes: []
+
+    # No SSL certs needed for testing
+    ssl_certs: []
+
+  tasks:
+    - name: Create dendrite directories for testing
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - /srv/dendrite
+        - /etc/dendrite
+
+    - name: Create dummy dendrite service for testing
+      ansible.builtin.systemd:
+        name: dendrite
+        state: stopped
+        enabled: false
+      ignore_errors: true
+
+    - name: Test nginx_mono configuration with dendrite settings
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: dendrite
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: "{{ dendrite_server_name }}"
+          server_port: 80  # HTTP-only for testing
+          upstream_name: dendrite
+          upstream_servers:
+            - "127.0.0.1:8008"
+          proxy_pass: "http://dendrite"
+          proxy_location: "/_matrix"
+          proxy_timeout: "600"
+          locations:
+            - name: "/.well-known/matrix/server"
+              actions:
+                - "default_type application/json"
+                - >-
+                  return 200 '{ "m.server": "{{ dendrite_server_name }}:443" }'
+            - name: "/.well-known/matrix/client"
+              actions:
+                - "default_type application/json"
+                - 'add_header "Access-Control-Allow-Origin" *'
+                - >-
+                  return 200 '{ "m.homeserver": { "base_url": "https://{{ dendrite_server_name }}" } }'
+          redirects: "{{ dendrite_redirects }}"
+          vhost_includes: "{{ dendrite_vhost_includes }}"
+          vhost_users: "{{ dendrite_vhost_users }}"
+          vhost_for_zabbix: "{{ dendrite_vhost_for_zabbix }}"
+          letsencrypt: "{{ dendrite_vhost_letsencrypt }}"

@@ -1,0 +1,52 @@
+---
+name: "alphanodes.setup.dendrite"
+'on':
+  pull_request:
+  push:
+    branches:
+      - main
+    paths:
+      - 'roles/dendrite/**'
+      - 'roles/nginx_mono/**'
+      - 'molecule/dendrite/**'
+      - '.github/workflows/dendrite.yml'
+
+defaults:
+  run:
+    working-directory: 'dendrite'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      PY_COLORS: 1
+      ANSIBLE_FORCE_COLOR: 1
+
+    strategy:
+      matrix:
+        distro:
+          - ubuntu2204
+          - debian11
+
+    steps:
+      - name: Check out the codebase.
+        uses: actions/checkout@v5
+        with:
+          path: 'dendrite'
+
+      - name: Set up Python 3.
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install test dependencies.
+        run: |
+          python -m pip install --no-cache-dir --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Run Molecule tests.
+        run: |
+          molecule --version
+          molecule test -s dendrite
+        env:
+          MOLECULE_DISTRO: ${{ matrix.distro }}
