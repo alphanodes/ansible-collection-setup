@@ -11,7 +11,7 @@
       server_name: "{{ nextcloud_vhost_server }}"
       root: "{{ nextcloud_htdocs }}"
       index: "index.php index.html /index.php$request_uri"
-      with_fmp: "{{ nextcloud_with_fmp | default('nextcloud') }}"
+      with_fpm: "{{ nextcloud_with_fpm | default('nextcloud') }}"
       fastcgi_buffers: "64 8K"
       fastcgi_buffer_size: "4k"
       fastcgi_busy_buffers_size: "8k"

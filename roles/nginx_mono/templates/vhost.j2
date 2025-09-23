@@ -91,7 +91,7 @@ server {
   fastcgi_max_temp_file_size 0;
 
 {% endif %}
-{% if instance.with_fmp is defined %}
+{% if instance.with_fpm is defined %}
 {% include 'includes/fpm_location.inc.j2' %}
 
 {% endif %}
