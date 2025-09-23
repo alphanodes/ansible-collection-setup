@@ -1,0 +1,112 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Check if PostgreSQL is running
+      ansible.builtin.service:
+        name: postgresql
+        state: started
+      check_mode: true
+      register: postgresql_service
+      failed_when: postgresql_service.changed
+
+    - name: Check PostgreSQL process is running
+      ansible.builtin.command: pgrep -f postgres
+      register: postgresql_process
+      changed_when: false
+
+    - name: Verify PostgreSQL is listening on port 5432
+      ansible.builtin.wait_for:
+        port: 5432
+        host: localhost
+        delay: 1
+        timeout: 10
+      register: postgresql_connection
+
+    - name: Check PostgreSQL configuration file exists
+      ansible.builtin.stat:
+        path: "/etc/postgresql/{{ postgresql_version | default('17') }}/main/postgresql.conf"
+      register: postgresql_config
+
+    - name: Check pg_hba.conf file exists
+      ansible.builtin.stat:
+        path: "/etc/postgresql/{{ postgresql_version | default('17') }}/main/pg_hba.conf"
+      register: pg_hba_config
+
+    - name: Test PostgreSQL connectivity as postgres user
+      ansible.builtin.command: sudo -u postgres psql -c "SELECT version();"
+      register: postgresql_version_check
+      changed_when: false
+
+    - name: Check if pg_stat_statements extension is available
+      ansible.builtin.command: sudo -u postgres psql -c "SELECT * FROM pg_available_extensions WHERE name = 'pg_stat_statements';"
+      register: pg_stat_statements_check
+      changed_when: false
+
+    - name: Verify postgresql data directory exists
+      ansible.builtin.stat:
+        path: "/var/lib/postgresql/{{ postgresql_version | default('17') }}/main"
+      register: postgresql_data_dir
+
+    - name: Check PostgreSQL log directory
+      ansible.builtin.stat:
+        path: "/var/log/postgresql"
+      register: postgresql_log_dir
+
+    - name: Test basic database operations
+      block:
+        - name: Create test database
+          ansible.builtin.command: sudo -u postgres createdb molecule_test_db
+          register: create_db_result
+          changed_when: true
+
+        - name: Connect to test database
+          ansible.builtin.command: sudo -u postgres psql -d molecule_test_db -c "SELECT 1 as test;"
+          register: test_connection
+          changed_when: false
+
+        - name: Drop test database
+          ansible.builtin.command: sudo -u postgres dropdb molecule_test_db
+          register: drop_db_result
+          changed_when: true
+
+    - name: Check PostgreSQL system user exists
+      ansible.builtin.user:
+        name: postgres
+        state: present
+      check_mode: true
+      register: postgres_user
+      failed_when: postgres_user.changed
+
+    - name: Verify PostgreSQL can handle connections
+      ansible.builtin.command: sudo -u postgres psql -c "SHOW max_connections;"
+      register: max_connections_check
+      changed_when: false
+
+    - name: Check shared_preload_libraries configuration
+      ansible.builtin.command: sudo -u postgres psql -c "SHOW shared_preload_libraries;"
+      register: shared_preload_check
+      changed_when: false
+
+    - name: Display comprehensive test results
+      ansible.builtin.debug:
+        msg:
+          - "PostgreSQL Service: {{ 'OK' if not postgresql_service.changed else 'FAILED' }}"
+          - "PostgreSQL Process: {{ 'OK' if postgresql_process.rc == 0 else 'FAILED' }}"
+          - "PostgreSQL Connectivity: {{ 'OK' if postgresql_connection is succeeded else 'FAILED' }}"
+          - "Config File: {{ 'OK' if postgresql_config.stat.exists else 'FAILED' }}"
+          - "pg_hba.conf: {{ 'OK' if pg_hba_config.stat.exists else 'FAILED' }}"
+          - "PostgreSQL Version: {{ 'OK' if postgresql_version_check.rc == 0 else 'FAILED' }}"
+          - "pg_stat_statements: {{ 'OK' if pg_stat_statements_check.rc == 0 else 'FAILED' }}"
+          - "Data Directory: {{ 'OK' if postgresql_data_dir.stat.exists else 'FAILED' }}"
+          - "Log Directory: {{ 'OK' if postgresql_log_dir.stat.exists else 'FAILED' }}"
+          - "Database Operations: {{ 'OK' if (create_db_result.rc == 0 and test_connection.rc == 0 and drop_db_result.rc == 0) else 'FAILED' }}"
+          - "PostgreSQL User: {{ 'OK' if not postgres_user.changed else 'FAILED' }}"
+          - "Max Connections: {{ 'OK' if max_connections_check.rc == 0 else 'FAILED' }}"
+          - "Shared Preload Libraries: {{ 'OK' if shared_preload_check.rc == 0 else 'FAILED' }}"
+
+    - name: Display PostgreSQL version information
+      ansible.builtin.debug:
+        msg: "{{ postgresql_version_check.stdout }}"
+      when: postgresql_version_check.rc == 0

@@ -15,5 +15,24 @@
         name: python3-debian
         state: present
 
+  vars:
+    # Test configuration for PostgreSQL
+    postgresql_version: '17'
+    postgresql_shared_buffers: 128MB
+    postgresql_effective_cache_size: 512MB
+    postgresql_max_connections: 100
+    postgresql_listen_addresses: localhost
+    postgresql_port: 5432
+
+    # Test database and user
+    postgresql_databases:
+      - name: molecule_test
+        owner: postgres
+        encoding: UTF-8
+
+    postgresql_users:
+      - name: molecule_user
+        password: molecule_password
+
   roles:
     - role: alphanodes.setup.postgresql
