@@ -2,7 +2,7 @@
   # php-fpm configuration
   location ~ \.php$ {
 
-    {%- include 'templates/nginx/fpm.inc.j2' with context %}
+    {%- include 'includes/fpm.inc.j2' %}
 
   }
 

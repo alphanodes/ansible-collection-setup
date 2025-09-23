@@ -1,5 +1,5 @@
 #
-# Mapping for {{ instance.name }}
+# Mapping for {{ instance.name | default(nginx_mono_service_name) }}
 #
 
 {% for m in instance.mappings %}
@@ -22,7 +22,7 @@ server {
   listen [::]:443 {{ nginx_ssl_listen_option }};
 {% endif %}
 {% endif %}
-  {% include 'templates/nginx/modern_protocols.inc.j2' with context %}
+  {% include 'includes/modern_protocols.inc.j2' %}
   server_name {{ m.server }}{{ ' ' + m.server_alias if m.server_alias is defined else '' }};
   access_log off;
 
@@ -143,7 +143,7 @@ server {
   listen [::]:80;
 {% endif %}
 {% endif %}
-  {% include 'templates/nginx/modern_protocols.inc.j2' with context %}
+  {% include 'includes/modern_protocols.inc.j2' %}
   server_name {{ m.server }};
 
   {% if m.port == 80 -%}
@@ -164,7 +164,7 @@ server {
 server {
   listen 80;
   listen 443 {{ nginx_ssl_listen_option }};
-  {% include 'templates/nginx/modern_protocols.inc.j2' with context %}
+  {% include 'includes/modern_protocols.inc.j2' %}
   server_name {{ m.redirects | join(' ') }};
 
   {% if m.letsencrypt is defined and m.letsencrypt -%}

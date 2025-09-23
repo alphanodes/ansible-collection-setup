@@ -1,5 +1,5 @@
 
-# Redirects for {{ instance_name | default(instance.name) }}
+# Redirects for {{ instance_name | default(instance.name) | default(nginx_mono_service_name) }}
 server {
   server_name {{ instance.redirects | join(' ') }};
   listen 80;
@@ -13,12 +13,12 @@ server {
   listen [::]:443 {{ nginx_ssl_listen_option }};
 {% endif %}
 
-  {% include 'templates/nginx/modern_protocols.inc.j2' with context %}
+  {% include 'includes/modern_protocols.inc.j2' %}
 {% if instance.redirects_ssl_cert is defined %}
   ssl_certificate /etc/ssl/certs/{{ instance.redirects_ssl_cert }}.crt;
   ssl_certificate_key /etc/ssl/private/{{ instance.redirects_ssl_cert }}.key;
 {% else %}
-  {% include 'templates/nginx/ssl.inc.j2' with context %}
+  {% include 'includes/ssl.inc.j2' %}
 {% endif %}
 {% endif %}
 {% if instance.server_port is defined and instance.server_port == 80 %}
