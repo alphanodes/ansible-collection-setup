@@ -7,6 +7,8 @@ CLAUDE.md
 .venv
 .vscode
 .ansible
+barman_id_rsa
+barman_id_rsa.pub
 /*.retry
 /*.tar.gz
 /.python-version
