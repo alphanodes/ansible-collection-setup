@@ -1,0 +1,8 @@
+{% if instance.upstream_name is defined and instance.upstream_servers is defined %}
+upstream {{ instance.upstream_name }} {
+{% for server in instance.upstream_servers %}
+  server {{ server }};
+{% endfor %}
+}
+
+{% endif %}

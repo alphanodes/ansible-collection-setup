@@ -1,6 +1,7 @@
 {{ managed_by_ansible | comment }}
 # nginx {{ nginx_mono_service_name }} vhost configuration
 
+{% include 'includes/upstream.inc.j2' %}
 server {
 {# Clean listen configuration using pre-calculated variables #}
 {% set default_server_flag = ' default_server' if nginx_listen_config.default_server else '' -%}
@@ -57,6 +58,12 @@ server {
 {% endif %}
 {% if nginx_with_ssl %}
 {% include 'includes/ssl.inc.j2' %}
+{% endif %}
+{% if instance.additional_headers is defined %}
+{% for header in instance.additional_headers %}
+  add_header {{ header }};
+{% endfor %}
+
 {% endif %}
 {% if nginx_fastcgi_microcache_zone != '' and instance.microcache_zone is defined %}
   # microcache settings for zone {{ nginx_fastcgi_microcache_zone }}

@@ -1,5 +1,8 @@
 
   # Error handler
+  {% if instance.error_497_redirect is defined -%}
+  error_page 497 {{ instance.error_497_redirect }};
+  {% endif -%}
   {% if instance.error_404_page is defined -%}
   error_page 404 {{ instance.error_404_page }};
   location {{ instance.error_404_page }} {

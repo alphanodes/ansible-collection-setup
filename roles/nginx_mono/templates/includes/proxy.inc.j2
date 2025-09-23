@@ -2,21 +2,37 @@
   location {{ instance.proxy_location | default('/') }} {
     proxy_pass {{ instance.proxy_pass }};
     proxy_set_header X-Real-IP $remote_addr;
+{% if instance.proxy_host_header is defined %}
+    proxy_set_header Host {{ instance.proxy_host_header }};
+{% else %}
     proxy_set_header Host $host;
+{% endif %}
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+{% if instance.proxy_forwarded_proto is defined %}
+    proxy_set_header X-Forwarded-Proto {{ instance.proxy_forwarded_proto }};
+{% else %}
     proxy_set_header X-Forwarded-Proto $scheme;
+{% endif %}
 
 {% if instance.proxy_websocket is defined and instance.proxy_websocket %}
     # WebSocket support
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
+{% if instance.proxy_connection_upgrade is defined %}
+    proxy_set_header Connection "{{ instance.proxy_connection_upgrade }}";
+{% else %}
     proxy_set_header Connection $connection_upgrade;
+{% endif %}
 {% endif %}
 
 {% if instance.proxy_headers is defined %}
 {% for header in instance.proxy_headers %}
     proxy_set_header {{ header }};
 {% endfor %}
+{% endif %}
+
+{% if instance.proxy_redirect is defined %}
+    proxy_redirect {{ instance.proxy_redirect }};
 {% endif %}
 
 {% if instance.proxy_timeout is defined %}
