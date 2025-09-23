@@ -5,7 +5,7 @@ server {
 {% if nginx_with_ipv6 %}
   listen [::]:80;
 {% endif %}
-{% include 'templates/nginx/modern_protocols.inc.j2' with context %}
+{% include 'includes/modern_protocols.inc.j2' %}
   server_name _;
   return 301 {{ 'https' if nginx_with_ssl else 'http' }}://{{ instance.server_name }}$request_uri;
 }
@@ -16,10 +16,10 @@ server {
 {% if nginx_with_ipv6 %}
   listen [::]:{{ instance.server_port | default('443') }} {{ nginx_ssl_listen_option }} default_server;
 {% endif %}
-{% include 'templates/nginx/modern_protocols.inc.j2' with context %}
+{% include 'includes/modern_protocols.inc.j2' %}
   server_name _;
   return 301 https://{{ instance.server_name }}$request_uri;
 
-  {% include 'templates/nginx/ssl.inc.j2' with context %}
+  {% include 'includes/ssl.inc.j2' %}
 }
 {% endif %}

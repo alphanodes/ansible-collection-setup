@@ -1,5 +1,5 @@
 
-# External redirects for {{ instance_name | default(instance.name) }}
+# External redirects for {{ instance_name | default(instance.name) | default(nginx_mono_service_name) }}
 {% for ex in instance.external_redirects %}
 server {
   server_name {{ ex.server_name | join(' ') }};
@@ -12,7 +12,7 @@ server {
 {% if nginx_with_ipv6 %}
   listen [::]:443;
 {% endif %}
-  {% include 'templates/nginx/ssl.inc.j2' with context %}
+  {% include 'includes/ssl.inc.j2' %}
 {% endif %}
 
   return 301 {{ ex.rewrite }};
