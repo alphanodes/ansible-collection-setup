@@ -21,16 +21,36 @@
     vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
   when: rocketchat_vhost_letsencrypt is undefined or not rocketchat_vhost_letsencrypt
 
-- name: Update Rocket.Chat vhost configuration
-  ansible.builtin.template:
-    src: vhost.j2
-    dest: /etc/nginx/sites-available/rocketchat.conf
-    mode: '0644'
-  notify: Reload nginx
-
-- name: Ensure Rocket.Chat vhost is enabled
-  ansible.builtin.file:
-    src: /etc/nginx/sites-available/rocketchat.conf
-    dest: /etc/nginx/sites-enabled/rocketchat.conf
-    state: link
-  notify: Reload nginx
+- name: Setup nginx_mono and configure rocketchat vhost
+  tags: nginx
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nginx_mono
+  vars:
+    nginx_with_websocket: true
+    nginx_mono_service_name: rocketchat
+    nginx_mono_service_enabled: "{{ rocketchat_enabled }}"
+    nginx_mono_service_config:
+      server_name: "{{ rocketchat_vhost_server }}"
+      root: "{{ rocketchat_application_path }}"
+      upstream_name: rocket_chat
+      upstream_servers:
+        - "{{ rocketchat_internal_host }}:{{ rocketchat_internal_port }}"
+      proxy_pass: "http://rocket_chat"
+      proxy_location: "/"
+      proxy_websocket: true
+      proxy_host_header: "$host:$server_port"
+      proxy_forwarded_proto: "https"
+      proxy_connection_upgrade: "upgrade"
+      proxy_redirect: "off"
+      proxy_timeout: 86400
+      proxy_headers:
+        - "Referer $http_referer"
+        - "X-Forwarded-Ssl on"
+        - "X-Nginx-Proxy true"
+      error_497_redirect: "https://$host:$server_port$request_uri"
+      additional_headers:
+        - "Referrer-Policy 'no-referrer'"
+      vhost_includes: "{{ rocketchat_vhost_includes | default([]) }}"
+      vhost_for_zabbix: "{{ rocketchat_vhost_for_zabbix | default(false) }}"
+      redirects: "{{ rocketchat_redirects | default([]) }}"
+      letsencrypt: "{{ rocketchat_vhost_letsencrypt | default(false) }}"

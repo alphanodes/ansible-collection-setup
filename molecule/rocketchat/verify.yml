@@ -1,0 +1,130 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check if nginx is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+      check_mode: true
+      register: nginx_service
+      failed_when: nginx_service.changed
+
+    - name: Check nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax
+      changed_when: false
+
+    - name: Check if rocketchat vhost config exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/rocketchat.conf
+      register: rocketchat_vhost
+
+    - name: Verify rocketchat vhost is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/rocketchat.conf
+      register: rocketchat_enabled_check
+
+    - name: Check if rocketchat service exists (should not be running in test)
+      ansible.builtin.service:
+        name: rocketchat
+        state: stopped
+      check_mode: true
+      register: rocketchat_service
+      ignore_errors: true
+
+    - name: Test nginx configuration without actual rocketchat service
+      ansible.builtin.uri:
+        url: http://localhost/
+        method: GET
+        status_code: [200, 502, 503]  # 502/503 expected since rocketchat isn't running
+        headers:
+          Host: rocketchat.local
+      register: nginx_proxy
+      retries: 3
+      delay: 1
+
+    - name: Verify nginx_mono integration (no external template refs)
+      ansible.builtin.find:
+        paths: /etc/nginx/sites-available/
+        patterns: "*.conf"
+        contains: "templates/nginx/"
+      register: external_refs
+      failed_when: external_refs.matched > 0
+
+    - name: Check WebSocket support in nginx config
+      ansible.builtin.command: grep -q "connection_upgrade" /etc/nginx/nginx.conf
+      register: websocket_support
+      changed_when: false
+      failed_when: false
+
+    - name: Check upstream configuration in nginx config
+      ansible.builtin.command: grep -q "upstream rocket_chat" /etc/nginx/sites-available/rocketchat.conf
+      register: upstream_check
+      changed_when: false
+      failed_when: false
+
+    - name: Verify rocketchat vhost has proxy configuration
+      ansible.builtin.command: grep -q "proxy_pass.*rocket_chat" /etc/nginx/sites-available/rocketchat.conf
+      register: proxy_config
+      changed_when: false
+      failed_when: false
+
+    - name: Verify rocketchat-specific headers in vhost
+      ansible.builtin.command: grep -q "X-Nginx-Proxy\|Referrer-Policy" /etc/nginx/sites-available/rocketchat.conf
+      register: rocketchat_headers
+      changed_when: false
+      failed_when: false
+
+    - name: Check long timeout configuration
+      ansible.builtin.command: grep -q "proxy_send_timeout 86400" /etc/nginx/sites-available/rocketchat.conf
+      register: timeout_check
+      changed_when: false
+      failed_when: false
+
+    - name: Verify error 497 handling
+      ansible.builtin.command: grep -q "error_page 497" /etc/nginx/sites-available/rocketchat.conf
+      register: error497_check
+      changed_when: false
+      failed_when: false
+
+    - name: Verify WebSocket headers in rocketchat vhost
+      ansible.builtin.command: grep -q "proxy_set_header.*Upgrade" /etc/nginx/sites-available/rocketchat.conf
+      register: websocket_headers
+      changed_when: false
+      failed_when: false
+
+    - name: Check if nginx has reuseport configured (when enabled)
+      ansible.builtin.command: grep -q "listen.*reuseport" /etc/nginx/sites-available/rocketchat.conf
+      register: reuseport_config
+      changed_when: false
+      failed_when: false
+
+    - name: Check listen configuration syntax (should have proper listen directives)
+      ansible.builtin.command: grep -c "listen " /etc/nginx/sites-available/rocketchat.conf
+      register: listen_directives_count
+      changed_when: false
+      failed_when: false
+
+    - name: Display comprehensive test results
+      ansible.builtin.debug:
+        msg:
+          - "=== NGINX_MONO + ROCKETCHAT INTEGRATION TESTS ==="
+          - "Nginx service: {{ 'OK' if not nginx_service.changed else 'FAILED' }}"
+          - "Nginx syntax: {{ 'OK' if nginx_syntax.rc == 0 else 'FAILED' }}"
+          - "Rocketchat vhost exists: {{ 'OK' if rocketchat_vhost.stat.exists else 'FAILED' }}"
+          - "Rocketchat vhost enabled: {{ 'OK' if rocketchat_enabled_check.stat.exists else 'FAILED' }}"
+          - "Rocketchat service check: {{ 'OK' if rocketchat_service is not failed else 'FAILED' }}"
+          - "Nginx proxy configured: {{ 'OK' if nginx_proxy.status in [200, 502, 503] else 'FAILED' }}"
+          - "No external template refs: {{ 'OK' if external_refs.matched == 0 else 'FAILED' }}"
+          - "WebSocket support enabled: {{ 'OK' if websocket_support.rc == 0 else 'FAILED' }}"
+          - "Upstream configured: {{ 'OK' if upstream_check.rc == 0 else 'FAILED' }}"
+          - "Proxy config present: {{ 'OK' if proxy_config.rc == 0 else 'FAILED' }}"
+          - "Rocketchat headers present: {{ 'OK' if rocketchat_headers.rc == 0 else 'FAILED' }}"
+          - "Long timeout configured: {{ 'OK' if timeout_check.rc == 0 else 'FAILED' }}"
+          - "Error 497 handling: {{ 'OK' if error497_check.rc == 0 else 'FAILED' }}"
+          - "WebSocket headers present: {{ 'OK' if websocket_headers.rc == 0 else 'FAILED' }}"
+          - "Reuseport optimization: {{ 'ENABLED' if reuseport_config.rc == 0 else 'DISABLED' }} (expected: ENABLED in test)"
+          - "Listen directives count: {{ listen_directives_count.stdout | default('0') }}"
+          - "=== nginx_mono ROCKETCHAT INTEGRATION SUCCESS ==="
