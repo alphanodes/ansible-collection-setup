@@ -30,7 +30,6 @@ server {
 {% endif %}
 
 {% include 'includes/modern_protocols.inc.j2' %}
-
 {% if instance.server_name is defined %}
   server_name {{ instance.server_name }}{{ ' ' + instance.server_alias if instance.server_alias is defined else '' }};
 {% endif %}
@@ -105,11 +104,8 @@ server {
 {% endif %}
 
 {% include 'includes/location.inc.j2' %}
-
 {% include 'includes/proxy.inc.j2' %}
-
 {% include 'includes/rewrite_lines.inc.j2' %}
-
 {% include 'includes/error_handler.inc.j2' %}
 
 {% if instance.vhost_users is defined and instance.vhost_users | length > 0 %}
