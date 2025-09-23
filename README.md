@@ -5,14 +5,14 @@
 This collection provides setup for:
 
 - Linux operating systems:
-  - Debian 11/12/13
-  - Ubuntu 20.04/22.04
+  - Debian 12/13
+  - Ubuntu 24.04
 
 All provided roles do not use docker as container system.
 
 ## Minimum required Ansible-version
 
-- Ansible >= 2.15.0
+- Ansible >= 2.16.0
 
 ## Included content
 

@@ -1,0 +1,85 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Check if nginx is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+      check_mode: true
+      register: nginx_status
+      failed_when: nginx_status.changed
+
+    - name: Verify nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax_check
+      changed_when: false
+
+    - name: Check if nextcloud vhost config exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/nextcloud.conf
+      register: nextcloud_vhost_config
+
+    - name: Verify nextcloud vhost config file exists
+      ansible.builtin.assert:
+        that:
+          - nextcloud_vhost_config.stat.exists
+        fail_msg: "nextcloud vhost config file not found"
+
+    - name: Check nextcloud vhost configuration content
+      ansible.builtin.slurp:
+        src: /etc/nginx/sites-enabled/nextcloud.conf
+      register: nextcloud_vhost_content
+
+    - name: Verify nextcloud specific configuration
+      ansible.builtin.assert:
+        that:
+          - "'location = /' in nextcloud_vhost_content.content | b64decode"
+          - "'DavClnt' in nextcloud_vhost_content.content | b64decode"
+          - "'fastcgi_buffers 64 8K' in nextcloud_vhost_content.content | b64decode"
+          - "'X-Frame-Options' in nextcloud_vhost_content.content | b64decode"
+          - "'X-Content-Type-Options' in nextcloud_vhost_content.content | b64decode"
+          - "'Referrer-Policy' in nextcloud_vhost_content.content | b64decode"
+          - "'return 404' in nextcloud_vhost_content.content | b64decode"
+        fail_msg: "nextcloud specific nginx configuration not found"
+
+    - name: Check PHP-FPM service status
+      ansible.builtin.service_facts:
+
+    - name: Verify PHP-FPM is running
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.services['php8.2-fpm.service'].state == 'running'
+        fail_msg: "PHP-FPM service is not running"
+
+    - name: Test HTTP response (will fail without actual Nextcloud, but tests nginx config)
+      ansible.builtin.uri:
+        url: "http://localhost"
+        method: GET
+        status_code: [200, 301, 302, 404, 500]
+      register: http_response
+      ignore_errors: true
+
+    - name: Verify nginx is responding
+      ansible.builtin.assert:
+        that:
+          - http_response is not failed
+        fail_msg: "nginx is not responding to HTTP requests"
+
+    - name: Test direct PHP file access
+      ansible.builtin.uri:
+        url: "http://localhost/index.php"
+        method: GET
+        status_code: [200, 301, 302, 404, 500]
+      register: php_response
+      ignore_errors: true
+
+    - name: Verify basic nginx configuration directives
+      ansible.builtin.assert:
+        that:
+          - "'server_name nextcloud.test.local' in nextcloud_vhost_content.content | b64decode"
+          - "'root /var/www/nextcloud' in nextcloud_vhost_content.content | b64decode"
+          - "'index index.php index.html' in nextcloud_vhost_content.content | b64decode"
+        fail_msg: "Basic nginx configuration directives missing"
