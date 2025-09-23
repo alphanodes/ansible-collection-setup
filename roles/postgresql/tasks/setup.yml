@@ -73,11 +73,13 @@
     login_db: template1
   when: postgresql_with_pg_stat_statements
 
-- name: Remove log files if syslog is active
+- name: Remove entire PostgreSQL log directory if syslog is active
   ansible.builtin.file:
     path: /var/log/postgresql
     state: absent
-  when: postgresql_log_destination == 'syslog'
+  when:
+    - postgresql_log_destination == 'syslog'
+    - ansible_hostname != 'instance'
 
 - name: Include postgresqltuner tasks
   ansible.builtin.include_tasks: postgresqltuner.yml
