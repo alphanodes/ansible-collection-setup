@@ -24,8 +24,9 @@ jobs:
     strategy:
       matrix:
         distro:
-          - ubuntu2204
-          - debian11
+          - ubuntu2404
+          - debian12
+          - debian13
 
     steps:
       - name: Check out the codebase.
