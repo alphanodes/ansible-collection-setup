@@ -1,0 +1,66 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+
+    - name: Add python3-debian for deb822 support
+      ansible.builtin.apt:
+        name: python3-debian
+        state: present
+
+  vars:
+    # nginx_mono configuration (defaults + testing)
+    nginx_with_ssl: false  # Disable SSL for testing
+    nginx_with_ipv6: false
+    nginx_force_ssl: false
+    nginx_with_http3: false  # Test with HTTP/3 disabled (would need SSL)
+    nginx_with_reuseport: true  # Test reuseport optimization
+    nginx_resolver: ['8.8.8.8', '8.8.4.4']
+    hoster: 'local'
+
+    # grafana configuration
+    grafana_vhost_server: grafana.local
+    grafana_listen_port: 3000
+    grafana_web_user: grafana
+    grafana_web_password: testpass123  # Enable basic auth for testing
+    grafana_vhost_for_zabbix: false
+    grafana_vhost_letsencrypt: false
+    grafana_redirects: ['grafana-web.local']  # Test redirects
+
+    # No SSL certs needed for testing
+    ssl_certs: []
+
+  # Test nginx_mono directly with grafana configuration
+  tasks:
+    - name: Create dummy grafana service for testing
+      ansible.builtin.systemd:
+        name: grafana-server
+        state: stopped
+        enabled: false
+      ignore_errors: true
+
+    - name: Test nginx_mono configuration with grafana settings
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_with_websocket: true
+        nginx_mono_service_name: grafana
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: "{{ grafana_vhost_server }}"
+          server_port: 80  # HTTP-only for testing
+          proxy_pass: "http://127.0.0.1:{{ grafana_listen_port }}/"
+          proxy_location: "/"
+          proxy_websocket: true
+          proxy_headers:
+            - "X-Forwarded-Host $host"
+          redirects: "{{ grafana_redirects | default([]) }}"
+          vhost_users: "{{ [{'user': grafana_web_user, 'password': grafana_web_password}] if grafana_web_password | length > 0 else [] }}"
+          vhost_for_zabbix: false
+          letsencrypt: false

@@ -1,0 +1,81 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+
+    - name: Add python3-debian for deb822 support
+      ansible.builtin.apt:
+        name: python3-debian
+        state: present
+
+  vars:
+    # nginx_mono configuration (defaults + testing)
+    nginx_with_ssl: false  # Disable SSL for testing
+    nginx_with_ipv6: false
+    nginx_force_ssl: false
+    nginx_with_http3: false  # Test with HTTP/3 disabled (would need SSL)
+    nginx_with_reuseport: true  # Test reuseport optimization
+    nginx_resolver: ['8.8.8.8', '8.8.4.4']
+    hoster: 'local'
+
+    # element_web configuration
+    element_web_enabled: true
+    element_web_vhost_server: element.local
+    element_web_path: /usr/share/element-web
+    element_web_vhost_users: []  # No auth for testing
+    element_web_vhost_for_zabbix: false
+    element_web_vhost_letsencrypt: false
+    element_web_redirects: ['element-web.local']  # Test redirects
+
+    # No SSL certs needed for testing
+    ssl_certs: []
+
+  # Test nginx_mono directly with element_web configuration
+  tasks:
+    - name: Create element_web directory for testing
+      ansible.builtin.file:
+        path: "{{ element_web_path }}"
+        state: directory
+        mode: '0755'
+
+    - name: Create test index.html for element_web
+      ansible.builtin.copy:
+        dest: "{{ element_web_path }}/index.html"
+        content: |
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Element Web - Test</title>
+              <meta http-equiv="Content-Security-Policy" content="frame-ancestors 'none'">
+          </head>
+          <body>
+              <h1>Element Web Test Page</h1>
+              <p>This is a test page for Element Web nginx configuration.</p>
+          </body>
+          </html>
+        mode: '0644'
+
+    - name: Test nginx_mono configuration with element_web settings
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: element_web
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: "{{ element_web_vhost_server }}"
+          server_port: 80  # HTTP-only for testing
+          root: "{{ element_web_path }}"
+          index: "index.html"
+          redirects: "{{ element_web_redirects | default([]) }}"
+          vhost_users: []
+          vhost_for_zabbix: false
+          letsencrypt: false
+          static_service: true
+          additional_headers:
+            - "Content-Security-Policy \"frame-ancestors 'none'\""

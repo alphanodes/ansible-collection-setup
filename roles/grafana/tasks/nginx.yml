@@ -1,59 +1,28 @@
 ---
-- name: Update grafana user access
-  community.general.htpasswd:
-    path: /etc/nginx/.htpasswd_grafana
-    name: '{{ grafana_web_user }}'
-    password: '{{ grafana_web_password }}'
-    owner: root
-    group: "{{ nginx_group }}"
-    mode: '0640'
-  when: grafana_web_password | length > 0
-  notify: Restart nginx
 
-- name: Remove htpasswd file, if no password is set
-  ansible.builtin.file:
-    path: /etc/nginx/.htpasswd_grafana
-    state: absent
-  when: grafana_web_password | length == 0
-  notify: Restart nginx
+- name: Setup nginx_mono and configure grafana vhost
+  tags: nginx
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nginx_mono
+  vars:
+    nginx_mono_service_name: grafana
+    nginx_mono_service_enabled: true
+    nginx_mono_service_config:
+      server_name: "{{ grafana_vhost_server }}"
+      proxy_pass: "http://127.0.0.1:{{ grafana_listen_port }}/"
+      proxy_location: "/"
+      proxy_headers:
+        - "X-Forwarded-Host $host"
+      redirects: "{{ grafana_redirects | default([]) }}"
+      vhost_users: "{{ [{'user': grafana_web_user, 'password': grafana_web_password}] if grafana_web_password | length > 0 else [] }}"
+      vhost_for_zabbix: "{{ grafana_vhost_for_zabbix | default(false) }}"
+      letsencrypt: "{{ grafana_vhost_letsencrypt | default(false) }}"
+      letsencrypt_cert: "{{ grafana_vhost_letsencrypt_cert | default('') }}"
+      letsencrypt_key: "{{ grafana_vhost_letsencrypt_key | default('') }}"
+      letsencrypt_trusted_cert: "{{ grafana_vhost_letsencrypt_trusted_cert | default('') }}"
+      ssl_cert: "{{ grafana_vhost_ssl_cert | default('') }}"
+      vhost_includes: "{{ grafana_vhost_includes | default([]) }}"
 
-- name: Activate block
-  when:
-    - grafana_vhost_server is defined
-    - grafana_vhost_server | length > 0
-  block:
-    - name: Set TLS files for letsencrypt
-      ansible.builtin.set_fact:
-        vhost_letsencrypt_cert: "{{ grafana_vhost_letsencrypt_cert }}"
-        vhost_letsencrypt_trusted_cert: "{{ grafana_vhost_letsencrypt_trusted_cert }}"
-        vhost_letsencrypt_key: "{{ grafana_vhost_letsencrypt_key }}"
-        force_letsencrypt: true
-      when:
-        - grafana_vhost_letsencrypt is defined
-        - grafana_vhost_letsencrypt
-
-    - name: Check trusted TLS cert
-      ansible.builtin.stat:
-        path: /etc/ssl/certs/{{ grafana_vhost_ssl_cert }}_trusted.crt
-      register: trusted_cert
-      when: grafana_vhost_letsencrypt is undefined or not grafana_vhost_letsencrypt
-
-    - name: Set TLS files
-      ansible.builtin.set_fact:
-        vhost_ssl_cert: "{{ grafana_vhost_ssl_cert }}"
-        vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
-      when: grafana_vhost_letsencrypt is undefined or not grafana_vhost_letsencrypt
-
-    - name: Provide grafana vhost nginx configuration
-      ansible.builtin.template:
-        src: nginx/vhost.j2
-        dest: /etc/nginx/sites-available/grafana.conf
-        mode: '0644'
-      notify: Reload nginx
-
-    - name: Ensure grafana vhost is enabled
-      ansible.builtin.file:
-        src: /etc/nginx/sites-available/grafana.conf
-        dest: /etc/nginx/sites-enabled/grafana.conf
-        state: link
-      notify: Reload nginx
+- name: Include ssl role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.ssl

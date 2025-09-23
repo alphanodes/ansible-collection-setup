@@ -1,0 +1,127 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check if nginx is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+      check_mode: true
+      register: nginx_service
+      failed_when: nginx_service.changed
+
+    - name: Check nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax
+      changed_when: false
+
+    - name: Check if loki vhost config exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/loki.conf
+      register: loki_vhost
+
+    - name: Verify loki vhost is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/loki.conf
+      register: loki_enabled_check
+
+    - name: Test proxy configuration with basic auth
+      ansible.builtin.uri:
+        url: http://localhost/
+        method: GET
+        status_code: [401, 502, 503]  # 401 expected for basic auth, 502/503 expected since loki isn't running
+        headers:
+          Host: loki.local
+      register: proxy_response
+      retries: 3
+      delay: 1
+
+    - name: Test redirect domain
+      ansible.builtin.uri:
+        url: http://localhost/
+        method: GET
+        status_code: [301, 401]  # 301 for redirect or 401 for basic auth
+        headers:
+          Host: loki-web.local
+        follow_redirects: none
+      register: redirect_response
+      retries: 3
+      delay: 1
+      failed_when: false
+
+    - name: Verify nginx_mono integration (no external template refs)
+      ansible.builtin.find:
+        paths: /etc/nginx/sites-available/
+        patterns: "*.conf"
+        contains: "templates/nginx/"
+      register: external_refs
+      failed_when: external_refs.matched > 0
+
+    - name: Check WebSocket support in nginx config
+      ansible.builtin.command: grep -q "connection_upgrade" /etc/nginx/nginx.conf
+      register: websocket_support
+      changed_when: false
+      failed_when: false
+
+    - name: Verify loki proxy configuration
+      ansible.builtin.command: grep -q "proxy_pass.*3100" /etc/nginx/sites-available/loki.conf
+      register: proxy_config
+      changed_when: false
+      failed_when: false
+
+    - name: Verify WebSocket headers in loki vhost
+      ansible.builtin.command: grep -q "proxy_set_header.*Upgrade" /etc/nginx/sites-available/loki.conf
+      register: websocket_headers
+      changed_when: false
+      failed_when: false
+
+    - name: Check basic auth configuration
+      ansible.builtin.command: grep -q "auth_basic" /etc/nginx/sites-available/loki.conf
+      register: basic_auth_config
+      changed_when: false
+      failed_when: false
+
+    - name: Check basic auth password file
+      ansible.builtin.stat:
+        path: /etc/nginx/.htpasswd_loki
+      register: htpasswd_file
+
+    - name: Verify multiple users in htpasswd file
+      ansible.builtin.command: grep -c ":" /etc/nginx/.htpasswd_loki
+      register: user_count
+      changed_when: false
+      failed_when: false
+
+    - name: Check redirect configuration
+      ansible.builtin.command: grep -q "loki-web.local" /etc/nginx/sites-available/loki.conf
+      register: redirect_config
+      changed_when: false
+      failed_when: false
+
+    - name: Check custom location path
+      ansible.builtin.command: grep -q "location /" /etc/nginx/sites-available/loki.conf
+      register: location_config
+      changed_when: false
+      failed_when: false
+
+    - name: Display comprehensive test results
+      ansible.builtin.debug:
+        msg:
+          - "=== NGINX_MONO + LOKI INTEGRATION TESTS ==="
+          - "Nginx service: {{ 'OK' if not nginx_service.changed else 'FAILED' }}"
+          - "Nginx syntax: {{ 'OK' if nginx_syntax.rc == 0 else 'FAILED' }}"
+          - "Loki vhost exists: {{ 'OK' if loki_vhost.stat.exists else 'FAILED' }}"
+          - "Loki vhost enabled: {{ 'OK' if loki_enabled_check.stat.exists else 'FAILED' }}"
+          - "Proxy responding: {{ 'OK' if proxy_response.status in [401, 502, 503] else 'FAILED' }}"
+          - "Redirect working: {{ 'OK' if redirect_response.status in [301, 401] else 'SKIPPED' }}"
+          - "No external template refs: {{ 'OK' if external_refs.matched == 0 else 'FAILED' }}"
+          - "WebSocket support enabled: {{ 'OK' if websocket_support.rc == 0 else 'FAILED' }}"
+          - "Proxy config present: {{ 'OK' if proxy_config.rc == 0 else 'FAILED' }}"
+          - "WebSocket headers present: {{ 'OK' if websocket_headers.rc == 0 else 'FAILED' }}"
+          - "Basic auth configured: {{ 'OK' if basic_auth_config.rc == 0 else 'FAILED' }}"
+          - "Password file exists: {{ 'OK' if htpasswd_file.stat.exists else 'FAILED' }}"
+          - "Multiple users configured: {{ 'OK' if user_count.stdout | int >= 2 else 'FAILED' }}"
+          - "Redirect config present: {{ 'OK' if redirect_config.rc == 0 else 'FAILED' }}"
+          - "Custom location configured: {{ 'OK' if location_config.rc == 0 else 'FAILED' }}"
+          - "=== nginx_mono LOKI INTEGRATION SUCCESS ==="

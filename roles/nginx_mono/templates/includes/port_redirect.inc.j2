@@ -16,8 +16,8 @@ server {
   server_name {{ instance.server_name }};
 {% endif %}
 
-  {% include 'includes/modern_protocols.inc.j2' %}
 {% if instance.server_port != 443 -%}
+  {% include 'includes/modern_protocols.inc.j2' %}
   {% include 'includes/ssl.inc.j2' %}
 {% endif %}
 
