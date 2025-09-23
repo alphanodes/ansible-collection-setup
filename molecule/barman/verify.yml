@@ -1,0 +1,116 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Check if barman user exists
+      ansible.builtin.user:
+        name: barman
+        state: present
+      check_mode: true
+      register: barman_user_check
+      failed_when: barman_user_check.changed
+
+    - name: Check if barman group exists
+      ansible.builtin.group:
+        name: barman
+        state: present
+      check_mode: true
+      register: barman_group_check
+      failed_when: barman_group_check.changed
+
+    - name: Check if barman package is installed
+      ansible.builtin.package:
+        name: barman
+        state: present
+      check_mode: true
+      register: barman_package_check
+      failed_when: barman_package_check.changed
+
+    - name: Check if barman binary exists
+      ansible.builtin.stat:
+        path: /usr/bin/barman
+      register: barman_binary
+
+    - name: Check if barman home directory exists
+      ansible.builtin.stat:
+        path: /var/lib/barman
+      register: barman_home_dir
+
+    - name: Check if barman configuration directory exists
+      ansible.builtin.stat:
+        path: /etc/barman
+      register: barman_config_dir
+
+    - name: Check if main barman configuration file exists
+      ansible.builtin.stat:
+        path: /etc/barman/barman.conf
+      register: barman_main_config
+
+    - name: Test barman version command
+      ansible.builtin.command: barman --version
+      register: barman_version_output
+      changed_when: false
+
+    - name: Test barman help command
+      ansible.builtin.command: barman --help
+      register: barman_help_output
+      changed_when: false
+
+    - name: Check if barman log directory exists
+      ansible.builtin.stat:
+        path: /var/log/barman
+      register: barman_log_dir
+
+    - name: Check barman configuration syntax
+      ansible.builtin.command: barman diagnose
+      register: barman_diagnose
+      changed_when: false
+      failed_when: false
+
+    - name: Check if PostgreSQL client is available for barman
+      ansible.builtin.command: which psql
+      register: psql_check
+      changed_when: false
+      failed_when: false
+
+    - name: Check barman user home directory permissions
+      ansible.builtin.stat:
+        path: /var/lib/barman
+      register: barman_home_perms
+
+    - name: Test barman list-servers command
+      ansible.builtin.command: barman list-servers
+      become: true
+      become_user: barman
+      register: barman_list_servers
+      changed_when: false
+      failed_when: false
+
+    - name: Display comprehensive test results
+      ansible.builtin.debug:
+        msg:
+          - "Barman User: {{ 'OK' if not barman_user_check.changed else 'FAILED' }}"
+          - "Barman Group: {{ 'OK' if not barman_group_check.changed else 'FAILED' }}"
+          - "Barman Package: {{ 'OK' if not barman_package_check.changed else 'FAILED' }}"
+          - "Barman Binary: {{ 'OK' if barman_binary.stat.exists else 'FAILED' }}"
+          - "Barman Home Dir: {{ 'OK' if barman_home_dir.stat.exists else 'FAILED' }}"
+          - "Barman Config Dir: {{ 'OK' if barman_config_dir.stat.exists else 'FAILED' }}"
+          - "Barman Main Config: {{ 'OK' if barman_main_config.stat.exists else 'FAILED' }}"
+          - "Barman Version: {{ 'OK' if barman_version_output.rc == 0 else 'FAILED' }}"
+          - "Barman Help: {{ 'OK' if barman_help_output.rc == 0 else 'FAILED' }}"
+          - "Barman Log Dir: {{ 'OK' if barman_log_dir.stat.exists else 'FAILED' }}"
+          - "Barman Diagnose: {{ 'OK' if barman_diagnose.rc == 0 else 'WARNING' }}"
+          - "PostgreSQL Client: {{ 'OK' if psql_check.rc == 0 else 'FAILED' }}"
+          - "Home Dir Perms: {{ 'OK' if barman_home_perms.stat.exists and barman_home_perms.stat.pw_name == 'barman' else 'FAILED' }}"
+          - "List Servers: {{ 'OK' if barman_list_servers.rc == 0 else 'WARNING' }}"
+
+    - name: Display barman version information
+      ansible.builtin.debug:
+        msg: "{{ barman_version_output.stdout }}"
+      when: barman_version_output.rc == 0
+
+    - name: Display barman diagnose output (if available)
+      ansible.builtin.debug:
+        msg: "{{ barman_diagnose.stdout_lines[:10] }}"
+      when: barman_diagnose.rc == 0
