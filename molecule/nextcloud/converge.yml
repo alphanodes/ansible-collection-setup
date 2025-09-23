@@ -15,6 +15,8 @@
     nextcloud_vhost_includes: []
     ssl_certs: []
     nextcloud_vhost_ssl_cert: ""
+    hoster: "test"  # Define hoster variable for nginx_mono
+    nginx_resolver: ["8.8.8.8", "8.8.4.4"]  # Set explicit DNS resolver
 
   pre_tasks:
     - name: Update apt cache.
@@ -59,6 +61,9 @@
     - role: alphanodes.setup.nextcloud
       vars:
         nextcloud_enabled: true
+        nextcloud_use_nginx_mono: true
+        nextcloud_db_type: sqlite  # Use SQLite instead of PostgreSQL for testing
+        nextcloud_db_host: ""  # No external DB host needed for SQLite
       tags:
         - "!nginx"
 

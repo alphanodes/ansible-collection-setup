@@ -1,0 +1,22 @@
+---
+- name: Prepare (Generate SSH Keys for Testing)
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Create molecule files directory
+      ansible.builtin.file:
+        path: "{{ playbook_dir }}/files"
+        state: directory
+        mode: '0755'
+
+    - name: Generate SSH key pair for barman test
+      ansible.builtin.command: >
+        ssh-keygen -t rsa -b 2048 -f {{ playbook_dir }}/files/barman_id_rsa
+        -N '' -C 'test-barman-key-molecule'
+      args:
+        creates: "{{ playbook_dir }}/files/barman_id_rsa"
+
+    - name: Set proper permissions on private key
+      ansible.builtin.file:
+        path: "{{ playbook_dir }}/files/barman_id_rsa"
+        mode: '0600'

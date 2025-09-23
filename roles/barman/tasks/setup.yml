@@ -39,13 +39,24 @@
     state: present
   when: barman_db_servers | length > 0
 
-- name: Install private ssh key for barman
+- name: Install private ssh key for barman (from files/)
   ansible.builtin.copy:
     src: '{{ barman_private_key }}'
     dest: '{{ barman_home }}/.ssh/id_rsa'
     owner: '{{ barman_user }}'
     group: '{{ barman_group }}'
     mode: '0600'
+  when: barman_private_key is not match("^/.*")
+
+- name: Install private ssh key for barman (from absolute path)
+  ansible.builtin.copy:
+    src: '{{ barman_private_key }}'
+    dest: '{{ barman_home }}/.ssh/id_rsa'
+    owner: '{{ barman_user }}'
+    group: '{{ barman_group }}'
+    mode: '0600'
+    remote_src: true
+  when: barman_private_key is match("^/.*")
 
 - name: Install .pgpass for barman
   ansible.builtin.template:

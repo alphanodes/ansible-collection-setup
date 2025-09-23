@@ -55,7 +55,7 @@
     vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
   when: nextcloud_vhost_letsencrypt is undefined or not nextcloud_vhost_letsencrypt
 
-- name: Update nextcloud vhost configuration
+- name: Update nextcloud vhost configuration (legacy template approach)
   tags:
     - nginx
   ansible.builtin.template:
@@ -65,6 +65,7 @@
     owner: root
     group: root
   notify: Reload nginx
+  when: nextcloud_use_nginx_mono is undefined or not nextcloud_use_nginx_mono
 
 - name: Ensures nextcloud base directory exist
   ansible.builtin.file:
@@ -82,7 +83,7 @@
     group: '{{ nginx_group }}'
   when: nextcloud_with_data_permission
 
-- name: Ensure nextcloud vhost is enabled
+- name: Ensure nextcloud vhost is enabled (legacy nginx approach)
   tags:
     - nginx
   ansible.builtin.file:
@@ -90,6 +91,7 @@
     dest: /etc/nginx/sites-enabled/nextcloud.conf
     state: link
   notify: Reload nginx
+  when: nextcloud_use_nginx_mono is undefined or not nextcloud_use_nginx_mono
 
 - name: Download nextcloud archive {{ nextcloud_source_file }}
   ansible.builtin.get_url:

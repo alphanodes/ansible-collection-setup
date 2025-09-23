@@ -20,6 +20,9 @@
     barman_task: setup
     barman_log_level: DEBUG
 
+    # Use dynamically generated SSH key (now in files/ directory)
+    barman_private_key: barman_id_rsa
+
     # Simplified test configuration without database servers to avoid SSH dependencies
     barman_db_servers: []
 
@@ -30,6 +33,7 @@
         src: /etc
       - name: root
         src: /root
+
 
   roles:
     - role: alphanodes.setup.barman
