@@ -5,7 +5,6 @@ server {
 {% if nginx_with_ipv6 %}
   listen [::]:80;
 {% endif %}
-{% include 'includes/modern_protocols.inc.j2' %}
   server_name _;
   return 301 {{ 'https' if nginx_with_ssl else 'http' }}://{{ instance.server_name }}$request_uri;
 }

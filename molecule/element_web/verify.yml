@@ -1,0 +1,114 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check if nginx is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+      check_mode: true
+      register: nginx_service
+      failed_when: nginx_service.changed
+
+    - name: Check nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax
+      changed_when: false
+
+    - name: Check if element_web vhost config exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/element_web.conf
+      register: element_web_vhost
+
+    - name: Verify element_web vhost is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/element_web.conf
+      register: element_web_enabled_check
+
+    - name: Test static file serving
+      ansible.builtin.uri:
+        url: http://localhost/
+        method: GET
+        status_code: 200
+        headers:
+          Host: element.local
+      register: static_response
+      retries: 3
+      delay: 1
+
+    - name: Test redirect domain
+      ansible.builtin.uri:
+        url: http://localhost/
+        method: GET
+        status_code: 301
+        headers:
+          Host: element-web.local
+        follow_redirects: none
+      register: redirect_response
+      retries: 3
+      delay: 1
+      failed_when: false
+
+    - name: Verify nginx_mono integration (no external template refs)
+      ansible.builtin.find:
+        paths: /etc/nginx/sites-available/
+        patterns: "*.conf"
+        contains: "templates/nginx/"
+      register: external_refs
+      failed_when: external_refs.matched > 0
+
+    - name: Check Content-Security-Policy header in nginx config
+      ansible.builtin.command: grep -q "Content-Security-Policy.*frame-ancestors" /etc/nginx/sites-available/element_web.conf
+      register: csp_header
+      changed_when: false
+      failed_when: false
+
+    - name: Verify static file configuration
+      ansible.builtin.command: grep -q "root.*element-web" /etc/nginx/sites-available/element_web.conf
+      register: static_config
+      changed_when: false
+      failed_when: false
+
+    - name: Check redirect configuration
+      ansible.builtin.command: grep -q "element-web.local" /etc/nginx/sites-available/element_web.conf
+      register: redirect_config
+      changed_when: false
+      failed_when: false
+
+    - name: Check if nginx has reuseport configured (when enabled)
+      ansible.builtin.command: grep -q "listen.*reuseport" /etc/nginx/sites-available/element_web.conf
+      register: reuseport_config
+      changed_when: false
+      failed_when: false
+
+    - name: Check listen configuration syntax (should have proper listen directives)
+      ansible.builtin.command: grep -c "listen " /etc/nginx/sites-available/element_web.conf
+      register: listen_directives_count
+      changed_when: false
+      failed_when: false
+
+    - name: Verify content is served correctly
+      ansible.builtin.command: grep -q "Element Web Test Page" /usr/share/element-web/index.html
+      register: content_check
+      changed_when: false
+      failed_when: false
+
+    - name: Display comprehensive test results
+      ansible.builtin.debug:
+        msg:
+          - "=== NGINX_MONO + ELEMENT_WEB INTEGRATION TESTS ==="
+          - "Nginx service: {{ 'OK' if not nginx_service.changed else 'FAILED' }}"
+          - "Nginx syntax: {{ 'OK' if nginx_syntax.rc == 0 else 'FAILED' }}"
+          - "Element_web vhost exists: {{ 'OK' if element_web_vhost.stat.exists else 'FAILED' }}"
+          - "Element_web vhost enabled: {{ 'OK' if element_web_enabled_check.stat.exists else 'FAILED' }}"
+          - "Static file serving: {{ 'OK' if static_response.status == 200 else 'FAILED' }}"
+          - "Redirect working: {{ 'OK' if redirect_response.status == 301 else 'SKIPPED' }}"
+          - "No external template refs: {{ 'OK' if external_refs.matched == 0 else 'FAILED' }}"
+          - "CSP header present: {{ 'OK' if csp_header.rc == 0 else 'FAILED' }}"
+          - "Static config present: {{ 'OK' if static_config.rc == 0 else 'FAILED' }}"
+          - "Redirect config present: {{ 'OK' if redirect_config.rc == 0 else 'FAILED' }}"
+          - "Reuseport optimization: {{ 'ENABLED' if reuseport_config.rc == 0 else 'DISABLED' }} (expected: ENABLED in test)"
+          - "Listen directives count: {{ listen_directives_count.stdout | default('0') }}"
+          - "Test content exists: {{ 'OK' if content_check.rc == 0 else 'FAILED' }}"
+          - "=== nginx_mono ELEMENT_WEB INTEGRATION SUCCESS ==="

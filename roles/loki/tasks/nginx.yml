@@ -1,63 +1,26 @@
 ---
-- name: Update shipper user access
-  community.general.htpasswd:
-    path: /etc/nginx/.htpasswd_loki
-    name: '{{ loki_web_user }}'
-    password: '{{ loki_web_password }}'
-    owner: root
-    group: "{{ nginx_group }}"
-    mode: '0640'
-  notify: Restart nginx
 
-- name: Update customer user access
-  community.general.htpasswd:
-    path: /etc/nginx/.htpasswd_loki
-    name: '{{ loki_customer_web_user }}'
-    password: '{{ loki_customer_web_password }}'
-    owner: root
-    create: false
-    group: "{{ nginx_group }}"
-    mode: '0640'
-  when: loki_customer_web_user is defined
-  notify: Restart nginx
+- name: Setup nginx_mono and configure loki vhost
+  tags: nginx
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nginx_mono
+  vars:
+    nginx_mono_service_name: loki
+    nginx_mono_service_enabled: true
+    nginx_mono_service_config:
+      server_name: "{{ loki_vhost_server }}"
+      proxy_pass: "http://{{ loki_instance_addr }}:{{ loki_http_listen_port }}"
+      proxy_location: "{{ loki_vhost_location }}"
+      redirects: "{{ loki_redirects | default([]) }}"
+      vhost_users: "{{ [{'user': loki_web_user, 'password': loki_web_password}] + ([{'user': loki_customer_web_user, 'password': loki_customer_web_password}] if loki_customer_web_user is defined else []) }}"
+      vhost_for_zabbix: "{{ loki_vhost_for_zabbix | default(false) }}"
+      letsencrypt: "{{ loki_vhost_letsencrypt | default(false) }}"
+      letsencrypt_cert: "{{ loki_vhost_letsencrypt_cert | default('') }}"
+      letsencrypt_key: "{{ loki_vhost_letsencrypt_key | default('') }}"
+      letsencrypt_trusted_cert: "{{ loki_vhost_letsencrypt_trusted_cert | default('') }}"
+      ssl_cert: "{{ loki_vhost_ssl_cert | default('') }}"
+      vhost_includes: "{{ loki_vhost_includes | default([]) }}"
 
-- name: Activate block
-  when:
-    - loki_vhost_server is defined
-    - loki_vhost_server | length > 0
-  block:
-    - name: Set TLS files for letsencrypt
-      ansible.builtin.set_fact:
-        vhost_letsencrypt_cert: "{{ loki_vhost_letsencrypt_cert }}"
-        vhost_letsencrypt_trusted_cert: "{{ loki_vhost_letsencrypt_trusted_cert }}"
-        vhost_letsencrypt_key: "{{ loki_vhost_letsencrypt_key }}"
-        force_letsencrypt: true
-      when:
-        - loki_vhost_letsencrypt is defined
-        - loki_vhost_letsencrypt
-
-    - name: Check trusted TLS cert
-      ansible.builtin.stat:
-        path: /etc/ssl/certs/{{ loki_vhost_ssl_cert }}_trusted.crt
-      register: trusted_cert
-      when: loki_vhost_letsencrypt is undefined or not loki_vhost_letsencrypt
-
-    - name: Set TLS files
-      ansible.builtin.set_fact:
-        vhost_ssl_cert: "{{ loki_vhost_ssl_cert }}"
-        vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
-      when: loki_vhost_letsencrypt is undefined or not loki_vhost_letsencrypt
-
-    - name: Provide loki vhost nginx configuration
-      ansible.builtin.template:
-        src: nginx/vhost.j2
-        dest: /etc/nginx/sites-available/loki.conf
-        mode: '0644'
-      notify: Reload nginx
-
-    - name: Ensure loki vhost is enabled
-      ansible.builtin.file:
-        src: /etc/nginx/sites-available/loki.conf
-        dest: /etc/nginx/sites-enabled/loki.conf
-        state: link
-      notify: Reload nginx
+- name: Include ssl role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.ssl

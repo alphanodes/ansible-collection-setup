@@ -6,6 +6,50 @@
   ansible.builtin.set_fact:
     nginx_mono_instance: "{{ nginx_mono_instance_defaults | combine(nginx_mono_service_config | default({})) }}"
 
+- name: Check if multiple services would use reuseport without primary service set
+  block:
+    - name: Find existing vhost files with reuseport
+      ansible.builtin.find:
+        paths: /etc/nginx/sites-enabled
+        patterns: "*.conf"
+        excludes: "{{ nginx_mono_service_name }}.conf"
+      register: existing_vhosts
+
+    - name: Check if any existing vhost uses reuseport
+      ansible.builtin.command: grep -l "listen.*reuseport" {{ item.path }}
+      register: reuseport_check
+      loop: "{{ existing_vhosts.files | default([]) }}"
+      failed_when: false
+      changed_when: false
+
+    - name: Fail if multiple services need reuseport but no primary service is configured
+      ansible.builtin.fail:
+        msg: |
+          ERROR: Multiple nginx services detected but no primary service configured!
+
+          Found existing services with reuseport: {{ reuseport_check.results | selectattr('rc', 'equalto', 0) | map(attribute='item.path') | map('basename') | map('regex_replace', '\\.conf$', '') | list }}
+          Current service: {{ nginx_mono_service_name }}
+
+          SOLUTION: Set the primary service for reuseport in your configuration:
+          nginx_reuseport_primary_service: "grafana"  # or "loki" or "{{ nginx_mono_service_name }}"
+
+          Only ONE service per server can use reuseport on the same port (443).
+          This prevents nginx "duplicate listen options" errors.
+      when:
+        - nginx_with_reuseport | default(false)
+        - nginx_reuseport_primary_service is not defined
+        - reuseport_check.results | selectattr('rc', 'equalto', 0) | list | length > 0
+
+- name: Determine if this service should use reuseport
+  ansible.builtin.set_fact:
+    service_uses_reuseport: "{{ nginx_reuseport_primary_service | default('') == nginx_mono_service_name }}"
+  when: nginx_with_reuseport | default(false)
+
+- name: Set service_uses_reuseport to false if reuseport disabled
+  ansible.builtin.set_fact:
+    service_uses_reuseport: false
+  when: not (nginx_with_reuseport | default(false))
+
 - name: Calculate listen configuration
   ansible.builtin.set_fact:
     nginx_listen_config:
@@ -13,7 +57,7 @@
       use_ssl: "{{ nginx_with_ssl and (nginx_mono_instance.server_port is undefined or nginx_mono_instance.server_port == 443) }}"
       use_http: "{{ nginx_mono_instance.server_port is undefined or nginx_mono_instance.server_port == 80 }}"
       use_http3: "{{ nginx_with_http3 | default(false) }}"
-      use_reuseport: "{{ nginx_with_reuseport | default(false) }}"
+      use_reuseport: "{{ service_uses_reuseport | default(false) }}"
       default_server: "{{ nginx_mono_instance.vhost_default is defined and nginx_mono_instance.vhost_default }}"
       ssl_only: "{{ nginx_force_ssl and nginx_with_ssl and (nginx_mono_instance.server_port is undefined or nginx_mono_instance.server_port == 443) }}"
 

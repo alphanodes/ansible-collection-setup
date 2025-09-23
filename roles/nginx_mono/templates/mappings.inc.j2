@@ -22,7 +22,9 @@ server {
   listen [::]:443 {{ nginx_ssl_listen_option }};
 {% endif %}
 {% endif %}
+{% if m.port != 80 -%}
   {% include 'includes/modern_protocols.inc.j2' %}
+{% endif %}
   server_name {{ m.server }}{{ ' ' + m.server_alias if m.server_alias is defined else '' }};
   access_log off;
 
@@ -143,7 +145,9 @@ server {
   listen [::]:80;
 {% endif %}
 {% endif %}
+{% if m.port == 80 -%}
   {% include 'includes/modern_protocols.inc.j2' %}
+{% endif %}
   server_name {{ m.server }};
 
   {% if m.port == 80 -%}

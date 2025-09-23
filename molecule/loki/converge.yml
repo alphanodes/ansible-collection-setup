@@ -1,0 +1,68 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+
+    - name: Add python3-debian for deb822 support
+      ansible.builtin.apt:
+        name: python3-debian
+        state: present
+
+  vars:
+    # nginx_mono configuration (defaults + testing)
+    nginx_with_ssl: false  # Disable SSL for testing
+    nginx_with_ipv6: false
+    nginx_force_ssl: false
+    nginx_with_http3: false  # Test with HTTP/3 disabled (would need SSL)
+    nginx_with_reuseport: true  # Test reuseport optimization
+    nginx_resolver: ['8.8.8.8', '8.8.4.4']
+    hoster: 'local'
+
+    # loki configuration
+    loki_vhost_server: loki.local
+    loki_vhost_location: /
+    loki_instance_addr: 127.0.0.1
+    loki_http_listen_port: 3100
+    loki_web_user: shipper
+    loki_web_password: testsecret123
+    loki_customer_web_user: customer
+    loki_customer_web_password: customersecret456
+    loki_vhost_for_zabbix: false
+    loki_vhost_letsencrypt: false
+    loki_redirects: ['loki-web.local']  # Test redirects
+
+    # No SSL certs needed for testing
+    ssl_certs: []
+
+  # Test nginx_mono directly with loki configuration
+  tasks:
+    - name: Create dummy loki service for testing
+      ansible.builtin.systemd:
+        name: loki
+        state: stopped
+        enabled: false
+      ignore_errors: true
+
+    - name: Test nginx_mono configuration with loki settings
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_with_websocket: true
+        nginx_mono_service_name: loki
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: "{{ loki_vhost_server }}"
+          server_port: 80  # HTTP-only for testing
+          proxy_pass: "http://{{ loki_instance_addr }}:{{ loki_http_listen_port }}"
+          proxy_location: "{{ loki_vhost_location }}"
+          proxy_websocket: true
+          redirects: "{{ loki_redirects | default([]) }}"
+          vhost_users: "{{ [{'user': loki_web_user, 'password': loki_web_password}] + ([{'user': loki_customer_web_user, 'password': loki_customer_web_password}] if loki_customer_web_user is defined else []) }}"
+          vhost_for_zabbix: false
+          letsencrypt: false

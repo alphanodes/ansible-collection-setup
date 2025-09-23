@@ -9,15 +9,17 @@ server {
 
 {# SSL Configuration (443) #}
 {% if nginx_listen_config.use_ssl %}
+{# SSL listen directives #}
   listen 443 {{ nginx_ssl_listen_option }}{{ default_server_flag }}{{ reuseport_flag }};
 {% if nginx_listen_config.use_ipv6 %}
   listen [::]:443 {{ nginx_ssl_listen_option }}{{ default_server_flag }}{{ reuseport_flag }};
 {% endif %}
-{# HTTP/3 QUIC support #}
+{# HTTP/3 QUIC support - reuseport only for primary service #}
 {% if nginx_listen_config.use_http3 %}
-  listen 443 quic{{ reuseport_flag }}{{ default_server_flag }};
+{%- set quic_reuseport = ' reuseport' if nginx_listen_config.use_reuseport else '' %}
+  listen 443 quic{{ default_server_flag }}{{ quic_reuseport }};
 {% if nginx_listen_config.use_ipv6 %}
-  listen [::]:443 quic{{ reuseport_flag }}{{ default_server_flag }};
+  listen [::]:443 quic{{ default_server_flag }}{{ quic_reuseport }};
 {% endif %}
 {% endif %}
 {% endif %}
