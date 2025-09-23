@@ -145,7 +145,6 @@ nginx_mono_instance_defaults:
   server_name: localhost
   server_port: 443
   root: /var/www/html
-  index: index.html
   proxy_pass: ''
   proxy_location: '/'
   proxy_websocket: false

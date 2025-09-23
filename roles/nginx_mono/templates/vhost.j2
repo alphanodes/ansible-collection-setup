@@ -125,10 +125,10 @@ server {
 {% if instance.mappings is defined %}
 {% include 'mappings.inc.j2' with context %}
 {% endif %}
-{% if instance.redirects is defined %}
+{% if instance.redirects is defined and instance.redirects | length > 0 %}
 {% include 'includes/redirects.inc.j2' %}
 {% endif %}
-{% if instance.external_redirects is defined %}
+{% if instance.external_redirects is defined and instance.external_redirects | length > 0 %}
 {% include 'includes/external_redirects.inc.j2' %}
 {% endif %}
 {% if instance.vhost_for_zabbix is defined and instance.vhost_for_zabbix %}

@@ -1,5 +1,6 @@
 
 # Redirects for {{ instance_name | default(instance.name) | default(nginx_mono_service_name) }}
+{% if instance.redirects and instance.redirects | length > 0 %}
 server {
   server_name {{ instance.redirects | join(' ') }};
   listen 80;
@@ -29,3 +30,4 @@ server {
   return 301 $scheme://{{ instance.server_name }}$request_uri;
 {% endif %}
 }
+{% endif %}
