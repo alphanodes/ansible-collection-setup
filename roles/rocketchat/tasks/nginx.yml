@@ -52,5 +52,5 @@
         - "Referrer-Policy 'no-referrer'"
       vhost_includes: "{{ rocketchat_vhost_includes | default([]) }}"
       vhost_for_zabbix: "{{ rocketchat_vhost_for_zabbix | default(false) }}"
-      redirects: "{{ rocketchat_redirects | default([]) }}"
+      redirects: "{{ rocketchat_redirects | default(omit) }}"
       letsencrypt: "{{ rocketchat_vhost_letsencrypt | default(false) }}"
