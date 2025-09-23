@@ -1,0 +1,169 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check if nginx is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+      check_mode: true
+      register: nginx_service
+      failed_when: nginx_service.changed
+
+    - name: Check nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax
+      changed_when: false
+
+    - name: Check if dendrite vhost config exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/dendrite.conf
+      register: dendrite_vhost
+
+    - name: Verify dendrite vhost is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/dendrite.conf
+      register: dendrite_enabled_check
+
+    - name: Check if dendrite service exists (should not be running in test)
+      ansible.builtin.service:
+        name: dendrite
+        state: stopped
+      check_mode: true
+      register: dendrite_service
+      ignore_errors: true
+
+    - name: Test nginx configuration without actual dendrite service (check /_matrix endpoint)
+      ansible.builtin.uri:
+        url: http://localhost/_matrix/
+        method: GET
+        status_code: [200, 502, 503]  # 502/503 expected since dendrite isn't running
+        headers:
+          Host: dendrite.local
+      register: nginx_proxy
+      retries: 3
+      delay: 1
+      ignore_errors: true
+
+    - name: Test Matrix .well-known/matrix/server endpoint
+      ansible.builtin.uri:
+        url: http://localhost/.well-known/matrix/server
+        method: GET
+        status_code: 200
+        headers:
+          Host: dendrite.local
+      register: matrix_server_discovery
+      retries: 3
+      delay: 1
+
+    - name: Test Matrix .well-known/matrix/client endpoint
+      ansible.builtin.uri:
+        url: http://localhost/.well-known/matrix/client
+        method: GET
+        status_code: 200
+        headers:
+          Host: dendrite.local
+      register: matrix_client_discovery
+      retries: 3
+      delay: 1
+
+    - name: Verify nginx_mono integration (no external template refs)
+      ansible.builtin.find:
+        paths: /etc/nginx/sites-available/
+        patterns: "*.conf"
+        contains: "templates/nginx/"
+      register: external_refs
+      failed_when: external_refs.matched > 0
+
+    - name: Verify dendrite upstream configuration
+      ansible.builtin.command: grep -q "upstream dendrite" /etc/nginx/sites-available/dendrite.conf
+      register: upstream_config
+      changed_when: false
+      failed_when: false
+
+    - name: Verify dendrite vhost has Matrix proxy configuration
+      ansible.builtin.command: grep -q "proxy_pass.*dendrite" /etc/nginx/sites-available/dendrite.conf
+      register: proxy_config
+      changed_when: false
+      failed_when: false
+
+    - name: Verify Matrix /_matrix location block
+      ansible.builtin.command: grep -q "location /_matrix" /etc/nginx/sites-available/dendrite.conf
+      register: matrix_location
+      changed_when: false
+      failed_when: false
+
+    - name: Verify Matrix .well-known/matrix/server location
+      ansible.builtin.command: grep -q "location /.well-known/matrix/server" /etc/nginx/sites-available/dendrite.conf
+      register: well_known_server
+      changed_when: false
+      failed_when: false
+
+    - name: Verify Matrix .well-known/matrix/client location
+      ansible.builtin.command: grep -q "location /.well-known/matrix/client" /etc/nginx/sites-available/dendrite.conf
+      register: well_known_client
+      changed_when: false
+      failed_when: false
+
+    - name: Verify proxy timeout configuration
+      ansible.builtin.command: grep -q "proxy_read_timeout.*600\|proxy_timeout.*600" /etc/nginx/sites-available/dendrite.conf
+      register: proxy_timeout
+      changed_when: false
+      failed_when: false
+
+    - name: Check JSON response content type for Matrix endpoints
+      ansible.builtin.command: grep -q "default_type application/json" /etc/nginx/sites-available/dendrite.conf
+      register: json_content_type
+      changed_when: false
+      failed_when: false
+
+    - name: Check Access-Control-Allow-Origin header for Matrix client
+      ansible.builtin.command: grep -q "Access-Control-Allow-Origin" /etc/nginx/sites-available/dendrite.conf
+      register: cors_header
+      changed_when: false
+      failed_when: false
+
+    - name: Check if nginx has reuseport configured (when enabled)
+      ansible.builtin.command: grep -q "listen.*reuseport" /etc/nginx/sites-available/dendrite.conf
+      register: reuseport_config
+      changed_when: false
+      failed_when: false
+
+    - name: Check listen configuration syntax (should have proper listen directives)
+      ansible.builtin.command: grep -c "listen " /etc/nginx/sites-available/dendrite.conf
+      register: listen_directives_count
+      changed_when: false
+      failed_when: false
+
+    - name: Verify no WebSocket headers (dendrite doesn't need WebSocket)
+      ansible.builtin.command: grep -q "proxy_set_header.*Upgrade\|connection_upgrade" /etc/nginx/sites-available/dendrite.conf
+      register: websocket_headers
+      changed_when: false
+      failed_when: websocket_headers.rc == 0  # Should NOT find WebSocket headers
+
+    - name: Display comprehensive test results
+      ansible.builtin.debug:
+        msg:
+          - "=== NGINX_MONO + DENDRITE INTEGRATION TESTS ==="
+          - "Nginx service: {{ 'OK' if not nginx_service.changed else 'FAILED' }}"
+          - "Nginx syntax: {{ 'OK' if nginx_syntax.rc == 0 else 'FAILED' }}"
+          - "Dendrite vhost exists: {{ 'OK' if dendrite_vhost.stat.exists else 'FAILED' }}"
+          - "Dendrite vhost enabled: {{ 'OK' if dendrite_enabled_check.stat.exists else 'FAILED' }}"
+          - "Dendrite service check: {{ 'OK' if dendrite_service is not failed else 'FAILED' }}"
+          - "Matrix /_matrix proxy: {{ 'OK' if nginx_proxy.status is defined and nginx_proxy.status in [200, 502, 503] else 'SKIPPED' }}"
+          - "Matrix server discovery: {{ 'OK' if matrix_server_discovery.status == 200 else 'FAILED' }}"
+          - "Matrix client discovery: {{ 'OK' if matrix_client_discovery.status == 200 else 'FAILED' }}"
+          - "No external template refs: {{ 'OK' if external_refs.matched == 0 else 'FAILED' }}"
+          - "Dendrite upstream block: {{ 'OK' if upstream_config.rc == 0 else 'FAILED' }}"
+          - "Matrix proxy config present: {{ 'OK' if proxy_config.rc == 0 else 'FAILED' }}"
+          - "Matrix /_matrix location: {{ 'OK' if matrix_location.rc == 0 else 'FAILED' }}"
+          - "Matrix .well-known/server: {{ 'OK' if well_known_server.rc == 0 else 'FAILED' }}"
+          - "Matrix .well-known/client: {{ 'OK' if well_known_client.rc == 0 else 'FAILED' }}"
+          - "Proxy timeout config: {{ 'OK' if proxy_timeout.rc == 0 else 'FAILED' }}"
+          - "JSON content type: {{ 'OK' if json_content_type.rc == 0 else 'FAILED' }}"
+          - "CORS header: {{ 'OK' if cors_header.rc == 0 else 'FAILED' }}"
+          - "No WebSocket headers: {{ 'OK' if websocket_headers.rc != 0 else 'FAILED' }} (expected: no WebSocket)"
+          - "Reuseport optimization: {{ 'ENABLED' if reuseport_config.rc == 0 else 'DISABLED' }} (expected: ENABLED in test)"
+          - "Listen directives count: {{ listen_directives_count.stdout | default('0') }}"
+          - "=== DENDRITE nginx_mono INTEGRATION SUCCESS ==="

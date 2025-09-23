@@ -1,39 +1,36 @@
 ---
 
-- name: Set TLS files for letsencrypt
-  ansible.builtin.set_fact:
-    vhost_letsencrypt_cert: "{{ dendrite_vhost_letsencrypt_cert }}"
-    vhost_letsencrypt_trusted_cert: "{{ dendrite_vhost_letsencrypt_trusted_cert }}"
-    vhost_letsencrypt_key: "{{ dendrite_vhost_letsencrypt_key }}"
-    force_letsencrypt: true
-  when:
-    - dendrite_vhost_letsencrypt is defined
-    - dendrite_vhost_letsencrypt
-
-- name: Check trusted TLS cert
-  ansible.builtin.stat:
-    path: /etc/ssl/certs/{{ dendrite_vhost_ssl_cert }}_trusted.crt
-  register: trusted_cert
-  when: dendrite_vhost_letsencrypt is undefined or not dendrite_vhost_letsencrypt
-
-- name: Set TLS files
-  ansible.builtin.set_fact:
-    vhost_ssl_cert: "{{ dendrite_vhost_ssl_cert }}"
-    vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
-  when: dendrite_vhost_letsencrypt is undefined or not dendrite_vhost_letsencrypt
-
-- name: Update Dendrite vhost configuration
+- name: Setup nginx_mono and configure dendrite vhost
   tags: nginx
-  ansible.builtin.template:
-    src: vhost.j2
-    dest: /etc/nginx/sites-available/dendrite.conf
-    mode: '0644'
-  notify: Reload nginx
-
-- name: Enable Dendrite vhost
-  tags: nginx
-  ansible.builtin.file:
-    src: /etc/nginx/sites-available/dendrite.conf
-    dest: /etc/nginx/sites-enabled/dendrite.conf
-    state: link
-  notify: Reload nginx
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nginx_mono
+  vars:
+    nginx_mono_service_name: dendrite
+    nginx_mono_service_enabled: "{{ dendrite_enabled | default(true) }}"
+    nginx_mono_service_config:
+      server_name: "{{ dendrite_server_name }}"
+      root: "{{ dendrite_vhost_root | default(omit) }}"
+      upstream_name: dendrite
+      upstream_servers:
+        - "127.0.0.1:8008"
+      proxy_pass: "http://dendrite"
+      proxy_location: "/_matrix"
+      proxy_timeout: "600"
+      locations:
+        - name: "/.well-known/matrix/server"
+          actions:
+            - "default_type application/json"
+            - >-
+              return 200 '{ "m.server": "{{ dendrite_server_name }}:443" }'
+        - name: "/.well-known/matrix/client"
+          actions:
+            - "default_type application/json"
+            - 'add_header "Access-Control-Allow-Origin" *'
+            - >-
+              return 200 '{ "m.homeserver": { "base_url": "https://{{ dendrite_server_name }}" } }'
+      redirects: "{{ dendrite_redirects | default([]) }}"
+      vhost_includes: "{{ dendrite_vhost_includes | default([]) }}"
+      vhost_users: "{{ dendrite_vhost_users | default([]) }}"
+      vhost_for_zabbix: "{{ dendrite_vhost_for_zabbix | default(false) }}"
+      letsencrypt: "{{ dendrite_vhost_letsencrypt | default(false) }}"
+      ssl_cert: "{{ dendrite_vhost_ssl_cert | default(omit) }}"
