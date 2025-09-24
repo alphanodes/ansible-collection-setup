@@ -1,8 +1,8 @@
 ---
 # defaults file for mysql_client
 
-# use mysql.com packages (only with Debian)
-mysql_with_mysql_com: true
+# use mysql.com packages (only with Debian, disabled for compatibility)
+mysql_with_mysql_com: false
 
 mysql_apt_url: https://repo.mysql.com/apt/debian/
 # if not specified, local key is used

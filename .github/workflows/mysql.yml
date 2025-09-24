@@ -27,9 +27,8 @@ jobs:
     strategy:
       matrix:
         distro:
-          - ubuntu2404
-          - debian12
-          - debian13
+          - ubuntu2404  # Ubuntu 24.04 LTS - MySQL 8.4 LTS supported
+          - debian12    # Debian 12 Bookworm - MySQL 8.4 LTS supported
 
     steps:
       - name: Check out the codebase.

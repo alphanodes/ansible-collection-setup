@@ -1,0 +1,55 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Verify MySQL client is installed
+      ansible.builtin.command: mysql --version
+      register: mysql_version_output
+      changed_when: false
+
+    - name: Assert MySQL client version contains expected string
+      ansible.builtin.assert:
+        that:
+          - mysql_version_output.stdout is search("mysql")
+          - mysql_version_output.rc == 0
+        fail_msg: "MySQL client is not properly installed"
+
+    - name: Verify MySQL client can show help
+      ansible.builtin.command: mysql --help
+      register: mysql_help_output
+      changed_when: false
+
+    - name: Assert MySQL client help is available
+      ansible.builtin.assert:
+        that:
+          - mysql_help_output.stdout is search("Usage:")
+          - mysql_help_output.rc == 0
+        fail_msg: "MySQL client help is not available"
+
+    - name: Verify python3-pymysql is installed
+      ansible.builtin.command: python3 -c "import pymysql; print(pymysql.__version__)"
+      register: pymysql_version
+      changed_when: false
+
+    - name: Assert PyMySQL is working
+      ansible.builtin.assert:
+        that:
+          - pymysql_version.rc == 0
+          - pymysql_version.stdout | length > 0
+        fail_msg: "PyMySQL module is not properly installed or working"
+
+    - name: Check if MySQL client packages are installed (Debian/Ubuntu)
+      ansible.builtin.command: dpkg -l mysql-client python3-pymysql
+      register: packages_status
+      changed_when: false
+      when: ansible_os_family == "Debian"
+
+    - name: Assert packages are installed
+      ansible.builtin.assert:
+        that:
+          - packages_status.rc == 0
+          - packages_status.stdout is search("ii.*mysql-client")
+          - packages_status.stdout is search("ii.*python3-pymysql")
+        fail_msg: "Required MySQL client packages are not properly installed"
+      when: ansible_os_family == "Debian"

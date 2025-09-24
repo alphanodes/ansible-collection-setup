@@ -1,0 +1,106 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check if MySQL service is running
+      ansible.builtin.systemd_service:
+        name: mysql
+      register: mysql_service_status
+
+    - name: Assert MySQL service is active
+      ansible.builtin.assert:
+        that:
+          - mysql_service_status.status.ActiveState == "active"
+          - mysql_service_status.status.SubState == "running"
+        fail_msg: "MySQL service is not running properly"
+
+    - name: Verify MySQL is listening on port 3306
+      ansible.builtin.wait_for:
+        port: 3306
+        host: 127.0.0.1
+        timeout: 10
+
+    - name: Test MySQL connection via Unix socket
+      ansible.builtin.command: "mysql -u root -proot -e 'SELECT VERSION();'"
+      register: mysql_socket_connection
+      changed_when: false
+      no_log: true
+
+    - name: Assert socket connection works
+      ansible.builtin.assert:
+        that:
+          - mysql_socket_connection.rc == 0
+          - mysql_socket_connection.stdout is search("\\d+\\.\\d+\\.\\d+")
+        fail_msg: "MySQL connection via Unix socket failed"
+
+    - name: Test MySQL connection via TCP
+      ansible.builtin.command: "mysql -u root -proot -h 127.0.0.1 -e 'SELECT VERSION();'"
+      register: mysql_tcp_connection
+      changed_when: false
+      no_log: true
+
+    - name: Assert TCP connection works
+      ansible.builtin.assert:
+        that:
+          - mysql_tcp_connection.rc == 0
+          - mysql_tcp_connection.stdout is search("\\d+\\.\\d+\\.\\d+")
+        fail_msg: "MySQL connection via TCP failed"
+
+    - name: Test database operations
+      ansible.builtin.command: "mysql -u root -proot -e 'SHOW DATABASES;'"
+      register: mysql_databases
+      changed_when: false
+      no_log: true
+
+    - name: Assert system databases exist
+      ansible.builtin.assert:
+        that:
+          - mysql_databases.rc == 0
+          - mysql_databases.stdout is search("information_schema")
+          - mysql_databases.stdout is search("mysql")
+          - mysql_databases.stdout is search("performance_schema")
+          - mysql_databases.stdout is search("sys")
+        fail_msg: "Required MySQL system databases are missing"
+
+    - name: Test MySQL configuration file exists
+      ansible.builtin.stat:
+        path: /etc/mysql/mysql.conf.d/ansible.cnf
+      register: mysql_config_file
+
+    - name: Assert MySQL configuration file exists
+      ansible.builtin.assert:
+        that:
+          - mysql_config_file.stat.exists
+          - mysql_config_file.stat.isreg
+        fail_msg: "MySQL configuration file is missing"
+
+    - name: Check MySQL process
+      ansible.builtin.command: pgrep mysqld
+      register: mysql_process
+      changed_when: false
+
+    - name: Assert MySQL process is running
+      ansible.builtin.assert:
+        that:
+          - mysql_process.rc == 0
+          - mysql_process.stdout | length > 0
+        fail_msg: "MySQL process is not running"
+
+    - name: Test MySQL error log exists
+      ansible.builtin.stat:
+        path: /var/log/mysql/error.log
+      register: mysql_error_log
+      failed_when: false
+
+    - name: Test MySQL data directory
+      ansible.builtin.stat:
+        path: /var/lib/mysql
+      register: mysql_datadir
+
+    - name: Assert MySQL data directory exists
+      ansible.builtin.assert:
+        that:
+          - mysql_datadir.stat.exists
+          - mysql_datadir.stat.isdir
+        fail_msg: "MySQL data directory is missing"
