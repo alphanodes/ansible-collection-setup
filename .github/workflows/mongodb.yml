@@ -25,9 +25,8 @@ jobs:
     strategy:
       matrix:
         distro:
-          - ubuntu2404
-          - debian12
-          - debian13
+          - ubuntu2204  # Ubuntu 22.04 LTS - MongoDB 7.0 supported
+          - debian12    # Debian 12 Bookworm - MongoDB 7.0 supported
 
     steps:
       - name: Check out the codebase.
