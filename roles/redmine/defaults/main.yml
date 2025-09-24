@@ -240,6 +240,8 @@ redmine_plugin_test_files:
   - .slim-lint.yml
   - .stylelintrc.json
   - CLAUDE.md
+  - AGENTS.md
+  - CONTRIBUTING.md
   - Gemfile.lock
   - Gemfile.release
   - config/brakeman.ignore

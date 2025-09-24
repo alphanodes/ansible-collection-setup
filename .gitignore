@@ -3,15 +3,33 @@
 .DS_Store
 .ruby-lsp
 CLAUDE.md
+AGENTS.md
+CONTRIBUTING.md
 .claude/
 .venv
 .vscode
 .ansible
-barman_id_rsa
-barman_id_rsa.pub
 /*.retry
 /*.tar.gz
 /.python-version
 Gemfile.lock
 hosts
 tmp/
+
+# Ignore all private SSH keys (also with prefixes like barman_id_rsa)
+*_id_rsa
+*_id_rsa.*
+!*_id_rsa.pub
+
+*_id_ecdsa
+*_id_ecdsa.*
+!*_id_ecdsa.pub
+
+*_id_ed25519
+*_id_ed25519.*
+!*_id_ed25519.pub
+
+# Generic: ignore all *_key files except the .pub
+*_key
+*_key.*
+!*_key.pub
