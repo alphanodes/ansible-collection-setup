@@ -64,7 +64,7 @@
     ssl: "{{ True if mongodb_net_ssl_mode == 'requireSSL' else False }}"
   loop:
     - "{{ mongodb_users | default([]) }}"
-  when: ( mongodb_replication_replset
+  when: ( mongodb_replication_replset | length > 0
         and mongodb_security_authorization == 'enabled'
         and mongodb_master is defined and mongodb_master )
 
@@ -83,7 +83,7 @@
   loop:
     - "{{ mongodb_users | default([]) }}"
   when: ( mongodb_security_authorization == 'enabled'
-          and not mongodb_replication_replset )
+          and mongodb_replication_replset | length == 0 )
 
 - name: Create oplog user with replicaset
   community.mongodb.mongodb_user:
