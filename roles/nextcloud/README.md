@@ -12,7 +12,7 @@ Available variables can be found in [defaults/main.yml](defaults/main.yml)
     - hosts: all
 
       vars:
-        nextcloud_vhost_server: myvhost.mydomain.com
+        nextcloud_vhost_server: myhost.mydomain.com
 
       roles:
         - alphanodes.setup.nextcloud
