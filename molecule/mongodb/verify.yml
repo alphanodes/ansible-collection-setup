@@ -1,10 +1,105 @@
 ---
-# This is an example playbook to execute Ansible tests.
-
 - name: Verify
   hosts: all
-  gather_facts: false
+  gather_facts: true
   tasks:
-    - name: Example assertion
+    - name: Check if MongoDB service is running
+      ansible.builtin.systemd:
+        name: mongod
+      register: mongodb_service_status
+
+    - name: Assert MongoDB service is running
       ansible.builtin.assert:
-        that: true
+        that:
+          - mongodb_service_status.status.ActiveState == "active"
+        fail_msg: "MongoDB service is not running"
+
+    - name: Check if MongoDB is listening on port 27017
+      ansible.builtin.wait_for:
+        port: 27017
+        host: 127.0.0.1
+        timeout: 10
+      register: mongodb_port
+
+    - name: Check MongoDB configuration file exists
+      ansible.builtin.stat:
+        path: /etc/mongod.conf
+      register: mongodb_config
+
+    - name: Assert MongoDB config file exists
+      ansible.builtin.assert:
+        that:
+          - mongodb_config.stat.exists
+        fail_msg: "MongoDB configuration file does not exist"
+
+    - name: Check MongoDB data directory exists
+      ansible.builtin.stat:
+        path: /var/lib/mongodb
+      register: mongodb_data_dir
+
+    - name: Assert MongoDB data directory exists
+      ansible.builtin.assert:
+        that:
+          - mongodb_data_dir.stat.exists
+          - mongodb_data_dir.stat.isdir
+        fail_msg: "MongoDB data directory does not exist or is not a directory"
+
+    - name: Test MongoDB connection with mongosh
+      ansible.builtin.shell: |
+        mongosh --quiet --eval 'db.runCommand({ ping: 1 })'
+      register: mongodb_connection
+      changed_when: false
+
+    - name: Assert MongoDB connection works
+      ansible.builtin.assert:
+        that:
+          - mongodb_connection.rc == 0
+          - "'ok' in mongodb_connection.stdout"
+        fail_msg: "Cannot connect to MongoDB or ping command failed"
+
+    - name: Check MongoDB version
+      ansible.builtin.shell: |
+        mongosh --quiet --eval 'db.version()'
+      register: mongodb_version_check
+      changed_when: false
+
+    - name: Assert MongoDB version
+      ansible.builtin.assert:
+        that:
+          - mongodb_version_check.rc == 0
+          - mongodb_version_check.stdout is version('5.0', '>=')
+        fail_msg: "MongoDB version check failed or version is too old"
+
+    - name: Test basic MongoDB operations
+      ansible.builtin.shell: |
+        mongosh --quiet --eval '
+        db.test.insertOne({name: "test", value: 42});
+        const result = db.test.findOne({name: "test"});
+        if (result && result.value === 42) {
+          print("SUCCESS");
+        } else {
+          print("FAILED");
+        }
+        db.test.drop();
+        '
+      register: mongodb_operations
+      changed_when: false
+
+    - name: Assert MongoDB operations work
+      ansible.builtin.assert:
+        that:
+          - mongodb_operations.rc == 0
+          - "'SUCCESS' in mongodb_operations.stdout"
+        fail_msg: "Basic MongoDB operations failed"
+
+    - name: Check if PyMongo is installed (when not using pip)
+      ansible.builtin.command: python3 -c "import pymongo; print(pymongo.version)"
+      register: pymongo_check
+      changed_when: false
+      ignore_errors: true
+
+    - name: Assert PyMongo is available
+      ansible.builtin.assert:
+        that:
+          - pymongo_check.rc == 0
+        fail_msg: "PyMongo is not properly installed"

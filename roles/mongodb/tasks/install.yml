@@ -3,6 +3,13 @@
   ansible.builtin.set_fact:
     mongodb_major_version: "{{ mongodb_version[0:3] | string }}"
 
+- name: Check if running on ARM64 architecture
+  ansible.builtin.fail:
+    msg: "MongoDB does not support ARM64 architecture. This role can only run on x86_64 systems."
+  when:
+    - ansible_architecture == "aarch64"
+    - not mongodb_allow_unsupported_arch | default(false)
+
 - name: Mongodb-org block
   when: mongodb_package == 'mongodb-org'
   block:

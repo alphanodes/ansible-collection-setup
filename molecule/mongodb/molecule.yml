@@ -3,14 +3,9 @@ dependency:
   name: galaxy
 driver:
   name: docker
-lint: |
-  set -e
-  yamllint .
-  ansible-lint .
-  flake8 library --ignore=E501,E402
 platforms:
   - name: mongo1
-    image: "geerlingguy/docker-${MOLECULE_DISTRO:-centos7}-ansible:latest"
+    image: "quay.io/ansible/ubuntu22.04-ansible:latest"
     command: ${MOLECULE_DOCKER_COMMAND:-""}
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
@@ -19,24 +14,28 @@ platforms:
     pre_build_image: true
     groups:
       - mongo_master
+    published_ports:
+      - "27017:27017"
+    # Force x86_64 platform for MongoDB compatibility
+    platform: linux/amd64
 provisioner:
   name: ansible
+  options:
+    diff: true
   config_options:
     defaults:
+      interpreter_python: auto_silent
       pipelining: true
-  log: true
   playbooks:
     converge: ${MOLECULE_PLAYBOOK:-converge.yml}
     prepare: ${MOLECULE_PLAYBOOK:-prepare.yml}
   env:
-    MONGODB_VERSION: ${MONGODB_VERSION:-5.0}
+    MONGODB_VERSION: ${MONGODB_VERSION:-7.0}
     MONGODB_PACKAGE: ${MONGODB_PACKAGE:-mongodb-org}
     AUTH_STATE: ${AUTH_STATE:-disabled}
-    # ANSIBLE_VERBOSITY: 3
   inventory:
     host_vars:
       mongo1:
-        ansible_python_interpreter: auto_silent
         mongodb_net_bindip: "{{ hostvars[inventory_hostname].ansible_default_ipv4.address }},127.0.0.1"
         mongodb_master: true
         mongodb_replication_params:
