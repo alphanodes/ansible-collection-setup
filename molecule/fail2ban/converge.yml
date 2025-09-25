@@ -74,3 +74,4 @@
         fail2ban_matrix_token: "test_token_12345"
         fail2ban_matrix_room_id: "!test:example.com"
         fail2ban_action_path: "/etc/fail2ban/action.d"
+      tags: never  # Skip by default to keep idempotence clean; use separate scenario for Matrix
