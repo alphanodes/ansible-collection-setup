@@ -138,7 +138,7 @@ action_mw = %(banaction)s[name=%(__name__)s, bantime="%(bantime)s", port="%(port
 action_mwl = %(banaction)s[name=%(__name__)s, bantime="%(bantime)s", port="%(port)s", protocol="%(protocol)s", chain="%(chain)s"]
              %(mta)s-whois-lines[name=%(__name__)s, dest="%(destemail)s", logpath=%(logpath)s, chain="%(chain)s"]
 
-{% if fail2ban_matrix_server is defined and fail2ban_matrix_server | length > 0 and fail2ban_matrix_token is defined and fail2ban_matrix_token | length > 0 and fail2ban_matrix_room_id is defined and fail2ban_matrix_room_id | length > 0 %}
+{% if fail2ban_matrix_server is defined and fail2ban_matrix_server is not none and fail2ban_matrix_server | length > 0 and fail2ban_matrix_token is defined and fail2ban_matrix_token is not none and fail2ban_matrix_token | length > 0 and fail2ban_matrix_room_id is defined and fail2ban_matrix_room_id is not none and fail2ban_matrix_room_id | length > 0 %}
 action_with_matrix = %(banaction)s[name=%(__name__)s, bantime="%(bantime)s", port="%(port)s", protocol="%(protocol)s", chain="%(chain)s"]
                      matrix[name=%(__name__)s, dest="%(destemail)s", chain="%(chain)s"]
 

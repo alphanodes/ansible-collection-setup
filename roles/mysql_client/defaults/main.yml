@@ -3,7 +3,7 @@
 
 # use mysql.com packages
 # (only used for Debian - not for Ubuntu, because Ubuntu has mysql packages)
-mysql_with_mysql_com: true
+mysql_with_mysql_com: false
 
 mysql_client_packages:
   - default-mysql-client

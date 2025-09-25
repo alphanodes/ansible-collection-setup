@@ -1,5 +1,5 @@
 ---
-php_cli_custom_php_ini: /etc/php/8.1/cli/conf.d/custom.ini
+php_cli_custom_php_ini: /etc/php/8.3/cli/conf.d/custom.ini
 
 php_cli_packages:
   - php8.3-cli

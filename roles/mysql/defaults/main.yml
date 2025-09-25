@@ -172,6 +172,9 @@ mysql_obsoleted_conflicted_files:
   - "{{ mysql_config_mysql_include_dir }}/mysql.cnf"
   - "{{ mysql_config_mysql_include_dir }}/mysqld.cnf"
 
+# use mysql.com packages instead of distro packages
+mysql_with_mysql_com: false
+
 # enable zabbix monitoring
 zabbix_monitoring: false
 zabbix_agent_home: /var/lib/zabbix
