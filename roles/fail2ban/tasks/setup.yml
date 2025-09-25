@@ -7,7 +7,7 @@
       - fail2ban_matrix_room_id is defined and fail2ban_matrix_room_id | length > 0
     fail_msg: "Matrix notification is enabled (fail2ban_matrix_server is set) but fail2ban_matrix_token and/or fail2ban_matrix_room_id are missing!"
     success_msg: "Matrix configuration is valid"
-  when: fail2ban_matrix_server is defined and fail2ban_matrix_server | length > 0
+  when: fail2ban_matrix_server is defined and fail2ban_matrix_server is not none and fail2ban_matrix_server | length > 0
 
 - name: Set facts
   ansible.builtin.set_fact:

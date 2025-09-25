@@ -20,6 +20,7 @@ defaults:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       PY_COLORS: 1
       ANSIBLE_FORCE_COLOR: 1
