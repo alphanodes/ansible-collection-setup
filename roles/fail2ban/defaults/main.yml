@@ -54,9 +54,9 @@ fail2ban_messenger_icon: 'https://dcah.files.wordpress.com/2013/09/adblock.png'
 fail2ban_messenger_with_start_message: false
 
 # if you want matrix notification, set these variables!
-fail2ban_matrix_server:
-fail2ban_matrix_token:
-fail2ban_matrix_room_id:
+# fail2ban_matrix_server: http://matrix.local
+# fail2ban_matrix_token: yourtoken
+# fail2ban_matrix_room_id: your_room_id
 
 # do uninstall fail2ban with all data, set it to yes
 fail2ban_remove: false

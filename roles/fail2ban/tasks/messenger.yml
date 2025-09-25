@@ -4,10 +4,6 @@
   when:
     - fail2ban_matrix_server is defined
     - fail2ban_matrix_server | length > 0
-    - fail2ban_matrix_token is defined
-    - fail2ban_matrix_token | length > 0
-    - fail2ban_matrix_room_id is defined
-    - fail2ban_matrix_room_id | length > 0
   block:
     - name: Install Matrix configuration
       ansible.builtin.template:
@@ -39,7 +35,3 @@
   when: >
     fail2ban_matrix_server is not defined or
     fail2ban_matrix_server | length == 0 or
-    fail2ban_matrix_token is not defined or
-    fail2ban_matrix_token | length == 0 or
-    fail2ban_matrix_room_id is not defined or
-    fail2ban_matrix_room_id | length == 0
