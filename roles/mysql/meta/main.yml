@@ -3,6 +3,7 @@ dependencies:
   - role: alphanodes.setup.common
     public: true
   - role: alphanodes.setup.mysql_client
+    public: true
 
 galaxy_info:
   description: Setup mysql server
