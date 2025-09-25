@@ -192,6 +192,17 @@
     mode: '0640'
   when: nextcloud_config_exists.stat.exists
 
+- name: Create nextcloud config directory if needed
+  ansible.builtin.file:
+    path: '{{ nextcloud_htdocs }}/config'
+    state: directory
+    owner: '{{ nginx_user }}'
+    group: '{{ nginx_group }}'
+    mode: '0750'
+  when:
+    - not nextcloud_exists.stat.exists
+    - not nextcloud_config_exists.stat.exists
+
 - name: Install nextcloud autoconfig file
   ansible.builtin.template:
     src: autoconfig.php.j2

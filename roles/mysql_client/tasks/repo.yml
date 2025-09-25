@@ -16,13 +16,6 @@
         mode: '0644'
       when: mysql_apt_signed_by is undefined
 
-    - name: Remove old apt repository files
-      ansible.builtin.file:
-        path: '{{ item }}'
-        state: absent
-      loop:
-        - /etc/apt/sources.list.d/repo_mysql_com_apt_debian.list
-
     # see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/deb822_repository_module.html
     - name: Add mysql apt repository
       ansible.builtin.deb822_repository:

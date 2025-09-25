@@ -32,9 +32,7 @@
 
     # Test both scenarios: without Matrix and with Matrix
     # Matrix configuration will be tested in separate task
-    fail2ban_matrix_server: ""
-    fail2ban_matrix_token: ""
-    fail2ban_matrix_room_id: ""
+    # Leave Matrix variables undefined to test default behavior (disabled)
 
     # Basic system configuration
     ssh_server_port: 22

@@ -1,15 +1,16 @@
 ---
 # defaults file for mysql_client
 
-# use mysql.com packages (only with Debian, disabled for compatibility)
-mysql_with_mysql_com: false
+# use mysql.com packages
+# (only used for Debian - not for Ubuntu, because Ubuntu has mysql packages)
+mysql_with_mysql_com: true
+
+mysql_client_packages:
+  - default-mysql-client
+  - python3-pymysql
 
 mysql_apt_url: https://repo.mysql.com/apt/debian/
 # if not specified, local key is used
 # mysql_apt_signed_by: https://url_to_gpg_key
 mysql_apt_suites: '{{ ansible_distribution_release }}'
 mysql_apt_components: 'mysql-8.4-lts'
-
-mysql_client_packages:
- - mysql-client
- - python3-pymysql
