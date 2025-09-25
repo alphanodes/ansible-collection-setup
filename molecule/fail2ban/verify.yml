@@ -2,6 +2,7 @@
 - name: Verify
   hosts: all
   gather_facts: false
+  become: true
   tasks:
     - name: Check if fail2ban is running
       ansible.builtin.service:
@@ -12,7 +13,7 @@
       failed_when: fail2ban_service.changed
 
     - name: Check fail2ban configuration syntax
-      ansible.builtin.command: fail2ban-client --test
+      ansible.builtin.command: fail2ban-client -t
       register: fail2ban_syntax
       changed_when: false
 
