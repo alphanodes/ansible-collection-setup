@@ -6,7 +6,7 @@
 mysql_with_mysql_com: false
 
 mysql_client_packages:
-  - default-mysql-client
+  - mysql-client
   - python3-pymysql
 
 mysql_apt_url: https://repo.mysql.com/apt/debian/
