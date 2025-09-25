@@ -1,5 +1,14 @@
 ---
 
+- name: Validate Matrix configuration
+  ansible.builtin.assert:
+    that:
+      - fail2ban_matrix_token is defined and fail2ban_matrix_token | length > 0
+      - fail2ban_matrix_room_id is defined and fail2ban_matrix_room_id | length > 0
+    fail_msg: "Matrix notification is enabled (fail2ban_matrix_server is set) but fail2ban_matrix_token and/or fail2ban_matrix_room_id are missing!"
+    success_msg: "Matrix configuration is valid"
+  when: fail2ban_matrix_server is defined and fail2ban_matrix_server | length > 0
+
 - name: Set facts
   ansible.builtin.set_fact:
     login_action: "{{ fail2ban_action if fail2ban_login_action == '' else fail2ban_login_action }}"

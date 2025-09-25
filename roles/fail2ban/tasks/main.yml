@@ -9,7 +9,7 @@
   ansible.builtin.include_tasks: messenger.yml
   tags:
     - fail2ban
-    - rocketchat
+    - matrix
   when: not fail2ban_remove
 
 - name: Include remove tasks

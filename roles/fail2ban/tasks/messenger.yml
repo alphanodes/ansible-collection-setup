@@ -1,37 +1,45 @@
 ---
 
-- name: Rocket.Chat configuration
-  when: fail2ban_rocketchat_hook | length > 0
+- name: Matrix configuration
+  when:
+    - fail2ban_matrix_server is defined
+    - fail2ban_matrix_server | length > 0
+    - fail2ban_matrix_token is defined
+    - fail2ban_matrix_token | length > 0
+    - fail2ban_matrix_room_id is defined
+    - fail2ban_matrix_room_id | length > 0
   block:
-    - name: Install Rocket.Chat configuration
+    - name: Install Matrix configuration
       ansible.builtin.template:
         src: messenger.conf.j2
-        dest: '{{ fail2ban_action_path }}/rocketchat.conf'
+        dest: '{{ fail2ban_action_path }}/matrix.conf'
         mode: '0644'
         owner: root
         group: root
       notify: Restart fail2ban
       vars:
-        script_name: rocketchat.sh
+        script_name: matrix.sh
 
-    - name: Install Rocket.Chat script
+    - name: Install Matrix script
       ansible.builtin.template:
         src: messenger.sh.j2
-        dest: '{{ fail2ban_action_path }}/rocketchat.sh'
-        mode: '0644'
+        dest: '{{ fail2ban_action_path }}/matrix.sh'
+        mode: '0755'
         owner: root
         group: root
       notify: Restart fail2ban
-      vars:
-        messenger_channel: '{{ fail2ban_rocketchat_channel }}'
-        messenger_user: '{{ fail2ban_rocketchat_user }}'
-        messenger_hook: '{{ fail2ban_rocketchat_hook }}'
 
-- name: Remove unused Rocket.Chat configuration
+- name: Remove unused Matrix configuration
   ansible.builtin.file:
     path: '{{ fail2ban_action_path }}/{{ item }}'
     state: absent
   loop:
-    - rocketchat.conf
-    - rocketchat.sh
-  when: fail2ban_rocketchat_hook | length == 0
+    - matrix.conf
+    - matrix.sh
+  when: >
+    fail2ban_matrix_server is not defined or
+    fail2ban_matrix_server | length == 0 or
+    fail2ban_matrix_token is not defined or
+    fail2ban_matrix_token | length == 0 or
+    fail2ban_matrix_room_id is not defined or
+    fail2ban_matrix_room_id | length == 0

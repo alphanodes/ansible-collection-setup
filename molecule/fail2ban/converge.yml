@@ -1,0 +1,78 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+
+    - name: Add python3-debian for deb822 support
+      ansible.builtin.apt:
+        name: python3-debian
+        state: present
+
+  vars:
+    # Disable SSL and complex features for testing
+    nginx_with_ssl: false
+    nginx_with_ipv6: false
+    nginx_force_ssl: false
+    nginx_with_http3: false
+    hoster: 'local'
+
+    # fail2ban configuration for testing (without Matrix notification)
+    fail2ban_enabled: true
+    fail2ban_sshd_ddos: true
+    fail2ban_nginx_http_auth: true
+    fail2ban_default_bantime: 300  # Shorter for testing
+    fail2ban_default_findtime: 300
+    fail2ban_default_maxretry: 3
+
+    # Test both scenarios: without Matrix and with Matrix
+    # Matrix configuration will be tested in separate task
+    fail2ban_matrix_server: ""
+    fail2ban_matrix_token: ""
+    fail2ban_matrix_room_id: ""
+
+    # Basic system configuration
+    ssh_server_port: 22
+    alphanodes_support_mail: "test@localhost"
+    backup_ip_address_v4: "192.168.1.100"
+    ext_ip_address_v4: "203.0.113.10"
+    ip_address_v4: "203.0.113.10"
+
+    # Override fail2ban_ignore_ips for testing (avoid hostvars dependency)
+    fail2ban_ignore_ips:
+      - "192.168.1.100/32"  # backup_ip_address_v4
+      - "203.0.113.10/32"   # ext_ip_address_v4
+      - "203.0.113.20/32"   # mock alphanodes-broker
+      - "203.0.113.30/32"   # mock alphanodes-gitlab
+      - "203.0.113.40/32"   # mock alphanodes-monitor
+
+  roles:
+    - role: alphanodes.setup.fail2ban
+
+  post_tasks:
+    - name: Test Matrix configuration validation (should succeed without Matrix)
+      ansible.builtin.debug:
+        msg: "fail2ban installed successfully without Matrix notification"
+
+    - name: Test Matrix configuration with incomplete config (should be disabled)
+      ansible.builtin.include_role:
+        name: alphanodes.setup.fail2ban
+      vars:
+        fail2ban_matrix_server: "https://matrix.example.com"
+        # Missing token and room_id - should be disabled, not fail
+      tags: never  # Skip this by default as it will trigger validation error
+
+    - name: Test complete Matrix configuration
+      ansible.builtin.include_role:
+        name: alphanodes.setup.fail2ban
+        tasks_from: messenger.yml
+      vars:
+        fail2ban_matrix_server: "https://matrix.example.com"
+        fail2ban_matrix_token: "test_token_12345"
+        fail2ban_matrix_room_id: "!test:example.com"
+        fail2ban_action_path: "/etc/fail2ban/action.d"

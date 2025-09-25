@@ -28,7 +28,7 @@ All provided roles do not use docker as container system.
 - [alphanodes.setup.drush](roles/drush/)
 - [alphanodes.setup.element_web](roles/element_web/) [![element_web](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/element_web.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/element_web.yml)
 - [alphanodes.setup.ethercalc](roles/ethercalc/) [![ethercalc](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/ethercalc.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/ethercalc.yml)
-- [alphanodes.setup.fail2ban](roles/fail2ban/)
+- [alphanodes.setup.fail2ban](roles/fail2ban/) [![fail2ban](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/fail2ban.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/fail2ban.yml)
 - [alphanodes.setup.git](roles/git/)
 - [alphanodes.setup.git_config](roles/git_config/)
 - [alphanodes.setup.gitlab](roles/gitlab/)

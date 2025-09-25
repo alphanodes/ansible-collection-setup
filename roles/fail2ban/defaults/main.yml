@@ -44,7 +44,7 @@ fail2ban_default_maxretry: 6
 fail2ban_sshd_port: "{{ ssh_server_port | default('ssh') }}"
 
 # for all login filters
-fail2ban_login_action: "%(action_with_rocketchat)s"
+fail2ban_login_action: "%(action_with_matrix)s"
 fail2ban_login_maxretry: "{{ fail2ban_default_maxretry }}"
 
 # only for Ubuntu
@@ -53,9 +53,10 @@ fail2ban_nginx_botsearch: false
 fail2ban_messenger_icon: 'https://dcah.files.wordpress.com/2013/09/adblock.png'
 fail2ban_messenger_with_start_message: false
 
-fail2ban_rocketchat_hook: '{{ alphanodes_rocketchat_hook | default("") }}'
-fail2ban_rocketchat_user: fail2ban
-fail2ban_rocketchat_channel: '#system'
+# if you want matrix notification, set these variables!
+fail2ban_matrix_server:
+fail2ban_matrix_token:
+fail2ban_matrix_room_id:
 
 # do uninstall fail2ban with all data, set it to yes
 fail2ban_remove: false

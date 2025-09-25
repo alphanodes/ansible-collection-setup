@@ -138,15 +138,15 @@ action_mw = %(banaction)s[name=%(__name__)s, bantime="%(bantime)s", port="%(port
 action_mwl = %(banaction)s[name=%(__name__)s, bantime="%(bantime)s", port="%(port)s", protocol="%(protocol)s", chain="%(chain)s"]
              %(mta)s-whois-lines[name=%(__name__)s, dest="%(destemail)s", logpath=%(logpath)s, chain="%(chain)s"]
 
-{% if fail2ban_rocketchat_hook != '' %}
-action_with_rocketchat = %(banaction)s[name=%(__name__)s, bantime="%(bantime)s", port="%(port)s", protocol="%(protocol)s", chain="%(chain)s"]
-                         rocketchat[name=%(__name__)s, dest="%(destemail)s", chain="%(chain)s"]
+{% if fail2ban_matrix_server is defined and fail2ban_matrix_server | length > 0 and fail2ban_matrix_token is defined and fail2ban_matrix_token | length > 0 and fail2ban_matrix_room_id is defined and fail2ban_matrix_room_id | length > 0 %}
+action_with_matrix = %(banaction)s[name=%(__name__)s, bantime="%(bantime)s", port="%(port)s", protocol="%(protocol)s", chain="%(chain)s"]
+                     matrix[name=%(__name__)s, dest="%(destemail)s", chain="%(chain)s"]
 
-action_with_rocketchat_proxy = iptables-proxy[name=%(__name__)s, port="%(port)s",protocol="%(protocol)s"]
-                               rocketchat[name=%(__name__)s, dest="%(destemail)s", chain="%(chain)s"]
+action_with_matrix_proxy = iptables-proxy[name=%(__name__)s, port="%(port)s",protocol="%(protocol)s"]
+                           matrix[name=%(__name__)s, dest="%(destemail)s", chain="%(chain)s"]
 
-action_with_rocketchat_http = iptables-proxy[name=%(__name__)s, port="80",protocol="%(protocol)s"]
-                              rocketchat[name=%(__name__)s, dest="%(destemail)s", chain="%(chain)s"]
+action_with_matrix_http = iptables-proxy[name=%(__name__)s, port="80",protocol="%(protocol)s"]
+                          matrix[name=%(__name__)s, dest="%(destemail)s", chain="%(chain)s"]
 {% endif %}
 
 # Report block via blocklist.de fail2ban reporting service API

@@ -1,71 +1,71 @@
 #!/bin/bash
 # {{ managed_by_ansible }}
 
+# Matrix configuration
+MATRIX_SERVER="{{ fail2ban_matrix_server }}"
+MATRIX_TOKEN="{{ fail2ban_matrix_token }}"
+MATRIX_ROOM_ID="{{ fail2ban_matrix_room_id }}"
+
 # message first command argument
 MESSAGE=$1
 HOST=$(hostname)
 LOG_PATH="$3"
-COLOR="#ff2a00"
 LOG_LINES=""
 
 # ip second command argument
 if [ "$#" -ge 2 ]; then
     IP=$2
     # lets find out from what country we have our hacker
-    COUNTRY=$(curl ipinfo.io/${IP}/country)
-    # converting country to lover case. I love you bash script =\
-    COUNTRY=$(echo "$COUNTRY" | tr -s  '[:upper:]'  '[:lower:]')
-    # slack emoji
-    # COUNTRY=":flag-$COUNTRY:"
-    COUNTRY=":flag-$COUNTRY:"
-
-    # replace _country_ template to the country emoji
-    MESSAGE="${MESSAGE/_country_/$COUNTRY}"
+    COUNTRY=$(curl -s ipinfo.io/${IP}/country 2>/dev/null)
+    if [ ! -z "$COUNTRY" ]; then
+        # converting country to lower case
+        COUNTRY=$(echo "$COUNTRY" | tr -s '[:upper:]' '[:lower:]')
+        # Matrix doesn't support emoji flags, use country code
+        COUNTRY="($COUNTRY)"
+        # replace _country_ template to the country code
+        MESSAGE="${MESSAGE/_country_/$COUNTRY}"
+    else
+        # fallback if country lookup fails
+        MESSAGE="${MESSAGE/_country_/}"
+    fi
 fi
 
 if [ ! -z "$LOG_PATH" ]; then
-  # find lines with ip address
-  # convert | to space
-  # convert line breaks to literal \n @see https://stackoverflow.com/questions/38672680/replace-newlines-with-literal-n
-  LOG_LINES=$(grep "[^0-9]${IP}[^0-9]" ${LOG_PATH} | sed "s/|/\ /g" | sed 's/$/\\n/' | tr -d '\n' )
+    # find lines with ip address and format for Matrix
+    LOG_LINES=$(grep "[^0-9]${IP}[^0-9]" ${LOG_PATH} 2>/dev/null | sed "s/|/ /g" | head -5)
 fi
 
-# Build our JSON payload and send it as a POST request to the incoming web-hook URL
-generate_payload_data()
+# Generate unique transaction ID
+TRANSACTION_ID=$(date +%s)_$$
+
+# Build Matrix message payload
+generate_matrix_payload()
 {
-  cat <<EOF
+    local body_text="[${HOST}] ${MESSAGE}"
+    local formatted_body="<b>[${HOST}]</b> ${MESSAGE}"
+
+    if [ ! -z "$LOG_LINES" ]; then
+        body_text="${body_text}\n\nLog entries:\n${LOG_LINES}"
+        formatted_body="${formatted_body}<br><br><b>Log entries:</b><br><pre>${LOG_LINES}</pre>"
+    fi
+
+    cat <<EOF
 {
-  "text": "[*${HOST}*] ${MESSAGE}",
-  "link_names": "1",
-  "icon_url": "{{ fail2ban_messenger_icon }}",
-  "channel": "{{ messenger_channel }}",
-  "username": "{{ messenger_user }}"
+  "msgtype": "m.text",
+  "body": "${body_text}",
+  "format": "org.matrix.custom.html",
+  "formatted_body": "${formatted_body}"
 }
 EOF
 }
 
-generate_payload_data_with_log()
-{
-  cat <<EOF
-{
-  "text": "[*${HOST}*] ${MESSAGE}",
-  "link_names": "1",
-  "icon_url": "{{ fail2ban_messenger_icon }}",
-  "channel": "{{ messenger_channel }}",
-  "username": "{{ messenger_user }}",
-  "attachments": [{
-     "color": "${COLOR}",
-     "text": "${LOG_LINES}" }]
-}
-EOF
-}
+# Send message to Matrix room
+MATRIX_URL="${MATRIX_SERVER}/_matrix/client/v3/rooms/${MATRIX_ROOM_ID}/send/m.room.message/${TRANSACTION_ID}"
 
-if [ -z "$LOG_LINES" ]; then
-  # echo "payload=$(generate_payload_data)" >>/tmp/fail2ban_debug.txt
-  curl -i -X POST --data-urlencode "payload=$(generate_payload_data)" {{ messenger_hook }}
-else
-  # echo "with_log: payload=$(generate_payload_data_with_log)" >>/tmp/fail2ban_debug.txt
-  curl -i -X POST --data-urlencode "payload=$(generate_payload_data_with_log)" {{ messenger_hook }}
-fi
+curl -s -X PUT \
+  -H "Authorization: Bearer ${MATRIX_TOKEN}" \
+  -H "Content-Type: application/json" \
+  --data "$(generate_matrix_payload)" \
+  "${MATRIX_URL}" > /dev/null
 
 exit 0
