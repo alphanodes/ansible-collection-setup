@@ -97,8 +97,8 @@
     path: '{{ item }}'
     state: absent
   loop:
-    - /var/log/mysql
     - /var/log/mysql.log
+    - '{{ mysql_slow_query_log_file }}'
 
 - name: Create slow query log file (if configured)
   ansible.builtin.command: "touch {{ mysql_slow_query_log_file }}"
