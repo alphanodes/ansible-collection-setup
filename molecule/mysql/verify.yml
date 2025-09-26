@@ -63,6 +63,12 @@
           - mysql_databases.stdout is search("sys")
         fail_msg: "Required MySQL system databases are missing"
 
+    - name: Assert test_db exists
+      ansible.builtin.assert:
+        that:
+          - mysql_databases.stdout is search("test_db")
+        fail_msg: "Test database 'test_db' not found"
+
     - name: Test MySQL configuration file exists
       ansible.builtin.stat:
         path: /etc/mysql/mysql.conf.d/ansible.cnf

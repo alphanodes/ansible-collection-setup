@@ -16,6 +16,15 @@
 
   roles:
     - role: alphanodes.setup.mysql
+      vars:
+        # Bootstrap über Unix-Socket und setze Root-Passwort für Tests
+        mysql_socket_force: true
+        mysql_root_password: root
+        # Lege eine Test-Datenbank für die Verifikation an
+        mysql_databases:
+          - name: test_db
+            encoding: utf8mb4
+            collation: utf8mb4_unicode_ci
 
   post_tasks:
     - name: Make sure we can connect to MySQL via Unix socket.
