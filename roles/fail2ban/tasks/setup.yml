@@ -50,8 +50,12 @@
 
 - name: Remove obsolete actions
   ansible.builtin.file:
-    path: '{{ fail2ban_action_path }}/iptables-http.conf'
+    path: '{{ fail2ban_action_path }}/{{ item }}'
     state: absent
+  loop:
+    - iptables-http.conf
+    - rocketchat.conf
+    - rocketchat.sh
 
 - name: Install filters
   ansible.builtin.copy:

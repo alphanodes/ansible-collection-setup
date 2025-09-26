@@ -225,7 +225,7 @@ bantime = {{ fail2ban_dovecot_bantime | default(fail2ban_default_bantime) }}
 enabled = {{ 'true' if fail2ban_redmine_login else 'false' }}
 port    = http,https
 backend = auto
-action  = {{ fail2ban_redmine_action | default(login_action) }}
+action  = {{ fail2ban_redmine_action | default(fail2ban_login_action) }}
 maxretry = {{ fail2ban_redmine_maxretry | default(fail2ban_login_maxretry) }}
 bantime  = {{ fail2ban_redmine_login_bantime | default(fail2ban_default_bantime) }}
 
@@ -234,13 +234,13 @@ enabled = {{ 'true' if fail2ban_drupal_auth else 'false' }}
 port     = http,https
 backend = auto
 bantime  = {{ fail2ban_drupal_auth_bantime | default(fail2ban_default_bantime) }}
-action  = {{ fail2ban_drupal_action | default(login_action) }}
+action  = {{ fail2ban_drupal_action | default(fail2ban_login_action) }}
 
 [drupal-login]
 enabled = {{ 'true' if fail2ban_drupal_login else 'false' }}
 port    = http,https
 backend = auto
-action  = {{ fail2ban_drupal_action | default(login_action) }}
+action  = {{ fail2ban_drupal_action | default(fail2ban_login_action) }}
 maxretry = {{ fail2ban_drupal_maxretry | default(fail2ban_login_maxretry) }}
 bantime  = {{ fail2ban_drupal_login_bantime | default(fail2ban_default_bantime) }}
 
@@ -248,14 +248,14 @@ bantime  = {{ fail2ban_drupal_login_bantime | default(fail2ban_default_bantime) 
 enabled = {{ 'true' if fail2ban_drupal_honeypot else 'false' }}
 port    = http,https
 backend = auto
-action  = {{ fail2ban_drupal_action | default(login_action) }}
+action  = {{ fail2ban_drupal_action | default(fail2ban_login_action) }}
 bantime  = {{ fail2ban_drupal_honeypot_bantime | default(fail2ban_default_bantime) }}
 
 [nextcloud-login]
 enabled = {{ 'true' if fail2ban_nextcloud_login else 'false' }}
 port    = http,https
 backend = auto
-action  = {{ fail2ban_nextcloud_action | default(login_action) }}
+action  = {{ fail2ban_nextcloud_action | default(fail2ban_login_action) }}
 maxretry = {{ fail2ban_login_maxretry }}
 bantime  = {{ fail2ban_nextcloud_login_bantime | default(fail2ban_default_bantime) }}
 
@@ -264,5 +264,5 @@ enabled = {{ 'true' if fail2ban_nginx_phpmyadmin else 'false' }}
 port    = http,https
 backend = auto
 logpath = %(nginx_error_log)s
-action  = {{ fail2ban_phpmyadmin_action | default(login_action) }}
+action  = {{ fail2ban_phpmyadmin_action | default(fail2ban_login_action) }}
 bantime  = {{ fail2ban_nginx_phpmyadmin_bantime | default(fail2ban_default_bantime) }}
