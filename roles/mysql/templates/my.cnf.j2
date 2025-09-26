@@ -110,8 +110,8 @@ event_scheduler = {{ mysql_event_scheduler_state }}
 net_read_timeout = 30
 
 {% if mysql_server_tmpdir != '' -%}
-# use ram disk for tmp directoy
-tmpdir = /run/mysqld
+# tmp directory for MySQL temporary files
+tmpdir = {{ mysql_server_tmpdir }}
 {% endif %}
 
 # As high as possible (or run FLUSH HOSTS occasional)

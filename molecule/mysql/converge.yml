@@ -20,6 +20,8 @@
         # Bootstrap über Unix-Socket und setze Root-Passwort für Tests
         mysql_socket_force: true
         mysql_root_password: root
+        # Nutze /tmp als tmpdir in CI, um Rechte-/Mount-Themen in /run zu vermeiden
+        mysql_server_tmpdir: /tmp
         # Lege eine Test-Datenbank für die Verifikation an
         mysql_databases:
           - name: test_db
