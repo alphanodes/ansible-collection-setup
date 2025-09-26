@@ -3,6 +3,8 @@
   hosts: all
   gather_facts: false
   become: true
+  roles:
+    - role: alphanodes.setup.common
   tasks:
     - name: Check if fail2ban is running
       ansible.builtin.service:

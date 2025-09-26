@@ -11,7 +11,16 @@
 
 - name: Set facts
   ansible.builtin.set_fact:
-    login_action: "{{ fail2ban_action if fail2ban_login_action == '' else fail2ban_login_action }}"
+    login_action: >-
+      {{
+        fail2ban_login_action
+        if (
+          (fail2ban_matrix_server is defined and (fail2ban_matrix_server | length) > 0)
+          and (fail2ban_matrix_token is defined and (fail2ban_matrix_token | length) > 0)
+          and (fail2ban_matrix_room_id is defined and (fail2ban_matrix_room_id | length) > 0)
+        )
+        else fail2ban_action
+      }}
     named_ssh_server_port: "{{ 'ssh' if fail2ban_sshd_port == '22' else fail2ban_sshd_port }}"
 
 - name: Get error log file info
