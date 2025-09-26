@@ -10,6 +10,8 @@
     dest: '{{ tmp_file }}'
     mode: '0755'
   delegate_to: localhost
+  become: false
+  run_once: true
 
 - name: Install latest mysqltuner.pl
   ansible.builtin.copy:

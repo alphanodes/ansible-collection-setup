@@ -50,7 +50,7 @@ slow_query_log_file = {{ mysql_slow_query_log_file }}
 
 {% if mysql_disable_log_bin and not mysql_replication_master %}
 # Disable binlog to save disk space
-disable-log-bin
+skip-log-bin
 {% endif %}
 
 {% if mysql_replication_master %}
