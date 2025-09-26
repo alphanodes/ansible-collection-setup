@@ -117,6 +117,15 @@
     mode: '0700'
     setype: mysqld_db_t
 
+- name: Ensure MySQL tmpdir exists and writable
+  when: mysql_server_tmpdir is defined and mysql_server_tmpdir | length > 0
+  ansible.builtin.file:
+    path: "{{ mysql_server_tmpdir }}"
+    state: directory
+    owner: mysql
+    group: mysql
+    mode: '0775'
+
 - name: Set ownership on slow query log file (if configured)
   ansible.builtin.file:
     path: "{{ mysql_slow_query_log_file }}"
