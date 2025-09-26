@@ -86,6 +86,18 @@
       register: mysql_process
       changed_when: false
 
+    - name: Check installed server is Oracle MySQL (not MariaDB)
+      ansible.builtin.command: mysql --version
+      register: mysql_version_out
+      changed_when: false
+
+    - name: Assert server is MySQL (not MariaDB)
+      ansible.builtin.assert:
+        that:
+          - mysql_version_out.rc == 0
+          - mysql_version_out.stdout is not search('mariadb', ignorecase=True)
+        fail_msg: "Installed server seems to be MariaDB, not MySQL"
+
     - name: Assert MySQL process is running
       ansible.builtin.assert:
         that:

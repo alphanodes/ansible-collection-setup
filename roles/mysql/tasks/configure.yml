@@ -148,11 +148,34 @@
         mode: '0640'
 
 - name: Ensure MySQL is started and enabled on boot
-  ansible.builtin.systemd_service:
-    name: "{{ mysql_daemon }}"
-    state: started
-    enabled: "{{ mysql_enabled_on_startup | bool }}"
-  register: mysql_service_configuration
+  block:
+    - name: Start and enable mysql service
+      ansible.builtin.systemd_service:
+        name: "{{ mysql_daemon }}"
+        state: started
+        enabled: "{{ mysql_enabled_on_startup | bool }}"
+      register: mysql_service_configuration
+  rescue:
+    - name: Show mysql service status for diagnostics
+      ansible.builtin.command: systemctl status {{ mysql_daemon }} --no-pager
+      register: mysql_service_status_cmd
+      changed_when: false
+      failed_when: false
+
+    - name: Show recent mysql journal logs for diagnostics
+      ansible.builtin.command: journalctl -u {{ mysql_daemon }} --no-pager -n 200
+      register: mysql_journal_logs
+      changed_when: false
+      failed_when: false
+
+    - name: Fail with mysql service diagnostics
+      ansible.builtin.fail:
+        msg: |
+          MySQL service failed to start.
+          systemctl status:
+          {{ mysql_service_status_cmd.stdout | default('') }}
+          journalctl:
+          {{ mysql_journal_logs.stdout | default('') }}
 
 - name: Ensure MySQL databases are present
   community.mysql.mysql_db:
