@@ -35,6 +35,11 @@
     {{ action }};
 {% endfor %}
 {% endif %}
+{% if location.raw_actions is defined %}
+{% for raw_action in location.raw_actions %}
+    {{ raw_action }}
+{% endfor %}
+{% endif %}
 {% if location.return is defined %}
     return {{ location.return }};
 {% endif %}

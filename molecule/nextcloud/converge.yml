@@ -107,7 +107,7 @@
             - 'X-XSS-Protection "1; mode=block" always'
           locations:
             - name: "= /"
-              actions:
+              raw_actions:
                 - 'if ( $http_user_agent ~ ^DavClnt ) { return 302 /remote.php/webdav/$is_args$args; }'
             - name: '~ ^/(?:build|tests|config|lib|3rdparty|templates|data)(?:$|/)'
               return: "404"
