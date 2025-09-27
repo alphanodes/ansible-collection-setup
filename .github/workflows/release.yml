@@ -34,15 +34,23 @@ jobs:
         shell: bash
         run: |
           mkdir -p ~/.ansible
-          # Write token as-is; ensure no trailing newline gets added
-          printf "%s" "${{ secrets.GALAXY_API_KEY }}" > ~/.ansible/galaxy_token
+          # Trim potential newlines/CR from the secret before writing
+          CLEAN_TOKEN=$(printf "%s" "${{ secrets.GALAXY_API_KEY }}" | tr -d '\r\n')
+          printf "%s" "$CLEAN_TOKEN" > ~/.ansible/galaxy_token
           chmod 600 ~/.ansible/galaxy_token
+
+      - name: Prepare Galaxy token env
+        shell: bash
+        run: |
+          CLEAN_TOKEN=$(printf "%s" "${{ secrets.GALAXY_API_KEY }}" | tr -d '\r\n')
+          echo "GALAXY_API_KEY_CLEAN=$CLEAN_TOKEN" >> "$GITHUB_ENV"
 
       - name: Publish collection to Ansible Galaxy
         uses: artis3n/ansible_galaxy_collection@v2
         with:
-          api_key: ${{ secrets.GALAXY_API_KEY }}
+          api_key: ${{ env.GALAXY_API_KEY_CLEAN }}
           galaxy_version: ${{ env.RELEASE_VERSION }}
+          server: https://galaxy.ansible.com
 
       - name: Checkout default branch for version bump
         if: ${{ success() }}
