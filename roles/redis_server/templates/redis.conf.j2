@@ -1990,16 +1990,16 @@ set-max-intset-entries 512
 # the following directives.
 {% if redis_use_redis_io %}
 set-max-listpack-entries 128
-{% endif %}
 set-max-listpack-value 64
+{% endif %}
 
 # Similarly to hashes and lists, sorted sets are also specially encoded in
 # order to save a lot of space. This encoding is only used when the length and
 # elements of a sorted set are below the following limits:
 {% if redis_use_redis_io %}
 zset-max-listpack-entries 128
-{% endif %}
 zset-max-listpack-value 64
+{% endif %}
 
 # HyperLogLog sparse representation bytes limit. The limit includes the
 # 16 bytes header. When a HyperLogLog using the sparse representation crosses
