@@ -59,6 +59,7 @@ All provided roles do not use docker as container system.
 - [alphanodes.setup.postgresql_client](roles/postgresql_client/) [![postgresql_client](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/postgresql_client.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/postgresql_client.yml)
 - [alphanodes.setup.python](roles/python/) [![python](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/python.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/python.yml)
 - [alphanodes.setup.redis_server](roles/redis_server/)
+  [![redis_server](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/redis_server.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/redis_server.yml)
 - [alphanodes.setup.redmine](roles/redmine/)
 - [alphanodes.setup.rocketchat](roles/rocketchat/) [![rocketchat](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/rocketchat.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/rocketchat.yml)
 - [alphanodes.setup.rsync](roles/rsync/)

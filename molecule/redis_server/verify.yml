@@ -1,0 +1,61 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check Redis service status
+      ansible.builtin.systemd_service:
+        name: redis-server
+      register: redis_service
+
+    - name: Assert Redis service is running
+      ansible.builtin.assert:
+        that:
+          - redis_service.status.ActiveState == 'active'
+          - redis_service.status.SubState == 'running'
+        fail_msg: "Redis service is not running"
+
+    - name: Verify Redis is listening on TCP port 6379
+      ansible.builtin.wait_for:
+        port: 6379
+        host: 127.0.0.1
+        timeout: 10
+
+    - name: Ping Redis via TCP
+      ansible.builtin.command: redis-cli ping
+      register: redis_ping_tcp
+      changed_when: false
+
+    - name: Assert TCP ping is PONG
+      ansible.builtin.assert:
+        that:
+          - redis_ping_tcp.rc == 0
+          - redis_ping_tcp.stdout == 'PONG'
+        fail_msg: "Redis TCP ping failed"
+
+    - name: Ping Redis via Unix socket
+      ansible.builtin.command: redis-cli -s /run/redis/redis.sock ping
+      register: redis_ping_sock
+      changed_when: false
+      failed_when: false
+
+    - name: Assert socket ping is PONG (if available)
+      ansible.builtin.assert:
+        that:
+          - redis_ping_sock.rc == 0
+          - redis_ping_sock.stdout == 'PONG'
+        fail_msg: "Redis socket ping failed"
+      when: redis_ping_sock.rc == 0
+
+    - name: Verify Redis config exists
+      ansible.builtin.stat:
+        path: /etc/redis/redis.conf
+      register: redis_conf
+
+    - name: Assert Redis config file exists
+      ansible.builtin.assert:
+        that:
+          - redis_conf.stat.exists
+          - redis_conf.stat.isreg
+        fail_msg: "Redis configuration file is missing"
+
