@@ -62,23 +62,23 @@
           proxy_location: "/"
           proxy_websocket: true
           proxy_headers:
-            - "X-Forwarded-Proto $scheme"   # no semicolon
-            - "X-Forwarded-Host $host;"    # already terminated
-          proxy_redirect: "off"              # no semicolon
+            - "X-Forwarded-Proto $scheme"
+            - "X-Forwarded-Host $host"
+          proxy_redirect: "off"
           additional_headers:
-            - 'X-Test-Header "ok"'          # no semicolon
-            - 'X-Second "yes";'             # already terminated
+            - 'X-Test-Header "ok"'
+            - 'X-Second "yes"'
           rewrite_lines:
-            - '^/old/(.*) /new/$1 permanent'   # no semicolon
-            - '^/x/(.*) /y/$1 last;'           # already terminated
+            - '^/old/(.*) /new/$1 permanent'
+            - '^/x/(.*) /y/$1 last'
           # intentionally mix actions with and without semicolons
           locations:
             - name: "/_health"
               action: "return 200"
             - name: "/_ping"
               actions:
-                - "add_header X-Ping pong"  # no semicolon
-                - "return 204;"            # already terminated
+                - "add_header X-Ping pong"
+                - "return 204"
           vhost_users: []
           vhost_for_zabbix: false
           letsencrypt: false

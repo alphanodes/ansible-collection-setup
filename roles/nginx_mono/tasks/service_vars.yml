@@ -1,0 +1,126 @@
+---
+
+# Validate structured variables are provided without trailing semicolons.
+# Templates are responsible for appending ';'.
+
+- name: Set service-specific variables
+  ansible.builtin.set_fact:
+    nginx_mono_instance: "{{ nginx_mono_instance_defaults | combine(nginx_mono_service_config | default({})) }}"
+
+- name: Validate additional_headers entries do not end with ';'
+  vars:
+    bad_headers: "{{ (nginx_mono_instance.additional_headers | default([]))
+                    | map('trim')
+                    | select('search', ';\\s*$')
+                    | list }}"
+  ansible.builtin.fail:
+    msg: >-
+      nginx_mono additional_headers entries must NOT include a trailing ';'.
+      Offending entries: {{ bad_headers }}
+  when:
+    - nginx_mono_instance.additional_headers is defined
+    - bad_headers | length > 0
+
+- name: Validate fastcgi_params entries do not end with ';'
+  vars:
+    bad_fastcgi: "{{ (nginx_mono_instance.fastcgi_params | default([]))
+                    | map('trim')
+                    | select('search', ';\\s*$')
+                    | list }}"
+  ansible.builtin.fail:
+    msg: >-
+      nginx_mono fastcgi_params entries must NOT include a trailing ';'.
+      Offending entries: {{ bad_fastcgi }}
+  when:
+    - nginx_mono_instance.fastcgi_params is defined
+    - bad_fastcgi | length > 0
+
+- name: Validate proxy_headers entries do not end with ';'
+  vars:
+    bad_proxy_headers: "{{ (nginx_mono_instance.proxy_headers | default([]))
+                          | map('trim')
+                          | select('search', ';\\s*$')
+                          | list }}"
+  ansible.builtin.fail:
+    msg: >-
+      nginx_mono proxy_headers entries must NOT include a trailing ';'.
+      Offending entries: {{ bad_proxy_headers }}
+  when:
+    - nginx_mono_instance.proxy_headers is defined
+    - bad_proxy_headers | length > 0
+
+- name: Validate rewrite_lines entries do not end with ';'
+  vars:
+    bad_rewrites: "{{ (nginx_mono_instance.rewrite_lines | default([]))
+                     | map('trim')
+                     | select('search', ';\\s*$')
+                     | list }}"
+  ansible.builtin.fail:
+    msg: >-
+      nginx_mono rewrite_lines entries must NOT include a trailing ';'.
+      Offending entries: {{ bad_rewrites }}
+  when:
+    - nginx_mono_instance.rewrite_lines is defined
+    - bad_rewrites | length > 0
+
+- name: Validate proxy_redirect does not end with ';'
+  vars:
+    proxy_redirect_value: "{{ nginx_mono_instance.proxy_redirect | default('') }}"
+  ansible.builtin.fail:
+    msg: >-
+      nginx_mono proxy_redirect must NOT include a trailing ';'.
+      Offending entry: {{ proxy_redirect_value }}
+  when:
+    - nginx_mono_instance.proxy_redirect is defined
+    - (proxy_redirect_value | trim) is search(';\\s*$')
+
+- name: Validate location.action entries do not end with ';'
+  vars:
+    location_actions_defined: "{{ (nginx_mono_instance.locations | default([])) | selectattr('action', 'defined') | map(attribute='action') | list }}"
+    bad_location_actions: "{{ location_actions_defined | map('trim') | select('search', ';\\s*$') | list }}"
+  ansible.builtin.fail:
+    msg: >-
+      nginx_mono locations.action must NOT include a trailing ';'.
+      Offending entries: {{ bad_location_actions }}
+  when:
+    - nginx_mono_instance.locations is defined
+    - bad_location_actions | length > 0
+
+- name: Validate location.actions entries do not end with ';'
+  vars:
+    location_actions_lists: "{{ (nginx_mono_instance.locations | default([])) | selectattr('actions', 'defined') | map(attribute='actions') | list }}"
+    flat_location_actions: "{{ location_actions_lists | flatten | map('trim') | list }}"
+    bad_location_actions_list: "{{ flat_location_actions | select('search', ';\\s*$') | list }}"
+  ansible.builtin.fail:
+    msg: >-
+      nginx_mono locations.actions must NOT include trailing ';'.
+      Offending entries: {{ bad_location_actions_list }}
+  when:
+    - nginx_mono_instance.locations is defined
+    - bad_location_actions_list | length > 0
+
+- name: Validate mappings.actions entries do not end with ';'
+  vars:
+    mapping_actions_lists: "{{ (nginx_mono_instance.mappings | default([])) | selectattr('actions', 'defined') | map(attribute='actions') | list }}"
+    flat_mapping_actions: "{{ mapping_actions_lists | flatten | map('trim') | list }}"
+    bad_mapping_actions: "{{ flat_mapping_actions | select('search', ';\\s*$') | list }}"
+  ansible.builtin.fail:
+    msg: >-
+      nginx_mono mappings.actions must NOT include trailing ';'.
+      Offending entries: {{ bad_mapping_actions }}
+  when:
+    - nginx_mono_instance.mappings is defined
+    - bad_mapping_actions | length > 0
+
+- name: Validate mappings.rewrite_lines entries do not end with ';'
+  vars:
+    mapping_rewrites_lists: "{{ (nginx_mono_instance.mappings | default([])) | selectattr('rewrite_lines', 'defined') | map(attribute='rewrite_lines') | list }}"
+    flat_mapping_rewrites: "{{ mapping_rewrites_lists | flatten | map('trim') | list }}"
+    bad_mapping_rewrites: "{{ flat_mapping_rewrites | select('search', ';\\s*$') | list }}"
+  ansible.builtin.fail:
+    msg: >-
+      nginx_mono mappings.rewrite_lines must NOT include trailing ';'.
+      Offending entries: {{ bad_mapping_rewrites }}
+  when:
+    - nginx_mono_instance.mappings is defined
+    - bad_mapping_rewrites | length > 0

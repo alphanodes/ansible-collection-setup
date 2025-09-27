@@ -27,7 +27,8 @@
     - name: Verify additional_headers normalization
       ansible.builtin.shell: |
         set -e
-        grep -E '^\s*add_header X-Test-Header "ok";\s*$' /etc/nginx/sites-available/ethercalc.conf
+        grep -F 'add_header X-Test-Header "ok";' /etc/nginx/sites-available/ethercalc.conf
+        grep -F 'add_header X-Second "yes";' /etc/nginx/sites-available/ethercalc.conf
       register: addhdr_check
       changed_when: false
       failed_when: addhdr_check.rc != 0
@@ -44,7 +45,7 @@
     - name: Verify proxy_headers normalization
       ansible.builtin.shell: |
         set -e
-        awk '/location \/ \{/,/}/ {print}' /etc/nginx/sites-available/ethercalc.conf | grep -E "proxy_set_header X-Forwarded-Proto \$scheme;\$"
+        grep -F 'proxy_set_header X-Forwarded-Proto $scheme;' /etc/nginx/sites-available/ethercalc.conf
       register: proxyhdr_check
       changed_when: false
       failed_when: proxyhdr_check.rc != 0

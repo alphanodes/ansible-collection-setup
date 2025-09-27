@@ -63,7 +63,7 @@ server {
 {% endif %}
 {% if instance.additional_headers is defined %}
 {% for header in instance.additional_headers %}
-  add_header {{ header }}
+  add_header {{ header }};
 {% endfor %}
 
 {% endif %}
@@ -80,7 +80,7 @@ server {
 {% endif %}
 {% if instance.fastcgi_params is defined %}
 {% for fastcgi_param in instance.fastcgi_params %}
-  fastcgi_param {{ fastcgi_param }}
+  fastcgi_param {{ fastcgi_param }};
 {% endfor %}
 
 {% endif %}

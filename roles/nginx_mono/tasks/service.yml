@@ -2,102 +2,8 @@
 # nginx_mono service configuration tasks
 # This file handles individual service integration
 
-- name: Set service-specific variables
-  ansible.builtin.set_fact:
-    nginx_mono_instance: "{{ nginx_mono_instance_defaults | combine(nginx_mono_service_config | default({})) }}"
-
-- name: Normalize simple directive lists (headers, fastcgi, proxy headers, rewrites)
-  ansible.builtin.set_fact:
-    nginx_mono_prep_additional_headers: >-
-      {{ (nginx_mono_instance.additional_headers | default([]))
-         | map('trim')
-         | map('regex_replace', '(?<![;}])\s*$', ';')
-         | list }}
-    nginx_mono_prep_fastcgi_params: >-
-      {{ (nginx_mono_instance.fastcgi_params | default([]))
-         | map('trim')
-         | map('regex_replace', '(?<![;}])\s*$', ';')
-         | list }}
-    nginx_mono_prep_proxy_headers: >-
-      {{ (nginx_mono_instance.proxy_headers | default([]))
-         | map('trim')
-         | map('regex_replace', '(?<![;}])\s*$', ';')
-         | list }}
-    nginx_mono_prep_rewrite_lines: >-
-      {{ (nginx_mono_instance.rewrite_lines | default([]))
-         | map('trim')
-         | map('regex_replace', '(?<![;}])\s*$', ';')
-         | list }}
-
-- name: Normalize proxy_redirect
-  when: nginx_mono_instance.proxy_redirect is defined
-  ansible.builtin.set_fact:
-    nginx_mono_prep_proxy_redirect: >-
-      {{ (nginx_mono_instance.proxy_redirect | trim)
-         | regex_replace('(?![;}]$)\s*$',';')
-      }}
-
-- name: Init normalized locations list
-  when: nginx_mono_instance.locations is defined
-  ansible.builtin.set_fact:
-    nginx_mono_prep_locations: []
-
-- name: Build normalized locations
-  when: nginx_mono_instance.locations is defined
-  ansible.builtin.set_fact:
-    nginx_mono_prep_locations: "{{ nginx_mono_prep_locations + [ normalized_loc ] }}"
-  vars:
-    _action: "{{ (item.action | default('') | trim) }}"
-    _norm_action: "{{ _action if (_action | length == 0) or (_action[-1:] in [';','}']) else _action + ';' }}"
-    _actions: >-
-      {{ (item.actions | default([]))
-         | map('trim')
-         | map('regex_replace', '(?<![;}])\s*$', ';')
-         | list }}
-    normalized_loc: >-
-      {{ item
-         | combine( (item.action is defined) | ternary({'action': _norm_action}, {}), recursive=True)
-         | combine( (item.actions is defined) | ternary({'actions': _actions}, {}), recursive=True) }}
-  loop: "{{ nginx_mono_instance.locations }}"
-
-- name: Init normalized mappings list
-  when: nginx_mono_instance.mappings is defined
-  ansible.builtin.set_fact:
-    nginx_mono_prep_mappings: []
-
-- name: Build normalized mappings
-  when: nginx_mono_instance.mappings is defined
-  ansible.builtin.set_fact:
-    nginx_mono_prep_mappings: "{{ nginx_mono_prep_mappings + [ normalized_map ] }}"
-  vars:
-    _map_actions: >-
-      {{ (item.actions | default([]))
-         | map('trim')
-         | map('regex_replace', '(?<![;}])\s*$', ';')
-         | list }}
-    _map_rewrite_lines: >-
-      {{ (item.rewrite_lines | default([]))
-         | map('trim')
-         | map('regex_replace', '(?<![;}])\s*$', ';')
-         | list }}
-    normalized_map: >-
-      {{ item
-         | combine( (item.actions is defined) | ternary({'actions': _map_actions}, {}), recursive=True)
-         | combine( (item.rewrite_lines is defined) | ternary({'rewrite_lines': _map_rewrite_lines}, {}), recursive=True) }}
-  loop: "{{ nginx_mono_instance.mappings }}"
-
-- name: Build prepared instance
-  ansible.builtin.set_fact:
-    nginx_mono_instance_prepared: >-
-      {{ nginx_mono_instance | combine({
-          'additional_headers': (nginx_mono_prep_additional_headers | default(nginx_mono_instance.additional_headers | default([]))),
-          'fastcgi_params': (nginx_mono_prep_fastcgi_params | default(nginx_mono_instance.fastcgi_params | default([]))),
-          'proxy_headers': (nginx_mono_prep_proxy_headers | default(nginx_mono_instance.proxy_headers | default([]))),
-          'rewrite_lines': (nginx_mono_prep_rewrite_lines | default(nginx_mono_instance.rewrite_lines | default([]))),
-          'locations': (nginx_mono_prep_locations | default(nginx_mono_instance.locations | default([]))),
-          'mappings': (nginx_mono_prep_mappings | default(nginx_mono_instance.mappings | default([]))),
-          'proxy_redirect': (nginx_mono_prep_proxy_redirect | default(nginx_mono_instance.proxy_redirect | default(omit)))
-        }, recursive=True) }}
+- name: Validate service variables (no trailing semicolons in structured fields)
+  ansible.builtin.include_tasks: service_vars.yml
 
 - name: Check if multiple services would use reuseport without primary service set
   block:
@@ -184,7 +90,7 @@
     dest: "/etc/nginx/sites-available/{{ nginx_mono_service_name }}.conf"
     mode: '0644'
   vars:
-    instance: "{{ nginx_mono_instance_prepared }}"
+    instance: "{{ nginx_mono_instance }}"
   notify: Reload nginx
 
 - name: Enable service vhost

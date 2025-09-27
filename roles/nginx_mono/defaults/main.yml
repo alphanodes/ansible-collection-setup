@@ -141,6 +141,19 @@ nginx_mono_service_type: ''  # 'proxy', 'php', 'static', 'mixed'
 nginx_mono_proxy_config: {}
 
 # Default instance config (can be overridden per service)
+# Convention for service config (nginx_mono_service_config):
+# - Structured directive lists must NOT include trailing semicolons; templates append ';'.
+#   Affected keys when defined under service config or within locations/mappings:
+#   * additional_headers: list of 'Name Value' (no ';') → renders as 'add_header ...;'
+#   * fastcgi_params:    list of 'Name Value' (no ';') → renders as 'fastcgi_param ...;'
+#   * proxy_headers:     list of 'Name Value' (no ';') → renders as 'proxy_set_header ...;'
+#   * rewrite_lines:     list of 'args'          (no ';') → renders as 'rewrite ...;'
+#   * proxy_redirect:    single value            (no ';') → renders as 'proxy_redirect ...;'
+#   * locations[].action / locations[].actions: entries without ';'
+#   * mappings[].actions / mappings[].rewrite_lines: entries without ';'
+# - Raw includes (e.g. via vhost_includes files) should contain fully formed
+#   Nginx directives including trailing semicolons — raw is raw.
+# The role validates these conventions and fails on trailing ';' in structured fields.
 nginx_mono_instance_defaults:
   server_name: localhost
   server_port: 443
