@@ -1988,13 +1988,17 @@ set-max-intset-entries 512
 # data structure when they have a small number of entries, and the biggest entry
 # does not exceed a given threshold. These thresholds can be configured using
 # the following directives.
+{% if redis_use_redis_io %}
 set-max-listpack-entries 128
+{% endif %}
 set-max-listpack-value 64
 
 # Similarly to hashes and lists, sorted sets are also specially encoded in
 # order to save a lot of space. This encoding is only used when the length and
 # elements of a sorted set are below the following limits:
+{% if redis_use_redis_io %}
 zset-max-listpack-entries 128
+{% endif %}
 zset-max-listpack-value 64
 
 # HyperLogLog sparse representation bytes limit. The limit includes the
