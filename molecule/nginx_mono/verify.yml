@@ -18,7 +18,7 @@
 
     - name: Verify action normalization (no double semicolons)
       ansible.builtin.shell: |
-        set -e
+        set -euo pipefail
         awk '/location \/_ping/,/}/ {print}' /etc/nginx/sites-available/ethercalc.conf | grep -E "add_header X-Ping pong;\$|return 204;\$"
       register: normalize_check
       changed_when: false
@@ -52,7 +52,7 @@
 
     - name: Verify proxy_redirect normalization
       ansible.builtin.shell: |
-        set -e
+        set -euo pipefail
         awk '/location \/ \{/,/}/ {print}' /etc/nginx/sites-available/ethercalc.conf | grep -E "^\s*proxy_redirect off;\s*$"
       register: proxyredir_check
       changed_when: false
