@@ -28,11 +28,11 @@
     rewrite {{ location.rewrite }} permanent;
 {% endif %}
 {% if location.action is defined %}
-    {{ location.action }};
+    {{ location.action | ensure_semicolon }}
 {% endif %}
 {% if location.actions is defined %}
-{% for action in location.actions %}
-    {{ action }};
+{% for action in location.actions | normalize_actions %}
+    {{ action }}
 {% endfor %}
 {% endif %}
 {% if location.return is defined %}

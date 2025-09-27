@@ -16,6 +16,55 @@
       register: nginx_syntax
       changed_when: false
 
+    - name: Verify action normalization (no double semicolons)
+      ansible.builtin.shell: |
+        set -e
+        awk '/location \/_ping/,/}/ {print}' /etc/nginx/sites-available/ethercalc.conf | grep -E "add_header X-Ping pong;\$|return 204;\$"
+      register: normalize_check
+      changed_when: false
+      failed_when: normalize_check.rc != 0
+
+    - name: Verify additional_headers normalization
+      ansible.builtin.shell: |
+        set -e
+        grep -E '^\s*add_header X-Test-Header "ok";\s*$' /etc/nginx/sites-available/ethercalc.conf
+      register: addhdr_check
+      changed_when: false
+      failed_when: addhdr_check.rc != 0
+
+    - name: Verify fastcgi_params normalization (rendered but harmless)
+      ansible.builtin.shell: |
+        set -e
+        # fastcgi_param may or may not be present depending on config; accept absence gracefully
+        ! grep -q 'fastcgi_param .*;;' /etc/nginx/sites-available/ethercalc.conf
+      register: fpmparam_check
+      changed_when: false
+      failed_when: fpmparam_check.rc != 0
+
+    - name: Verify proxy_headers normalization
+      ansible.builtin.shell: |
+        set -e
+        awk '/location \/ \{/,/}/ {print}' /etc/nginx/sites-available/ethercalc.conf | grep -E "proxy_set_header X-Forwarded-Proto \$scheme;\$"
+      register: proxyhdr_check
+      changed_when: false
+      failed_when: proxyhdr_check.rc != 0
+
+    - name: Verify proxy_redirect normalization
+      ansible.builtin.shell: |
+        set -e
+        awk '/location \/ \{/,/}/ {print}' /etc/nginx/sites-available/ethercalc.conf | grep -E "^\s*proxy_redirect off;\s*$"
+      register: proxyredir_check
+      changed_when: false
+      failed_when: proxyredir_check.rc != 0
+
+    - name: Verify rewrite_lines normalization
+      ansible.builtin.shell: |
+        set -e
+        grep -E '^\s*rewrite \^/old/\(\.\*\) /new/\$1 permanent;\s*$' /etc/nginx/sites-available/ethercalc.conf
+      register: rewrite_check
+      changed_when: false
+      failed_when: rewrite_check.rc != 0
+
     - name: Check if ethercalc vhost config exists
       ansible.builtin.stat:
         path: /etc/nginx/sites-available/ethercalc.conf
@@ -56,6 +105,12 @@
         msg:
           - "Nginx service: {{ 'OK' if not nginx_service.changed else 'FAILED' }}"
           - "Nginx syntax: {{ 'OK' if nginx_syntax.rc == 0 else 'FAILED' }}"
+          - "Normalize actions: {{ 'OK' if normalize_check.rc == 0 else 'FAILED' }}"
+          - "Add headers normalized: {{ 'OK' if addhdr_check.rc == 0 else 'FAILED' }}"
+          - "FastCGI params: {{ 'OK' if fpmparam_check.rc == 0 else 'FAILED' }}"
+          - "Proxy headers normalized: {{ 'OK' if proxyhdr_check.rc == 0 else 'FAILED' }}"
+          - "Proxy redirect normalized: {{ 'OK' if proxyredir_check.rc == 0 else 'FAILED' }}"
+          - "Rewrite lines normalized: {{ 'OK' if rewrite_check.rc == 0 else 'FAILED' }}"
           - "Ethercalc vhost exists: {{ 'OK' if ethercalc_vhost.stat.exists else 'FAILED' }}"
           - "Ethercalc enabled: {{ 'OK' if ethercalc_enabled.stat.exists else 'FAILED' }}"
           - "Proxy config: {{ 'OK' if not proxy_config.changed else 'FAILED' }}"

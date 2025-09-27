@@ -27,12 +27,12 @@
 
 {% if instance.proxy_headers is defined %}
 {% for header in instance.proxy_headers %}
-    proxy_set_header {{ header }};
+    {{ ('proxy_set_header ' ~ header) | ensure_semicolon }}
 {% endfor %}
 {% endif %}
 
 {% if instance.proxy_redirect is defined %}
-    proxy_redirect {{ instance.proxy_redirect }};
+    {{ ('proxy_redirect ' ~ instance.proxy_redirect) | ensure_semicolon }}
 {% endif %}
 
 {% if instance.proxy_timeout is defined %}

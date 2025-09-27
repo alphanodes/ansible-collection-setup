@@ -48,11 +48,16 @@
     - name: Check PHP-FPM service status
       ansible.builtin.service_facts:
 
+    - name: Detect PHP-FPM service name
+      ansible.builtin.set_fact:
+        php_fpm_service_name: "{{ (ansible_facts.services.keys() | list | select('match','^php[0-9.]+-fpm\\.service$') | list | first) | default('') }}"
+
     - name: Verify PHP-FPM is running
       ansible.builtin.assert:
         that:
-          - ansible_facts.services['php8.2-fpm.service'].state == 'running'
-        fail_msg: "PHP-FPM service is not running"
+          - php_fpm_service_name | length > 0
+          - ansible_facts.services[php_fpm_service_name].state == 'running'
+        fail_msg: "PHP-FPM service is missing or not running"
 
     - name: Test HTTP response (will fail without actual Nextcloud, but tests nginx config)
       ansible.builtin.uri:

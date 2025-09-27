@@ -61,6 +61,24 @@
           proxy_pass: "http://{{ ethercalc_ip }}:{{ ethercalc_port }}"
           proxy_location: "/"
           proxy_websocket: true
+          proxy_headers:
+            - "X-Forwarded-Proto $scheme"   # no semicolon
+            - "X-Forwarded-Host $host;"    # already terminated
+          proxy_redirect: "off"              # no semicolon
+          additional_headers:
+            - 'X-Test-Header "ok"'          # no semicolon
+            - 'X-Second "yes";'             # already terminated
+          rewrite_lines:
+            - '^/old/(.*) /new/$1 permanent'   # no semicolon
+            - '^/x/(.*) /y/$1 last;'           # already terminated
+          # intentionally mix actions with and without semicolons
+          locations:
+            - name: "/_health"
+              action: "return 200"
+            - name: "/_ping"
+              actions:
+                - "add_header X-Ping pong"  # no semicolon
+                - "return 204;"            # already terminated
           vhost_users: []
           vhost_for_zabbix: false
           letsencrypt: false

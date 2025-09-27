@@ -73,11 +73,13 @@
       ansible.builtin.include_role:
         name: alphanodes.setup.nginx_mono
       vars:
+        nginx_with_ssl: false
         nginx_mono_service_name: nextcloud
         nginx_mono_service_enabled: true
         nginx_mono_service_config:
           server_name: "{{ nextcloud_vhost_server }}"
           root: "{{ nextcloud_htdocs }}"
+          server_port: 80
           index: "index.php index.html /index.php$request_uri"
           with_fpm: "{{ nextcloud_with_fpm | default('nextcloud') }}"
           fastcgi_buffers: "64 8K"
@@ -85,7 +87,7 @@
           fastcgi_busy_buffers_size: "8k"
           fastcgi_params:
             - "SCRIPT_FILENAME $document_root$fastcgi_script_name"
-            - "PATH_INFO $path_info"
+            - "PATH_INFO $fastcgi_path_info"
             - "HTTPS on"
             - "modHeadersAvailable true"
             - "front_controller_active true"
