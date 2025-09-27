@@ -6,7 +6,6 @@ def ensure_semicolon(value: str) -> str:
     s = str(value).rstrip()
     if not s:
         return s
-    # Do not append if already properly terminated
     if s.endswith(";") or s.endswith("}"):
         return s
     return s + ";"
