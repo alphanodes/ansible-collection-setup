@@ -72,6 +72,7 @@
     name: '{{ redis_server_service_name }}'
     state: started
     enabled: true
+    daemon_reload: true
 
 - name: Test Redis is working on port {{ redis_server_port }}
   ansible.builtin.command: redis-cli ping

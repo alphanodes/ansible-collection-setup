@@ -22,4 +22,10 @@
     owner: root
     group: root
     mode: '0644'
+  register: redis_systemd_override
   notify: Restart redis
+
+- name: Reload systemd daemon when drop-in changed
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  when: redis_systemd_override is changed
