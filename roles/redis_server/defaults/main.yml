@@ -26,6 +26,10 @@ redis_server_syslog_ident: redis
 # Specify the syslog facility. Must be USER or between LOCAL0-LOCAL7.
 redis_server_syslog_facility: local0
 
+# Optional: locale used for string collation. Only supported on newer Redis releases.
+# Leave undefined to omit the directive (recommended for distro Redis 7.0.x).
+# Example: redis_server_locale_collate: "C"
+
 # socket is not working on all systems!
 # port 0 for socket only
 redis_server_port: 6379

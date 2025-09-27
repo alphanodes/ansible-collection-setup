@@ -417,7 +417,17 @@ proc-title-template "{title} {listen-addr} {server-mode}"
 # Set the local environment which is used for string comparison operations, and
 # also affect the performance of Lua scripts. Empty String indicates the locale
 # is derived from the environment variables.
-locale-collate ""
+{#
+  Preserve behavior for external repo (newer Redis):
+  - If redis_use_redis_io is true, always render locale-collate with the
+    configured value or empty string (derive from env) by default.
+  - For distro Redis (older), only render when explicitly set to a non-empty value.
+#}
+{% if redis_use_redis_io %}
+locale-collate "{{ redis_server_locale_collate | default('') }}"
+{% elif redis_server_locale_collate is defined and (redis_server_locale_collate | string | length) > 0 %}
+locale-collate "{{ redis_server_locale_collate }}"
+{% endif %}
 
 ################################ SNAPSHOTTING  ################################
 
