@@ -58,6 +58,9 @@
             pool: www
             skip_user_create: true
     - role: alphanodes.setup.redis_server
+      vars:
+        # Use distro-provided redis for CI stability; avoid upstream repo in tests
+        redis_use_redis_io: false
     - role: alphanodes.setup.nextcloud
       vars:
         nextcloud_enabled: true
