@@ -51,4 +51,3 @@ jobs:
           molecule test -s redis_server
         env:
           MOLECULE_DISTRO: ${{ matrix.distro }}
-

@@ -58,4 +58,3 @@
           - redis_conf.stat.exists
           - redis_conf.stat.isreg
         fail_msg: "Redis configuration file is missing"
-

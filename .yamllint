@@ -5,6 +5,7 @@ extends: default
 ignore:
   - roles/alphanodes.mongodb/
   - '.ansible'
+  - '.venv'
 
 rules:
   line-length: disable
