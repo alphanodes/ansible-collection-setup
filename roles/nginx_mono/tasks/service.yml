@@ -94,15 +94,20 @@
   notify: Reload nginx
 
 - name: Show rendered vhost configuration (debug)
-  ansible.builtin.slurp:
-    src: "/etc/nginx/sites-available/{{ nginx_mono_service_name }}.conf"
-  register: nginx_mono_vhost_dump
   when: nginx_mono_show_vhost | bool
+  block:
+    - name: Read rendered vhost file
+      ansible.builtin.slurp:
+        src: "/etc/nginx/sites-available/{{ nginx_mono_service_name }}.conf"
+      register: nginx_mono_vhost_dump
 
-- name: Debug vhost content
-  ansible.builtin.debug:
-    msg: "{{ nginx_mono_vhost_dump.content | b64decode }}"
-  when: nginx_mono_show_vhost | bool
+    - name: Prepare vhost text
+      ansible.builtin.set_fact:
+        nginx_mono_vhost_text: "{{ nginx_mono_vhost_dump.content | b64decode }}"
+
+    - name: Debug vhost content (pretty, with newlines)
+      ansible.builtin.debug:
+        var: nginx_mono_vhost_text
 
 - name: Enable service vhost
   tags: nginx
