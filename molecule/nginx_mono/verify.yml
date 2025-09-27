@@ -20,6 +20,8 @@
       ansible.builtin.shell: |
         set -euo pipefail
         awk '/location \/_ping/,/}/ {print}' /etc/nginx/sites-available/ethercalc.conf | grep -E "add_header X-Ping pong;\$|return 204;\$"
+      args:
+        executable: /bin/bash
       register: normalize_check
       changed_when: false
       failed_when: normalize_check.rc != 0
@@ -54,6 +56,8 @@
       ansible.builtin.shell: |
         set -euo pipefail
         awk '/location \/ \{/,/}/ {print}' /etc/nginx/sites-available/ethercalc.conf | grep -E "^\s*proxy_redirect off;\s*$"
+      args:
+        executable: /bin/bash
       register: proxyredir_check
       changed_when: false
       failed_when: proxyredir_check.rc != 0
