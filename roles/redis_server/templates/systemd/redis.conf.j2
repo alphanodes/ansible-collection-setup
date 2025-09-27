@@ -4,4 +4,6 @@
 {% if redis_server_supervised == 'systemd' %}
 Type=notify
 {% endif %}
+{% if redis_server_pidfile != '' %}
 PIDFile={{ redis_server_pidfile }}
+{% endif %}

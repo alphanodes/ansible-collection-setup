@@ -67,12 +67,35 @@
 - name: Include systemd tasks
   ansible.builtin.import_tasks: systemd.yml
 
-- name: Start the redis-server service
-  ansible.builtin.systemd_service:
-    name: '{{ redis_server_service_name }}'
-    state: started
-    enabled: true
-    daemon_reload: true
+- name: Ensure redis-server is enabled and started
+  block:
+    - name: Start and enable redis-server service
+      ansible.builtin.systemd_service:
+        name: '{{ redis_server_service_name }}'
+        state: started
+        enabled: true
+        daemon_reload: true
+  rescue:
+    - name: Show redis-server service status for diagnostics
+      ansible.builtin.command: systemctl status {{ redis_server_service_name }} --no-pager
+      register: redis_service_status_cmd
+      changed_when: false
+      failed_when: false
+
+    - name: Show recent redis-server journal logs for diagnostics
+      ansible.builtin.command: journalctl -u {{ redis_server_service_name }} --no-pager -n 200
+      register: redis_journal_logs
+      changed_when: false
+      failed_when: false
+
+    - name: Fail with redis-server service diagnostics
+      ansible.builtin.fail:
+        msg: |
+          Redis service failed to start.
+          systemctl status:
+          {{ redis_service_status_cmd.stdout | default('') }}
+          journalctl:
+          {{ redis_journal_logs.stdout | default('') }}
 
 - name: Test Redis is working on port {{ redis_server_port }}
   ansible.builtin.command: redis-cli ping

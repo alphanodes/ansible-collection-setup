@@ -3,9 +3,9 @@
 # @see: https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/System_Administrators_Guide/sect-Managing_Services_with_systemd-Unit_Files.html
 # @see: https://help.directadmin.com/item.php?id=614
 
-- name: Set fact redis_server_service_dir
+- name: Set fact redis_server_service_dir (drop-in for the actual unit name)
   ansible.builtin.set_fact:
-    redis_server_service_dir: /etc/systemd/system/redis.service.d
+    redis_server_service_dir: "/etc/systemd/system/{{ redis_server_service_name }}.service.d"
 
 - name: Make sure conf override dir exists
   ansible.builtin.file:
@@ -22,10 +22,6 @@
     owner: root
     group: root
     mode: '0644'
-  register: redis_systemd_override
-  notify: Restart redis
-
-- name: Reload systemd daemon when drop-in changed
-  ansible.builtin.systemd_service:
-    daemon_reload: true
-  when: redis_systemd_override is changed
+  notify:
+    - Reload systemd
+    - Restart redis

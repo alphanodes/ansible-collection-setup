@@ -1,6 +1,10 @@
 ---
 # handlers file for redis_server
 
+- name: Reload systemd
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+
 - name: Restart redis
   ansible.builtin.systemd_service:
     name: '{{ redis_server_service_name }}'
