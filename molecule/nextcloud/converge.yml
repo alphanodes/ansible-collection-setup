@@ -78,6 +78,7 @@
       ansible.builtin.include_role:
         name: alphanodes.setup.nginx_mono
       vars:
+        nginx_mono_show_vhost: true
         nginx_with_ssl: false
         nginx_mono_service_name: nextcloud
         nginx_mono_service_enabled: true
