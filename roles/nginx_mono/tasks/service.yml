@@ -93,6 +93,17 @@
     instance: "{{ nginx_mono_instance }}"
   notify: Reload nginx
 
+- name: Show rendered vhost configuration (debug)
+  ansible.builtin.slurp:
+    src: "/etc/nginx/sites-available/{{ nginx_mono_service_name }}.conf"
+  register: nginx_mono_vhost_dump
+  when: nginx_mono_show_vhost | bool
+
+- name: Debug vhost content
+  ansible.builtin.debug:
+    msg: "{{ nginx_mono_vhost_dump.content | b64decode }}"
+  when: nginx_mono_show_vhost | bool
+
 - name: Enable service vhost
   tags: nginx
   ansible.builtin.file:

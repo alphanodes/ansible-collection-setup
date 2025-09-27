@@ -162,3 +162,6 @@ nginx_mono_instance_defaults:
   proxy_location: '/'
   proxy_websocket: false
   proxy_timeout: 30s
+
+# Debug: show rendered vhost on demand
+nginx_mono_show_vhost: false
