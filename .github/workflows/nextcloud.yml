@@ -18,9 +18,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    env:
-      ANSIBLE_COLLECTIONS_PATHS: ${{ github.workspace }}
-      ANSIBLE_FILTER_PLUGINS: ${{ github.workspace }}/plugins/filter
+    env: {}
     strategy:
       matrix:
         distro:

@@ -48,7 +48,7 @@ server {
 
   {% if m.rewrite_lines is defined -%}
   {% for rewrite_line in m.rewrite_lines -%}
-    {{ ('rewrite ' ~ rewrite_line) | ensure_semicolon }}
+    rewrite {{ rewrite_line }}
   {% endfor -%}
   {% endif -%}
 
@@ -124,7 +124,7 @@ server {
     {% endif %}
 
     {% if m.actions is defined -%}
-    {% for action in m.actions | normalize_actions -%}
+    {% for action in m.actions -%}
     {{ action }}
     {% endfor -%}
     {% endif -%}

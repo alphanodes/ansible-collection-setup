@@ -17,9 +17,6 @@ provisioner:
   config_options:
     defaults:
       interpreter_python: auto_silent
-      filter_plugins: "../../plugins/filter"
-  env:
-    ANSIBLE_FILTER_PLUGINS: "../../plugins/filter"
   playbooks:
     converge: ${MOLECULE_PLAYBOOK:-converge.yml}
 verifier:
