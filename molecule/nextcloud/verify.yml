@@ -50,7 +50,7 @@
 
     - name: Detect PHP-FPM service name
       ansible.builtin.set_fact:
-        php_fpm_service_name: "{{ (ansible_facts.services.keys() | list | select('match','^php[0-9.]+-fpm\\.service$') | list | first) | default('') }}"
+        php_fpm_service_name: "{{ (ansible_facts.services.keys() | list | select('match', '^php[0-9.]+-fpm\\.service$') | list | first) | default('') }}"
 
     - name: Verify PHP-FPM is running
       ansible.builtin.assert:
