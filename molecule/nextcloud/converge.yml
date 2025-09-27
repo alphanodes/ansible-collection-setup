@@ -10,7 +10,7 @@
     nextcloud_version: '29.0.8'
     nextcloud_htdocs: /var/www/nextcloud
     nextcloud_vhost_server: nextcloud.test.local
-    nextcloud_with_fpm: nextcloud
+    nextcloud_with_fpm: www
     nextcloud_vhost_letsencrypt: false
     nextcloud_vhost_for_zabbix: false
     nextcloud_redirects: []
