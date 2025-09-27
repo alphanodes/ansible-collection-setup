@@ -5,6 +5,8 @@
   vars:
     ntp_timezone: Europe/Berlin
     php_fpm_base: /run/php/php-fpm
+    # Avoid upstream Redis repo in CI (packages.redis.io 403 on trixie)
+    redis_use_redis_io: false
     nextcloud_version: '29.0.8'
     nextcloud_htdocs: /var/www/nextcloud
     nextcloud_vhost_server: nextcloud.test.local
