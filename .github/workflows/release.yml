@@ -4,31 +4,77 @@ name: Release
 on:
   push:
     tags:
-      - '*'
+      - '*.*.*'  # only X.Y.Z tags
 
 jobs:
   release:
     name: Publish to Galaxy
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Validate tag format (X.Y.Z)
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if [[ ! "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Tag '$TAG' hat kein X.Y.Z-Format (z.B. 1.2.3)."
+            exit 1
+          fi
+
       - name: Set RELEASE_VERSION from tag
         shell: bash
         run: |
-          REF="${GITHUB_REF_NAME}"
-          if [[ "$REF" == v* ]]; then
-            echo "RELEASE_VERSION=${REF#v}" >> "$GITHUB_ENV"
-          else
-            echo "RELEASE_VERSION=$REF" >> "$GITHUB_ENV"
-          fi
+          echo "RELEASE_VERSION=${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
+
+      - name: Configure Ansible Galaxy token
+        shell: bash
+        run: |
+          mkdir -p ~/.ansible
+          # Write token as-is; ensure no trailing newline gets added
+          printf "%s" "${{ secrets.GALAXY_API_KEY }}" > ~/.ansible/galaxy_token
+          chmod 600 ~/.ansible/galaxy_token
 
       - name: Publish collection to Ansible Galaxy
         uses: artis3n/ansible_galaxy_collection@v2
         with:
           api_key: ${{ secrets.GALAXY_API_KEY }}
           galaxy_version: ${{ env.RELEASE_VERSION }}
+
+      - name: Checkout default branch for version bump
+        if: ${{ success() }}
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - name: Bump galaxy.yml version to tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          current=$(awk '/^version:/ {print $2; exit}' galaxy.yml || true)
+          echo "Current galaxy.yml version: '${current}'"
+          echo "Tag version: '${RELEASE_VERSION}'"
+          if [[ "${current}" == "${RELEASE_VERSION}" ]]; then
+            echo "NO_UPDATE=true" >> "$GITHUB_ENV"
+            echo "galaxy.yml already up to date."
+            exit 0
+          fi
+          sed -i -E "s/^version: .*/version: ${RELEASE_VERSION}/" galaxy.yml
+          echo "NO_UPDATE=false" >> "$GITHUB_ENV"
+
+      - name: Commit galaxy.yml bump to default branch
+        if: ${{ env.NO_UPDATE != 'true' }}
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          branch: ${{ github.event.repository.default_branch }}
+          commit_message: "chore: bump galaxy.yml version to ${{ env.RELEASE_VERSION }}"
+          file_pattern: galaxy.yml
+          commit_user_name: alphanodes CI
+          commit_user_email: servus@alphanodes.com
 
       # Note:
       # We intentionally do not commit galaxy.yml with the new version.
