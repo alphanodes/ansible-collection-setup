@@ -15,8 +15,8 @@
 {% if rails_env is defined and rails_env != 'production' %}
     rails_env: {{ rails_env }}
 {% endif %}
-{% if system_watch_host is defined %}
-    system_watch_host: {{ system_watch_host }}
+{% if hostname_short is defined or system_watch_host is defined%}
+    system_watch_host: {{ hostname_short | default(system_watch_host) }}
 {% endif %}
 {% if redmine_task_instances is defined %}
     redmine_instances:
