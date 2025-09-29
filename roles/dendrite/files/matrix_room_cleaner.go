@@ -195,21 +195,27 @@ func main() {
 			txnID := "redact-" + strings.TrimPrefix(ev.EventID, "$")
 			redURL := fmt.Sprintf("%s/_matrix/client/v3/rooms/%s/redact/%s/%s",
 				base, roomEsc, url.PathEscape(ev.EventID), url.PathEscape(txnID))
-			body := strings.NewReader(`{"reason":"auto-retention"}`)
-			rreq, _ := authReq(http.MethodPost, redURL, token, body)
+            body := strings.NewReader(`{"reason":"auto-retention"}`)
+            // CS API requires PUT for idempotent redact with txnId
+            rreq, _ := authReq(http.MethodPut, redURL, token, body)
 
 			// retry on 429 inside doJSON
-			for {
-				if err := doJSON[map[string]any](client, rreq, nil); err != nil {
-					if strings.Contains(err.Error(), "rate limited") {
-						continue
-					}
-					// log and continue
-					fmt.Fprintf(os.Stderr, "redact failed %s: %v\n", ev.EventID, err)
-				}
-				break
-			}
-			redacted++
+            success := false
+            for {
+                if err := doJSON[map[string]any](client, rreq, nil); err != nil {
+                    if strings.Contains(err.Error(), "rate limited") {
+                        continue
+                    }
+                    // log and stop retrying this event
+                    fmt.Fprintf(os.Stderr, "redact failed %s: %v\n", ev.EventID, err)
+                } else {
+                    success = true
+                }
+                break
+            }
+            if success {
+                redacted++
+            }
 			if sleepMs > 0 {
 				time.Sleep(time.Duration(sleepMs) * time.Millisecond)
 			}
