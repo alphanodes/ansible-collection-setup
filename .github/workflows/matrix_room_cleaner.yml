@@ -52,4 +52,3 @@ jobs:
           molecule test -s matrix_room_cleaner
         env:
           MOLECULE_DISTRO: ${{ matrix.distro }}
-
