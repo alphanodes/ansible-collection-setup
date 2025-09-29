@@ -1,0 +1,71 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  become: true
+  vars:
+    service_unit: /etc/systemd/system/matrix-room-cleaner.service
+    timer_unit: /etc/systemd/system/matrix-room-cleaner.timer
+
+  tasks:
+    - name: Check matrix-room-cleaner service unit exists
+      ansible.builtin.stat:
+        path: "{{ service_unit }}"
+      register: cleaner_service_unit
+
+    - name: Check matrix-room-cleaner timer unit exists
+      ansible.builtin.stat:
+        path: "{{ timer_unit }}"
+      register: cleaner_timer_unit
+
+    - name: Assert unit files are present
+      ansible.builtin.assert:
+        that:
+          - cleaner_service_unit.stat.exists
+          - cleaner_timer_unit.stat.exists
+        fail_msg: "matrix-room-cleaner units are missing"
+
+    - name: Validate Environment variables in service unit
+      ansible.builtin.shell: |
+        set -euo pipefail
+        grep -q 'Environment="MATRIX_BASE=https://dendrite.local"' "{{ service_unit }}"
+        grep -q 'Environment="MATRIX_TOKEN=TEST_TOKEN"' "{{ service_unit }}"
+        grep -q 'Environment="ROOM_ID=!room:example.org"' "{{ service_unit }}"
+        grep -q 'Environment="MAX_AGE_DAYS=7"' "{{ service_unit }}"
+      args:
+        executable: /bin/bash
+      register: env_check
+      changed_when: false
+
+    - name: Validate OnCalendar in timer unit
+      ansible.builtin.command: grep -q "^OnCalendar=weekly$" "{{ timer_unit }}"
+      register: calendar_check
+      changed_when: false
+
+    - name: Validate Persistent=yes in timer unit
+      ansible.builtin.command: grep -q "^Persistent=yes$" "{{ timer_unit }}"
+      register: persistent_check
+      changed_when: false
+
+    - name: Check timer is enabled
+      ansible.builtin.command: systemctl is-enabled matrix-room-cleaner.timer
+      register: timer_enabled
+      failed_when: timer_enabled.rc not in [0]
+      changed_when: false
+
+    - name: Check timer is active
+      ansible.builtin.command: systemctl is-active matrix-room-cleaner.timer
+      register: timer_active
+      failed_when: timer_active.rc not in [0]
+      changed_when: false
+
+    - name: Summary
+      ansible.builtin.debug:
+        msg:
+          - "Service unit present: {{ cleaner_service_unit.stat.exists }}"
+          - "Timer unit present: {{ cleaner_timer_unit.stat.exists }}"
+          - "Env vars check: {{ 'OK' if env_check.rc == 0 else 'FAILED' }}"
+          - "OnCalendar weekly: {{ 'OK' if calendar_check.rc == 0 else 'FAILED' }}"
+          - "Persistent yes: {{ 'OK' if persistent_check.rc == 0 else 'FAILED' }}"
+          - "Timer enabled: {{ timer_enabled.stdout | default('') }}"
+          - "Timer active: {{ timer_active.stdout | default('') }}"

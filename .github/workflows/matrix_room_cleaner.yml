@@ -1,5 +1,6 @@
 ---
-name: "alphanodes.setup.dendrite"
+name: "alphanodes.setup.matrix_room_cleaner"
+
 'on':
   pull_request:
   push:
@@ -7,15 +8,13 @@ name: "alphanodes.setup.dendrite"
       - main
     paths:
       - 'roles/dendrite/**'
-      - 'roles/nginx_mono/**'
       - 'roles/systemd_timer/**'
-      - 'molecule/dendrite/**'
       - 'molecule/matrix_room_cleaner/**'
-      - '.github/workflows/dendrite.yml'
+      - '.github/workflows/matrix_room_cleaner.yml'
 
 defaults:
   run:
-    working-directory: 'dendrite'
+    working-directory: 'matrix_room_cleaner'
 
 jobs:
   build:
@@ -35,7 +34,7 @@ jobs:
       - name: Check out the codebase.
         uses: actions/checkout@v5
         with:
-          path: 'dendrite'
+          path: 'matrix_room_cleaner'
 
       - name: Set up Python 3.
         uses: actions/setup-python@v5
@@ -50,7 +49,7 @@ jobs:
       - name: Run Molecule tests.
         run: |
           molecule --version
-          molecule test -s dendrite
           molecule test -s matrix_room_cleaner
         env:
           MOLECULE_DISTRO: ${{ matrix.distro }}
+
