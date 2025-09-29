@@ -25,14 +25,20 @@ type SyncResp struct {
 }
 
 type Event struct {
-	EventID          string `json:"event_id"`
-	Type             string `json:"type"`
-	OriginServerTS   int64  `json:"origin_server_ts"`
+    EventID          string `json:"event_id"`
+    Type             string `json:"type"`
+    OriginServerTS   int64  `json:"origin_server_ts"`
+    // state_key is present for state events; absence => message/ephemeral
+    StateKey         *string `json:"state_key"`
 }
 
 type MessagesResp struct {
 	Chunk []Event `json:"chunk"`
 	End   string  `json:"end"`
+}
+
+type DirectoryResp struct {
+	RoomID string `json:"room_id"`
 }
 
 func getenv(k, def string) string {
@@ -90,6 +96,20 @@ func doJSON[T any](client *http.Client, req *http.Request, out *T) error {
 	return dec.Decode(out)
 }
 
+func resolveAlias(client *http.Client, base, token, alias string) (string, error) {
+    esc := url.PathEscape(alias)
+    u := fmt.Sprintf("%s/_matrix/client/v3/directory/room/%s", base, esc)
+    req, _ := authReq(http.MethodGet, u, token, nil)
+    var dr DirectoryResp
+    if err := doJSON(client, req, &dr); err != nil {
+        return "", err
+    }
+    if dr.RoomID == "" {
+        return "", fmt.Errorf("alias not found: %s", alias)
+    }
+    return dr.RoomID, nil
+}
+
 func main() {
 	base := strings.TrimRight(mustEnv("MATRIX_BASE"), "/")
 	token := mustEnv("MATRIX_TOKEN")
@@ -103,6 +123,17 @@ func main() {
 	cutoff := time.Now().Add(-time.Duration(maxAgeDays) * 24 * time.Hour).UnixMilli()
 
 	client := &http.Client{Timeout: 30 * time.Second}
+
+	// Validate/resolve ROOM_ID early
+	if strings.HasPrefix(roomID, "#") {
+		rid, err := resolveAlias(client, base, token, roomID)
+		if err != nil {
+			die(fmt.Errorf("failed to resolve alias %q: %w", roomID, err))
+		}
+		roomID = rid
+	} else if !strings.HasPrefix(roomID, "!") {
+		die(fmt.Errorf("invalid ROOM_ID %q: must start with '!' (room id) or '#' (alias)", roomID))
+	}
 
 	// 1) Get next_batch from /sync (timeout=0)
 	syncURL := fmt.Sprintf("%s/_matrix/client/v3/sync?timeout=0", base)
@@ -144,14 +175,23 @@ func main() {
 			break
 		}
 
-		// redact candidates (< cutoff, non-state)
-		for _, ev := range chunk {
-			if ev.EventID == "" || strings.HasPrefix(ev.Type, "m.room.") {
-				continue
-			}
-			if ev.OriginServerTS >= cutoff {
-				continue
-			}
+        // redact candidates (< cutoff, non-state)
+        for _, ev := range chunk {
+            // skip if no id
+            if ev.EventID == "" {
+                continue
+            }
+            // skip state events (those have a state_key)
+            if ev.StateKey != nil {
+                continue
+            }
+            // optionally skip redaction events themselves
+            if ev.Type == "m.room.redaction" {
+                continue
+            }
+            if ev.OriginServerTS >= cutoff {
+                continue
+            }
 			txnID := "redact-" + strings.TrimPrefix(ev.EventID, "$")
 			redURL := fmt.Sprintf("%s/_matrix/client/v3/rooms/%s/redact/%s/%s",
 				base, roomEsc, url.PathEscape(ev.EventID), url.PathEscape(txnID))
