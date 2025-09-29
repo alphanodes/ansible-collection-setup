@@ -30,6 +30,16 @@
   notify:
     - Restart nginx
 
+- name: Remove cleaner binary
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - '{{ ddendrite_cleaner_bin }}'
+    - '{{ dendrite_cleaner_src_dir }}'
+    - /etc/systemd/system/matrix-room-cleaner@.service
+    - /etc/systemd/system/matrix-room-cleaner@.timer
+
 - name: Remove Dendrite files
   ansible.builtin.file:
     path: '{{ dendrite_home_dir }}'

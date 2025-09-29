@@ -22,6 +22,13 @@
     - dendrite
     - matrix
 
+- name: Include matrix room cleaner tasks
+  ansible.builtin.include_tasks: matrix_room_cleaner.yml
+  when: not dendrite_remove | bool and dendrite_with_matrix_room_cleaner
+  tags:
+    - dendrite
+    - matrix
+
 - name: Include remove tasks
   ansible.builtin.include_tasks: remove.yml
   when: dendrite_remove | bool

@@ -5,3 +5,8 @@
   ansible.builtin.systemd_service:
     name: dendrite
     state: restarted
+
+- name: Rebuild matrix root cleaner
+  ansible.builtin.command:
+    cmd: go build -trimpath -ldflags="-s -w" -o {{ dendrite_cleaner_bin }} matrix_room_cleaner.go
+    chdir: "{{ dendrite_cleaner_src_dir }}"

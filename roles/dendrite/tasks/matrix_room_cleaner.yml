@@ -1,0 +1,33 @@
+---
+
+- name: Create source directory
+  ansible.builtin.file:
+    path: "{{ dendrite_cleaner_src_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Go source
+  ansible.builtin.copy:
+    dest: "{{ dendrite_cleaner_src_dir }}/matrix_room_cleaner.go"
+    mode: "0644"
+    content: "{{ lookup('file', 'files/matrix_room_cleaner.go') }}"
+  notify: Rebuild matrix root cleaner
+
+- name: Install systemd service
+  ansible.builtin.include_role:
+    name: alphanodes.setup.systemd_timer
+  vars:
+    timers:
+      matrix_room_cleaner:
+        exec_start: "{{ dendrite_cleaner_bin }}"
+        env:
+          - name: MATRIX_BASE
+            value: "{{ dendrite_cleaner_matrix_base }}"
+          - name: MATRIX_TOKEN
+            value: "{{ dendrite_cleaner_matrix_token }}"
+          - name: ROOM_ID
+            value: "{{ dendrite_cleaner_matrix_room_id }}"
+          - name: MAX_AGE_DAYS
+            value: "{{ dendrite_cleaner_matrix_max_age_days }}"
+        on_calendar: weekly
+        persistent: true

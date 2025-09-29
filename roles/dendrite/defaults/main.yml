@@ -115,3 +115,12 @@ dendrite_media_api_max_file_size_bytes: 10485760
 dendrite_media_api_dynamic_thumbnails: false
 # The maximum number of simultaneous thumbnail generators to run.
 dendrite_media_api_max_thumbnail_generators: 10
+
+## matrix room cleaner
+dendrite_with_matrix_room_cleaner: false
+dendrite_cleaner_matrix_base: "https://{{ dendrite_server_name }}"
+dendrite_cleaner_matrix_token: "REDACT_TOKEN"
+dendrite_cleaner_matrix_room_id: "!abc123:example.org"
+dendrite_cleaner_matrix_max_age_days: 7
+dendrite_cleaner_src_dir: /usr/local/src/matrix_room_cleaner
+dendrite_cleaner_bin: /usr/local/bin/matrix_room_cleaner
