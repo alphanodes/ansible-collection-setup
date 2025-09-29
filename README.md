@@ -72,7 +72,6 @@ All provided roles do not use docker as container system.
 - [alphanodes.setup.swapfile](roles/swapfile/)
 - [alphanodes.setup.systemd_timer](roles/systemd_timer/) [![systemd_timer](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/systemd_timer.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/systemd_timer.yml)
 - [alphanodes.setup.unbound](roles/unbound/)
-- [alphanodes.setup.wordpress](roles/wordpress/)
 - [alphanodes.setup.zsh](roles/zsh/)
 
 ## Installation
