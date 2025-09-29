@@ -11,6 +11,12 @@
 {% if project_sync_instance_name is defined %}
     project_sync_instance_name: {{ project_sync_instance_name }}
 {% endif %}
+{% if mysql_root_plugin is defined %}
+    mysql_root_plugin: {{ mysql_root_plugin }}
+{% endif %}
+{% if mysql_socket is defined %}
+    mysql_socket: {{ mysql_socket }}
+{% endif %}
     project_sync_instances:
       {{ project_sync_instances | to_nice_yaml(indent=2) | trim | indent(6) }}
 

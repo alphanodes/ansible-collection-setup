@@ -40,9 +40,15 @@
 {% endif %}
 {% if backup_with_mysql is defined and backup_with_mysql | bool %}
     backup_with_mysql: true
+{% if mysql_root_plugin is defined %}
+    mysql_root_plugin: {{ mysql_root_plugin }}
+{% endif %}
+{% if mysql_socket is defined %}
+    mysql_socket: {{ mysql_socket }}
 {% endif %}
 {% if backup_mysql_defaults_extra_file is defined %}
     backup_mysql_defaults_extra_file: {{ backup_mysql_defaults_extra_file }}
+{% endif %}
 {% endif %}
 {% if backup_dir is defined %}
     backup_dir: {{ backup_dir }}
