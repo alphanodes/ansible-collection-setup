@@ -5,7 +5,7 @@
   serial: 1
 
   vars:
-{% if playbook_ansible_python_interpreter != '' %}
+{% if playbook_ansible_python_interpreter | length > 0 %}
     ansible_python_interpreter: {{ playbook_ansible_python_interpreter }}
 {% endif %}
 {% if matomo_config_master is defined %}
