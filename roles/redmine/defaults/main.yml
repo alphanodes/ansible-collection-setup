@@ -241,6 +241,8 @@ redmine_plugin_test_files:
   - .stylelintrc.json
   - docs
   - CLAUDE.md
+  - DEVELOPMENT.md
+  - TESTING.md
   - AGENTS.md
   - CONTRIBUTING.md
   - Gemfile.lock
