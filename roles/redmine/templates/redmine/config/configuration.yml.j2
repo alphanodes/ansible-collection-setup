@@ -35,7 +35,16 @@ default:
 {% endif %}
 {% if instance.redmine_config is defined and instance.redmine_config | length > 0 %}
 {% for key, value in instance.redmine_config | ansible.builtin.dictsort %}
-  {{ key }}: {{ (value | bool | string | lower) if value is boolean else value }}
+{% if value is boolean %}
+  {{ key }}: {{ (value | bool | string | lower) }}
+{% elif value is sequence and value is not string %}
+  {{ key }}:
+{% for item in value %}
+    - {{ item }}
+{% endfor %}
+{% else %}
+  {{ key }}: {{ value }}
+{% endif %}
 {% endfor %}
 {% endif %}
 
