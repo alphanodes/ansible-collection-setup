@@ -34,7 +34,7 @@ default:
   imagemagick_convert_command: magick
 {% endif %}
 {% if instance.redmine_config is defined and instance.redmine_config | length > 0 %}
-{% for key, value in instance.redmine_config | ansible.builtin.dictsort %}
+{% for key, value in instance.redmine_config | dictsort %}
 {% if value is boolean %}
   {{ key }}: {{ (value | bool | string | lower) }}
 {% elif value is sequence and value is not string %}
