@@ -30,23 +30,13 @@ default:
 {% if instance.database_cipher_key is defined and instance.database_cipher_key != '' %}
   database_cipher_key: "{{ instance.database_cipher_key }}"
 {% endif %}
-{% if instance.helpdesk_debug is defined and instance.helpdesk_debug != '' %}
-  helpdesk_debug: {{ instance.helpdesk_debug | bool | lower }}
-{% endif %}
-{% if instance.default_cc_addresses_with_to is defined and instance.default_cc_addresses_with_to != '' %}
-  default_cc_addresses_with_to: {{ instance.default_cc_addresses_with_to | bool | lower }}
-{% endif %}
-{% if instance.select2_init_entries is defined and instance.select2_init_entries != '' %}
-  select2_init_entries: {{ instance.select2_init_entries | int }}
-{% endif %}
 {% if ansible_distribution_release == 'trixie' %}
   imagemagick_convert_command: magick
 {% endif %}
-{% if instance.gps_macro_with_bavaria_only is defined and instance.gps_macro_with_bavaria_only != '' %}
-  gps_macro_with_bavaria_only: {{ instance.gps_macro_with_bavaria_only | bool | lower }}
-{% endif %}
-{% if instance.active_enterprise_support is defined and instance.active_enterprise_support %}
-  active_enterprise_support: true
+{% if instance.redmine_config is defined and instance.redmine_config | length > 0 %}
+{% for key, value in instance.redmine_config | ansible.builtin.dictsort %}
+  {{ key }}: {{ (value | bool | string | lower) if value is boolean else value }}
+{% endfor %}
 {% endif %}
 
 {% if active_system_infos_vars | length > 0 %}
