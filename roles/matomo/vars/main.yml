@@ -29,7 +29,7 @@ matomo_available_plugins:
     use_git: true
     repo: https://github.com/matomo-org/plugin-Migration.git
     download: https://github.com/matomo-org/plugin-Migration/archive/%%version%%.tar.gz
-    version: 5.0.5
+    version: 5.0.6
   Provider:
     use_git: true
     repo: https://github.com/matomo-org/plugin-Provider.git
