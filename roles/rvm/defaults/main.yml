@@ -9,7 +9,7 @@ rvm1_rubies:
 rvm1_bundler_install: false
 
 # Delete a specific version of ruby (ie. ruby-2.1.0)
-rvm1_delete_ruby:
+rvm1_delete_ruby: ''
 
 # Install path for rvm (defaults to user based install)
 rvm1_install_path: '~/.rvm'
