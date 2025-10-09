@@ -67,4 +67,4 @@
   ansible.builtin.command: '{{ rvm1_rvm }} remove {{ rvm1_delete_ruby }}'
   register: rvm_delete_command
   changed_when: "'#removing' in rvm_delete_command.stdout"
-  when: rvm1_delete_ruby is defined and rvm1_delete_ruby
+  when: rvm1_delete_ruby is defined and rvm1_delete_ruby | length > 0
