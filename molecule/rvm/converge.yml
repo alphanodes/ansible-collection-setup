@@ -63,6 +63,7 @@
     rvm1_bundler_install: true
     rvm1_symlink: true
     rvm1_gpg_keys: ''  # Skip GPG verification in test environment
+    rvm1_autolibs_mode: '0'  # Disable RVM dependency checking (we handle deps manually)
 
   roles:
     - role: alphanodes.setup.rvm
