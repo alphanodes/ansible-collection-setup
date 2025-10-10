@@ -42,6 +42,8 @@
   ansible.builtin.shell: >
     set -o pipefail &&
     curl -sSL https://rvm.io/{{ item }} | gpg --batch --import -
+  args:
+    executable: /bin/bash
   loop:
     - mpapis.asc
     - pkuczynski.asc

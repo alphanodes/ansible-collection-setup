@@ -63,7 +63,7 @@ All provided roles do not use docker as container system.
 - [alphanodes.setup.redmine](roles/redmine/)
 - [alphanodes.setup.rocketchat](roles/rocketchat/) [![rocketchat](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/rocketchat.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/rocketchat.yml)
 - [alphanodes.setup.rsync](roles/rsync/)
-- [alphanodes.setup.rvm](roles/rvm/)
+- [alphanodes.setup.rvm](roles/rvm/) [![rvm](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/rvm.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/rvm.yml)
 - [alphanodes.setup.sphinx](roles/sphinx/)
 - [alphanodes.setup.ssh](roles/ssh/) [![ssh](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/ssh.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/ssh.yml)
 - [alphanodes.setup.ssl](roles/ssl/)

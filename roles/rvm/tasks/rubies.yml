@@ -25,6 +25,8 @@
     {{ rvm1_rvm }} list strings |
     grep {{ item }} |
     tail -n 1
+  args:
+    executable: /bin/bash
   loop: '{{ rvm1_rubies }}'
   changed_when: false
   register: ruby_patch
@@ -37,6 +39,7 @@
     ls {{ rvm1_install_path }}/wrappers/{{ item.stdout }} |
     if ! grep "^bundler " ; then {{ rvm1_install_path }}/wrappers/{{ item.stdout }}/gem install bundler ; fi
   args:
+    executable: /bin/bash
     creates: '{{ rvm1_install_path }}/wrappers/{{ item.stdout }}/bundler'
   loop: '{{ ruby_patch.results }}'
   when: rvm1_bundler_install
@@ -50,6 +53,7 @@
     dest: '{{ rvm1_symlink_to }}/{{ item }}'
     owner: '{{ root_user }}'
     group: '{{ root_group }}'
+    follow: false
   when: not '--user-install' in rvm1_install_flags and rvm1_symlink
   loop: '{{ rvm1_symlink_binaries }}'
 
@@ -60,6 +64,7 @@
     dest: '{{ rvm1_symlink_to }}/{{ item }}'
     owner: '{{ root_user }}'
     group: '{{ root_group }}'
+    follow: false
   when: not '--user-install' in rvm1_install_flags and rvm1_bundler_install and rvm1_symlink
   loop: '{{ rvm1_symlink_bundler_binaries }}'
 

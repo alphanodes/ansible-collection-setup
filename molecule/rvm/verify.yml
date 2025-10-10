@@ -1,0 +1,156 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check if rvm binary exists
+      ansible.builtin.stat:
+        path: /usr/local/rvm/bin/rvm
+      register: rvm_binary
+
+    - name: Verify rvm binary exists
+      ansible.builtin.assert:
+        that:
+          - rvm_binary.stat.exists
+        fail_msg: "RVM binary not found"
+        success_msg: "RVM binary found"
+
+    - name: Check rvm version
+      ansible.builtin.command: /usr/local/rvm/bin/rvm version
+      changed_when: false
+      register: rvm_version
+      become: true
+      become_user: root
+
+    - name: Verify rvm is installed
+      ansible.builtin.assert:
+        that:
+          - rvm_version.rc == 0
+          - "'rvm' in rvm_version.stdout"
+        fail_msg: "RVM version check failed"
+        success_msg: "RVM is properly installed"
+
+    - name: List installed rubies
+      ansible.builtin.command: /usr/local/rvm/bin/rvm list
+      changed_when: false
+      register: rvm_list
+      become: true
+      become_user: root
+
+    - name: Verify ruby is installed
+      ansible.builtin.assert:
+        that:
+          - rvm_list.rc == 0
+          - "'ruby-3.2.4' in rvm_list.stdout"
+        fail_msg: "Ruby 3.2.4 not found"
+        success_msg: "Ruby 3.2.4 is installed"
+
+    - name: Check default ruby version
+      ansible.builtin.command: /usr/local/rvm/bin/rvm alias list default
+      changed_when: false
+      register: default_ruby
+      become: true
+      become_user: root
+
+    - name: Verify default ruby is set
+      ansible.builtin.assert:
+        that:
+          - default_ruby.rc == 0
+          - "'ruby-3.2' in default_ruby.stdout"
+        fail_msg: "Default ruby not properly set"
+        success_msg: "Default ruby is set to ruby-3.2.4"
+
+    - name: Test ruby execution
+      ansible.builtin.command: /usr/local/bin/ruby -e 'puts RUBY_VERSION'
+      changed_when: false
+      register: ruby_execution
+
+    - name: Verify ruby can execute code
+      ansible.builtin.assert:
+        that:
+          - ruby_execution.rc == 0
+          - ruby_execution.stdout | length > 0
+        fail_msg: "Ruby execution failed"
+        success_msg: "Ruby execution successful"
+
+    - name: Check if bundler is installed
+      ansible.builtin.stat:
+        path: /usr/local/rvm/wrappers/default/bundler
+      register: bundler_binary
+
+    - name: Verify bundler is installed
+      ansible.builtin.assert:
+        that:
+          - bundler_binary.stat.exists
+        fail_msg: "Bundler not found"
+        success_msg: "Bundler is installed"
+
+    - name: Test bundler version
+      ansible.builtin.command: /usr/local/rvm/wrappers/default/bundler --version
+      changed_when: false
+      register: bundler_version
+      become: true
+      become_user: root
+
+    - name: Verify bundler works
+      ansible.builtin.assert:
+        that:
+          - bundler_version.rc == 0
+          - "'Bundler version' in bundler_version.stdout"
+        fail_msg: "Bundler execution failed"
+        success_msg: "Bundler is working"
+
+    - name: Check if ruby symlink exists
+      ansible.builtin.stat:
+        path: /usr/local/bin/ruby
+      register: ruby_symlink
+
+    - name: Verify ruby symlink
+      ansible.builtin.assert:
+        that:
+          - ruby_symlink.stat.exists
+          - ruby_symlink.stat.islnk
+        fail_msg: "Ruby symlink not found or not a link"
+        success_msg: "Ruby symlink exists"
+
+    - name: Check if gem symlink exists
+      ansible.builtin.stat:
+        path: /usr/local/bin/gem
+      register: gem_symlink
+
+    - name: Verify gem symlink
+      ansible.builtin.assert:
+        that:
+          - gem_symlink.stat.exists
+          - gem_symlink.stat.islnk
+        fail_msg: "Gem symlink not found or not a link"
+        success_msg: "Gem symlink exists"
+
+    - name: Check if bundle symlink exists
+      ansible.builtin.stat:
+        path: /usr/local/bin/bundle
+      register: bundle_symlink
+
+    - name: Verify bundle symlink
+      ansible.builtin.assert:
+        that:
+          - bundle_symlink.stat.exists
+          - bundle_symlink.stat.islnk
+        fail_msg: "Bundle symlink not found or not a link"
+        success_msg: "Bundle symlink exists"
+
+    - name: Display comprehensive test results
+      ansible.builtin.debug:
+        msg:
+          - "=== RVM INSTALLATION TESTS ==="
+          - "RVM binary: {{ 'OK' if rvm_binary.stat.exists else 'FAILED' }}"
+          - "RVM version: {{ 'OK' if rvm_version.rc == 0 else 'FAILED' }}"
+          - "Ruby installed: {{ 'OK' if 'ruby-3.2.4' in rvm_list.stdout else 'FAILED' }}"
+          - "Default ruby set: {{ 'OK' if 'ruby-3.2' in default_ruby.stdout else 'FAILED' }}"
+          - "Ruby execution: {{ 'OK' if ruby_execution.rc == 0 else 'FAILED' }}"
+          - "Bundler installed: {{ 'OK' if bundler_binary.stat.exists else 'FAILED' }}"
+          - "Bundler works: {{ 'OK' if bundler_version.rc == 0 else 'FAILED' }}"
+          - "Ruby symlink: {{ 'OK' if ruby_symlink.stat.exists and ruby_symlink.stat.islnk else 'FAILED' }}"
+          - "Gem symlink: {{ 'OK' if gem_symlink.stat.exists and gem_symlink.stat.islnk else 'FAILED' }}"
+          - "Bundle symlink: {{ 'OK' if bundle_symlink.stat.exists and bundle_symlink.stat.islnk else 'FAILED' }}"
+          - "=== RVM INSTALLATION SUCCESS ==="
