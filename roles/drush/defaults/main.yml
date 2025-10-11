@@ -4,11 +4,6 @@
 # drush version (github branch)
 drush_version: 8.x
 
-# PHP modules required by composer for drush installation
-# ZIP extension needed to avoid fallback to git source downloads
-php_extra_modules:
-  - php-zip
-
 drush_run_as_user: 1
 drush_aliases: []
 
