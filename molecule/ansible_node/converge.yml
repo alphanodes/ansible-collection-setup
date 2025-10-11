@@ -12,7 +12,6 @@
 
   roles:
     - role: alphanodes.setup.common
-    - role: alphanodes.setup.git
     - role: alphanodes.setup.ansible_node
 
   post_tasks:

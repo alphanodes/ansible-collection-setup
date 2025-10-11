@@ -18,6 +18,8 @@
     - name: Verify drush is installed
       ansible.builtin.command: drush --version
       changed_when: false
-      failed_when: false
       register: drush_version
-    # TODO: Requires PHP to be installed first for drush to work
+
+    - name: Display drush version
+      ansible.builtin.debug:
+        var: drush_version.stdout
