@@ -5,3 +5,9 @@
   ansible.builtin.systemd_service:
     name: unbound
     state: restarted
+
+- name: Restart systemd-resolved
+  ansible.builtin.systemd_service:
+    name: systemd-resolved
+    state: restarted
+  failed_when: false
