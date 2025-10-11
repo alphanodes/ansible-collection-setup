@@ -5,11 +5,17 @@
     name: '{{ unbound_packages }}'
     state: present
 
-- name: Update root anchor
+- name: Check if root key file already exists
+  ansible.builtin.stat:
+    path: "{{ unbound_root_key_file }}"
+  register: unbound_root_key_stat
+
+- name: Initial root anchor setup (only if file doesn't exist)
   ansible.builtin.command: unbound-anchor -a {{ unbound_root_key_file }}
   register: unbound_anchor_rc
   changed_when: unbound_anchor_rc.rc == 1
   failed_when: unbound_anchor_rc.rc > 1
+  when: not unbound_root_key_stat.stat.exists
 
 - name: Set permission for root key file
   ansible.builtin.file:
