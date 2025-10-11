@@ -1,6 +1,8 @@
 ---
 
-# only ee is support for now
+# Only GitLab EE is supported for now
+# Supported distributions: Debian 11 and Debian 12 only
+# See: https://docs.gitlab.com/install/package/debian/
 
 gitlab_required_packages:
   # ruby just used for syntax check
@@ -143,6 +145,10 @@ gitlab_env:
 gitlab_alertmanager_enable: false
 gitlab_alertmanager_flags:
   cluster.advertise-address: "127.0.0.1:9093"
+
+# IP addresses allowed to access monitoring endpoints
+# See: https://docs.gitlab.com/ee/administration/monitoring/ip_whitelist.html
+gitlab_monitoring_ip_whitelist: ['127.0.0.0/8']
 
 gitlab_ldap_enabled: false
 gitlab_ldap_prevent_ldap_sign_in: false

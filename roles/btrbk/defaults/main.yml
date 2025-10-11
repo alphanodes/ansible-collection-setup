@@ -47,4 +47,4 @@ btrbk_remove: false
 #     snapshot_dir: btrbk_snapshots
 #     subvolume: home
 
-btrbk_volumes: {}
+btrbk_volumes: []

@@ -3,7 +3,6 @@
   hosts: all
   become: true
   vars:
-    ntp_timezone: Europe/Berlin
     php_fpm_base: /run/php/php-fpm
     # Avoid upstream Redis repo in CI (packages.redis.io 403 on trixie)
     redis_use_redis_io: false

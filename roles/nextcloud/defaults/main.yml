@@ -27,7 +27,7 @@ nextcloud_db_role_flags: 'NOSUPERUSER,CREATEDB'
 
 nextcloud_mail_domain: '{{ ansible_domain }}'
 nextcloud_mail_from_address: webmaster
-nextcloud_logtimezone: '{{ ntp_timezone }}'
+nextcloud_logtimezone: "{{ ntp_timezone | default('Europe/Berlin') }}"
 nextcloud_default_language: de
 nextcloud_loglevel: 2
 

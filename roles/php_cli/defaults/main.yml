@@ -4,4 +4,4 @@
 php_extra_modules: []
 
 php_cli_error_log: syslog
-php_cli_date_timezone: '{{ ntp_timezone }}'
+php_cli_date_timezone: "{{ ntp_timezone | default('Europe/Berlin') }}"

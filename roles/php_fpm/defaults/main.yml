@@ -20,7 +20,7 @@ php_fpm_ping_path: /php_ping
 
 php_fpm_pool_clear_env: false
 
-php_date_timezone: '{{ ntp_timezone }}'
+php_date_timezone: "{{ ntp_timezone | default('Europe/Berlin') }}"
 php_disable_functions: "pcntl_alarm,pcntl_fork,pcntl_waitpid,pcntl_wait,pcntl_wifexited,pcntl_wifstopped,pcntl_wifsignaled,pcntl_wexitstatus,pcntl_wtermsig,pcntl_wstopsig,pcntl_signal,pcntl_signal_dispatch,pcntl_get_last_error,pcntl_strerror,pcntl_sigprocmask,pcntl_sigwaitinfo,pcntl_sigtimedwait,pcntl_exec,pcntl_getpriority,pcntl_setpriority"
 php_error_log: syslog
 php_error_reporting: "E_ALL & ~E_NOTICE & ~E_STRICT"
