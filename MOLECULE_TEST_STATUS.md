@@ -40,7 +40,7 @@ Each role has:
 
 ## Phase 2: Role Fixes ✅ COMPLETED
 
-### ✅ Successfully Fixed Roles (3 roles)
+### ✅ Successfully Fixed Roles (8 roles)
 
 #### 1. unbound ✅
 **Problem**: Idempotency test failed on file permissions
@@ -96,6 +96,96 @@ No package matching 'openjdk-17-jre-headless' is available
 
 **Test Results**: ✅ All 3 distributions pass (debian12, debian13, ubuntu2404)
 
+#### 4. gitlab_omnibus ✅
+**Problem 1**: Missing python3-debian dependency
+**Error**:
+```
+Failed to import the required Python library (python3-debian)
+```
+
+**Solution 1** (`roles/gitlab_omnibus/tasks/setup.yml:7-11`):
+- Install python3-debian before using deb822_repository module
+
+**Problem 2**: GitLab packages not available after repository addition
+**Error**:
+```
+No package matching 'gitlab-ee' is available
+```
+
+**Solution 2** (`roles/gitlab_omnibus/tasks/setup.yml:23-26`):
+- Added explicit apt cache update after repository addition
+
+**Problem 3**: Distribution support limitation
+**Issue**: GitLab only supports Debian 11 and 12 (not Debian 13 or Ubuntu)
+
+**Solution 3** (`.github/workflows/gitlab_omnibus.yml`):
+- Removed debian13 and ubuntu2404 from test matrix
+- Only test on debian12
+- Added documentation reference to https://docs.gitlab.com/install/package/debian/
+
+**Problem 4**: Missing template variables
+**Error**:
+```
+'gitlab_monitoring_ip_whitelist' is undefined
+```
+
+**Solution 4** (`roles/gitlab_omnibus/defaults/main.yml`):
+- Added missing variables from private ansible_sysconfig repo
+- Fixed syntax error in gitlab_nginx_ssl_protocols
+
+**Problem 5**: Let's Encrypt certificate failure for invalid hostname
+**Error**:
+```
+Cannot issue for "instance": Domain name needs at least one dot
+```
+
+**Solution 5** (`molecule/gitlab_omnibus/converge.yml`):
+- Implemented self-signed SSL certificate for testing (matching real customer use case)
+- Valid FQDN: gitlab-test.example.com
+- Pre-task creates self-signed cert in /etc/gitlab/ssl/
+- GitLab Omnibus automatically uses certificates from this directory
+
+**Test Results**: ✅ Debian 12 passes (only supported distribution)
+- GitLab EE successfully installed (39 packages)
+- gitlab-ctl reconfigure runs successfully
+- Idempotency test passes (0 changed tasks)
+
+#### 5. php_cli ✅
+**Problem**: Undefined variable `ntp_timezone`
+**Error**: Template variable undefined when ntp role not included
+
+**Solution** (`roles/php_cli/defaults/main.yml:7`):
+- Added default fallback: `{{ ntp_timezone | default('Europe/Berlin') }}`
+
+**Test Results**: ✅ All 3 distributions pass (debian12, debian13, ubuntu2404)
+
+#### 6. php_fpm ✅
+**Problem**: Undefined variable `ntp_timezone`
+**Error**: Template variable undefined when ntp role not included
+
+**Solution** (`roles/php_fpm/defaults/main.yml:23`):
+- Added default fallback: `{{ ntp_timezone | default('Europe/Berlin') }}`
+
+**Test Results**: ✅ All 3 distributions pass (debian12, debian13, ubuntu2404)
+
+#### 7. btrbk ✅
+**Problem**: Wrong variable type for `btrbk_volumes`
+**Error**: Expected list but got dict `{}`
+
+**Solution** (`roles/btrbk/defaults/main.yml:50`):
+- Changed from `btrbk_volumes: {}` to `btrbk_volumes: []`
+
+**Test Results**: ✅ All 3 distributions pass (debian12, debian13, ubuntu2404)
+
+#### 8. nextcloud ✅
+**Problem**: Undefined variable `ntp_timezone`
+**Error**: Template variable undefined when ntp role not included
+
+**Solution** (`roles/nextcloud/defaults/main.yml:30`):
+- Added default fallback: `{{ ntp_timezone | default('Europe/Berlin') }}`
+
+**Test Results**: ✅ All 3 distributions pass (debian12, debian13, ubuntu2404)
+
 ### ✅ Successfully Tested Roles (8 roles - from Phase 1)
 
 1. **common** - Post-task adjusted (check_mode to command)
@@ -123,16 +213,16 @@ swapon: /swapfile: swapon failed: Invalid argument
 These roles have tests but haven't been executed locally yet (run in GitHub Actions):
 
 **Development Tools**:
-- php_cli, php_fpm, sphinx
+- sphinx
 
 **Complex Roles**:
-- nginx, git_config, btrbk, ssl
+- nginx, git_config, ssl
 
 **Service Roles**:
 - netfilter, goaccess
 
 **Application Roles**:
-- drupal, drush, gitlab, gitlab_omnibus, hedgedoc, jekyll, matomo, phpmyadmin, redmine
+- drupal, drush, gitlab, hedgedoc, jekyll, matomo, phpmyadmin, redmine
 
 ## Important Adjustments
 
@@ -249,6 +339,15 @@ done
 - `roles/java/vars/default.yml` - Created (OpenJDK 21)
 - `roles/java/vars/Debian-12.yml` - Created (OpenJDK 17)
 - `roles/java/defaults/main.yml` - Updated documentation
+- `roles/gitlab_omnibus/tasks/setup.yml` - Added python3-debian + apt update
+- `roles/gitlab_omnibus/defaults/main.yml` - Added monitoring variable + docs
+- `molecule/gitlab_omnibus/converge.yml` - Self-signed SSL setup
+- `.github/workflows/gitlab_omnibus.yml` - Limited to debian12 only
+- `roles/php_cli/defaults/main.yml` - Added ntp_timezone default fallback
+- `roles/php_fpm/defaults/main.yml` - Added ntp_timezone default fallback
+- `roles/btrbk/defaults/main.yml` - Fixed btrbk_volumes type (dict → list)
+- `roles/nextcloud/defaults/main.yml` - Added ntp_timezone default fallback
+- `molecule/nextcloud/converge.yml` - Minor cleanup
 
 ## Lessons Learned
 
@@ -290,6 +389,16 @@ done
    - Use vars/ directory for distribution-specific variables
    - Use `include_vars` with `with_first_found` pattern
 
+5. **Undefined variables from other roles**
+   - Variables like `ntp_timezone` from ntp role need default fallbacks
+   - Pattern: `{{ ntp_timezone | default('Europe/Berlin') }}`
+   - Allows roles to work standalone without ntp role dependency
+
+6. **Variable type mismatches**
+   - Empty dicts `{}` vs empty lists `[]` matter in templates
+   - Example: `btrbk_volumes: []` not `btrbk_volumes: {}`
+   - Check template expectations (loops expect lists, not dicts)
+
 ## GitHub Actions Status
 
 After pushing, all workflows run automatically:
@@ -307,9 +416,12 @@ After pushing, all workflows run automatically:
 - Test infrastructure fully operational
 
 ✅ **Phase 2 completed**
-- 3 role problems fixed (unbound, nfs, java)
+- 8 role problems fixed (unbound, nfs, java, gitlab_omnibus, php_cli, php_fpm, btrbk, nextcloud)
+- Total: 16 roles successfully tested (8 from Phase 1 + 8 fixed in Phase 2)
 - All fixes validated locally and on GitHub Actions
-- All 3 distributions passing (debian12, debian13, ubuntu2404)
+- Distribution-specific testing: Most roles pass all 3 distributions (debian12, debian13, ubuntu2404)
+- gitlab_omnibus: Only debian12 supported (GitLab limitation)
+- Common pattern: ntp_timezone variable needs default fallback for standalone role usage
 
 🎯 **Ready for Phase 3**
 - Continue systematic testing of remaining roles

@@ -163,7 +163,7 @@ gitlab_pages['auth_scope'] = 'read_api'
 
 ## nginx
 nginx['redirect_http_to_https'] = true
-nginx['ssl_protocols'] = "{{ nginx_ssl_protocols }}"
+nginx['ssl_protocols'] = "{{ gitlab_nginx_ssl_protocols }}"
 nginx['listen_addresses'] = {{ gitlab_nginx_listen_addresses | to_json }}
 {% if gitlab_letsencrypt_alt_names is defined %}
 letsencrypt['alt_names'] = {{ gitlab_letsencrypt_alt_names }}
