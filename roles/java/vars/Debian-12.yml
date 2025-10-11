@@ -1,0 +1,4 @@
+---
+# Debian 12 (Bookworm) uses OpenJDK 17
+java_packages:
+  - openjdk-17-jre-headless

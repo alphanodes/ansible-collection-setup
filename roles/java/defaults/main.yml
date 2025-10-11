@@ -1,11 +1,10 @@
 ---
-# Set java_packages if you would like to use a different version than the
-# default for the OS (see defaults per OS in `vars` directory).
+# Java packages are loaded automatically from vars/ directory based on distribution:
+#   - Default: OpenJDK 21 (for modern distributions)
+#   - Debian 12: OpenJDK 17 (exception for older LTS)
+#
+# Override by setting java_packages in your playbook if needed.
 # java_packages: []
 
 # see https://github.com/geerlingguy/ansible-role-jenkins
 java_home: ""
-
-# JDK version options include:
-java_packages:
-  - openjdk-17-jre-headless

@@ -1,0 +1,5 @@
+---
+# Default for modern distributions - uses OpenJDK 21
+# Override this by setting java_packages in your playbook
+java_packages:
+  - openjdk-21-jre-headless
