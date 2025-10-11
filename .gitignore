@@ -33,3 +33,5 @@ tmp/
 *_key
 *_key.*
 !*_key.pub
+.env
+.mcp.json

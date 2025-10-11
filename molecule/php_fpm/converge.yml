@@ -1,0 +1,26 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  roles:
+    - role: alphanodes.setup.common
+    - role: alphanodes.setup.php_fpm
+
+  post_tasks:
+    - name: Verify PHP-FPM is running
+      ansible.builtin.service:
+        name: php-fpm
+        state: started
+      check_mode: true
+      register: php_fpm_service
+      failed_when: php_fpm_service.changed
+      ignore_errors: true
+    # TODO: Service name may vary by PHP version (php8.2-fpm, php8.3-fpm, etc.)

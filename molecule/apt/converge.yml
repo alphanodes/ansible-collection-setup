@@ -1,0 +1,25 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+    - name: Add python3-debian for deb822 support
+      ansible.builtin.apt:
+        name: python3-debian
+        state: present
+
+  roles:
+    - role: alphanodes.setup.common
+    - role: alphanodes.setup.apt
+
+  post_tasks:
+    - name: Verify apt configuration
+      ansible.builtin.command: apt-config dump
+      changed_when: false

@@ -1,0 +1,24 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  vars:
+    hedgedoc_enabled: false  # Don't actually deploy HedgeDoc in test
+
+  roles:
+    - role: alphanodes.setup.common
+    - role: alphanodes.setup.hedgedoc
+
+  post_tasks:
+    - name: Check hedgedoc role completed
+      ansible.builtin.debug:
+        msg: "HedgeDoc role executed successfully"
+    # TODO: Requires Node.js and database setup for complete testing

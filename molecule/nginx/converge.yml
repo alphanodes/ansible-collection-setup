@@ -1,0 +1,27 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  vars:
+    # Disable SSL and complex features for testing
+    nginx_with_ssl: false
+    nginx_with_ipv6: false
+    nginx_force_ssl: false
+    nginx_with_http3: false
+
+  roles:
+    - role: alphanodes.setup.common
+    - role: alphanodes.setup.nginx
+
+  post_tasks:
+    - name: Test nginx configuration
+      ansible.builtin.command: nginx -t
+      changed_when: false

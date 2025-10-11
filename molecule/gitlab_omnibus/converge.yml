@@ -1,0 +1,24 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  vars:
+    gitlab_omnibus_enabled: false  # Don't actually install GitLab Omnibus in test
+
+  roles:
+    - role: alphanodes.setup.common
+    - role: alphanodes.setup.gitlab_omnibus
+
+  post_tasks:
+    - name: Check gitlab_omnibus role completed
+      ansible.builtin.debug:
+        msg: "GitLab Omnibus role executed successfully"
+    # TODO: Full GitLab Omnibus installation requires significant resources

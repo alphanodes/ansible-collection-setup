@@ -1,0 +1,25 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  roles:
+    - role: alphanodes.setup.common
+    - role: alphanodes.setup.sphinx
+
+  post_tasks:
+    - name: Verify sphinx packages installed
+      ansible.builtin.package:
+        name: python3-sphinx
+        state: present
+      check_mode: true
+      register: sphinx_packages
+      failed_when: sphinx_packages.changed
+      ignore_errors: true

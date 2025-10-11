@@ -1,0 +1,24 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  vars:
+    redmine_enabled: false  # Don't actually deploy Redmine in test
+
+  roles:
+    - role: alphanodes.setup.common
+    - role: alphanodes.setup.redmine
+
+  post_tasks:
+    - name: Check redmine role completed
+      ansible.builtin.debug:
+        msg: "Redmine role executed successfully"
+    # TODO: Requires Ruby, database and nginx for complete testing

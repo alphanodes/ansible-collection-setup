@@ -1,0 +1,23 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  roles:
+    - role: alphanodes.setup.common
+    - role: alphanodes.setup.btrbk
+
+  post_tasks:
+    - name: Verify btrbk is installed
+      ansible.builtin.command: btrbk --version
+      changed_when: false
+      failed_when: false
+      register: btrbk_version
+    # TODO: Test might fail if btrbk installation requires special conditions

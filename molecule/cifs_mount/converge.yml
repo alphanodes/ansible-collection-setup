@@ -1,0 +1,24 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  roles:
+    - role: alphanodes.setup.common
+    - role: alphanodes.setup.cifs_mount
+
+  post_tasks:
+    - name: Verify cifs-utils is installed
+      ansible.builtin.package:
+        name: cifs-utils
+        state: present
+      check_mode: true
+      register: cifs_utils
+      failed_when: cifs_utils.changed

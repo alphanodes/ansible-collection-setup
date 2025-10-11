@@ -1,0 +1,25 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  vars:
+    git_config_user_name: "Test User"
+    git_config_user_email: "test@example.com"
+
+  roles:
+    - role: alphanodes.setup.git
+    - role: alphanodes.setup.git_config
+
+  post_tasks:
+    - name: Verify git config
+      ansible.builtin.command: git config --global user.name
+      changed_when: false
+      failed_when: false

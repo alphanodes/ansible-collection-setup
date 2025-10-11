@@ -1,0 +1,24 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  vars:
+    netfilter_enabled: false  # Don't modify firewall rules in test
+
+  roles:
+    - role: alphanodes.setup.common
+    - role: alphanodes.setup.netfilter
+
+  post_tasks:
+    - name: Check netfilter role completed
+      ansible.builtin.debug:
+        msg: "Netfilter role executed successfully"
+    # TODO: Firewall configuration requires careful testing to avoid lockouts

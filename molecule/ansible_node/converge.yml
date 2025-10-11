@@ -1,0 +1,21 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  roles:
+    - role: alphanodes.setup.common
+    - role: alphanodes.setup.git
+    - role: alphanodes.setup.ansible_node
+
+  post_tasks:
+    - name: Verify ansible is installed
+      ansible.builtin.command: ansible --version
+      changed_when: false

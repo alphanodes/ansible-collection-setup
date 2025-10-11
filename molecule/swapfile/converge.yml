@@ -1,0 +1,24 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  vars:
+    swapfile_enabled: false  # Don't create swapfile in container test
+
+  roles:
+    - role: alphanodes.setup.common
+    - role: alphanodes.setup.swapfile
+
+  post_tasks:
+    - name: Check swapfile role completed
+      ansible.builtin.debug:
+        msg: "Swapfile role executed successfully"
+    # TODO: Swapfile creation in Docker containers may not work as expected

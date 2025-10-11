@@ -1,0 +1,24 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  vars:
+    matomo_enabled: false  # Don't actually deploy Matomo in test
+
+  roles:
+    - role: alphanodes.setup.common
+    - role: alphanodes.setup.matomo
+
+  post_tasks:
+    - name: Check matomo role completed
+      ansible.builtin.debug:
+        msg: "Matomo role executed successfully"
+    # TODO: Requires PHP, MySQL/MariaDB and nginx for complete testing

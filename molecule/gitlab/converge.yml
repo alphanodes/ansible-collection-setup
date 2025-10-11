@@ -1,0 +1,24 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  vars:
+    gitlab_enabled: false  # Don't actually install GitLab in test
+
+  roles:
+    - role: alphanodes.setup.common
+    - role: alphanodes.setup.gitlab
+
+  post_tasks:
+    - name: Check gitlab role completed
+      ansible.builtin.debug:
+        msg: "GitLab role executed successfully"
+    # TODO: Full GitLab installation requires significant resources and time

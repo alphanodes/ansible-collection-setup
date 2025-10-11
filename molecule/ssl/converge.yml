@@ -1,0 +1,24 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  vars:
+    ssl_enabled: false  # Don't manage SSL certificates in test
+
+  roles:
+    - role: alphanodes.setup.common
+    - role: alphanodes.setup.ssl
+
+  post_tasks:
+    - name: Check ssl role completed
+      ansible.builtin.debug:
+        msg: "SSL role executed successfully"
+    # TODO: SSL certificate management requires valid domains and Let's Encrypt setup

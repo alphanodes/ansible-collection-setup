@@ -1,0 +1,24 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  roles:
+    - role: alphanodes.setup.common
+    - role: alphanodes.setup.unbound
+
+  post_tasks:
+    - name: Verify unbound is installed
+      ansible.builtin.package:
+        name: unbound
+        state: present
+      check_mode: true
+      register: unbound_package
+      failed_when: unbound_package.changed

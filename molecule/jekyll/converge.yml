@@ -1,0 +1,24 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  vars:
+    jekyll_enabled: false  # Don't actually deploy Jekyll in test
+
+  roles:
+    - role: alphanodes.setup.common
+    - role: alphanodes.setup.jekyll
+
+  post_tasks:
+    - name: Check jekyll role completed
+      ansible.builtin.debug:
+        msg: "Jekyll role executed successfully"
+    # TODO: Requires Ruby/RVM setup for complete testing

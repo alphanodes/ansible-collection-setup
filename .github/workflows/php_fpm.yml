@@ -1,0 +1,52 @@
+---
+name: "alphanodes.setup.php_fpm"
+'on':
+  pull_request:
+  push:
+    branches:
+      - main
+    paths:
+      - 'roles/php_fpm/**'
+      - 'molecule/php_fpm/**'
+      - '.github/workflows/php_fpm.yml'
+
+defaults:
+  run:
+    working-directory: 'php_fpm'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      PY_COLORS: 1
+      ANSIBLE_FORCE_COLOR: 1
+
+    strategy:
+      matrix:
+        distro:
+          - ubuntu2404
+          - debian12
+          - debian13
+
+    steps:
+      - name: Check out the codebase.
+        uses: actions/checkout@v5
+        with:
+          path: 'php_fpm'
+
+      - name: Set up Python 3.
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install test dependencies.
+        run: |
+          python -m pip install --no-cache-dir --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Run Molecule tests.
+        run: |
+          molecule --version
+          molecule test -s php_fpm
+        env:
+          MOLECULE_DISTRO: ${{ matrix.distro }}
