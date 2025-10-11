@@ -60,6 +60,10 @@ server {
     proxy_set_header Host $http_host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+{% if instance.with_saml is defined and instance.with_saml | bool %}
+    # FIX für SAML Cookie-Problem (Chrome 80+)
+    proxy_cookie_path / "/; SameSite=Lax; Secure; HttpOnly";
+{% endif %}
 
     proxy_pass http://{{ instance_name | replace('-', '_')}}_mailcatcher;
     proxy_redirect off;
