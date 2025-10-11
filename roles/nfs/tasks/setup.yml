@@ -11,6 +11,14 @@
     state: present
   when: nfs_server
 
+- name: Ensure /etc/modprobe.d directory exists
+  ansible.builtin.file:
+    path: /etc/modprobe.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
 - name: Configure nfs
   ansible.builtin.template:
     src: '{{ item }}.j2'
