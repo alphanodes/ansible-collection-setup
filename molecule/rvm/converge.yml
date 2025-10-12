@@ -49,6 +49,7 @@
     rvm1_autolib_mode: 0  # Disable RVM dependency checking (we handle deps manually)
 
   roles:
+    - role: alphanodes.setup.common
     - role: alphanodes.setup.rvm
 
   post_tasks:
