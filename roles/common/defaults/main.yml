@@ -21,6 +21,10 @@ nginx_group: www-data
 # set no_log (e.g. for passwords used)
 hide_sensitive_data: true
 
+common_packages:
+  - curl
+  - python3-debian
+
 # required globally for mysql auth_socket support
 # caching_sha2_password or auth_socket
 mysql_root_plugin: caching_sha2_password

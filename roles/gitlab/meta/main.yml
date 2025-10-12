@@ -12,13 +12,7 @@ galaxy_info:
   platforms:
     - name: Ubuntu
       versions:
-        - jammy
         - noble
-    - name: Debian
-      versions:
-        - bullseye
-        - bookworm
-        - trixie
   galaxy_tags:
     - gitlab
     - git

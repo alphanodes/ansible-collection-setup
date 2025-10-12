@@ -8,11 +8,6 @@
         name: bash
         state: present
 
-    - name: Add python3-debian for deb822 support
-      ansible.builtin.apt:
-        name: python3-debian
-        state: present
-
     # fix Illegal option -o pipefail
     - name: Set default interactive shell to bash (used by scripts)
       ansible.builtin.file:

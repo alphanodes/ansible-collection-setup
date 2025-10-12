@@ -13,7 +13,6 @@
     - name: Install dependencies for RVM (common packages)
       ansible.builtin.apt:
         name:
-          - curl
           - gnupg2
           - procps
           - gawk

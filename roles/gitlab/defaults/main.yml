@@ -148,7 +148,6 @@ gitlab_packages:
   - build-essential
   - checkinstall
   - cmake
-  - curl
   - gettext
   - graphicsmagick
   - libcurl4-openssl-dev

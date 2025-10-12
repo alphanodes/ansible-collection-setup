@@ -23,10 +23,11 @@ jobs:
 
     strategy:
       matrix:
+        # GitLab source installation (self-compiled) is only used with Ubuntu 24.04
+        # See: https://gitlab.com/gitlab-org/gitlab/-/blob/master/doc/install/self_compiled/_index.md
+        # For GitLab Omnibus (package installation), use gitlab_omnibus role instead
         distro:
           - ubuntu2404
-          - debian12
-          - debian13
 
     steps:
       - name: Check out the codebase.

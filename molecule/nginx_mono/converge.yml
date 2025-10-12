@@ -9,15 +9,9 @@
         update_cache: true
         cache_valid_time: 600
 
-    - name: Add python3-debian for deb822 support
-      ansible.builtin.apt:
-        name: python3-debian
-        state: present
-
     - name: Install required packages for nginx and nodejs
       ansible.builtin.apt:
         name:
-          - curl
           - git
           - redis-server
         state: present

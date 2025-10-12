@@ -4,12 +4,6 @@
   ansible.builtin.set_fact:
     activ_object_store_consolidated: "{{ gitlab_object_store_consolidated and gitlab_object_store_connection | length > 1 }}"
 
-- name: Ensure python3-debian is installed for deb822_repository
-  ansible.builtin.apt:
-    name: python3-debian
-    state: present
-    update_cache: true
-
 - name: Add Gitlab apt repository
   ansible.builtin.deb822_repository:
     name: gitlab

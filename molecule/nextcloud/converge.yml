@@ -25,12 +25,6 @@
         update_cache: true
       when: ansible_os_family == 'Debian'
 
-    - name: Add python3-debian for deb822 support
-      ansible.builtin.apt:
-        name: python3-debian
-        state: present
-      when: ansible_os_family == 'Debian'
-
     - name: Create nextcloud directory
       ansible.builtin.file:
         path: "{{ nextcloud_htdocs }}"

@@ -10,11 +10,34 @@
         cache_valid_time: 600
       changed_when: false
 
+    - name: Create git user early (required for GitLab)
+      ansible.builtin.user:
+        name: git
+        comment: "GitLab"
+        shell: /bin/bash
+        home: /home/git
+        createhome: true
+        state: present
+
+    - name: Import RVM GPG keys for git user (required for GitLab)
+      ansible.builtin.shell: |
+        set -o pipefail
+        curl -sSL https://rvm.io/mpapis.asc | gpg --import -
+        curl -sSL https://rvm.io/pkuczynski.asc | gpg --import -
+      args:
+        executable: /bin/bash
+      changed_when: false
+      become: true
+      become_user: git
+      ignore_errors: true
+
   vars:
     gitlab_enabled: false  # Don't actually install GitLab in test
+    rvm1_gpg_keys: ''  # Skip GPG verification in test environment
 
   roles:
     - role: alphanodes.setup.common
+    - role: alphanodes.setup.git
     - role: alphanodes.setup.gitlab
 
   post_tasks:

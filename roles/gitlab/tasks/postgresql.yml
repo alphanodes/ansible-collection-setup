@@ -50,4 +50,4 @@
   community.postgresql.postgresql_ext:
     name: pg_stat_statements
     login_db: '{{ gitlab_db_name }}'
-  when: postgresql_with_pg_stat_statements
+  when: postgresql_with_pg_stat_statements | default(false)

@@ -91,7 +91,7 @@
 
     - name: Set default resolver, if no resolver defined before
       ansible.builtin.set_fact:
-        nginx_resolver: "{{ hetzner_nameserver_v4 if hoster == 'hetzner' else ['8.8.8.8', '8.8.4.4'] }}"
+        nginx_resolver: "{{ hetzner_nameserver_v4 if (hoster | default('')) == 'hetzner' else ['8.8.8.8', '8.8.4.4'] }}"
       when:
         - nginx_resolver | length < 1
 

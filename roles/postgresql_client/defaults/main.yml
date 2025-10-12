@@ -6,8 +6,7 @@ postgresql_client_use_repo: true
 
 # which version should be used?
 # if postresql role (server) is available, this version is used
-# possible values: 10, 11, 12, 13, 14 or 15
-postgresql_client_version: "{{ postgresql_version | default('14') }}"
+postgresql_client_version: "{{ postgresql_version | default('17') }}"
 postgresql_client_packages:
  - postgresql-client-{{ postgresql_version | default(postgresql_client_version) }}
  - python3-psycopg2

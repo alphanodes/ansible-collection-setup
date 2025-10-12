@@ -2,7 +2,6 @@
 # defaults file for fail2ban
 
 fail2ban_packages:
-  - curl
   - fail2ban
   - iptables
   - python3-systemd

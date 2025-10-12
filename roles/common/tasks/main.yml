@@ -7,3 +7,8 @@
     group: '{{ software_path_group | default(omit) }}'
     mode: '{{ software_path_mode | default(omit) }}'
     state: directory
+
+- name: Be sure common packages are installed
+  ansible.builtin.apt:
+    name: '{{ common_packages }}'
+    state: present

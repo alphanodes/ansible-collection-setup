@@ -9,6 +9,7 @@
     dest: '{{ tmp_file }}'
     mode: '0755'
   delegate_to: localhost
+  become: false
 
 - name: Install latest postgresqltuner.pl
   ansible.builtin.copy:
