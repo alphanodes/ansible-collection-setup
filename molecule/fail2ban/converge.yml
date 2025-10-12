@@ -34,21 +34,6 @@
     # Matrix configuration will be tested in separate task
     # Leave Matrix variables undefined to test default behavior (disabled)
 
-    # Basic system configuration
-    ssh_server_port: 22
-    alphanodes_support_mail: "test@localhost"
-    backup_ip_address_v4: "192.168.1.100"
-    ext_ip_address_v4: "203.0.113.10"
-    ip_address_v4: "203.0.113.10"
-
-    # Override fail2ban_ignore_ips for testing (avoid hostvars dependency)
-    fail2ban_ignore_ips:
-      - "192.168.1.100/32"  # backup_ip_address_v4
-      - "203.0.113.10/32"   # ext_ip_address_v4
-      - "203.0.113.20/32"   # mock alphanodes-broker
-      - "203.0.113.30/32"   # mock alphanodes-gitlab
-      - "203.0.113.40/32"   # mock alphanodes-monitor
-
   roles:
     - role: alphanodes.setup.common
     - role: alphanodes.setup.fail2ban

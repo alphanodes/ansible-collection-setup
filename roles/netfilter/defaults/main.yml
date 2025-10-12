@@ -40,7 +40,6 @@ netfilter_allowed_udp_ports_with_saddr_v6: []
 
 netfilter_allowed_networks: []
 netfilter_allowed_networks_v6: []
-
 netfilter_allowed_networks_output: []
 netfilter_allowed_networks_output_v6: []
 
