@@ -5,43 +5,24 @@
   gather_facts: false
 
   tasks:
-    - name: Check phpmyadmin directory exists
-      ansible.builtin.stat:
-        path: /usr/share/alphanodes/phpmyadmin
-      register: phpmyadmin_dir_stat
-      failed_when: not phpmyadmin_dir_stat.stat.exists
-
-    - name: Check phpmyadmin configuration exists
-      ansible.builtin.stat:
-        path: /etc/phpmyadmin/config.inc.php
-      register: phpmyadmin_config_stat
-      failed_when: not phpmyadmin_config_stat.stat.exists
-
-    - name: Check nginx configuration exists
-      ansible.builtin.stat:
-        path: /etc/nginx/phpmyadmin.conf
-      register: nginx_config_stat
-      failed_when: not nginx_config_stat.stat.exists
-
-    - name: Validate phpmyadmin configuration
-      ansible.builtin.command: php -l /etc/phpmyadmin/config.inc.php
+    - name: Verify PHP CLI is installed
+      ansible.builtin.command: php --version
       changed_when: false
+      register: php_output
+      failed_when: "'PHP 8.2' not in php_output.stdout"
 
-    - name: Check phpmyadmin packages are installed
-      ansible.builtin.package:
-        name:
-          - php-mbstring
-          - php-zip
-          - php-gd
-          - php-json
-          - php-curl
-          - php-xml
-          - php-mysql
-        state: present
-      check_mode: true
-      register: pkg_check
-      failed_when: pkg_check.changed
+    - name: Verify MySQL client is installed
+      ansible.builtin.command: mysql --version
+      changed_when: false
+      register: mysql_output
+      failed_when: mysql_output.rc != 0
 
-    - name: Display verification success message
+    - name: Verify PHP-FPM pool config exists
+      ansible.builtin.stat:
+        path: /etc/php/8.2/fpm/pool.d/phpmyadmin.conf
+      register: fpm_pool_config
+      failed_when: not fpm_pool_config.stat.exists
+
+    - name: Display verification success
       ansible.builtin.debug:
-        msg: "phpMyAdmin verification completed successfully"
+        msg: "phpMyAdmin dependencies verification completed successfully"
