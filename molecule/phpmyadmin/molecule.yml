@@ -1,19 +1,17 @@
 ---
 dependency:
   name: galaxy
-  options:
-    requirements-file: ../../requirements.yml
 driver:
   name: docker
 platforms:
   - name: instance
-    image: "ghcr.io/alphanodes/docker-ansible:${MOLECULE_DISTRO:-debian12}"
-    command: ""
+    image: "geerlingguy/docker-${MOLECULE_DISTRO:-debian12}-ansible:latest"
+    command: ${MOLECULE_DOCKER_COMMAND:-""}
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
-    cgroupns_mode: host
     privileged: true
     pre_build_image: true
+    cgroupns_mode: host
 provisioner:
   name: ansible
   options:
@@ -21,9 +19,6 @@ provisioner:
   config_options:
     defaults:
       interpreter_python: auto_silent
-      callback_whitelist: profile_tasks, timer, yaml
-    ssh_connection:
-      pipelining: true
   playbooks:
     converge: ${MOLECULE_PLAYBOOK:-converge.yml}
 verifier:

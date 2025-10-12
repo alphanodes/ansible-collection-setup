@@ -26,6 +26,9 @@
       - mariadb-client
       - python3-pymysql
 
+    # nodejs configuration (needed for phpmyadmin build)
+    nodejs_install_npm_user: root  # Use root in container tests
+
     # phpMyAdmin configuration
     phpmyadmin_no_dbserver: true  # Skip database setup (no MySQL server in test)
     phpmyadmin_force_installation: false  # Don't force installation

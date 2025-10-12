@@ -13,6 +13,7 @@
     - name: Install RVM dependencies
       ansible.builtin.apt:
         name:
+          - curl
           - gnupg2
           - procps
           - libtool
