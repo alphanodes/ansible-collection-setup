@@ -1,0 +1,47 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Check phpmyadmin directory exists
+      ansible.builtin.stat:
+        path: /usr/share/alphanodes/phpmyadmin
+      register: phpmyadmin_dir_stat
+      failed_when: not phpmyadmin_dir_stat.stat.exists
+
+    - name: Check phpmyadmin configuration exists
+      ansible.builtin.stat:
+        path: /etc/phpmyadmin/config.inc.php
+      register: phpmyadmin_config_stat
+      failed_when: not phpmyadmin_config_stat.stat.exists
+
+    - name: Check nginx configuration exists
+      ansible.builtin.stat:
+        path: /etc/nginx/phpmyadmin.conf
+      register: nginx_config_stat
+      failed_when: not nginx_config_stat.stat.exists
+
+    - name: Validate phpmyadmin configuration
+      ansible.builtin.command: php -l /etc/phpmyadmin/config.inc.php
+      changed_when: false
+
+    - name: Check phpmyadmin packages are installed
+      ansible.builtin.package:
+        name:
+          - php-mbstring
+          - php-zip
+          - php-gd
+          - php-json
+          - php-curl
+          - php-xml
+          - php-mysql
+        state: present
+      check_mode: true
+      register: pkg_check
+      failed_when: pkg_check.changed
+
+    - name: Display verification success message
+      ansible.builtin.debug:
+        msg: "phpMyAdmin verification completed successfully"

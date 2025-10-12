@@ -11,14 +11,37 @@
       changed_when: false
 
   vars:
-    phpmyadmin_enabled: false  # Don't actually deploy phpMyAdmin in test
+    # PHP configuration
+    php_version: "8.2"
+    php_fpm_base: /run/php/php-fpm
+    php_fpm_pools:
+      - name: phpmyadmin
+        user: www-data
+        group: www-data
+        pool: phpmyadmin
+        skip_user_create: true
+
+    # MySQL client configuration (no server needed for test)
+    mysql_client_packages:
+      - mariadb-client
+      - python3-pymysql
+
+    # phpMyAdmin configuration
+    phpmyadmin_no_dbserver: true  # Skip database setup (no MySQL server in test)
+    phpmyadmin_force_installation: false  # Don't force installation
+    phpmyadmin_git_version: RELEASE_5_2_3  # Specific version for test
+
+    # Skip nginx configuration in test
+    nginx_user: www-data
+    nginx_group: www-data
 
   roles:
     - role: alphanodes.setup.common
+    - role: alphanodes.setup.mysql_client
+    - role: alphanodes.setup.php_cli
+      vars:
+        php_cli_version: "{{ php_version }}"
+    - role: alphanodes.setup.php_fpm
+      vars:
+        php_fpm_version: "{{ php_version }}"
     - role: alphanodes.setup.phpmyadmin
-
-  post_tasks:
-    - name: Check phpmyadmin role completed
-      ansible.builtin.debug:
-        msg: "phpMyAdmin role executed successfully"
-    # TODO: Requires PHP, MySQL and nginx for complete testing
