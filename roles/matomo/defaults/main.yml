@@ -39,8 +39,8 @@ matomo_db_password: '{{ [ansible_machine_id, ansible_hostname, "matomo"] | join 
 matomo_db_tables_prefix: piwik_
 
 matomo_geoip_url: 'http://geolite.maxmind.com/download/geoip/database'
-matomo_geoip_file: 'GeoLiteCity.dat.gz'
-matomo_geoip_dest: 'GeoIPCity.dat'
+matomo_geoip_file: GeoLiteCity.dat.gz
+matomo_geoip_dest: GeoIPCity.dat
 matomo_geoip_custom_directory: '{{ matomo_dir }}/misc'
 
 # for cluster you can customize installation

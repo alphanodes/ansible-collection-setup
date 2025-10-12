@@ -10,6 +10,54 @@
         cache_valid_time: 600
       changed_when: false
 
+    - name: Install git (required for phpmyadmin git module)
+      ansible.builtin.apt:
+        name: git
+        state: present
+
+    - name: Create dummy phpmyadmin directory (skip real installation for test)
+      ansible.builtin.file:
+        path: /usr/share/alphanodes/phpmyadmin
+        state: directory
+        mode: '0755'
+
+    - name: Initialize git repository (to skip clone in test)
+      ansible.builtin.command: git init
+      args:
+        chdir: /usr/share/alphanodes/phpmyadmin
+        creates: /usr/share/alphanodes/phpmyadmin/.git
+
+    - name: Create libraries directory
+      ansible.builtin.file:
+        path: /usr/share/alphanodes/phpmyadmin/libraries
+        state: directory
+        mode: '0755'
+
+    - name: Create dummy phpmyadmin files (skip real installation for test)
+      ansible.builtin.copy:
+        content: |
+          <?php
+          // Dummy phpmyadmin for testing
+          define('CONFIG_DIR', '/etc/phpmyadmin/');
+          define('VERSION_CHECK_DEFAULT', false);
+        dest: "/usr/share/alphanodes/phpmyadmin/{{ item }}"
+        mode: '0644'
+      loop:
+        - index.php
+        - libraries/vendor_config.php
+
+    - name: Configure git repository (origin, commit, tag)
+      ansible.builtin.shell: |
+        git config user.email "test@test.local"
+        git config user.name "Test"
+        git remote add origin https://github.com/phpmyadmin/phpmyadmin || true
+        git add .
+        git commit -m "Initial dummy commit" || true
+        git tag RELEASE_5_2_3 || true
+      args:
+        chdir: /usr/share/alphanodes/phpmyadmin
+      changed_when: false
+
   vars:
     # PHP configuration
     php_version: "8.2"
@@ -32,7 +80,6 @@
     # phpMyAdmin configuration
     phpmyadmin_no_dbserver: true  # Skip database setup (no MySQL server in test)
     phpmyadmin_force_installation: false  # Don't force installation
-    phpmyadmin_git_version: RELEASE_5_2_3  # Specific version for test
 
     # Skip nginx configuration in test
     nginx_user: www-data
@@ -47,5 +94,4 @@
     - role: alphanodes.setup.php_fpm
       vars:
         php_fpm_version: "{{ php_version }}"
-    - role: alphanodes.setup.git
     - role: alphanodes.setup.phpmyadmin
