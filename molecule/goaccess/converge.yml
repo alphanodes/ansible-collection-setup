@@ -12,6 +12,7 @@
 
   roles:
     - role: alphanodes.setup.common
+    - role: alphanodes.setup.git
     - role: alphanodes.setup.goaccess
 
   post_tasks:

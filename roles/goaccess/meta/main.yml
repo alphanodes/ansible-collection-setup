@@ -5,6 +5,7 @@ dependencies:
     public: true
   - role: alphanodes.setup.ssl
   - role: alphanodes.setup.nginx
+  - role: alphanodes.setup.git
 
 galaxy_info:
   description: Setup goaccess
