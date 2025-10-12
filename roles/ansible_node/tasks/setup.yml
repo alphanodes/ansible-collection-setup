@@ -75,7 +75,7 @@
   loop: '{{ ansible_node_collections | default([]) }}'
   when: ansible_node_identifier | length > 0
   register: ansible_collections_result
-  changed_when: "'Installing' in ansible_collections_result.stdout or 'Replacing' in ansible_collections_result.stdout"
+  changed_when: "'-U' in (item.action | default('install'))"
 
 - name: Remove obsolete ansible roles
   ansible.builtin.file:
