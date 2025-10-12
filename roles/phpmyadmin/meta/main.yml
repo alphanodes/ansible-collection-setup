@@ -4,6 +4,7 @@ dependencies:
     public: true
   - role: alphanodes.setup.mysql_client
   - role: alphanodes.setup.php_fpm
+  - role: alphanodes.setup.git
   - role: geerlingguy.composer
 
 galaxy_info:

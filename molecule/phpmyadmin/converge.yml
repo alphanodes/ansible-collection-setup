@@ -47,4 +47,5 @@
     - role: alphanodes.setup.php_fpm
       vars:
         php_fpm_version: "{{ php_version }}"
+    - role: alphanodes.setup.git
     - role: alphanodes.setup.phpmyadmin
