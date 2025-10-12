@@ -42,7 +42,6 @@
     - name: Gather package facts
       ansible.builtin.package_facts:
         manager: auto
-      when: ansible_os_family == "Debian"
 
     - name: Assert packages are installed
       ansible.builtin.assert:
@@ -50,4 +49,3 @@
           - "'mysql-client' in ansible_facts.packages"
           - "'python3-pymysql' in ansible_facts.packages"
         fail_msg: "Required MySQL client packages are not properly installed"
-      when: ansible_os_family == "Debian"

@@ -1,0 +1,42 @@
+---
+
+ruby_required_packages:
+  - ruby
+
+ruby_dev_packages:
+  - ruby-dev
+
+ruby_build_packages:
+  - autoconf
+  - automake
+  - bison
+  - build-essential
+  - gawk
+  - libffi-dev
+  - libgdbm-dev
+  - libgmp-dev
+  - libncurses-dev
+  - libreadline-dev
+  - libsqlite3-dev
+  - libssl-dev
+  - libsystemd-dev
+  - libyaml-dev
+  - libzstd-dev
+  - sqlite3
+
+# if this is true, required packages will be removed!
+ruby_without_required_packages: false
+
+# if this is false, ruby_dev_packages will be removed!
+ruby_dev: false
+# if ruby_dev is false and if ruby_without_dev_packages is true,
+# ruby_dev_packages will be removed
+ruby_without_dev_packages: false
+
+ruby_build: false
+# if ruby_build is false and if ruby_without_build_packages is true,
+# ruby_build_packages will be removed
+ruby_without_build_packages: false
+
+# use git from backports, if backports is enabled with debian_backports
+git_use_backports: true

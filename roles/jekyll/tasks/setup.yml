@@ -1,5 +1,11 @@
 ---
 
+- name: Include system ruby
+  ansible.builtin.include_role:
+    name: alphanodes.setup.ruby
+  vars:
+    ruby_dev: true
+
 - name: Be sure jekyll packages are installed
   ansible.builtin.apt:
     name: '{{ jekyll_packages }}'

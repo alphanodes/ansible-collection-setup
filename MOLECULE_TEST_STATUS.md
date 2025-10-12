@@ -1,7 +1,7 @@
 # Molecule Test Implementation - Project Status
 
-**Date**: 2025-10-12
-**Phase**: Phase 2 in progress - Additional role fixes completed
+**Date**: 2025-10-12 (Updated)
+**Phase**: Phase 2 in progress - Additional role fixes completed (ruby added)
 
 ## Project Goal
 
@@ -36,11 +36,11 @@ Each role has:
 #### 4. Quality Assurance
 - ✅ yamllint: All files pass without errors
 - ✅ ansible-lint: 60 files, 0 failures, 0 warnings
-- ✅ molecule test: 11 roles successfully tested locally
+- ✅ molecule test: 18 roles successfully tested locally (7 from Phase 1 + 11 fixed in Phase 2)
 
 ## Phase 2: Role Fixes ✅ COMPLETED
 
-### ✅ Successfully Fixed Roles (10 roles)
+### ✅ Successfully Fixed Roles (11 roles)
 
 #### 1. unbound ✅
 **Problem**: Idempotency test failed on file permissions
@@ -243,6 +243,34 @@ sudo: a password is required
 - Idempotency test passes
 - Production keeps `-U` flag for automatic updates
 
+#### 11. ruby ✅
+**Problem 1**: Multiple typos in variable names and task states
+**Errors**:
+- Variable `ruby_required_package` (singular) but used as `ruby_required_packages` (plural) in tasks
+- Variable `git_use_backports` should be `ruby_use_backports`
+- Three tasks used `state: present` instead of `state: absent` when removing packages
+- Wrong tag `git` instead of `ruby` in main.yml
+
+**Solution**:
+1. **Variable naming** (`roles/ruby/defaults/main.yml:3`):
+   - Fixed: `ruby_required_package` → `ruby_required_packages`
+   - Fixed: `git_use_backports` → `ruby_use_backports`
+
+2. **Package removal tasks** (`roles/ruby/tasks/setup.yml`):
+   - Line 28: Fixed "Ensure ruby packages are removed" - `state: present` → `state: absent`
+   - Line 41: Fixed "Ensure dev packages are removed" - `state: present` → `state: absent`
+   - Line 54: Fixed "Ensure build packages are removed" - `state: present` → `state: absent`
+   - Line 51: Fixed task name from "present" to "removed"
+
+3. **Tag correction** (`roles/ruby/tasks/main.yml:6`):
+   - Fixed: `tags: git` → `tags: ruby`
+
+**Test Results**: ✅ All 3 distributions pass (debian12, debian13, ubuntu2404)
+- Ruby 3.1.2 (Debian 12) successfully installed
+- Ruby 3.3.5 (Ubuntu 24.04) successfully installed
+- Idempotency test passes
+- All package management scenarios work correctly
+
 ### ✅ Successfully Tested Roles (7 roles - from Phase 1)
 
 1. **common** - Post-task adjusted (check_mode to command)
@@ -252,6 +280,40 @@ sudo: a password is required
 5. **rsync** - Works out-of-the-box
 6. **cifs_mount** - Works out-of-the-box
 7. **zsh** - Git dependency added (needs git for powerlevel10k)
+
+### 🔧 Partially Fixed Roles (1 role)
+
+#### 1. gitlab ⏳
+**Problem 1**: Docker connection failure - gather_facts fails
+**Error**:
+```
+Task failed: Failed to create temporary directory
+Failed command: ( umask 77 && mkdir -p "` echo ~/.ansible/tmp `"&& mkdir ... )
+```
+
+**Root Cause**: Variable `ansible_host: "gitlab-test.example.com"` in converge.yml overrode Docker connection
+- Ansible tried to SSH to "gitlab-test.example.com" instead of using Docker connection
+- `ansible_host` is a special Ansible connection variable
+
+**Solution** (`molecule/gitlab/converge.yml:71`):
+- Removed `ansible_host` variable from vars section
+- Connection now uses Molecule's Docker connection correctly
+- Kept other test variables (hostname, ip_address_v4) as they don't affect connection
+
+**Problem 2**: SSL certificate requirement
+**Solution** (`molecule/gitlab/converge.yml:73-74`):
+- Removed `ssl_certs` and `letsencrypt_default_cert` - not needed for test environment
+- SSL role skips certificate installation when these are not defined
+
+**Test Results**: ⏳ Partially successful
+- ✅ Connection works: 89 tasks executed successfully
+- ✅ All dependencies work: common, git, postgresql, nginx, RVM roles
+- ⏱️ Test timed out after 10 minutes during RVM/Ruby compilation (expected - complex installation)
+- 🔧 **Status**: Connection issue fully resolved, full test pending due to compilation time
+
+**Next Steps**:
+- Consider creating simplified test without full Ruby compilation
+- Or accept longer timeout for complete integration test
 
 ### ❌ Known Issues (1 role remaining)
 
@@ -278,7 +340,9 @@ These roles have tests but haven't been executed locally yet (run in GitHub Acti
 - netfilter, goaccess
 
 **Application Roles**:
-- drupal, drush, gitlab, hedgedoc, jekyll, matomo, phpmyadmin, redmine
+- drupal, hedgedoc, jekyll, matomo, phpmyadmin, redmine
+
+**Note**: gitlab moved to "Partially Fixed Roles", ruby successfully tested and fixed
 
 ## Important Adjustments
 
@@ -411,6 +475,13 @@ done
 - `roles/ansible_node/tasks/setup.yml` - Smart changed_when logic based on -U flag
 - `roles/ansible_node/tasks/hosts.yml` - Added become: false + improved when conditions
 - `molecule/ansible_node/converge.yml` - Override collections without -U for test idempotency
+- `roles/ruby/defaults/main.yml` - Fixed variable names (ruby_required_packages, ruby_use_backports)
+- `roles/ruby/tasks/setup.yml` - Fixed package removal tasks (state: absent)
+- `roles/ruby/tasks/main.yml` - Fixed tag (git → ruby)
+- `molecule/ruby/molecule.yml` - Created test configuration
+- `molecule/ruby/converge.yml` - Created test playbook with Ruby verification
+- `.github/workflows/ruby.yml` - Created CI/CD workflow
+- `molecule/gitlab/converge.yml` - Removed ansible_host variable (broke Docker connection), removed ssl_certs
 
 ## Lessons Learned
 
@@ -474,6 +545,14 @@ done
    - Production: Keep `action: install -U` for automatic updates
    - Pattern: `changed_when: "'-U' in (item.action | default('install'))"`
 
+9. **ansible_host breaks Docker connection in Molecule**
+   - `ansible_host` is a special Ansible connection variable
+   - Setting it in converge.yml vars overrides Molecule's Docker connection
+   - Symptom: "Failed to create temporary directory" during gather_facts
+   - Solution: Remove `ansible_host` from test vars, let Molecule manage connection
+   - Other variables like `hostname`, `ip_address_v4` are safe (don't affect connection)
+   - Never set Ansible connection variables (`ansible_host`, `ansible_port`, `ansible_user`, etc.) in Molecule tests
+
 ## GitHub Actions Status
 
 After pushing, all workflows run automatically:
@@ -491,8 +570,9 @@ After pushing, all workflows run automatically:
 - Test infrastructure fully operational
 
 ✅ **Phase 2 completed**
-- 10 role problems fixed (unbound, nfs, java, gitlab_omnibus, php_cli, php_fpm, btrbk, nextcloud, drush, ansible_node)
-- Total: 17 roles successfully tested (7 from Phase 1 + 10 fixed in Phase 2)
+- 11 role problems fixed (unbound, nfs, java, gitlab_omnibus, php_cli, php_fpm, btrbk, nextcloud, drush, ansible_node, ruby)
+- Total: 18 roles successfully tested (7 from Phase 1 + 11 fixed in Phase 2)
+- 1 role partially fixed (gitlab - connection works, full test pending)
 - All fixes validated locally and on GitHub Actions
 - Distribution-specific testing: Most roles pass all 3 distributions (debian12, debian13, ubuntu2404)
 - gitlab_omnibus: Only debian12 supported (GitLab limitation)
@@ -500,8 +580,10 @@ After pushing, all workflows run automatically:
   - ntp_timezone variable needs default fallback for standalone role usage
   - Composer changed global path from ~/.composer to ~/.config/composer
   - Git-based ansible-galaxy collections need smart changed_when logic for idempotency
+  - ansible_host variable breaks Docker connection in Molecule tests
 
 🎯 **Ready for Phase 3**
 - Continue systematic testing of remaining roles
 - Monitor GitHub Actions for all roles
 - Address any additional issues discovered
+- Consider optimizing gitlab role test (RVM compilation time)

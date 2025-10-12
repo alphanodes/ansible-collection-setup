@@ -1,11 +1,18 @@
 ---
 
-- name: Install system ruby packages
+- name: Include system ruby
+  ansible.builtin.include_role:
+    name: alphanodes.setup.ruby
+  vars:
+    ruby_dev: true
+    ruby_build: true
+  when: not gitlab_rvm_ruby
+
+- name: Install system ruby-pg
   ansible.builtin.apt:
     name: '{{ item }}'
     state: present
   loop:
-    - ruby-dev
     - ruby-pg
   become: true
   when: not gitlab_rvm_ruby
@@ -101,3 +108,4 @@
         state: latest
       become: true
       become_user: '{{ gitlab_user }}'
+      when: gitlab_enabled | default(true)

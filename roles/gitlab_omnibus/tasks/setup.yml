@@ -19,6 +19,11 @@
     update_cache: true
   changed_when: false
 
+# ruby just used for syntax check
+- name: Include system ruby
+  ansible.builtin.include_role:
+    name: alphanodes.setup.ruby
+
 - name: Ensure required packages are installed
   ansible.builtin.apt:
     name: "{{ gitlab_required_packages }}"

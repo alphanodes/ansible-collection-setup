@@ -145,29 +145,21 @@ gitlab_mattermost_host: 'https://mattermost.example.com'
 # problems with gpgme:
 # gem install gpgme -- --use-system-libraries
 gitlab_packages:
-  - build-essential
   - checkinstall
   - cmake
   - gettext
   - graphicsmagick
   - libcurl4-openssl-dev
   - libexpat1-dev
-  - libffi-dev
-  - libgdbm-dev
   - libgpgme-dev
   - libicu-dev
   - libimage-exiftool-perl
   - libkrb5-dev
-  - libncurses-dev
   - libpcre2-dev
   - libpq-dev
   - libre2-dev
-  - libreadline-dev
-  - libsqlite3-dev
-  - libssl-dev
   - libxml2-dev
   - libxslt-dev
-  - libyaml-dev
   - libz-dev
   - logrotate
   - pkgconf

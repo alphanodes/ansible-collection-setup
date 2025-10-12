@@ -160,26 +160,10 @@ redmine_default_logger: syslog
 # redmine_setup_instance: redmine
 
 redmine_packages:
-  - autoconf
-  - automake
-  - bison
-  - build-essential
-  - gawk
   - ghostscript
   - gnupg
   - graphviz
   - imagemagick
-  - libffi-dev
-  - libgdbm-dev
-  - libgmp-dev
-  - libncurses-dev
-  - libreadline-dev
-  - libsqlite3-dev
-  - libssl-dev
-  - libsystemd-dev
-  - libyaml-dev
-  - libzstd-dev
-  - sqlite3
   - subversion
 
 # This should be default, if system ruby version < 2.7

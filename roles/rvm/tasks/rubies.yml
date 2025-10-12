@@ -1,5 +1,11 @@
 ---
 
+- name: Install ruby build packages
+  ansible.builtin.include_role:
+    name: alphanodes.setup.ruby
+  vars:
+    ruby_build: true
+
 - name: Detect rubies
   ansible.builtin.command: '{{ rvm1_rvm }} list strings'
   register: rvm_list_strings

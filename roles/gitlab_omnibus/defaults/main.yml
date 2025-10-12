@@ -5,8 +5,6 @@
 # See: https://docs.gitlab.com/install/package/debian/
 
 gitlab_required_packages:
-  # ruby just used for syntax check
-  - ruby
   - gitlab-ee
 
 gitlab_config_file: /etc/gitlab/gitlab.rb

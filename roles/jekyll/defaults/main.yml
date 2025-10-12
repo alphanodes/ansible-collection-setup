@@ -5,8 +5,6 @@
 jekyll_base_dir: '{{ srv_path }}/jekyll'
 
 jekyll_packages:
-  - ruby
-  - ruby-dev
   - rubygems
   - zlib1g-dev
 

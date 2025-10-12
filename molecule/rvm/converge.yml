@@ -8,37 +8,21 @@
       ansible.builtin.apt:
         update_cache: true
         cache_valid_time: 600
-      when: ansible_os_family == 'Debian'
 
     - name: Install dependencies for RVM (common packages)
       ansible.builtin.apt:
         name:
           - gnupg2
           - procps
-          - gawk
-          - autoconf
-          - automake
-          - bison
-          - libgdbm-dev
-          - libncurses-dev
-          - libsqlite3-dev
           - libtool
-          - libyaml-dev
           - pkg-config
-          - sqlite3
-          - libgmp-dev
-          - libreadline-dev
-          - build-essential
-          - libssl-dev
           - zlib1g-dev
         state: present
-      when: ansible_os_family == 'Debian'
 
     - name: Install libncurses5-dev for older distributions
       ansible.builtin.apt:
         name: libncurses5-dev
         state: present
-      when: ansible_os_family == 'Debian'
       ignore_errors: true
 
     - name: Import RVM GPG keys for testing

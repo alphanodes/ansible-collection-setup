@@ -130,6 +130,7 @@
   vars:
     golang_version: '{{ gitlab_go_version | default(omit) }}'
     golang_sha256_checksum: '{{ gitlab_go_sha256_checksum | default(omit) }}'
+  when: gitlab_enabled | default(true)
 
 - name: Remove system yarnpkg is removed
   ansible.builtin.apt:
@@ -245,6 +246,7 @@
     - Restart gitaly
     - Restart gitlab workhorse
     - Restart gitlab sidekiq
+  when: gitlab_enabled | default(true)
 
 - name: Configure resque
   ansible.builtin.template:

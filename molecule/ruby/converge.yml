@@ -1,0 +1,25 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  roles:
+    - role: alphanodes.setup.common
+    - role: alphanodes.setup.ruby
+
+  post_tasks:
+    - name: Verify ruby is installed
+      ansible.builtin.command: ruby --version
+      changed_when: false
+      register: ruby_version
+
+    - name: Display ruby version
+      ansible.builtin.debug:
+        var: ruby_version.stdout
