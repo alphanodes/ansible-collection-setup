@@ -13,6 +13,11 @@
   roles:
     - role: alphanodes.setup.common
     - role: alphanodes.setup.ansible_node
+      vars:
+        # Override for testing: use 'install' without -U for idempotence
+        ansible_node_collections:
+          - name: 'git+https://github.com/alphanodes/ansible-collection-tasks.git,main'
+            action: install
 
   post_tasks:
     - name: Verify ansible is installed
