@@ -21,24 +21,15 @@
         pool: phpmyadmin
         skip_user_create: true
 
-    # MySQL client configuration (no server needed for test)
-    mysql_client_packages:
-      - mariadb-client
-      - python3-pymysql
-
     # nodejs configuration
     nodejs_install_npm_user: root  # Use root in container tests
 
-    # Skip nginx configuration in test
-    nginx_user: www-data
-    nginx_group: www-data
-
   roles:
     - role: alphanodes.setup.common
-    - role: alphanodes.setup.mysql_client
     - role: alphanodes.setup.php_cli
       vars:
         php_cli_version: "{{ php_version }}"
+    - role: alphanodes.setup.mysql_client
     - role: alphanodes.setup.php_fpm
       vars:
         php_fpm_version: "{{ php_version }}"
