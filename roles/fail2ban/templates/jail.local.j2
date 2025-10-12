@@ -258,11 +258,3 @@ backend = auto
 action  = {{ fail2ban_nextcloud_action | default(fail2ban_login_action) }}
 maxretry = {{ fail2ban_login_maxretry }}
 bantime  = {{ fail2ban_nextcloud_login_bantime | default(fail2ban_default_bantime) }}
-
-[nginx-phpmyadmin]
-enabled = {{ 'true' if fail2ban_nginx_phpmyadmin else 'false' }}
-port    = http,https
-backend = auto
-logpath = %(nginx_error_log)s
-action  = {{ fail2ban_phpmyadmin_action | default(fail2ban_login_action) }}
-bantime  = {{ fail2ban_nginx_phpmyadmin_bantime | default(fail2ban_default_bantime) }}

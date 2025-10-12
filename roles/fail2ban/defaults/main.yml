@@ -14,7 +14,6 @@ fail2ban_drupal_login: false
 fail2ban_drupal_spam: false
 fail2ban_nextcloud_login: false
 fail2ban_nginx_http_auth: false
-fail2ban_nginx_phpmyadmin: false
 fail2ban_owncloud_login: false
 fail2ban_postfix: false
 fail2ban_proftpd: false
