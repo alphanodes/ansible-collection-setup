@@ -1,7 +1,7 @@
 # Molecule Test Implementation - Project Status
 
 **Date**: 2025-10-12 (Updated)
-**Phase**: Phase 2 in progress - Additional role fixes completed (ruby added)
+**Phase**: Phase 2 completed - 18 roles fixed, idempotence issues resolved
 
 ## Project Goal
 
@@ -11,22 +11,23 @@ Implement Molecule tests, GitHub Actions workflows, and README badges for all 57
 
 ### Achievements:
 
-#### 1. Molecule Tests Created (30 new roles)
+#### 1. Molecule Tests Created (29 new roles)
 Tests created for the following roles:
 - ansible_node, apt, btrbk, cifs_mount, common
 - drupal, drush, git, git_config, gitlab, gitlab_omnibus, goaccess
 - hedgedoc, java, jekyll, matomo, netfilter, nfs, nginx
-- php_cli, php_fpm, phpmyadmin, redmine, rsync
+- php_cli, php_fpm, redmine, rsync
 - sphinx, ssl, sudo, swapfile, unbound, zsh
 
 Each role has:
 - `molecule/<role>/molecule.yml` - Docker-based test configuration
 - `molecule/<role>/converge.yml` - Minimal test playbook
 
-#### 2. GitHub Actions Workflows Created (31 workflows)
-- 30 new workflows for new tests
+#### 2. GitHub Actions Workflows Created (30 workflows)
+- 29 new workflows for new tests
 - 1 additional workflow for `postfix` (had test but no workflow)
-- All test on: ubuntu2404, debian12, debian13
+- Most test on: ubuntu2404, debian12, debian13
+- MySQL-dependent roles (mysql, mysql_client, drupal) test only: ubuntu2404, debian12 (no MySQL packages for debian13 yet)
 - Path: `.github/workflows/<role>.yml`
 
 #### 3. README Updated
@@ -35,8 +36,9 @@ Each role has:
 
 #### 4. Quality Assurance
 - ✅ yamllint: All files pass without errors
-- ✅ ansible-lint: 60 files, 0 failures, 0 warnings
+- ✅ ansible-lint: All files pass without errors or warnings
 - ✅ molecule test: 18 roles successfully tested locally (7 from Phase 1 + 11 fixed in Phase 2)
+- ✅ idempotence: 18 converge.yml files fixed with `changed_when: false` for apt cache updates
 
 ## Phase 2: Role Fixes ✅ COMPLETED
 
@@ -340,7 +342,7 @@ These roles have tests but haven't been executed locally yet (run in GitHub Acti
 - netfilter, goaccess
 
 **Application Roles**:
-- drupal, hedgedoc, jekyll, matomo, phpmyadmin, redmine
+- drupal, hedgedoc, jekyll, matomo, redmine
 
 **Note**: gitlab moved to "Partially Fixed Roles", ruby successfully tested and fixed
 
@@ -431,7 +433,7 @@ ansible-lint molecule/<role>/
 ### Test All Roles
 ```bash
 # Test all roles (takes a long time!)
-for role in ansible_node apt btrbk cifs_mount common drupal drush git git_config gitlab gitlab_omnibus goaccess hedgedoc java jekyll matomo netfilter nfs nginx php_cli php_fpm phpmyadmin redmine rsync sphinx ssl sudo swapfile unbound zsh; do
+for role in ansible_node apt btrbk cifs_mount common drupal drush git git_config gitlab gitlab_omnibus goaccess hedgedoc java jekyll matomo netfilter nfs nginx php_cli php_fpm redmine rsync sphinx ssl sudo swapfile unbound zsh; do
   echo "=== Testing $role ==="
   MOLECULE_DISTRO=debian12 molecule test -s $role
 done
@@ -440,9 +442,9 @@ done
 ## Files Overview
 
 ### New Files
-- `molecule/*/molecule.yml` - 30 new test configurations
-- `molecule/*/converge.yml` - 30 new test playbooks
-- `.github/workflows/*.yml` - 31 new/updated workflows
+- `molecule/*/molecule.yml` - 29 new test configurations
+- `molecule/*/converge.yml` - 29 new test playbooks
+- `.github/workflows/*.yml` - 30 new/updated workflows
 - `README.md` - Updated with all badges
 - `MOLECULE_TEST_STATUS.md` - This file
 
@@ -482,6 +484,28 @@ done
 - `molecule/ruby/converge.yml` - Created test playbook with Ruby verification
 - `.github/workflows/ruby.yml` - Created CI/CD workflow
 - `molecule/gitlab/converge.yml` - Removed ansible_host variable (broke Docker connection), removed ssl_certs
+- **Idempotence fixes (18 files)** - Added `changed_when: false` to apt cache update tasks in:
+  - molecule/ethercalc/converge.yml
+  - molecule/loki/converge.yml
+  - molecule/nodejs/converge.yml
+  - molecule/python/converge.yml
+  - molecule/rvm/converge.yml
+  - molecule/matrix_room_cleaner/converge.yml
+  - molecule/diagnostic/converge.yml
+  - molecule/fail2ban/converge.yml
+  - molecule/grafana/converge.yml
+  - molecule/memcached/converge.yml
+  - molecule/redis_server/converge.yml
+  - molecule/mysql_client/converge.yml
+  - molecule/dendrite/converge.yml
+  - molecule/mysql/converge.yml
+  - molecule/element_web/converge.yml
+  - molecule/nginx_mono/converge.yml
+  - molecule/rocketchat/converge.yml
+  - molecule/nextcloud/converge.yml
+- `.github/workflows/drupal.yml` - Limited to ubuntu2404 and debian12 (MySQL packages not available for debian13)
+- `.github/workflows/mysql.yml` - Already limited to ubuntu2404 and debian12
+- `.github/workflows/mysql_client.yml` - Already limited to ubuntu2404 and debian12
 
 ## Lessons Learned
 
@@ -553,6 +577,20 @@ done
    - Other variables like `hostname`, `ip_address_v4` are safe (don't affect connection)
    - Never set Ansible connection variables (`ansible_host`, `ansible_port`, `ansible_user`, etc.) in Molecule tests
 
+10. **Apt cache update idempotence**
+   - `apt: update_cache=true` without `changed_when: false` always shows as changed in idempotence tests
+   - Solution: Add `changed_when: false` to apt cache update tasks in pre_tasks
+   - Pattern:
+     ```yaml
+     - name: Update apt cache.
+       ansible.builtin.apt:
+         update_cache: true
+         cache_valid_time: 600
+       changed_when: false
+     ```
+   - Critical: `changed_when` must be at task level, NOT inside the apt module parameters
+   - Affects all molecule tests with apt cache updates (18 files fixed)
+
 ## GitHub Actions Status
 
 After pushing, all workflows run automatically:
@@ -564,7 +602,7 @@ After pushing, all workflows run automatically:
 ## Summary
 
 ✅ **Phase 1 completed**
-- 30 new tests + 31 workflows + README badges
+- 29 new tests + 30 workflows + README badges
 - All files pass linting
 - 7 roles successfully tested locally
 - Test infrastructure fully operational
@@ -573,14 +611,18 @@ After pushing, all workflows run automatically:
 - 11 role problems fixed (unbound, nfs, java, gitlab_omnibus, php_cli, php_fpm, btrbk, nextcloud, drush, ansible_node, ruby)
 - Total: 18 roles successfully tested (7 from Phase 1 + 11 fixed in Phase 2)
 - 1 role partially fixed (gitlab - connection works, full test pending)
+- 18 converge.yml files fixed for idempotence (apt cache update with changed_when: false)
 - All fixes validated locally and on GitHub Actions
 - Distribution-specific testing: Most roles pass all 3 distributions (debian12, debian13, ubuntu2404)
+- MySQL-dependent roles (mysql, mysql_client, drupal): Only ubuntu2404 and debian12 (no MySQL packages for debian13 yet)
 - gitlab_omnibus: Only debian12 supported (GitLab limitation)
+- nextcloud: All 3 distributions (uses PostgreSQL, not MySQL)
 - Common patterns identified:
   - ntp_timezone variable needs default fallback for standalone role usage
   - Composer changed global path from ~/.composer to ~/.config/composer
   - Git-based ansible-galaxy collections need smart changed_when logic for idempotency
   - ansible_host variable breaks Docker connection in Molecule tests
+  - apt cache updates need changed_when: false for idempotence
 
 🎯 **Ready for Phase 3**
 - Continue systematic testing of remaining roles
