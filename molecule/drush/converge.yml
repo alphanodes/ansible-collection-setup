@@ -21,7 +21,7 @@
 
   post_tasks:
     - name: Verify drush is installed
-      ansible.builtin.command: /root/.composer/vendor/bin/drush --version
+      ansible.builtin.command: /root/.config/composer/vendor/bin/drush --version
       changed_when: false
       register: drush_version
 

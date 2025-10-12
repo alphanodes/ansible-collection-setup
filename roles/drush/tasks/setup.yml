@@ -8,6 +8,7 @@
     - name: Install drush
       ansible.builtin.command: '{{ composer_path }} global require drush/drush:{{ drush_version }}'
       register: drush_result
+      changed_when: "'Nothing to install, update or remove' not in drush_result.stderr"
 
     - name: Output of drush
       ansible.builtin.debug:
@@ -17,7 +18,7 @@
     - name: Update composer packages to latest required version
       ansible.builtin.command: '{{ composer_path }} global update'
       register: composer_result
-      changed_when: "'Nothing to install or update' not in composer_result.stderr"
+      changed_when: "'Nothing to install, update or remove' not in composer_result.stderr"
 
     - name: Output of composer update
       ansible.builtin.debug:

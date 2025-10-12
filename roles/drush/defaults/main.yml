@@ -26,5 +26,5 @@ drush_reset_script_files: ''
 drush_reset_script_file_owner: ''
 drush_reset_script_file_group: ''
 
-drush_path: /root/.composer/vendor/bin/drush
+drush_path: /root/.config/composer/vendor/bin/drush
 drush_profile: ''
