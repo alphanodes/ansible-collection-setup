@@ -11,7 +11,7 @@ goaccess_apt_components: main
 
 goaccess_from_source: true
 goaccess_source_repo: https://github.com/allinurl/goaccess.git
-goaccess_source_version: v1.6
+goaccess_source_version: v1.9.4
 
 goaccess_from_source_packages:
   - autoconf
