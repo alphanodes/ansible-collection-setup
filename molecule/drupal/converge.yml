@@ -16,6 +16,7 @@
 
   roles:
     - role: alphanodes.setup.common
+    - role: alphanodes.setup.php_cli
     - role: alphanodes.setup.drupal
 
   post_tasks:
