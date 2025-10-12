@@ -8,10 +8,12 @@
       ansible.builtin.apt:
         update_cache: true
         cache_valid_time: 600
+        changed_when: false
 
     - name: Install dependencies for RVM (common packages)
       ansible.builtin.apt:
         name:
+          - curl
           - gnupg2
           - procps
           - libtool

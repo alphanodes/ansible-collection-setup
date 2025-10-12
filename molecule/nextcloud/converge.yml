@@ -23,6 +23,8 @@
     - name: Update apt cache.
       ansible.builtin.apt:
         update_cache: true
+        cache_valid_time: 600
+      changed_when: false
 
     - name: Create nextcloud directory
       ansible.builtin.file:

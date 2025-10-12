@@ -20,6 +20,7 @@
       ansible.builtin.apt:
         update_cache: true
         cache_valid_time: 600
+        changed_when: false
 
     - name: Include matrix room cleaner tasks only
       ansible.builtin.include_tasks: ../../roles/dendrite/tasks/matrix_room_cleaner.yml

@@ -8,6 +8,7 @@
       ansible.builtin.apt:
         update_cache: true
         cache_valid_time: 600
+        changed_when: false
 
   vars:
     # nodejs configuration (fix for Docker container)
