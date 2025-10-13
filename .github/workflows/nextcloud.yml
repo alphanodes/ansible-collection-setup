@@ -1,5 +1,5 @@
 ---
-name: nextcloud
+name: "alphanodes.setup.nextcloud"
 "on":
   pull_request:
     paths:
