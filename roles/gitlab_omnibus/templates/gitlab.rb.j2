@@ -52,7 +52,7 @@ gitlab_rails['artifacts_enabled'] = {{ gitlab_artifacts_enabled | to_json }}
 {% if gitlab_artifacts_object_store and not activ_object_store_consolidated %}
 gitlab_rails['artifacts_object_store_enabled'] = true
 gitlab_rails['artifacts_object_store_proxy_download'] = {{ gitlab_object_store_proxy_download | lower }}
-gitlab_rails['artifacts_object_store_remote_directory'] = "{{ gitlab_artifacts_object_store_bucket }}"
+gitlab_rails['artifacts_object_store_remote_directory'] = '{{ gitlab_artifacts_object_store_bucket }}'
 gitlab_rails['artifacts_object_store_connection'] = {{ gitlab_object_store_connection }}
 {% endif %}
 
@@ -61,7 +61,7 @@ gitlab_rails['external_diffs_enabled'] = {{ gitlab_external_diffs_enabled | lowe
 {% if gitlab_external_diffs_object_store and not activ_object_store_consolidated %}
 gitlab_rails['external_diffs_object_store_enabled'] = true
 gitlab_rails['external_diffs_object_store_proxy_download'] = {{ gitlab_object_store_proxy_download | lower }}
-gitlab_rails['external_diffs_object_store_remote_directory'] = "{{ gitlab_external_diffs_object_store_bucket }}"
+gitlab_rails['external_diffs_object_store_remote_directory'] = '{{ gitlab_external_diffs_object_store_bucket }}'
 gitlab_rails['external_diffs_object_store_connection'] = {{ gitlab_object_store_connection }}
 {% endif %}
 
@@ -70,7 +70,7 @@ gitlab_rails['lfs_enabled'] = {{ gitlab_lfs_enabled | lower }}
 {% if gitlab_lfs_object_store and not activ_object_store_consolidated %}
 gitlab_rails['lfs_object_store_enabled'] = true
 gitlab_rails['lfs_object_store_proxy_download'] = {{ gitlab_object_store_proxy_download | lower }}
-gitlab_rails['lfs_object_store_remote_directory'] = "{{ gitlab_lfs_object_store_bucket }}"
+gitlab_rails['lfs_object_store_remote_directory'] = '{{ gitlab_lfs_object_store_bucket }}'
 gitlab_rails['lfs_object_store_connection'] = {{ gitlab_object_store_connection }}
 {% endif %}
 
@@ -78,7 +78,7 @@ gitlab_rails['lfs_object_store_connection'] = {{ gitlab_object_store_connection 
 ### GitLab uploads
 gitlab_rails['uploads_object_store_enabled'] = true
 gitlab_rails['uploads_object_store_proxy_download'] = {{ gitlab_object_store_proxy_download | lower }}
-gitlab_rails['uploads_object_store_remote_directory'] = "{{ gitlab_uploads_object_store_bucket }}"
+gitlab_rails['uploads_object_store_remote_directory'] = '{{ gitlab_uploads_object_store_bucket }}'
 gitlab_rails['uploads_object_store_connection'] = {{ gitlab_object_store_connection }}
 {% endif %}
 
@@ -87,7 +87,7 @@ gitlab_rails['terraform_state_enabled'] = {{ gitlab_terraform_state_enabled | lo
 {% if gitlab_terraform_state_object_store and not activ_object_store_consolidated %}
 gitlab_rails['terraform_state_object_store_enabled'] = true
 gitlab_rails['terraform_state_object_store_proxy_download'] = {{ gitlab_object_store_proxy_download | lower }}
-gitlab_rails['terraform_state_object_store_remote_directory'] = "{{ gitlab_terraform_state_object_store_bucket }}"
+gitlab_rails['terraform_state_object_store_remote_directory'] = '{{ gitlab_terraform_state_object_store_bucket }}'
 gitlab_rails['terraform_state_object_store_connection'] = {{ gitlab_object_store_connection }}
 {% endif %}
 
@@ -96,7 +96,7 @@ gitlab_rails['ci_secure_files_enabled'] = {{ gitlab_ci_secure_files_enabled | lo
 {% if gitlab_ci_secure_files_object_store and not activ_object_store_consolidated %}
 gitlab_rails['ci_secure_files_object_store_enabled'] = true
 gitlab_rails['ci_secure_files_object_store_proxy_download'] = {{ gitlab_object_store_proxy_download | lower }}
-gitlab_rails['ci_secure_files_object_store_remote_directory'] = "{{ gitlab_ci_secure_files_object_store_bucket }}"
+gitlab_rails['ci_secure_files_object_store_remote_directory'] = '{{ gitlab_ci_secure_files_object_store_bucket }}'
 gitlab_rails['ci_secure_files_object_store_connection'] = {{ gitlab_object_store_connection }}
 {% endif %}
 
@@ -105,7 +105,7 @@ gitlab_rails['packages_enabled'] = {{ gitlab_packages_enabled | lower }}
 {% if gitlab_packages_object_store and not activ_object_store_consolidated %}
 gitlab_rails['packages_object_store_enabled'] = true
 gitlab_rails['packages_object_store_proxy_download'] = {{ gitlab_object_store_proxy_download | lower }}
-gitlab_rails['packages_object_store_remote_directory'] = "{{ gitlab_packages_object_store_bucket }}"
+gitlab_rails['packages_object_store_remote_directory'] = '{{ gitlab_packages_object_store_bucket }}'
 gitlab_rails['packages_object_store_connection'] = {{ gitlab_object_store_connection }}
 {% endif %}
 
@@ -114,7 +114,7 @@ gitlab_rails['dependency_proxy_enabled'] = {{ gitlab_dependency_proxy_enabled | 
 {% if gitlab_dependency_proxy_object_store and not activ_object_store_consolidated %}
 gitlab_rails['dependency_proxy_object_store_enabled'] = true
 gitlab_rails['dependency_proxy_object_store_proxy_download'] = {{ gitlab_object_store_proxy_download | lower }}
-gitlab_rails['dependency_proxy_object_store_remote_directory'] = "{{ gitlab_dependency_proxy_object_store_bucket }}"
+gitlab_rails['dependency_proxy_object_store_remote_directory'] = '{{ gitlab_dependency_proxy_object_store_bucket }}'
 gitlab_rails['dependency_proxy_object_store_connection'] = {{ gitlab_object_store_connection }}
 {% endif %}
 
@@ -123,9 +123,9 @@ gitlab_rails['monitoring_whitelist'] = {{ gitlab_monitoring_ip_whitelist }}
 
 ### Backup Settings
 gitlab_rails['manage_backup_path'] = {{ gitlab_manage_backup_path | lower }}
-gitlab_rails['backup_path'] = "{{ gitlab_backup_path }}"
+gitlab_rails['backup_path'] = '{{ gitlab_backup_path }}'
 gitlab_rails['backup_archive_permissions'] = {{ gitlab_backup_archive_permissions }}
-gitlab_rails['backup_pg_schema'] = "{{ gitlab_backup_pg_schema }}"
+gitlab_rails['backup_pg_schema'] = '{{ gitlab_backup_pg_schema }}'
 gitlab_rails['backup_keep_time'] = {{ gitlab_backup_keep_time }}
 
 ### LDAP settings
@@ -149,10 +149,10 @@ gitlab_pages['enable'] = {{ gitlab_pages_enabled | lower }}
 gitlab_pages['external_http'] = {{ gitlab_pages_external_http }}
 {% if gitlab_pages_with_tls %}
 gitlab_pages['external_https'] = {{ gitlab_pages_external_https }}
-pages_external_url "{{ gitlab_pages_external_url }}"
+pages_external_url '{{ gitlab_pages_external_url }}'
 # pages_nginx['redirect_http_to_https'] = true
-# pages_nginx['ssl_certificate'] = "{{ gitlab_pages_nginx_ssl_certificate }}"
-# pages_nginx['ssl_certificate_key'] = "{{ gitlab_pages_nginx_ssl_certificate_key }}"
+# pages_nginx['ssl_certificate'] = '{{ gitlab_pages_nginx_ssl_certificate }}'
+# pages_nginx['ssl_certificate_key'] = '{{ gitlab_pages_nginx_ssl_certificate_key }}'
 {% endif %}
 gitlab_pages['artifacts_server'] = {{ gitlab_pages_artifacts_server | lower }}
 gitlab_pages['access_control'] = {{ gitlab_pages_access_control | lower }}
@@ -163,16 +163,16 @@ gitlab_pages['auth_scope'] = 'read_api'
 
 ## nginx
 nginx['redirect_http_to_https'] = true
-nginx['ssl_protocols'] = "{{ gitlab_nginx_ssl_protocols }}"
+nginx['ssl_protocols'] = '{{ gitlab_nginx_ssl_protocols }}'
 {% if gitlab_nginx_ssl_certificate is defined %}
-nginx['ssl_certificate'] = "{{ gitlab_nginx_ssl_certificate }}"
+nginx['ssl_certificate'] = '{{ gitlab_nginx_ssl_certificate }}'
 {% endif %}
 {% if gitlab_nginx_ssl_certificate_key is defined %}
-nginx['ssl_certificate_key'] = "{{ gitlab_nginx_ssl_certificate_key }}"
+nginx['ssl_certificate_key'] = '{{ gitlab_nginx_ssl_certificate_key }}'
 {% endif %}
 nginx['listen_addresses'] = {{ gitlab_nginx_listen_addresses | to_json }}
 {% if gitlab_letsencrypt_enable is defined %}
-letsencrypt['enable'] = gitlab_letsencrypt_enable | lower
+letsencrypt['enable'] = {{ gitlab_letsencrypt_enable | lower }}
 {% endif %}
 {% if gitlab_letsencrypt_alt_names is defined %}
 letsencrypt['alt_names'] = {{ gitlab_letsencrypt_alt_names }}
@@ -189,20 +189,20 @@ alertmanager['flags'] = {{ gitlab_alertmanager_flags }}
 ## PostgreSQL
 postgresql['shared_preload_libraries'] = 'pg_stat_statements'
 postgresql['max_connections'] = {{ gitlab_postgresql_max_connections }}
-postgresql['statement_timeout'] = "{{ gitlab_postgresql_statement_timeout }}"
-postgresql['idle_in_transaction_session_timeout'] = "{{ gitlab_postgresql_idle_in_transaction_session_timeout }}"
+postgresql['statement_timeout'] = '{{ gitlab_postgresql_statement_timeout }}'
+postgresql['idle_in_transaction_session_timeout'] = '{{ gitlab_postgresql_idle_in_transaction_session_timeout }}'
 postgresql['random_page_cost'] = {{ gitlab_postgresql_random_page_cost }}
 postgresql['effective_io_concurrency'] = {{ gitlab_postgresql_effective_io_concurrency }}
 {% if gitlab_postgresql_effective_cache_size is defined or postgresql_effective_cache_size is defined %}
-postgresql['effective_cache_size'] = "{{ gitlab_postgresql_effective_cache_size | default(postgresql_effective_cache_size) }}"
+postgresql['effective_cache_size'] = '{{ gitlab_postgresql_effective_cache_size | default(postgresql_effective_cache_size) }}'
 {% endif %}
-postgresql['work_mem'] = "{{ gitlab_postgresql_work_mem }}"
-postgresql['maintenance_work_mem'] = "{{ gitlab_postgresql_maintenance_work_mem }}"
+postgresql['work_mem'] = '{{ gitlab_postgresql_work_mem }}'
+postgresql['maintenance_work_mem'] = '{{ gitlab_postgresql_maintenance_work_mem }}'
 postgresql['max_files_per_process'] = {{ gitlab_postgresql_max_files_per_process }}
-postgresql['log_connections'] = "{{ 'on' if gitlab_postgresql_log_connections else 'off' }}"
-postgresql['log_disconnections'] = "{{ 'on' if gitlab_postgresql_log_disconnections else 'off' }}"
+postgresql['log_connections'] = '{{ "on" if gitlab_postgresql_log_connections else "off" }}'
+postgresql['log_disconnections'] = '{{ "on" if gitlab_postgresql_log_disconnections else "off" }}'
 {% if gitlab_postgresql_shared_buffers is defined or postgresql_shared_buffers is defined %}
-postgresql['shared_buffers'] = "{{ gitlab_postgresql_shared_buffers | default(postgresql_shared_buffers) }}"
+postgresql['shared_buffers'] = '{{ gitlab_postgresql_shared_buffers | default(postgresql_shared_buffers) }}'
 {% endif %}
 {% if postgres_exporter_enable is defined %}
 postgres_exporter['enable'] = {{ postgres_exporter_enable | lower }}
