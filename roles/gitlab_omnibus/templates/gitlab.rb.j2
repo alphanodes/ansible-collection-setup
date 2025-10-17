@@ -164,7 +164,16 @@ gitlab_pages['auth_scope'] = 'read_api'
 ## nginx
 nginx['redirect_http_to_https'] = true
 nginx['ssl_protocols'] = "{{ gitlab_nginx_ssl_protocols }}"
+{% if gitlab_nginx_ssl_certificate is defined %}
+nginx['ssl_certificate'] = {{ gitlab_nginx_ssl_certificate }}  # Full-Chain
+{% endif %}
+{% if gitlab_nginx_ssl_certificate_key is defined %}
+nginx['ssl_certificate_key'] = {{ gitlab_nginx_ssl_certificate_key }}
+{% endif %}
 nginx['listen_addresses'] = {{ gitlab_nginx_listen_addresses | to_json }}
+{% if gitlab_letsencrypt_enable is defined %}
+letsencrypt['enable'] = gitlab_letsencrypt_enable | lower
+{% endif %}
 {% if gitlab_letsencrypt_alt_names is defined %}
 letsencrypt['alt_names'] = {{ gitlab_letsencrypt_alt_names }}
 {% endif %}
