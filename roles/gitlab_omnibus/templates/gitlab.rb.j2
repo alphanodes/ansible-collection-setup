@@ -3,6 +3,9 @@
 ## see https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-config-template/gitlab.rb.template
 
 external_url '{{ gitlab_external_url }}'
+{% if gitlab_registry_external_url is defined %}
+registry_external_url = '{{ gitlab_registry_external_url }}'
+{% endif %}
 
 ### Email Settings
 gitlab_rails['gitlab_email_from'] = '{{ gitlab_email_from }}'
@@ -141,6 +144,12 @@ EOS
 registry_nginx['listen_addresses'] = {{ gitlab_registry_nginx_listen_addresses | to_json }}
 {% if gitlab_registry_storage is defined %}
 registry['storage'] = {{ gitlab_registry_storage }}
+{% endif %}
+{% if postgres_exporter_enable is defined %}
+registry_nginx['ssl_certificate'] = '{{ gitlab_registry_nginx_ssl_certificate }}'
+{% endif %}
+{% if postgres_exporter_enable is defined %}
+registry_nginx['ssl_certificate_key'] = '{{ gitlab_registry_nginx_ssl_certificate_key }}'
 {% endif %}
 
 ### Pages
