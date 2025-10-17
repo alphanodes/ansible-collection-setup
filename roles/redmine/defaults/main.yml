@@ -217,6 +217,7 @@ redmine_plugin_test_files:
   - .git
   - .gitignore
   - .gitlab-ci.yml
+  - .markdownlint.json
   - .overwritten_templates
   - .rails_best_practices.yml
   - .reek.yml
