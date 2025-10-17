@@ -139,6 +139,11 @@ gitlab_rails['ldap_servers'] = YAML.load <<-'EOS'
   {{ gitlab_ldap_servers }}
 EOS
 {% endif %}
+{% if gitlab_registry_enabled is defined %}
+
+### Registry settings
+gitlab_rails['registry_enabled'] = {{ gitlab_registry_enabled | lower }}
+{% endif %}
 
 ### Registry
 registry_nginx['listen_addresses'] = {{ gitlab_registry_nginx_listen_addresses | to_json }}
