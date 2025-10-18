@@ -22,7 +22,7 @@
     state: present
   when: not ruby_without_required_packages
 
-- name: Ensure ruby packages are removed
+- name: Ensure ruby packages are absent
   ansible.builtin.apt:
     name: '{{ ruby_required_packages }}'
     state: absent
@@ -35,7 +35,7 @@
     state: present
   when: ruby_dev
 
-- name: Ensure dev packages are removed
+- name: Ensure dev packages are absent
   ansible.builtin.apt:
     name: '{{ ruby_dev_packages }}'
     state: absent
@@ -48,7 +48,7 @@
     state: present
   when: ruby_build
 
-- name: Ensure build packages are present
+- name: Ensure build packages are absent
   ansible.builtin.apt:
     name: '{{ ruby_build_packages }}'
     state: absent
