@@ -2,5 +2,7 @@
 
 - name: Include setup tasks
   ansible.builtin.include_tasks: setup.yml
+  become: true
+  become_user: root
   tags:
     - ruby
