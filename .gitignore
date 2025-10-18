@@ -5,7 +5,9 @@
 CLAUDE.md
 AGENTS.md
 CONTRIBUTING.md
+yarn.lock
 .claude/
+node_modules/
 .venv
 .vscode
 .ansible
