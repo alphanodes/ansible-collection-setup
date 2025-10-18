@@ -1,7 +1,11 @@
 ---
 
+# Use import_tasks instead of include_tasks because we need become/become_user support.
+# This ensures all apt operations run with root privileges, regardless of the become_user
+# context inherited from calling roles (e.g., gitlab running as git user).
+# Note: include_tasks does not support become/become_user attributes.
 - name: Include setup tasks
-  ansible.builtin.include_tasks: setup.yml
+  ansible.builtin.import_tasks: setup.yml
   become: true
   become_user: root
   tags:
