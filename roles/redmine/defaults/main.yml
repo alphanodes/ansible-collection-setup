@@ -125,7 +125,7 @@ redmine_vhost_for_zabbix: false
 redmine_content_security_policy: ''
 
 redmine_repo: 'https://github.com/redmine/redmine.git'
-redmine_repo_version: 5.0-stable
+redmine_repo_version: 6.0-stable
 redmine_repo_update: true
 
 # set default vhost name
