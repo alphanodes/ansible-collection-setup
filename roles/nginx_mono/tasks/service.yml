@@ -39,26 +39,8 @@
         - nginx_reuseport_primary_service is not defined
         - reuseport_check.results | selectattr('rc', 'equalto', 0) | list | length > 0
 
-- name: Determine if this service should use reuseport
-  ansible.builtin.set_fact:
-    service_uses_reuseport: "{{ nginx_reuseport_primary_service | default('') == nginx_mono_service_name }}"
-  when: nginx_with_reuseport | default(false)
-
-- name: Set service_uses_reuseport to false if reuseport disabled
-  ansible.builtin.set_fact:
-    service_uses_reuseport: false
-  when: not (nginx_with_reuseport | default(false))
-
-- name: Calculate listen configuration
-  ansible.builtin.set_fact:
-    nginx_listen_config:
-      use_ipv6: "{{ nginx_with_ipv6 | default(false) }}"
-      use_ssl: "{{ nginx_with_ssl and (nginx_mono_instance.server_port is undefined or nginx_mono_instance.server_port == 443) }}"
-      use_http: "{{ nginx_mono_instance.server_port is undefined or nginx_mono_instance.server_port == 80 }}"
-      use_http3: "{{ nginx_with_http3 | default(false) }}"
-      use_reuseport: "{{ service_uses_reuseport | default(false) }}"
-      default_server: "{{ nginx_mono_instance.vhost_default is defined and nginx_mono_instance.vhost_default }}"
-      ssl_only: "{{ nginx_force_ssl and nginx_with_ssl and (nginx_mono_instance.server_port is undefined or nginx_mono_instance.server_port == 443) }}"
+- name: Calculate listen configuration for service
+  ansible.builtin.include_tasks: calculate_listen_config.yml
 
 
 - name: Setup Basic Auth for service

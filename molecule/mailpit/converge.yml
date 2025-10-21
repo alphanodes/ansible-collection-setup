@@ -21,6 +21,15 @@
     nginx_resolver: ['8.8.8.8', '8.8.4.4']
     hoster: 'local'
 
+    # Test: nginx_vhosts should be IGNORED in service mode
+    # This validates that mailpit's include_role doesn't process other vhosts
+    nginx_vhosts:
+      - name: _test_dummy
+        server_port: 80
+        vhost_default: true
+        root: /var/www/html
+        index: index.html
+
     # mailpit configuration
     mailpit_enabled: true
     mailpit_vhost_server: mail.local

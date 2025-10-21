@@ -15,6 +15,9 @@
     - nginx_with_ssl
     - instance.letsencrypt_cert is undefined or not instance.letsencrypt_cert
 
+- name: Calculate listen configuration for instance
+  ansible.builtin.include_tasks: calculate_listen_config.yml
+
 - name: Configure vhosts - {{ instance.name }}
   ansible.builtin.template:
     src: vhost.j2

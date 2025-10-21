@@ -1,0 +1,33 @@
+---
+# Calculate nginx listen configuration
+# Used by both instance.yml (for nginx_vhosts) and service.yml (for nginx_mono services)
+#
+# Context detection:
+# - service.yml context: nginx_mono_service_name and nginx_mono_instance are defined
+# - instance.yml context: instance is defined from loop
+
+- name: Set context-aware variables for listen config calculation
+  ansible.builtin.set_fact:
+    _listen_calc_name: "{{ nginx_mono_service_name | default(instance.name) }}"
+    _listen_calc_instance: "{{ nginx_mono_instance | default(instance) }}"
+
+- name: Determine if this service/instance should use reuseport
+  ansible.builtin.set_fact:
+    service_uses_reuseport: "{{ nginx_reuseport_primary_service | default('') == _listen_calc_name }}"
+  when: nginx_with_reuseport | default(false)
+
+- name: Set service_uses_reuseport to false if reuseport disabled
+  ansible.builtin.set_fact:
+    service_uses_reuseport: false
+  when: not (nginx_with_reuseport | default(false))
+
+- name: Calculate listen configuration
+  ansible.builtin.set_fact:
+    nginx_listen_config:
+      use_ipv6: "{{ nginx_with_ipv6 | default(false) }}"
+      use_ssl: "{{ nginx_with_ssl and (_listen_calc_instance.server_port is undefined or _listen_calc_instance.server_port == 443) }}"
+      use_http: "{{ _listen_calc_instance.server_port is undefined or _listen_calc_instance.server_port == 80 }}"
+      use_http3: "{{ nginx_with_http3 | default(false) }}"
+      use_reuseport: "{{ service_uses_reuseport | default(false) }}"
+      default_server: "{{ _listen_calc_instance.vhost_default is defined and _listen_calc_instance.vhost_default }}"
+      ssl_only: "{{ nginx_force_ssl and nginx_with_ssl and (_listen_calc_instance.server_port is undefined or _listen_calc_instance.server_port == 443) }}"

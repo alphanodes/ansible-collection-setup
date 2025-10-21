@@ -101,6 +101,14 @@
       register: external_refs
       failed_when: external_refs.matched > 0
 
+    - name: Verify nginx_vhosts were NOT processed in service mode
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/_test_dummy.conf
+      register: dummy_vhost_check
+      failed_when: dummy_vhost_check.stat.exists
+      # This test MUST FAIL if _test_dummy.conf exists
+      # It validates that nginx_vhosts are ignored when nginx_mono_service_name is defined
+
     - name: Verify mailpit proxy configuration
       ansible.builtin.command: grep -q "proxy_pass.*127.0.0.1:8025" /etc/nginx/sites-available/mailpit.conf
       register: proxy_config
@@ -184,6 +192,7 @@
           - "Web UI accessible: {{ 'OK' if mailpit_web_ui.status == 200 else 'FAILED' }}"
           - "API endpoint: {{ 'OK' if mailpit_api.status == 200 else 'FAILED' }}"
           - "No external template refs: {{ 'OK' if external_refs.matched == 0 else 'FAILED' }}"
+          - "nginx_vhosts IGNORED in service mode: {{ 'OK' if not dummy_vhost_check.stat.exists else 'FAILED' }}"
           - "Proxy configuration: {{ 'OK' if proxy_config.rc == 0 else 'FAILED' }}"
           - "WebSocket support: {{ 'OK' if websocket_config.rc == 0 else 'FAILED' }}"
           - "Mailpit user exists: {{ 'OK' if mailpit_user.rc == 0 else 'FAILED' }}"
