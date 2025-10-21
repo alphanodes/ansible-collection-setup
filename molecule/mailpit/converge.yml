@@ -30,13 +30,16 @@
         root: /var/www/html
         index: index.html
 
-    # mailpit configuration
+    # mailpit configuration - Testing path-based mode (more complex than subdomain)
     mailpit_enabled: true
-    mailpit_vhost_server: mail.local
+    mailpit_vhost_server: redmine.local
     mailpit_smtp_bind: 127.0.0.1:1025
     mailpit_ui_bind: 127.0.0.1:8025
     mailpit_max_messages: 500
-    mailpit_vhost_users: []
+    mailpit_webroot: '/mail/'  # Path-based deployment
+    mailpit_vhost_users:
+      - user: admin
+        password: secret123
     mailpit_vhost_for_zabbix: false
     mailpit_vhost_letsencrypt: false
 

@@ -27,6 +27,7 @@
     nginx_with_ssl: false  # Disable SSL for testing
     nginx_with_ipv6: false
     nginx_force_ssl: false
+    nginx_with_websocket: true  # Enable WebSocket globally for testing
     nginx_resolver: ['8.8.8.8', '8.8.4.4']  # Fix undefined hoster variable
     hoster: 'local'  # Define hoster for testing
 
@@ -44,9 +45,9 @@
     ssl_certs: []
 
   roles:
+    # Test 1: Full vhost mode (default behavior)
     - role: alphanodes.setup.nginx_mono
       vars:
-        nginx_with_websocket: true  # Enable WebSocket for ethercalc test
         nginx_mono_service_name: ethercalc
         nginx_mono_service_enabled: true
         nginx_mono_service_config:
@@ -75,5 +76,22 @@
                 - "add_header X-Ping pong"
                 - "return 204"
           vhost_users: []
+          vhost_for_zabbix: false
+          letsencrypt: false
+
+    # Test 2: Include mode (for path-based deployments)
+    - role: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_include_mode: true
+        nginx_mono_service_name: test_include
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          proxy_pass: "http://127.0.0.1:9000"
+          proxy_location: "/testapp/"
+          proxy_headers:
+            - "X-Include-Test true"
+          vhost_users:
+            - user: testuser
+              password: testpass
           vhost_for_zabbix: false
           letsencrypt: false

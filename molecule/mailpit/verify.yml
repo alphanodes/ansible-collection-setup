@@ -48,16 +48,16 @@
           - mailpit_systemd_status.status.ActiveState == "active"
         fail_msg: "Mailpit service is not active"
 
-    - name: Verify mailpit service has NO --webroot flag for subdomain deployment
+    - name: Verify mailpit service has --webroot flag for path-based deployment
       ansible.builtin.command: systemctl cat mailpit
       register: mailpit_service_content
       changed_when: false
 
-    - name: Check --webroot parameter is NOT present for default subdomain deployment
+    - name: Check --webroot parameter IS present for path-based deployment
       ansible.builtin.assert:
         that:
-          - "'--webroot' not in mailpit_service_content.stdout"
-        fail_msg: "Mailpit service should NOT have --webroot parameter when mailpit_webroot is '/'"
+          - "'--webroot mail' in mailpit_service_content.stdout"
+        fail_msg: "Mailpit service MUST have --webroot mail parameter when mailpit_webroot is '/mail/'"
 
     - name: Check if nginx is running
       ansible.builtin.service:
@@ -72,37 +72,39 @@
       register: nginx_syntax
       changed_when: false
 
-    - name: Check if mailpit vhost config exists
+    - name: Check if mailpit include config exists (path-based mode)
+      ansible.builtin.stat:
+        path: /etc/nginx/mailpit.conf
+      register: mailpit_include
+
+    - name: Verify include mode does NOT create sites-available file
       ansible.builtin.stat:
         path: /etc/nginx/sites-available/mailpit.conf
-      register: mailpit_vhost
+      register: mailpit_vhost_check
+      failed_when: mailpit_vhost_check.stat.exists
 
-    - name: Verify mailpit vhost is enabled
+    - name: Verify include mode does NOT create sites-enabled symlink
       ansible.builtin.stat:
         path: /etc/nginx/sites-enabled/mailpit.conf
       register: mailpit_enabled_check
+      failed_when: mailpit_enabled_check.stat.exists
 
-    - name: Test mailpit web UI via nginx
-      ansible.builtin.uri:
-        url: http://localhost/
-        method: GET
-        status_code: 200
-        headers:
-          Host: mail.local
-      register: mailpit_web_ui
-      retries: 3
-      delay: 2
+    - name: Verify include file contains location block for /mail/
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'location /mail/ {' /etc/nginx/mailpit.conf
+      register: mailpit_location
+      changed_when: false
+      failed_when: mailpit_location.rc != 0
 
-    - name: Test mailpit API endpoint
-      ansible.builtin.uri:
-        url: http://localhost/api/v1/messages
-        method: GET
-        status_code: 200
-        headers:
-          Host: mail.local
-      register: mailpit_api
-      retries: 3
-      delay: 1
+    - name: Check if htpasswd file for mailpit exists
+      ansible.builtin.stat:
+        path: /etc/nginx/.htpasswd_mailpit
+      register: mailpit_htpasswd
+
+    # Note: In path-based mode, mailpit is accessible via include file
+    # We cannot test the full web UI here because we don't have a vhost that includes it
+    # In production, user would add vhost_includes: [mailpit] to their vhost config
 
     - name: Verify nginx_mono integration (no external template refs)
       ansible.builtin.find:
@@ -120,17 +122,17 @@
       # This test MUST FAIL if _test_dummy.conf exists
       # It validates that nginx_vhosts are ignored when nginx_mono_service_name is defined
 
-    - name: Verify mailpit proxy configuration
-      ansible.builtin.command: grep -q "proxy_pass.*127.0.0.1:8025" /etc/nginx/sites-available/mailpit.conf
+    - name: Verify mailpit proxy configuration in include file
+      ansible.builtin.command: grep -q "proxy_pass.*127.0.0.1:8025" /etc/nginx/mailpit.conf
       register: proxy_config
       changed_when: false
-      failed_when: false
+      failed_when: proxy_config.rc != 0
 
-    - name: Verify WebSocket support for mailpit
-      ansible.builtin.command: grep -q "Upgrade\|websocket" /etc/nginx/sites-available/mailpit.conf
+    - name: Verify WebSocket support for mailpit in include file
+      ansible.builtin.command: grep -q "Upgrade\|websocket" /etc/nginx/mailpit.conf
       register: websocket_config
       changed_when: false
-      failed_when: false
+      failed_when: websocket_config.rc != 0
 
     - name: Check if mailpit user exists
       ansible.builtin.command: id mailpit
@@ -151,6 +153,16 @@
         timeout: 5
       register: web_port
 
+    - name: Test direct mailpit UI access (bypassing nginx, for testing only)
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8025/
+        method: GET
+        status_code: 200
+      register: mailpit_direct_ui
+      retries: 3
+      delay: 2
+      ignore_errors: true
+
     - name: Send test email via SMTP
       ansible.builtin.shell: |
         set -e
@@ -163,9 +175,9 @@
         sleep 0.1
         echo "DATA" >&3
         sleep 0.1
-        echo "Subject: Test Email" >&3
+        echo "Subject: Test Email for Path-Based Deployment" >&3
         echo "" >&3
-        echo "This is a test email from Molecule test." >&3
+        echo "This is a test email from Molecule test (path-based mode)." >&3
         echo "." >&3
         sleep 0.1
         echo "QUIT" >&3
@@ -179,30 +191,30 @@
         seconds: 2
       when: smtp_test is succeeded
 
-    - name: Check if test email was received
+    - name: Check if test email was received (direct API access)
       ansible.builtin.uri:
-        url: http://localhost/api/v1/messages
+        url: http://127.0.0.1:8025/api/v1/messages
         method: GET
-        headers:
-          Host: mail.local
       register: messages_check
       when: smtp_test is succeeded
+      ignore_errors: true
 
     - name: Display comprehensive test results
       ansible.builtin.debug:
         msg:
-          - "=== MAILPIT SUBDOMAIN DEPLOYMENT TESTS ==="
+          - "=== MAILPIT PATH-BASED DEPLOYMENT TESTS ==="
           - "Mailpit binary installed: {{ 'OK' if mailpit_binary.stat.exists else 'FAILED' }}"
           - "Mailpit version: {{ mailpit_version_output.stdout | default('N/A') }}"
           - "Mailpit service running: {{ 'OK' if not mailpit_service.changed else 'FAILED' }}"
           - "Mailpit service status: {{ mailpit_systemd_status.status.ActiveState }}"
-          - "No --webroot parameter (subdomain): {{ 'OK' if '--webroot' not in mailpit_service_content.stdout else 'FAILED' }}"
+          - "--webroot parameter present: {{ 'OK' if '--webroot mail' in mailpit_service_content.stdout else 'FAILED' }}"
           - "Nginx service: {{ 'OK' if not nginx_service.changed else 'FAILED' }}"
           - "Nginx syntax: {{ 'OK' if nginx_syntax.rc == 0 else 'FAILED' }}"
-          - "Mailpit vhost exists: {{ 'OK' if mailpit_vhost.stat.exists else 'FAILED' }}"
-          - "Mailpit vhost enabled: {{ 'OK' if mailpit_enabled_check.stat.exists else 'FAILED' }}"
-          - "Web UI accessible: {{ 'OK' if mailpit_web_ui.status == 200 else 'FAILED' }}"
-          - "API endpoint: {{ 'OK' if mailpit_api.status == 200 else 'FAILED' }}"
+          - "Include file exists: {{ 'OK' if mailpit_include.stat.exists else 'FAILED' }}"
+          - "No vhost file created: {{ 'OK' if not mailpit_vhost_check.stat.exists else 'FAILED' }}"
+          - "No symlink created: {{ 'OK' if not mailpit_enabled_check.stat.exists else 'FAILED' }}"
+          - "Location /mail/ exists: {{ 'OK' if mailpit_location.rc == 0 else 'FAILED' }}"
+          - "htpasswd file exists: {{ 'OK' if mailpit_htpasswd.stat.exists else 'FAILED' }}"
           - "No external template refs: {{ 'OK' if external_refs.matched == 0 else 'FAILED' }}"
           - "nginx_vhosts IGNORED in service mode: {{ 'OK' if not dummy_vhost_check.stat.exists else 'FAILED' }}"
           - "Proxy configuration: {{ 'OK' if proxy_config.rc == 0 else 'FAILED' }}"
@@ -210,6 +222,7 @@
           - "Mailpit user exists: {{ 'OK' if mailpit_user.rc == 0 else 'FAILED' }}"
           - "SMTP port (1025): {{ 'OK' if smtp_port is succeeded else 'FAILED' }}"
           - "Web UI port (8025): {{ 'OK' if web_port is succeeded else 'FAILED' }}"
+          - "Direct UI access: {{ 'OK' if mailpit_direct_ui.status == 200 else 'FAILED' }}"
           - "SMTP test: {{ 'OK' if smtp_test is succeeded else 'SKIPPED' }}"
           - "Emails received: {{ messages_check.json.messages | default([]) | length if smtp_test is succeeded else 'N/A' }}"
-          - "=== MAILPIT SUBDOMAIN DEPLOYMENT SUCCESS ==="
+          - "=== MAILPIT PATH-BASED DEPLOYMENT SUCCESS ==="

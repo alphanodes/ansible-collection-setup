@@ -105,6 +105,53 @@
       register: external_refs
       failed_when: external_refs.matched > 0
 
+    # Include mode tests
+    - name: Check if include mode file exists
+      ansible.builtin.stat:
+        path: /etc/nginx/test_include.conf
+      register: include_file
+
+    - name: Verify include mode does NOT create sites-available file
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/test_include.conf
+      register: include_vhost
+      failed_when: include_vhost.stat.exists
+
+    - name: Verify include mode does NOT create sites-enabled symlink
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/test_include.conf
+      register: include_enabled
+      failed_when: include_enabled.stat.exists
+
+    - name: Verify include file contains location block
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'location /testapp/ {' /etc/nginx/test_include.conf
+      register: include_location
+      changed_when: false
+      failed_when: include_location.rc != 0
+
+    - name: Verify include file contains proxy_pass
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'proxy_pass http://127.0.0.1:9000;' /etc/nginx/test_include.conf
+      register: include_proxy
+      changed_when: false
+      failed_when: include_proxy.rc != 0
+
+    - name: Verify include file does NOT contain server block
+      ansible.builtin.shell: |
+        set -e
+        ! grep -q '^server {' /etc/nginx/test_include.conf
+      register: include_no_server
+      changed_when: false
+      failed_when: include_no_server.rc != 0
+
+    - name: Check if htpasswd file for include mode exists
+      ansible.builtin.stat:
+        path: /etc/nginx/.htpasswd_test_include
+      register: include_htpasswd
+
     - name: Display test results
       ansible.builtin.debug:
         msg:
@@ -121,3 +168,10 @@
           - "Proxy config: {{ 'OK' if not proxy_config.changed else 'FAILED' }}"
           - "Nginx connectivity: {{ 'OK' if nginx_connection is succeeded else 'FAILED' }}"
           - "No external refs: {{ 'OK' if external_refs.matched == 0 else 'FAILED' }}"
+          - "Include file exists: {{ 'OK' if include_file.stat.exists else 'FAILED' }}"
+          - "Include mode no vhost: {{ 'OK' if not include_vhost.stat.exists else 'FAILED' }}"
+          - "Include mode no enabled: {{ 'OK' if not include_enabled.stat.exists else 'FAILED' }}"
+          - "Include has location: {{ 'OK' if include_location.rc == 0 else 'FAILED' }}"
+          - "Include has proxy: {{ 'OK' if include_proxy.rc == 0 else 'FAILED' }}"
+          - "Include no server block: {{ 'OK' if include_no_server.rc == 0 else 'FAILED' }}"
+          - "Include htpasswd exists: {{ 'OK' if include_htpasswd.stat.exists else 'FAILED' }}"
