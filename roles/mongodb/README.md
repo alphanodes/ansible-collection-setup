@@ -10,7 +10,7 @@ Ansible role to install and manage [MongoDB](https://www.mongodb.com/).
 
 MongoDB support: Ubuntu 22.04 and Debian 11 for MongoDB 4.0, 4.2, 4.4, 5.0 and 6.0
 
-#### Variables
+## Variables
 
 ```yaml
 # This variable is used to set source of MongoDB installation.
@@ -151,7 +151,7 @@ mongodb_root_backup_name: backupuser
 mongodb_root_backup_password: passw0rd
 ```
 
-#### Usage
+## Usage
 
 Add `alphanodes.setup.mongodb` to your roles and set vars in your playbook file.
 
@@ -211,7 +211,7 @@ And inventory file for replica set:
 [mongo_master]
 192.158.56.2 mongodb_master=True # it is't a really master of MongoDB replica set,
                                  # use this variable for replica set init only
-					                			 # or when master is moved from initial master node
+                         # or when master is moved from initial master node
 
 [mongo_replicas]
 192.168.56.3

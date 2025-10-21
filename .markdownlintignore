@@ -1,0 +1,7 @@
+# Ignore virtual environments and dependencies
+.venv/
+.ansible/
+node_modules/
+
+# Ignore git directory
+.git/

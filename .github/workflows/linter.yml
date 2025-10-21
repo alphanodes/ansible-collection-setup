@@ -1,5 +1,5 @@
 ---
-name: Ansible Lint  # feel free to pick your own name
+name: Linter
 
 on:  # yamllint disable-line rule:truthy
   # Run CI against all pushes (direct commits, also merged PRs), Pull Requests
@@ -8,12 +8,18 @@ on:  # yamllint disable-line rule:truthy
     paths:
       - 'roles/**'
       - 'requirements.yml'
+      - '**/*.md'
+      - '.markdownlintignore'
+      - 'package.json'
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [main]
     paths:
       - 'roles/**'
       - 'requirements.yml'
+      - '**/*.md'
+      - '.markdownlintignore'
+      - 'package.json'
 
 jobs:
   ansible-lint:
@@ -28,3 +34,20 @@ jobs:
         with:
           setup_python: "true"
           requirements_file: "requirements.yml"
+
+  markdownlint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run markdownlint
+        run: yarn markdownlint "**/*.md"

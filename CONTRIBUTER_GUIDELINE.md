@@ -20,11 +20,11 @@ In order to contribute code please:
 
 To have your code merged, see the expectations listed below.
 
-You can find a well-written guide [here](https://help.github.com/articles/fork-a-repo).
+You can find a well-written guide on [how to fork a repo on GitHub](https://help.github.com/articles/fork-a-repo).
 
 Please follow common commit best-practices. Be explicit, have a short summary, a well-written description and references. This is especially important for the merge-request.
 
-Some great guidelines can be found [here](https://wiki.openstack.org/wiki/GitCommitMessages) and [here](http://robots.thoughtbot.com/5-useful-tips-for-a-better-commit-message).
+Some great guidelines can be found in the [OpenStack Git Commit Messages guide](https://wiki.openstack.org/wiki/GitCommitMessages) and [Thoughtbot's commit message tips](http://robots.thoughtbot.com/5-useful-tips-for-a-better-commit-message).
 
 ## Expectations
 

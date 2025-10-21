@@ -88,7 +88,7 @@ options will not be set and default values of your ssh server will be used.
 ssh_key_algorithm: rsa
 ```
 
-`ssh_key_algorithm` is used as default algorithm for ssh user keys (file name: id_ + `ssh_key_algorithm`). Choose between: rsa, dsa, ecdsa and ed25519. See https://www.ssh.com/ssh/keygen/ for more information.
+`ssh_key_algorithm` is used as default algorithm for ssh user keys (file name: id_ + `ssh_key_algorithm`). Choose between: rsa, dsa, ecdsa and ed25519. See <https://www.ssh.com/ssh/keygen/> for more information.
 
 ```yaml
 ssh_key_management_exclusive: true
@@ -100,7 +100,7 @@ Default settings for user, if keys are managned exclusive
 ssh_client_hash_known_hosts: true
 ```
 
-ssh client configuration whether to use hashes for hostnames in known_hosts file or not. See https://www.ssh.com/ssh/config/ and https://security.stackexchange.com/questions/56268/ssh-benefits-of-using-hashed-known-hosts for more information.
+ssh client configuration whether to use hashes for hostnames in known_hosts file or not. See <https://www.ssh.com/ssh/config/> and <https://security.stackexchange.com/questions/56268/ssh-benefits-of-using-hashed-known-hosts> for more information.
 
 ```yaml
 ssh_groups: []

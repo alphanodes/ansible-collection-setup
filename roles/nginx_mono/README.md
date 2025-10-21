@@ -51,6 +51,7 @@ When defining custom directives inside a `location` block you have two options:
     ```
 
 Notes
+
 - Do not mix `actions` and `raw_actions` for the same statement. Choose one depending on whether a trailing `;` must be auto‑appended (`actions`) or must be avoided (`raw_actions`).
 - Validation rules that check for trailing semicolons apply to `actions`, not to `raw_actions`, which are passed through as‑is.
 
@@ -76,6 +77,7 @@ Example usage (manual include):
 ```
 
 Notes
+
 - Use only in test environments; the rendered config may include sensitive paths/values.
 - Disable again (`false`) once debugging is complete to keep logs concise.
 
