@@ -1,17 +1,22 @@
 ---
 
-- name: Setup nginx_mono and configure mailpit vhost
+# nginx_mono handles both modes:
+# - mailpit_webroot == '/' : Full vhost mode (sites-available/mailpit.conf)
+# - mailpit_webroot != '/' : Include mode (/etc/nginx/mailpit.conf)
+
+- name: Setup nginx_mono and configure mailpit
   tags: nginx
   ansible.builtin.include_role:
     name: alphanodes.setup.nginx_mono
   vars:
     nginx_with_websocket: true
+    nginx_mono_include_mode: "{{ mailpit_webroot != '/' }}"
     nginx_mono_service_name: mailpit
     nginx_mono_service_enabled: "{{ mailpit_enabled }}"
     nginx_mono_service_config:
       server_name: "{{ mailpit_vhost_server }}"
-      proxy_pass: "http://{{ mailpit_ui_bind }}/"
-      proxy_location: "/"
+      proxy_pass: "http://{{ mailpit_ui_bind }}"
+      proxy_location: "{{ mailpit_webroot }}"
       proxy_websocket: true
       proxy_headers:
         - "X-Forwarded-Host $host"
@@ -24,7 +29,3 @@
       letsencrypt_trusted_cert: "{{ mailpit_vhost_letsencrypt_trusted_cert | default('') }}"
       ssl_cert: "{{ mailpit_vhost_ssl_cert | default('') }}"
       vhost_includes: "{{ mailpit_vhost_includes | default([]) }}"
-
-- name: Include ssl role
-  ansible.builtin.include_role:
-    name: alphanodes.setup.ssl

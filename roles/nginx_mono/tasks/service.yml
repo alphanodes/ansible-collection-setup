@@ -42,7 +42,7 @@
 - name: Calculate listen configuration for service
   ansible.builtin.include_tasks: calculate_listen_config.yml
 
-
+# Common tasks for both modes (vhost and include)
 - name: Setup Basic Auth for service
   community.general.htpasswd:
     path: "/etc/nginx/.htpasswd_{{ nginx_mono_service_name }}"
@@ -65,45 +65,63 @@
     - nginx_mono_instance.vhost_users is undefined or nginx_mono_instance.vhost_users | length < 1
   notify: Restart nginx
 
-- name: Create service vhost configuration
-  tags: nginx
-  ansible.builtin.template:
-    src: vhost.j2
-    dest: "/etc/nginx/sites-available/{{ nginx_mono_service_name }}.conf"
-    mode: '0644'
-  vars:
-    instance: "{{ nginx_mono_instance }}"
-  notify: Reload nginx
-
-- name: Show rendered vhost configuration (debug)
-  when: nginx_mono_show_vhost | bool
+# Full vhost mode: creates sites-available/SERVICE.conf + sites-enabled symlink
+- name: Full vhost mode
+  when: not nginx_mono_include_mode
   block:
-    - name: Read rendered vhost file
-      ansible.builtin.slurp:
+    - name: Create service vhost configuration
+      tags: nginx
+      ansible.builtin.template:
+        src: vhost.j2
+        dest: "/etc/nginx/sites-available/{{ nginx_mono_service_name }}.conf"
+        mode: '0644'
+      vars:
+        instance: "{{ nginx_mono_instance }}"
+      notify: Reload nginx
+
+    - name: Show rendered vhost configuration (debug)
+      when: nginx_mono_show_vhost | bool
+      block:
+        - name: Read rendered vhost file
+          ansible.builtin.slurp:
+            src: "/etc/nginx/sites-available/{{ nginx_mono_service_name }}.conf"
+          register: nginx_mono_vhost_dump
+
+        - name: Prepare vhost text
+          ansible.builtin.set_fact:
+            nginx_mono_vhost_text: "{{ nginx_mono_vhost_dump.content | b64decode }}"
+
+        - name: Debug vhost content (pretty, with newlines)
+          ansible.builtin.debug:
+            var: nginx_mono_vhost_text
+
+    - name: Enable service vhost
+      tags: nginx
+      ansible.builtin.file:
         src: "/etc/nginx/sites-available/{{ nginx_mono_service_name }}.conf"
-      register: nginx_mono_vhost_dump
+        dest: "/etc/nginx/sites-enabled/{{ nginx_mono_service_name }}.conf"
+        state: link
+      notify: Reload nginx
+      when: nginx_mono_service_enabled | default(true)
 
-    - name: Prepare vhost text
-      ansible.builtin.set_fact:
-        nginx_mono_vhost_text: "{{ nginx_mono_vhost_dump.content | b64decode }}"
+    - name: Disable service vhost
+      tags: nginx
+      ansible.builtin.file:
+        path: "/etc/nginx/sites-enabled/{{ nginx_mono_service_name }}.conf"
+        state: absent
+      notify: Reload nginx
+      when: not (nginx_mono_service_enabled | default(true))
 
-    - name: Debug vhost content (pretty, with newlines)
-      ansible.builtin.debug:
-        var: nginx_mono_vhost_text
-
-- name: Enable service vhost
-  tags: nginx
-  ansible.builtin.file:
-    src: "/etc/nginx/sites-available/{{ nginx_mono_service_name }}.conf"
-    dest: "/etc/nginx/sites-enabled/{{ nginx_mono_service_name }}.conf"
-    state: link
-  notify: Reload nginx
-  when: nginx_mono_service_enabled | default(true)
-
-- name: Disable service vhost
-  tags: nginx
-  ansible.builtin.file:
-    path: "/etc/nginx/sites-enabled/{{ nginx_mono_service_name }}.conf"
-    state: absent
-  notify: Reload nginx
-  when: not (nginx_mono_service_enabled | default(true))
+# Include mode: creates /etc/nginx/SERVICE.conf only
+- name: Include mode
+  when: nginx_mono_include_mode
+  block:
+    - name: Create service include configuration
+      tags: nginx
+      ansible.builtin.template:
+        src: include.j2
+        dest: "/etc/nginx/{{ nginx_mono_service_name }}.conf"
+        mode: '0644'
+      vars:
+        instance: "{{ nginx_mono_instance }}"
+      notify: Reload nginx

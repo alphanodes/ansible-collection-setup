@@ -69,6 +69,12 @@ mailpit_use_message_dates: false
 # Virtual host server name (subdomain recommended)
 mailpit_vhost_server: mail.local
 
+# Deployment mode selection
+# '/' = Subdomain deployment: creates dedicated vhost via nginx_mono
+# '/mail/' = Path-based deployment: creates nginx include file only
+# For path-based: user must include in existing vhost via vhost_includes: [mailpit]
+mailpit_webroot: '/'
+
 # HTTP basic auth users (optional)
 mailpit_vhost_users: []
 
@@ -135,6 +141,44 @@ None (nginx_mono is automatically included for web interface)
         mailpit_vhost_server: mail.dev.example.com
 ```
 
+### Path-Based Deployment (Without Subdomain)
+
+For customers without a dedicated subdomain, mailpit can run under a path using nginx includes.
+
+**Step 1**: Deploy mailpit with path-based configuration:
+
+```yaml
+- hosts: production
+  become: true
+  roles:
+    - role: alphanodes.setup.mailpit
+      vars:
+        mailpit_webroot: '/mail/'  # Creates /etc/nginx/mailpit.conf include file
+        mailpit_vhost_users:
+          - user: admin
+            password: secure123
+```
+
+**Step 2**: Include mailpit in your existing service vhost (e.g., Redmine):
+
+```yaml
+redmine_instances:
+  redmine:
+    server_name: example.com
+    vhost_includes:
+      - mailpit  # Include /etc/nginx/mailpit.conf
+    # ... other redmine configuration
+```
+
+**Note**: When using path-based deployment:
+
+- mailpit creates ONLY an nginx include file at `/etc/nginx/mailpit.conf`
+- NO dedicated vhost is created
+- You must include it in an existing vhost via `vhost_includes: [mailpit]`
+- Access web UI at: `https://example.com/mail/`
+- SMTP remains at: `localhost:1025` (unchanged)
+- Useful for migrating from mailcatcher without dedicated subdomain
+
 ## Usage with Applications
 
 ### Ruby on Rails / Redmine
@@ -171,9 +215,20 @@ const transport = nodemailer.createTransport({
 
 After installation:
 
+**Subdomain deployment** (with `mailpit_webroot: '/'`):
+
+- Creates dedicated nginx vhost via nginx_mono
 - **Web UI**: `https://mail.dev.example.com` (or your configured vhost)
 - **SMTP**: `localhost:1025` (from applications on the same server)
 - **API**: `https://mail.dev.example.com/api/v1/` (REST API endpoint)
+
+**Path-based deployment** (with `mailpit_webroot: '/mail/'`):
+
+- Creates nginx include file `/etc/nginx/mailpit.conf` only
+- User must include in existing vhost via `vhost_includes: [mailpit]`
+- **Web UI**: `https://example.com/mail/` (via existing vhost)
+- **SMTP**: `localhost:1025` (unchanged, from applications on the same server)
+- **API**: `https://example.com/mail/api/v1/` (REST API endpoint)
 
 ## Security Notes
 

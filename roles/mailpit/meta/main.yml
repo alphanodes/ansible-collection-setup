@@ -1,5 +1,10 @@
 ---
 
+dependencies:
+  - role: alphanodes.setup.common
+    public: true
+  - role: alphanodes.setup.ssl
+
 galaxy_info:
   role_name: mailpit
   namespace: alphanodes
@@ -23,5 +28,3 @@ galaxy_info:
     - development
     - smtp
     - mailcatcher
-
-dependencies: []

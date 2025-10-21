@@ -48,6 +48,17 @@
           - mailpit_systemd_status.status.ActiveState == "active"
         fail_msg: "Mailpit service is not active"
 
+    - name: Verify mailpit service has NO --webroot flag for subdomain deployment
+      ansible.builtin.command: systemctl cat mailpit
+      register: mailpit_service_content
+      changed_when: false
+
+    - name: Check --webroot parameter is NOT present for default subdomain deployment
+      ansible.builtin.assert:
+        that:
+          - "'--webroot' not in mailpit_service_content.stdout"
+        fail_msg: "Mailpit service should NOT have --webroot parameter when mailpit_webroot is '/'"
+
     - name: Check if nginx is running
       ansible.builtin.service:
         name: nginx
@@ -180,11 +191,12 @@
     - name: Display comprehensive test results
       ansible.builtin.debug:
         msg:
-          - "=== MAILPIT ROLE TESTS ==="
+          - "=== MAILPIT SUBDOMAIN DEPLOYMENT TESTS ==="
           - "Mailpit binary installed: {{ 'OK' if mailpit_binary.stat.exists else 'FAILED' }}"
           - "Mailpit version: {{ mailpit_version_output.stdout | default('N/A') }}"
           - "Mailpit service running: {{ 'OK' if not mailpit_service.changed else 'FAILED' }}"
           - "Mailpit service status: {{ mailpit_systemd_status.status.ActiveState }}"
+          - "No --webroot parameter (subdomain): {{ 'OK' if '--webroot' not in mailpit_service_content.stdout else 'FAILED' }}"
           - "Nginx service: {{ 'OK' if not nginx_service.changed else 'FAILED' }}"
           - "Nginx syntax: {{ 'OK' if nginx_syntax.rc == 0 else 'FAILED' }}"
           - "Mailpit vhost exists: {{ 'OK' if mailpit_vhost.stat.exists else 'FAILED' }}"
@@ -200,4 +212,4 @@
           - "Web UI port (8025): {{ 'OK' if web_port is succeeded else 'FAILED' }}"
           - "SMTP test: {{ 'OK' if smtp_test is succeeded else 'SKIPPED' }}"
           - "Emails received: {{ messages_check.json.messages | default([]) | length if smtp_test is succeeded else 'N/A' }}"
-          - "=== MAILPIT nginx_mono INTEGRATION SUCCESS ==="
+          - "=== MAILPIT SUBDOMAIN DEPLOYMENT SUCCESS ==="

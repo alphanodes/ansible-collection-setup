@@ -140,6 +140,12 @@ nginx_limit_req_zones: []
 nginx_mono_service_type: ''  # 'proxy', 'php', 'static', 'mixed'
 nginx_mono_proxy_config: {}
 
+# nginx_mono include mode: Creates /etc/nginx/SERVICE.conf instead of sites-available/SERVICE.conf
+# Useful for path-based deployments that need to be included in existing vhosts
+# Example: mailpit with webroot /mail/ creates /etc/nginx/mailpit.conf
+# User includes this via vhost_includes: [mailpit]
+nginx_mono_include_mode: false
+
 # Default instance config (can be overridden per service)
 # Convention for service config (nginx_mono_service_config):
 # - Structured directive lists must NOT include trailing semicolons; templates append ';'.

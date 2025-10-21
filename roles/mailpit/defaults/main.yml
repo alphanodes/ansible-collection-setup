@@ -30,6 +30,12 @@ mailpit_vhost_letsencrypt_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cer
 mailpit_vhost_letsencrypt_key: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/privkey.pem
 mailpit_vhost_letsencrypt_trusted_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/chain.pem
 
+# Deployment mode selection:
+# '/' = Subdomain deployment (default): creates dedicated vhost via nginx_mono
+# '/mail/' = Path-based deployment: creates nginx include file at /etc/nginx/mailpit.conf
+#            User must include this in existing vhost via vhost_includes: [mailpit]
+mailpit_webroot: '/'
+
 # Additional mailpit options
 mailpit_max_messages: 1000
 mailpit_use_message_dates: false
