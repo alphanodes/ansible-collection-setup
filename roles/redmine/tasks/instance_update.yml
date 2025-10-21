@@ -63,15 +63,6 @@
       register: redmine_gem_result
       changed_when: redmine_gem_result.rc != 0
 
-    - name: Install latest mailcatcher (cannot use Gemfile) - {{ instance_name }}
-      community.general.gem:
-        name: mailcatcher
-        version: '{{ redmine_mailcatcher_version | default(omit) }}'
-        state: "{{ 'present' if redmine_mailcatcher_version is defined else 'latest' }}"
-      when:
-        - instance.with_mailcatcher is defined
-        - instance.with_mailcatcher
-
     # Check obsolete secret token - Start
     - name: Check if secret token file exists - {{ instance_name }}
       ansible.builtin.stat:

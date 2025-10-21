@@ -55,35 +55,3 @@
   ansible.builtin.systemd_service:
     name: '{{ puma_service_name }}'
     enabled: true
-
-- name: Mailcatcher service
-  when:
-    - instance.with_mailcatcher is defined
-    - instance.with_mailcatcher
-  block:
-    - name: Install mailcatcher systemd configuation - {{ instance_name }}
-      ansible.builtin.template:
-        src: etc/systemd/system/mailcatcher.service.j2
-        dest: "/etc/systemd/system/mailcatcher-{{ instance_name }}.service"
-        owner: root
-        group: root
-        mode: '0644'
-      notify:
-        - Reload systemd daemon
-
-    - name: Ensure mailcatcher services start after reboot - {{ instance_name }}
-      ansible.builtin.systemd_service:
-        name: mailcatcher-{{ instance_name }}
-        enabled: true
-
-- name: Uninstall mailcatcher systemd configuation - {{ instance_name }}
-  ansible.builtin.file:
-    path: '{{ item }}'
-    state: absent
-  loop:
-    - /etc/systemd/system/mailcatcher-{{ instance_name }}.service
-    - /etc/systemd/system/multi-user.target.wants/mailcatcher-{{ instance_name }}.service
-  when: instance.with_mailcatcher is undefined or not instance.with_mailcatcher
-  ignore_errors: true
-  notify:
-    - Reload systemd daemon

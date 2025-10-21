@@ -39,7 +39,7 @@
       {{
         not mailpit_binary.stat.exists or
         not mailpit_version_file.stat.exists or
-        mailpit_version != (mailpit_installed_version.content | default('') | b64decode | trim)
+        mailpit_version_resolved != (mailpit_installed_version.content | default('') | b64decode | trim)
       }}
 
 - name: Download and install mailpit binary
@@ -54,7 +54,7 @@
 
     - name: Download mailpit binary
       ansible.builtin.get_url:
-        url: "{{ mailpit_download_url }}"
+        url: "{{ mailpit_download_url_resolved }}"
         dest: "{{ mailpit_temp_dir.path }}/mailpit.tar.gz"
         mode: '0644'
 
@@ -82,7 +82,7 @@
 
     - name: Write mailpit version file
       ansible.builtin.copy:
-        content: "{{ mailpit_version }}\n"
+        content: "{{ mailpit_version_resolved }}\n"
         dest: /usr/local/share/mailpit-version.txt
         mode: '0644'
 

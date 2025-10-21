@@ -1,5 +1,11 @@
 ---
 
+- name: Include version resolution tasks
+  ansible.builtin.include_tasks: version.yml
+  when: not mailpit_remove | bool
+  tags:
+    - mailpit
+
 - name: Include setup tasks
   ansible.builtin.include_tasks: setup.yml
   when: not mailpit_remove | bool

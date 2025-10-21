@@ -1,0 +1,25 @@
+---
+
+# Resolve mailpit version (supports 'latest')
+
+- name: Fetch latest mailpit version from GitHub API
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/axllent/mailpit/releases/latest
+    return_content: true
+  register: mailpit_latest_release
+  when: mailpit_version == 'latest'
+  changed_when: false
+
+- name: Set resolved mailpit version (latest)
+  ansible.builtin.set_fact:
+    mailpit_version_resolved: "{{ mailpit_latest_release.json.tag_name | regex_replace('^v', '') }}"
+  when: mailpit_version == 'latest'
+
+- name: Set resolved mailpit version (specific version)
+  ansible.builtin.set_fact:
+    mailpit_version_resolved: "{{ mailpit_version }}"
+  when: mailpit_version != 'latest'
+
+- name: Set mailpit download URL with resolved version
+  ansible.builtin.set_fact:
+    mailpit_download_url_resolved: "https://github.com/axllent/mailpit/releases/download/v{{ mailpit_version_resolved }}/mailpit-linux-{{ mailpit_arch }}.tar.gz"

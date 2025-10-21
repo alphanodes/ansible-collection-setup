@@ -27,7 +27,9 @@ Mailpit is a multi-platform email testing tool that acts as both an SMTP server 
 
 ```yaml
 # Mailpit version to install
-mailpit_version: '1.20.0'
+# Can be a specific version (e.g. '1.20.0') or 'latest'
+# When set to 'latest', the role fetches the newest release from GitHub
+mailpit_version: '1.20.0'  # or 'latest'
 
 # Service user/group
 mailpit_service_user: mailpit
@@ -119,6 +121,18 @@ None (nginx_mono is automatically included for web interface)
       vars:
         mailpit_vhost_server: mail.dev.example.com
         mailpit_vhost_letsencrypt: true
+```
+
+### Always Use Latest Version
+
+```yaml
+- hosts: development
+  become: true
+  roles:
+    - role: alphanodes.setup.mailpit
+      vars:
+        mailpit_version: latest  # Always install newest release
+        mailpit_vhost_server: mail.dev.example.com
 ```
 
 ## Usage with Applications

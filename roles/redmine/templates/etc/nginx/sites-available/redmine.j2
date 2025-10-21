@@ -32,44 +32,6 @@ server {
 {% if nginx_with_ssl %}
   {% include 'templates/nginx/ssl.inc.j2' with context %}
 {% endif %}
-{% if instance.with_mailcatcher_proxy is defined and instance.with_mailcatcher_proxy %}
-
-  # mailcatcher, assets and messages are used with mailcatcher and cannot be used with redmine!
-
-  location /mailcatcher {
-    try_files $uri @mailcatcher;
-  }
-
-  location ~ ^/assets {
-    proxy_pass http://redmine_dev_mailcatcher;
-  }
-
-  location ~ ^/messages {
-    # WebSocket support
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection $connection_upgrade;
-    proxy_pass_header X-XSRF-TOKEN;
-
-    proxy_pass http://redmine_dev_mailcatcher;
-  }
-
-  location @mailcatcher {
-    rewrite /mailcatcher(.*) /$1 break;
-    proxy_http_version 1.1;
-    proxy_set_header Host $http_host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-{% if instance.with_saml is defined and instance.with_saml | bool %}
-    # FIX für SAML Cookie-Problem (Chrome 80+)
-    proxy_cookie_path / "/; SameSite=Lax; Secure; HttpOnly";
-{% endif %}
-
-    proxy_pass http://{{ instance_name | replace('-', '_')}}_mailcatcher;
-    proxy_redirect off;
-  }
-
-{% endif %}
 
   location {{ instance.prefix if instance.prefix is defined else '/' }} {
 {% if instance.nginx_api_limit_req is defined and instance.nginx_api_limit_req != '' %}
@@ -162,13 +124,6 @@ server {
 upstream {{ instance_name | replace('-', '_') }} {
   server unix:{{ redmine_run_base_path + "/" + instance_name }}/redmine.sock;
 }
-
-{% if instance.with_mailcatcher_proxy is defined and instance.with_mailcatcher_proxy %}
-### upstream for mailcatcher
-upstream {{ instance_name | replace('-', '_') }}_mailcatcher {
-  server {{ redmine_mailcatcher_ip if redmine_mailcatcher_ip != '' else '127.0.0.1' }}:{{ instance.mailcatcher_http_port | default(redmine_mailcatcher_http_port) }};
-}
-{% endif %}
 
 {% if instance.vhost_default is defined and instance.vhost_default %}
 {% include 'templates/nginx/default_host_redirect.inc.j2' with context %}
