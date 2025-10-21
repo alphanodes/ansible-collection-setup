@@ -1,8 +1,8 @@
 # Molecule Test Implementation - Project Status
 
 **Date**: 2025-10-21 (Updated)
-**Phase**: Phase 2 completed - 18 roles fixed, idempotence issues resolved
-**Latest**: nginx_mono service mode isolation fixed
+**Phase**: Phase 2 completed - 19 roles fixed, idempotence issues resolved
+**Latest**: nginx_mono include mode + mailpit path-based deployment implemented and tested
 
 ## Project Goal
 
@@ -49,7 +49,7 @@ Each role has:
 
 ## Phase 2: Role Fixes ✅ COMPLETED
 
-### ✅ Successfully Fixed Roles (11 roles)
+### ✅ Successfully Fixed Roles (14 roles)
 
 #### 1. unbound ✅
 
@@ -406,6 +406,163 @@ molecule/mailpit/
   - Service mode: For simple services (mailpit, rocketchat)
   - Instance mode: For complex multi-instance services (redmine, drupal) - not yet migrated
 
+#### 13. nginx_mono (Include Mode Extension) ✅
+
+**Enhancement**: Added include mode for path-based service deployments
+**Use Case**: Services without dedicated subdomains (e.g., mailpit at /mail/ on existing host)
+
+**Problem**: Some services need to be integrated into existing nginx vhosts via include files
+
+- Example: mailpit deployed at `/mail/` on redmine server (no separate subdomain)
+- Previous limitation: nginx_mono could only create full vhosts (sites-available + sites-enabled)
+- Pattern used by other roles: goaccess creates `/etc/nginx/goaccess.conf` include file
+- Needed: Reusable pattern with automatic htpasswd handling like full vhost mode
+
+**Solution**: Extended nginx_mono with include mode
+
+1. **New variable** (`roles/nginx_mono/defaults/main.yml:47-52`):
+   - `nginx_mono_include_mode: false` (default)
+   - When `true`: Creates `/etc/nginx/SERVICE.conf` instead of full vhost
+   - User must add `vhost_includes: [SERVICE]` to their existing vhost configuration
+
+2. **New template** (`roles/nginx_mono/templates/include.j2`):
+   - Location block only (no server{} wrapper)
+   - Contains proxy configuration, WebSocket support, etc.
+   - Same features as full vhost mode, but includable
+
+3. **Refactored service.yml** (`roles/nginx_mono/tasks/service.yml`):
+   - Clean block structure for two modes:
+     - **Full vhost mode** (`when: not nginx_mono_include_mode`):
+       - Creates `sites-available/SERVICE.conf`
+       - Creates `sites-enabled/SERVICE.conf` symlink
+     - **Include mode** (`when: nginx_mono_include_mode`):
+       - Creates `/etc/nginx/SERVICE.conf` only
+       - No vhost files, no symlinks
+   - **Common tasks** (both modes):
+     - htpasswd file handling (`/etc/nginx/.htpasswd_SERVICE`)
+     - Works automatically for both deployment types
+
+**Benefits**:
+
+- Unified approach: Both modes use same nginx_mono infrastructure
+- Automatic htpasswd: Basic auth works in both modes without duplication
+- Reusable pattern: Other roles can use include mode (not just mailpit)
+- Clean separation: Block structure makes mode distinction clear
+
+**Test Coverage** (`molecule/nginx_mono/`):
+
+- Test 1: Full vhost mode (ethercalc service)
+- Test 2: Include mode (test_include service with htpasswd)
+- Verifications:
+  - ✅ Include file exists: `/etc/nginx/test_include.conf`
+  - ✅ NO vhost files created in include mode
+  - ✅ NO symlinks created in include mode
+  - ✅ Location block present: `location /testapp/ {`
+  - ✅ Proxy configuration correct
+  - ✅ htpasswd file created: `/etc/nginx/.htpasswd_test_include`
+  - ✅ No server{} block in include file
+
+**Test Results**: ✅ All verifications pass (debian12, debian13, ubuntu2404)
+
+**Design Notes**:
+
+- Include mode complements full vhost mode (not replacement)
+- User responsibility: Add `vhost_includes: [service]` to existing vhost
+- Future: This pattern can be used by many other service roles
+
+#### 14. mailpit (Path-Based Deployment) ✅
+
+**Enhancement**: Added support for path-based deployment mode
+**Use Case**: Customers migrating from mailcatcher to mailpit without dedicated subdomain
+
+**Problem**: Customer needs mailpit but has no subdomain available
+
+- Migration trigger: mailcatcher incompatible with Redmine 6
+- Constraint: No dedicated subdomain/hostname available
+- Requirement: Deploy mailpit at path like `/mail/` on existing host
+
+**Solution**: Dual-mode deployment via `mailpit_webroot` variable
+
+1. **Deployment mode variable** (`roles/mailpit/defaults/main.yml:55-60`):
+   - `mailpit_webroot: '/'` - **Subdomain mode** (default):
+     - Creates full nginx vhost via nginx_mono
+     - Mailpit runs without --webroot flag
+     - Traditional deployment: mail.example.com
+   - `mailpit_webroot: '/mail/'` - **Path-based mode**:
+     - Creates nginx include file: `/etc/nginx/mailpit.conf`
+     - Mailpit runs with `--webroot mail` flag
+     - User adds `vhost_includes: [mailpit]` to existing vhost
+     - Example: redmine.example.com/mail/
+
+2. **nginx_mono integration** (`roles/mailpit/tasks/nginx.yml`):
+   - Single `include_role` call handles both modes
+   - Mode detection: `nginx_mono_include_mode: "{{ mailpit_webroot != '/' }}"`
+   - Automatic switching based on webroot configuration
+   - Same nginx_mono config for both modes (just different template used)
+
+3. **systemd service** (`roles/mailpit/templates/mailpit.service.j2:11-12`):
+   - Conditional `--webroot` flag only when path-based mode
+   - Trimmed slashes: `mailpit_webroot: '/mail/'` → `--webroot mail`
+   - Flag omitted for subdomain mode (mailpit default behavior)
+
+4. **Documentation** (`roles/mailpit/README.md`):
+   - Both deployment modes explained with examples
+   - Path-based mode: User must include in vhost configuration
+   - Clear instructions for vhost_includes usage
+
+**Integration Example** (path-based mode):
+
+```yaml
+# mailpit role configuration
+mailpit_webroot: '/mail/'
+mailpit_vhost_server: redmine.example.com
+mailpit_vhost_users:
+  - user: admin
+    password: secret123
+
+# In existing redmine/drupal/etc. vhost configuration
+nginx_vhosts:
+  - name: redmine
+    server_name: redmine.example.com
+    vhost_includes: [mailpit]  # Adds /mail/ location
+```
+
+**Benefits**:
+
+- Flexible deployment: Works with and without dedicated subdomain
+- Migration path: Customers can switch from mailcatcher seamlessly
+- Automatic configuration: --webroot flag added/removed automatically
+- htpasswd support: Basic auth works in both modes
+- Reuses nginx_mono: Leverages include mode infrastructure
+
+**Test Coverage** (`molecule/mailpit/`):
+
+Path-based mode tested comprehensively:
+
+- ✅ systemd service has `--webroot mail` parameter
+- ✅ Include file exists: `/etc/nginx/mailpit.conf`
+- ✅ NO vhost file created (sites-available/mailpit.conf)
+- ✅ NO symlink created (sites-enabled/mailpit.conf)
+- ✅ Location block: `location /mail/ {`
+- ✅ htpasswd file exists (Basic auth works)
+- ✅ Proxy configuration correct
+- ✅ WebSocket support enabled
+- ✅ nginx syntax valid
+
+**Test Results**: ✅ All verifications pass (debian12)
+
+**Known Limitations**:
+
+- Path-based mode: Full web UI test requires vhost with include (not tested in isolation)
+- Direct UI access: Returns 404 at root (expected with --webroot flag)
+- SMTP functionality: Not tested due to Docker /dev/tcp limitation (not a role issue)
+
+**Design Notes**:
+
+- Subdomain mode remains default (backward compatible)
+- Path-based mode opt-in via mailpit_webroot variable
+- Future roles can follow same pattern (webroot variable + nginx_mono include mode)
+
 ### ✅ Successfully Tested Roles (7 roles - from Phase 1)
 
 1. **common** - Post-task adjusted (check_mode to command)
@@ -663,9 +820,17 @@ done
 - `roles/nginx_mono/tasks/calculate_listen_config.yml` - Created (shared listen config for service + instance modes)
 - `roles/nginx_mono/tasks/main.yml` - Added service mode isolation (skip instance.yml when nginx_mono_service_name defined)
 - `roles/nginx_mono/tasks/instance.yml` - Added include for calculate_listen_config.yml
-- `roles/nginx_mono/tasks/service.yml` - Refactored to use calculate_listen_config.yml
-- `molecule/mailpit/converge.yml` - Added nginx_vhosts to test service mode isolation
-- `molecule/mailpit/verify.yml` - Added validation that nginx_vhosts are ignored in service mode
+- `roles/nginx_mono/tasks/service.yml` - Refactored to use calculate_listen_config.yml, added block structure for vhost/include modes
+- `roles/nginx_mono/defaults/main.yml` - Added nginx_mono_include_mode variable
+- `roles/nginx_mono/templates/include.j2` - Created (location-only template for include mode)
+- `molecule/nginx_mono/converge.yml` - Added test for include mode, moved nginx_with_websocket to global vars
+- `molecule/nginx_mono/verify.yml` - Added comprehensive include mode tests
+- `molecule/mailpit/converge.yml` - Updated to test path-based mode, added nginx_vhosts to test service mode isolation
+- `molecule/mailpit/verify.yml` - Updated for path-based mode verification
+- `roles/mailpit/defaults/main.yml` - Added mailpit_webroot variable for deployment mode selection
+- `roles/mailpit/tasks/nginx.yml` - Simplified to use nginx_mono for both modes
+- `roles/mailpit/templates/mailpit.service.j2` - Added conditional --webroot flag
+- `roles/mailpit/README.md` - Updated documentation for both deployment modes
 
 ## Lessons Learned
 
@@ -751,6 +916,12 @@ done
 
 1. **include_role multi-mode conflicts (nginx_mono case)** - Roles used via `include_role` execute their ENTIRE `main.yml`, not just relevant parts. Problem: A role with multiple operation modes can accidentally process unrelated data. **nginx_mono example**: Has two modes (Service mode via `include_role` and Instance mode direct). When mailpit used `include_role: nginx_mono`, it processed host's `nginx_vhosts` (wrong!). Host's nginx_vhosts are for instance mode, NOT service mode. **Symptom**: Variables undefined because wrong code path executed. **Solution Pattern**: (1) Use detection variable to identify mode (e.g., `nginx_mono_service_name`), (2) Add conditional to skip inappropriate tasks (`when: nginx_mono_service_name is not defined`), (3) Extract shared logic to separate file to avoid duplication. **Key insight**: `include_role` doesn't isolate - it runs everything in main.yml. **Testing**: Add test data that should be IGNORED (like nginx_vhosts in service mode). **Design consideration**: Multi-mode roles need explicit mode detection and task isolation.
 
+1. **Global variables in multi-role tests** - When testing a role multiple times in the same playbook (e.g., nginx_mono for vhost + include mode), role-level variables can conflict. **Problem**: Setting `nginx_with_websocket: true` in first role call doesn't carry to second call. **Symptom**: `$connection_upgrade` variable undefined error in nginx.conf template. **Wrong solution**: Always enable WebSocket map (breaks many roles that don't need it). **Correct solution**: Set variables globally in playbook vars, not in role-specific vars. **Pattern**: Global nginx settings (nginx_with_websocket, nginx_with_ssl, etc.) must be in playbook-level vars when multiple role invocations occur. **Testing**: Include multiple role calls to same role with different service configs. **Key insight**: Role vars are role-invocation scoped, playbook vars are global. **Example**: `molecule/nginx_mono/converge.yml` - `nginx_with_websocket: true` at playbook level, not in role vars.
+
+1. **Include mode pattern for services** - Services without dedicated subdomains need nginx include files instead of full vhosts. **Pattern**: (1) Add mode variable (e.g., `service_include_mode: false`), (2) Create include template with location blocks only (no server{}), (3) Use block structure in tasks for clean mode separation, (4) Document that user must add `vhost_includes: [service]` to their vhost. **Benefits**: Reusable pattern, automatic htpasswd handling, same infrastructure for both modes. **Testing**: Verify include file created, NO vhost files created, htpasswd works. **Example**: nginx_mono include mode used by mailpit path-based deployment. **Key insight**: Include mode complements vhost mode, doesn't replace it.
+
+1. **Path-based service deployment** - Services may need to run at URL paths instead of subdomains. **Pattern**: (1) Add webroot variable (e.g., `service_webroot: '/'`), (2) Use webroot to detect mode (`include_mode: "{{ service_webroot != '/' }}"`), (3) Pass webroot to service binary via systemd (e.g., `--webroot mail`), (4) Trim slashes for binary flag. **Benefits**: Single variable controls deployment mode, backward compatible (default subdomain), automatic flag generation. **Testing**: Verify systemd service has correct --webroot flag, include file created for path mode, full vhost for subdomain mode. **Example**: mailpit supports both `mailpit_webroot: '/'` (subdomain) and `mailpit_webroot: '/mail/'` (path-based). **Key insight**: Application must support --webroot or similar flag for path-based deployment.
+
 ## GitHub Actions Status
 
 After pushing, all workflows run automatically:
@@ -771,8 +942,8 @@ After pushing, all workflows run automatically:
 
 ✅ **Phase 2 completed**
 
-- 12 role problems fixed (unbound, nfs, java, gitlab_omnibus, php_cli, php_fpm, btrbk, nextcloud, drush, ansible_node, ruby, nginx_mono)
-- Total: 19 roles successfully tested (7 from Phase 1 + 12 fixed in Phase 2)
+- 14 role enhancements/fixes (unbound, nfs, java, gitlab_omnibus, php_cli, php_fpm, btrbk, nextcloud, drush, ansible_node, ruby, nginx_mono [2x], mailpit)
+- Total: 21 roles successfully tested (7 from Phase 1 + 14 from Phase 2)
 - 1 role partially fixed (gitlab - connection works, full test pending)
 - 18 converge.yml files fixed for idempotence (apt cache update with changed_when: false)
 - All fixes validated locally and on GitHub Actions
@@ -787,6 +958,9 @@ After pushing, all workflows run automatically:
   - ansible_host variable breaks Docker connection in Molecule tests
   - apt cache updates need changed_when: false for idempotence
   - include_role multi-mode conflicts need explicit mode detection and task isolation
+  - Global variables needed for multi-role tests (nginx_with_websocket, nginx_with_ssl, etc.)
+  - Include mode pattern for path-based service deployments
+  - Webroot variable pattern for dual-mode service deployment (subdomain vs path-based)
 
 🎯 **Ready for Phase 3**
 
