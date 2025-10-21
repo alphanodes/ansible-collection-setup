@@ -1,0 +1,29 @@
+[Unit]
+Description=Mailpit - email testing tool for developers
+Documentation=https://github.com/axllent/mailpit
+After=network.target
+
+[Service]
+Type=simple
+User={{ mailpit_service_user }}
+Group={{ mailpit_service_group }}
+ExecStart={{ mailpit_binary_path }} \
+  --smtp {{ mailpit_smtp_bind }} \
+  --listen {{ mailpit_ui_bind }} \
+  --max {{ mailpit_max_messages }}{% if mailpit_use_message_dates %} \
+  --use-message-dates{% endif %}{% if mailpit_smtp_auth_accept_any %} \
+  --smtp-auth-accept-any{% endif %}{% if mailpit_smtp_auth_allow_insecure %} \
+  --smtp-auth-allow-insecure{% endif %}
+
+Restart=on-failure
+RestartSec=5s
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/mailpit
+
+[Install]
+WantedBy=multi-user.target

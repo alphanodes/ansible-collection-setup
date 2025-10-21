@@ -1,0 +1,30 @@
+---
+
+- name: Setup nginx_mono and configure mailpit vhost
+  tags: nginx
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nginx_mono
+  vars:
+    nginx_with_websocket: true
+    nginx_mono_service_name: mailpit
+    nginx_mono_service_enabled: "{{ mailpit_enabled }}"
+    nginx_mono_service_config:
+      server_name: "{{ mailpit_vhost_server }}"
+      proxy_pass: "http://{{ mailpit_ui_bind }}/"
+      proxy_location: "/"
+      proxy_websocket: true
+      proxy_headers:
+        - "X-Forwarded-Host $host"
+      redirects: "{{ mailpit_redirects | default([]) }}"
+      vhost_users: "{{ mailpit_vhost_users | default([]) }}"
+      vhost_for_zabbix: "{{ mailpit_vhost_for_zabbix | default(false) }}"
+      letsencrypt: "{{ mailpit_vhost_letsencrypt | default(false) }}"
+      letsencrypt_cert: "{{ mailpit_vhost_letsencrypt_cert | default('') }}"
+      letsencrypt_key: "{{ mailpit_vhost_letsencrypt_key | default('') }}"
+      letsencrypt_trusted_cert: "{{ mailpit_vhost_letsencrypt_trusted_cert | default('') }}"
+      ssl_cert: "{{ mailpit_vhost_ssl_cert | default('') }}"
+      vhost_includes: "{{ mailpit_vhost_includes | default([]) }}"
+
+- name: Include ssl role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.ssl

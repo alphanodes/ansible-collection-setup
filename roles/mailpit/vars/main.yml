@@ -1,0 +1,4 @@
+---
+
+# Internal variables - do not override
+mailpit_config_dir: /etc/mailpit

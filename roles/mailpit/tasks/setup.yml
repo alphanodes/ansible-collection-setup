@@ -1,0 +1,113 @@
+---
+
+- name: Ensure the mailpit service group is present
+  ansible.builtin.group:
+    name: "{{ mailpit_service_group }}"
+    state: present
+    system: true
+
+- name: Ensure the mailpit service user is present
+  ansible.builtin.user:
+    comment: Mailpit Service User
+    name: "{{ mailpit_service_user }}"
+    group: "{{ mailpit_service_group }}"
+    home: /var/lib/mailpit
+    createhome: true
+    shell: /bin/false
+    state: present
+    system: true
+
+- name: Check if mailpit binary exists
+  ansible.builtin.stat:
+    path: "{{ mailpit_binary_path }}"
+  register: mailpit_binary
+
+- name: Check if mailpit version file exists
+  ansible.builtin.stat:
+    path: /usr/local/share/mailpit-version.txt
+  register: mailpit_version_file
+
+- name: Read installed mailpit version
+  ansible.builtin.slurp:
+    path: /usr/local/share/mailpit-version.txt
+  register: mailpit_installed_version
+  when: mailpit_version_file.stat.exists
+
+- name: Determine if mailpit binary needs update
+  ansible.builtin.set_fact:
+    mailpit_needs_install: >-
+      {{
+        not mailpit_binary.stat.exists or
+        not mailpit_version_file.stat.exists or
+        mailpit_version != (mailpit_installed_version.content | default('') | b64decode | trim)
+      }}
+
+- name: Download and install mailpit binary
+  when: mailpit_needs_install | bool
+  block:
+    - name: Create temporary download directory
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: mailpit
+      register: mailpit_temp_dir
+      changed_when: false
+
+    - name: Download mailpit binary
+      ansible.builtin.get_url:
+        url: "{{ mailpit_download_url }}"
+        dest: "{{ mailpit_temp_dir.path }}/mailpit.tar.gz"
+        mode: '0644'
+
+    - name: Extract mailpit binary
+      ansible.builtin.unarchive:
+        src: "{{ mailpit_temp_dir.path }}/mailpit.tar.gz"
+        dest: "{{ mailpit_temp_dir.path }}"
+        remote_src: true
+
+    - name: Install mailpit binary
+      ansible.builtin.copy:
+        src: "{{ mailpit_temp_dir.path }}/mailpit"
+        dest: "{{ mailpit_binary_path }}"
+        mode: '0755'
+        owner: root
+        group: root
+        remote_src: true
+      notify: Restart mailpit
+
+    - name: Create version file directory
+      ansible.builtin.file:
+        path: /usr/local/share
+        state: directory
+        mode: '0755'
+
+    - name: Write mailpit version file
+      ansible.builtin.copy:
+        content: "{{ mailpit_version }}\n"
+        dest: /usr/local/share/mailpit-version.txt
+        mode: '0644'
+
+    - name: Remove temporary download directory
+      ansible.builtin.file:
+        path: "{{ mailpit_temp_dir.path }}"
+        state: absent
+      changed_when: false
+
+- name: Create mailpit systemd service
+  ansible.builtin.template:
+    src: mailpit.service.j2
+    dest: /etc/systemd/system/mailpit.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Reload systemd daemon
+    - Restart mailpit
+
+- name: Flush all handlers at this point
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure mailpit is enabled and started at boot
+  ansible.builtin.systemd_service:
+    name: mailpit
+    state: started
+    enabled: "{{ mailpit_enabled }}"

@@ -1,0 +1,21 @@
+---
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  when: not mailpit_remove | bool
+  tags:
+    - mailpit
+
+- name: Include nginx tasks
+  ansible.builtin.include_tasks: nginx.yml
+  when: not mailpit_remove | bool
+  tags:
+    - mailpit
+    - nginx
+
+- name: Include remove tasks
+  ansible.builtin.include_tasks: remove.yml
+  when: mailpit_remove | bool
+  tags:
+    - mailpit
+    - remove

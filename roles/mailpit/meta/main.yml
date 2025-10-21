@@ -1,0 +1,27 @@
+---
+
+galaxy_info:
+  role_name: mailpit
+  namespace: alphanodes
+  author: Alexander Meindl
+  description: Install and configure mailpit email testing tool
+  company: AlphaNodes
+  license: MIT
+  min_ansible_version: "2.18"
+  platforms:
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+    - name: Ubuntu
+      versions:
+        - jammy
+        - noble
+  galaxy_tags:
+    - email
+    - testing
+    - development
+    - smtp
+    - mailcatcher
+
+dependencies: []

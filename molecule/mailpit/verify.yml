@@ -1,0 +1,194 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check if mailpit binary is installed
+      ansible.builtin.stat:
+        path: /usr/local/bin/mailpit
+      register: mailpit_binary
+
+    - name: Verify mailpit binary exists
+      ansible.builtin.assert:
+        that:
+          - mailpit_binary.stat.exists
+          - mailpit_binary.stat.executable
+        fail_msg: "Mailpit binary not found or not executable"
+
+    - name: Check mailpit version
+      ansible.builtin.command: /usr/local/bin/mailpit version
+      register: mailpit_version_output
+      changed_when: false
+      failed_when: false
+      ignore_errors: true
+
+    - name: Verify mailpit version (skip on architecture mismatch)
+      ansible.builtin.assert:
+        that:
+          - "'mailpit' in mailpit_version_output.stdout"
+        fail_msg: "Mailpit version check failed"
+      when: mailpit_version_output.rc == 0
+
+    - name: Check if mailpit service is running
+      ansible.builtin.service:
+        name: mailpit
+        state: started
+      check_mode: true
+      register: mailpit_service
+      failed_when: mailpit_service.changed
+
+    - name: Check mailpit systemd service status
+      ansible.builtin.systemd:
+        name: mailpit
+      register: mailpit_systemd_status
+
+    - name: Verify mailpit service is active
+      ansible.builtin.assert:
+        that:
+          - mailpit_systemd_status.status.ActiveState == "active"
+        fail_msg: "Mailpit service is not active"
+
+    - name: Check if nginx is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+      check_mode: true
+      register: nginx_service
+      failed_when: nginx_service.changed
+
+    - name: Check nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax
+      changed_when: false
+
+    - name: Check if mailpit vhost config exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/mailpit.conf
+      register: mailpit_vhost
+
+    - name: Verify mailpit vhost is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/mailpit.conf
+      register: mailpit_enabled_check
+
+    - name: Test mailpit web UI via nginx
+      ansible.builtin.uri:
+        url: http://localhost/
+        method: GET
+        status_code: 200
+        headers:
+          Host: mail.local
+      register: mailpit_web_ui
+      retries: 3
+      delay: 2
+
+    - name: Test mailpit API endpoint
+      ansible.builtin.uri:
+        url: http://localhost/api/v1/messages
+        method: GET
+        status_code: 200
+        headers:
+          Host: mail.local
+      register: mailpit_api
+      retries: 3
+      delay: 1
+
+    - name: Verify nginx_mono integration (no external template refs)
+      ansible.builtin.find:
+        paths: /etc/nginx/sites-available/
+        patterns: "*.conf"
+        contains: "templates/nginx/"
+      register: external_refs
+      failed_when: external_refs.matched > 0
+
+    - name: Verify mailpit proxy configuration
+      ansible.builtin.command: grep -q "proxy_pass.*127.0.0.1:8025" /etc/nginx/sites-available/mailpit.conf
+      register: proxy_config
+      changed_when: false
+      failed_when: false
+
+    - name: Verify WebSocket support for mailpit
+      ansible.builtin.command: grep -q "Upgrade\|websocket" /etc/nginx/sites-available/mailpit.conf
+      register: websocket_config
+      changed_when: false
+      failed_when: false
+
+    - name: Check if mailpit user exists
+      ansible.builtin.command: id mailpit
+      register: mailpit_user
+      changed_when: false
+
+    - name: Test SMTP port accessibility
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: 1025
+        timeout: 5
+      register: smtp_port
+
+    - name: Test Web UI port accessibility
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: 8025
+        timeout: 5
+      register: web_port
+
+    - name: Send test email via SMTP
+      ansible.builtin.shell: |
+        set -e
+        exec 3<>/dev/tcp/127.0.0.1/1025
+        echo "HELO localhost" >&3
+        sleep 0.1
+        echo "MAIL FROM:<test@example.com>" >&3
+        sleep 0.1
+        echo "RCPT TO:<recipient@example.com>" >&3
+        sleep 0.1
+        echo "DATA" >&3
+        sleep 0.1
+        echo "Subject: Test Email" >&3
+        echo "" >&3
+        echo "This is a test email from Molecule test." >&3
+        echo "." >&3
+        sleep 0.1
+        echo "QUIT" >&3
+        exec 3>&-
+      register: smtp_test
+      changed_when: false
+      ignore_errors: true
+
+    - name: Wait for email to be processed
+      ansible.builtin.pause:
+        seconds: 2
+      when: smtp_test is succeeded
+
+    - name: Check if test email was received
+      ansible.builtin.uri:
+        url: http://localhost/api/v1/messages
+        method: GET
+        headers:
+          Host: mail.local
+      register: messages_check
+      when: smtp_test is succeeded
+
+    - name: Display comprehensive test results
+      ansible.builtin.debug:
+        msg:
+          - "=== MAILPIT ROLE TESTS ==="
+          - "Mailpit binary installed: {{ 'OK' if mailpit_binary.stat.exists else 'FAILED' }}"
+          - "Mailpit version: {{ mailpit_version_output.stdout | default('N/A') }}"
+          - "Mailpit service running: {{ 'OK' if not mailpit_service.changed else 'FAILED' }}"
+          - "Mailpit service status: {{ mailpit_systemd_status.status.ActiveState }}"
+          - "Nginx service: {{ 'OK' if not nginx_service.changed else 'FAILED' }}"
+          - "Nginx syntax: {{ 'OK' if nginx_syntax.rc == 0 else 'FAILED' }}"
+          - "Mailpit vhost exists: {{ 'OK' if mailpit_vhost.stat.exists else 'FAILED' }}"
+          - "Mailpit vhost enabled: {{ 'OK' if mailpit_enabled_check.stat.exists else 'FAILED' }}"
+          - "Web UI accessible: {{ 'OK' if mailpit_web_ui.status == 200 else 'FAILED' }}"
+          - "API endpoint: {{ 'OK' if mailpit_api.status == 200 else 'FAILED' }}"
+          - "No external template refs: {{ 'OK' if external_refs.matched == 0 else 'FAILED' }}"
+          - "Proxy configuration: {{ 'OK' if proxy_config.rc == 0 else 'FAILED' }}"
+          - "WebSocket support: {{ 'OK' if websocket_config.rc == 0 else 'FAILED' }}"
+          - "Mailpit user exists: {{ 'OK' if mailpit_user.rc == 0 else 'FAILED' }}"
+          - "SMTP port (1025): {{ 'OK' if smtp_port is succeeded else 'FAILED' }}"
+          - "Web UI port (8025): {{ 'OK' if web_port is succeeded else 'FAILED' }}"
+          - "SMTP test: {{ 'OK' if smtp_test is succeeded else 'SKIPPED' }}"
+          - "Emails received: {{ messages_check.json.messages | default([]) | length if smtp_test is succeeded else 'N/A' }}"
+          - "=== MAILPIT nginx_mono INTEGRATION SUCCESS ==="

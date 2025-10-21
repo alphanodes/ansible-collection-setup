@@ -1,0 +1,38 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  vars:
+    # nginx_mono configuration (defaults + testing)
+    nginx_with_ssl: false  # Disable SSL for testing
+    nginx_with_ipv6: false
+    nginx_force_ssl: false
+    nginx_with_http3: false
+    nginx_with_websocket: true  # Enable WebSocket for mailpit
+    nginx_with_reuseport: true
+    nginx_resolver: ['8.8.8.8', '8.8.4.4']
+    hoster: 'local'
+
+    # mailpit configuration
+    mailpit_enabled: true
+    mailpit_vhost_server: mail.local
+    mailpit_smtp_bind: 127.0.0.1:1025
+    mailpit_ui_bind: 127.0.0.1:8025
+    mailpit_max_messages: 500
+    mailpit_vhost_users: []
+    mailpit_vhost_for_zabbix: false
+    mailpit_vhost_letsencrypt: false
+
+    # No SSL certs needed for testing
+    ssl_certs: []
+
+  roles:
+    - role: alphanodes.setup.mailpit

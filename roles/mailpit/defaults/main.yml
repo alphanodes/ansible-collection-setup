@@ -1,0 +1,38 @@
+---
+
+# Mailpit - email testing tool for developers
+# see https://github.com/axllent/mailpit
+
+mailpit_version: '1.20.0'
+mailpit_arch: "{{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}"
+mailpit_download_url: "https://github.com/axllent/mailpit/releases/download/v{{ mailpit_version }}/mailpit-linux-{{ mailpit_arch }}.tar.gz"
+mailpit_binary_path: /usr/local/bin/mailpit
+
+mailpit_service_user: mailpit
+mailpit_service_group: mailpit
+
+# SMTP server configuration
+mailpit_smtp_bind: 127.0.0.1:1025
+mailpit_smtp_auth_accept_any: false
+mailpit_smtp_auth_allow_insecure: false
+
+# Web UI configuration
+mailpit_ui_bind: 127.0.0.1:8025
+
+# nginx vhost configuration
+mailpit_vhost_server: mail.local
+mailpit_vhost_users: []
+mailpit_vhost_for_zabbix: false
+mailpit_vhost_letsencrypt: false
+mailpit_vhost_ssl_cert: '{{ ssl_certs[0].name | default(omit) }}'
+mailpit_vhost_letsencrypt_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/fullchain.pem
+mailpit_vhost_letsencrypt_key: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/privkey.pem
+mailpit_vhost_letsencrypt_trusted_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/chain.pem
+
+# Additional mailpit options
+mailpit_max_messages: 1000
+mailpit_use_message_dates: false
+
+# Enable/disable mailpit service
+mailpit_enabled: true
+mailpit_remove: false

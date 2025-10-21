@@ -1,0 +1,33 @@
+---
+
+- name: Stop mailpit service
+  ansible.builtin.systemd_service:
+    name: mailpit
+    state: stopped
+    enabled: false
+  ignore_errors: true
+
+- name: Remove mailpit systemd service
+  ansible.builtin.file:
+    path: /etc/systemd/system/mailpit.service
+    state: absent
+
+- name: Remove mailpit binary
+  ansible.builtin.file:
+    path: "{{ mailpit_binary_path }}"
+    state: absent
+
+- name: Remove mailpit user
+  ansible.builtin.user:
+    name: "{{ mailpit_service_user }}"
+    state: absent
+    remove: true
+
+- name: Remove mailpit group
+  ansible.builtin.group:
+    name: "{{ mailpit_service_group }}"
+    state: absent
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
