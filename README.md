@@ -1,5 +1,7 @@
 # Ansible Collection - alphanodes.setup
 
+[![Linter](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/linter.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/linter.yml)
+
 ## Description
 
 This collection provides setup for:
@@ -40,6 +42,7 @@ All provided roles do not use docker as container system.
 - [alphanodes.setup.java](roles/java/) [![java](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/java.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/java.yml)
 - [alphanodes.setup.jekyll](roles/jekyll/) [![jekyll](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/jekyll.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/jekyll.yml)
 - [alphanodes.setup.loki](roles/loki/) [![loki](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/loki.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/loki.yml)
+- [alphanodes.setup.mailpit](roles/mailpit/) [![mailpit](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/mailpit.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/mailpit.yml)
 - [alphanodes.setup.matomo](roles/matomo/) [![matomo](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/matomo.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/matomo.yml)
 - [alphanodes.setup.memcached](roles/memcached/) [![memcached](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/memcached.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/memcached.yml)
 - [alphanodes.setup.mongodb](roles/mongodb/) [![mongodb](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/mongodb.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/mongodb.yml)

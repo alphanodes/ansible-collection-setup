@@ -9,7 +9,10 @@ on:  # yamllint disable-line rule:truthy
       - 'roles/**'
       - 'requirements.yml'
       - '**/*.md'
+      - '**/*.yml'
+      - '**/*.yaml'
       - '.markdownlintignore'
+      - '.yamllint'
       - 'package.json'
   pull_request:
     # The branches below must be a subset of the branches above
@@ -18,10 +21,30 @@ on:  # yamllint disable-line rule:truthy
       - 'roles/**'
       - 'requirements.yml'
       - '**/*.md'
+      - '**/*.yml'
+      - '**/*.yaml'
       - '.markdownlintignore'
+      - '.yamllint'
       - 'package.json'
 
 jobs:
+  yamllint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: Run yamllint
+        run: yamllint .
+
   ansible-lint:
     runs-on: ubuntu-latest
 
