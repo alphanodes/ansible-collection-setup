@@ -79,6 +79,7 @@
     name: vm.swappiness
     value: "{{ swapfile_swappiness | string }}"
     state: present
+    sysctl_file: "{{ common_sysctl_file | default(omit) }}"
 
 - name: Get swap information
   ansible.builtin.command: swapon --show

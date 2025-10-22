@@ -63,6 +63,7 @@
     value: '{{ redis_vm_overcommit_memory }}'
     sysctl_set: true
     reload: true
+    sysctl_file: "{{ common_sysctl_file | default(omit) }}"
 
 - name: Include systemd tasks
   ansible.builtin.import_tasks: systemd.yml
