@@ -1,0 +1,50 @@
+---
+# DKIM key generation and management
+# See https://en.wikipedia.org/wiki/DomainKeys_Identified_Mail
+
+# Base directory for DKIM keys storage
+dkim_base_dir: /var/lib/dkim
+
+# User/Group for DKIM key files
+# Note: Different mail systems use different users
+# - Rspamd: _rspamd
+# - OpenDKIM: opendkim
+# - Postfix: postfix
+# Override this in your host_vars based on your mail stack
+dkim_user: root
+dkim_group: root
+
+# DKIM domains configuration
+# Each domain can have its own selector and key size
+#
+# Example:
+# dkim_domains:
+#   - domain: example.com
+#     selector: mail
+#     key_size: 2048
+#   - domain: example.org
+#     selector: default
+#     key_size: 2048
+#
+dkim_domains: []
+
+# Default selector name if not specified per domain
+dkim_default_selector: mail
+
+# Default key size (in bits)
+# Recommended: 2048 (industry standard)
+# Higher values (4096) are more secure but may cause DNS issues
+dkim_default_key_size: 2048
+
+# Force regeneration of existing keys
+# WARNING: Only set to true when rotating keys!
+# Old signatures will fail validation after rotation
+dkim_force_regenerate: false
+
+# Key file permissions
+dkim_key_mode: '0640'
+dkim_dir_mode: '0750'
+
+# Whether to display public keys during playbook run
+# Helpful for initial setup and key rotation
+dkim_show_public_keys: true

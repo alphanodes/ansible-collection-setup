@@ -1,0 +1,28 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  roles:
+    # Redis role (dependency of rspamd)
+    - role: alphanodes.setup.redis_server
+
+    # Rspamd role (includes DKIM setup automatically)
+    - role: alphanodes.setup.rspamd
+      vars:
+        rspamd_worker_controller_password: '$2$testpasswordhash'
+        rspamd_dkim_domains:
+          - domain: example.com
+            selector: mail
+            key_size: 2048
+        rspamd_dkim_key: /var/lib/dkim/example.com/mail.key
+        rspamd_dkim_selector: mail
+        rspamd_enable_service: true
+        rspamd_vhost_server: ''  # Disable vhost for testing

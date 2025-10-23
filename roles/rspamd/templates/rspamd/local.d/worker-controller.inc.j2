@@ -1,0 +1,3 @@
+password = "{{ rspamd_worker_controller_password }}";
+enable_password = "{{ rspamd_worker_controller_enable_password | default(rspamd_worker_controller_password) }}";
+secure_ip = "{{ rspamd_worker_controller_secure_ip }}"

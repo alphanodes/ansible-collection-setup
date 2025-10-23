@@ -1,0 +1,87 @@
+---
+- name: Update rspamd user access
+  community.general.htpasswd:
+    path: /etc/nginx/.htpasswd_rspamd
+    name: '{{ rspamd_web_user }}'
+    password: '{{ rspamd_web_password }}'
+    owner: root
+    group: "{{ nginx_group }}"
+    mode: '0640'
+  when: rspamd_web_password | length > 0
+  notify: Restart nginx
+
+- name: Remove htpasswd file, if no password is set
+  ansible.builtin.file:
+    path: /etc/nginx/.htpasswd_rspamd
+    state: absent
+  when: rspamd_web_password | length == 0
+  notify: Restart nginx
+
+- name: Activate block
+  when:
+    - rspamd_vhost_server is defined
+    - rspamd_vhost_server | length > 0
+  block:
+    - name: Set TLS files for letsencrypt
+      ansible.builtin.set_fact:
+        vhost_letsencrypt_cert: "{{ rspamd_vhost_letsencrypt_cert }}"
+        vhost_letsencrypt_trusted_cert: "{{ rspamd_vhost_letsencrypt_trusted_cert }}"
+        vhost_letsencrypt_key: "{{ rspamd_vhost_letsencrypt_key }}"
+        force_letsencrypt: true
+      when:
+        - rspamd_vhost_letsencrypt is defined
+        - rspamd_vhost_letsencrypt
+
+    - name: Check trusted TLS cert
+      ansible.builtin.stat:
+        path: /etc/ssl/certs/{{ rspamd_vhost_ssl_cert }}_trusted.crt
+      register: trusted_cert
+      when: rspamd_vhost_letsencrypt is undefined or not rspamd_vhost_letsencrypt
+
+    - name: Set TLS files
+      ansible.builtin.set_fact:
+        vhost_ssl_cert: "{{ rspamd_vhost_ssl_cert }}"
+        vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
+      when: rspamd_vhost_letsencrypt is undefined or not rspamd_vhost_letsencrypt
+
+    - name: Provide rspamd vhost nginx configuration
+      ansible.builtin.template:
+        src: nginx/vhost.j2
+        dest: /etc/nginx/sites-available/rspamd.conf
+        mode: '0644'
+      notify: Reload nginx
+
+    - name: Ensure rspamd vhost is enabled
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/rspamd.conf
+        dest: /etc/nginx/sites-enabled/rspamd.conf
+        state: link
+      notify: Reload nginx
+
+
+- name: Provide rspamd subdirectory nginx configuration
+  ansible.builtin.template:
+    src: nginx/subdirectory.j2
+    dest: /etc/nginx/rspamd.conf
+    mode: '0644'
+  notify: Reload nginx
+  when: rspamd_vhost_location != '/'
+
+# cleanup
+
+- name: Remove vhost nginx configuration (if subdirectory is used)
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  notify: Reload nginx
+  loop:
+    - /etc/nginx/sites-enabled/rspamd.conf
+    - /etc/nginx/sites-available/rspamd.conf
+  when: rspamd_vhost_server is undefined or (rspamd_vhost_server | length == 0)
+
+- name: Remove rspamd subdirectory nginx configuration (if vhost only is used)
+  ansible.builtin.file:
+    path: /etc/nginx/rspamd.conf
+    state: absent
+  notify: Reload nginx
+  when: rspamd_vhost_server is defined and rspamd_vhost_location == '/'

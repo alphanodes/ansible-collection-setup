@@ -1,0 +1,24 @@
+---
+dependencies:
+  - role: alphanodes.setup.common
+    public: true
+  - role: alphanodes.setup.redis_server
+
+galaxy_info:
+  description: Setup rspamd
+  author: alexandermeindl
+  company: AlphaNodes GmbH
+  license: Apache License 2.0
+  min_ansible_version: '2.18'
+  platforms:
+    - name: Ubuntu
+      versions:
+        - jammy
+        - noble
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+        - trixie
+  galaxy_tags:
+    - rspamd

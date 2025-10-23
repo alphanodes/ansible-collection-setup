@@ -1,0 +1,11 @@
+---
+- name: Set map_lines
+  ansible.builtin.set_fact:
+    map_lines: '{{ map.lines }}'
+
+- name: Configure maps with {{ map.name }}
+  ansible.builtin.template:
+    src: rspamd/local.d/whitelist_blacklist.map.j2
+    dest: /etc/rspamd/local.d/{{ map.name }}.map
+    mode: '0644'
+  notify: Restart rspamd

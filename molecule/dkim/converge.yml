@@ -1,0 +1,23 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  roles:
+    - role: alphanodes.setup.dkim
+      vars:
+        dkim_domains:
+          - domain: example.com
+            selector: mail
+            key_size: 2048
+          - domain: example.org
+            selector: default
+            key_size: 2048
+        dkim_show_public_keys: true

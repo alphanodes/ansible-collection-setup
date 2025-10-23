@@ -1,0 +1,99 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Verify DKIM base directory exists
+      ansible.builtin.stat:
+        path: /var/lib/dkim
+      register: dkim_base
+      failed_when: not dkim_base.stat.exists or not dkim_base.stat.isdir
+
+    - name: Verify example.com domain directory exists
+      ansible.builtin.stat:
+        path: /var/lib/dkim/example.com
+      register: dkim_example_com
+      failed_when: not dkim_example_com.stat.exists or not dkim_example_com.stat.isdir
+
+    - name: Verify example.org domain directory exists
+      ansible.builtin.stat:
+        path: /var/lib/dkim/example.org
+      register: dkim_example_org
+      failed_when: not dkim_example_org.stat.exists or not dkim_example_org.stat.isdir
+
+    - name: Verify example.com private key exists
+      ansible.builtin.stat:
+        path: /var/lib/dkim/example.com/mail.key
+      register: example_com_private
+      failed_when: not example_com_private.stat.exists
+
+    - name: Verify example.com public key file exists
+      ansible.builtin.stat:
+        path: /var/lib/dkim/example.com/mail.txt
+      register: example_com_public
+      failed_when: not example_com_public.stat.exists
+
+    - name: Verify example.org private key exists
+      ansible.builtin.stat:
+        path: /var/lib/dkim/example.org/default.key
+      register: example_org_private
+      failed_when: not example_org_private.stat.exists
+
+    - name: Verify example.org public key file exists
+      ansible.builtin.stat:
+        path: /var/lib/dkim/example.org/default.txt
+      register: example_org_public
+      failed_when: not example_org_public.stat.exists
+
+    - name: Verify private key permissions (example.com)
+      ansible.builtin.stat:
+        path: /var/lib/dkim/example.com/mail.key
+      register: key_perms
+      failed_when: key_perms.stat.mode != '0640'
+
+    - name: Read private key and verify it's RSA format
+      ansible.builtin.command: openssl rsa -in /var/lib/dkim/example.com/mail.key -check -noout
+      register: key_check
+      changed_when: false
+      failed_when: key_check.rc != 0
+
+    - name: Verify public key file contains DKIM DNS record
+      ansible.builtin.command: grep -q "v=DKIM1; k=rsa; p=" /var/lib/dkim/example.com/mail.txt
+      changed_when: false
+      failed_when: false
+      register: dns_record_check
+
+    - name: Fail if DNS record not found
+      ansible.builtin.fail:
+        msg: "DKIM DNS record not found in public key file"
+      when: dns_record_check.rc != 0
+
+    - name: Verify selector in DNS record
+      ansible.builtin.command: grep -q "mail._domainkey.example.com" /var/lib/dkim/example.com/mail.txt
+      changed_when: false
+
+    - name: Test idempotence - stat key before re-run
+      ansible.builtin.stat:
+        path: /var/lib/dkim/example.com/mail.key
+      register: key_before
+
+    - name: Re-run role to test idempotence
+      ansible.builtin.include_role:
+        name: alphanodes.setup.dkim
+      vars:
+        dkim_domains:
+          - domain: example.com
+            selector: mail
+            key_size: 2048
+
+    - name: Test idempotence - stat key after re-run
+      ansible.builtin.stat:
+        path: /var/lib/dkim/example.com/mail.key
+      register: key_after
+
+    - name: Verify key was not regenerated (idempotence check)
+      ansible.builtin.fail:
+        msg: "DKIM key was regenerated when it should have been reused"
+      when: key_before.stat.mtime != key_after.stat.mtime

@@ -1,0 +1,6 @@
+# DKIM key path (managed by alphanodes.setup.dkim role)
+path = "{{ rspamd_dkim_key }}"
+selector = "{{ rspamd_dkim_selector }}"
+
+### Enable DKIM signing for alias sender addresses
+allow_username_mismatch = true

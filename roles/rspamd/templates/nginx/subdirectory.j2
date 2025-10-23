@@ -1,0 +1,12 @@
+
+location ^~ /rspamd {
+  proxy_pass http://localhost:11334/;
+  proxy_set_header Host $host;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+{% if rspamd_web_password != '' %}
+
+  # access protection
+  auth_basic "Restricted access only";
+  auth_basic_user_file /etc/nginx/.htpasswd_rspamd;
+{% endif %}
+}

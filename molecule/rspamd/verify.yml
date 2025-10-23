@@ -1,0 +1,86 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Verify rspamd package is installed
+      ansible.builtin.command: dpkg -l rspamd
+      register: rspamd_pkg
+      changed_when: false
+      failed_when: rspamd_pkg.rc != 0
+
+    - name: Verify rspamd service is running
+      ansible.builtin.systemd:
+        name: rspamd
+      register: rspamd_service
+      failed_when: rspamd_service.status.ActiveState != 'active'
+
+    - name: Verify Redis is running (dependency)
+      ansible.builtin.systemd:
+        name: redis-server
+      register: redis_service
+      failed_when: redis_service.status.ActiveState != 'active'
+
+    - name: Verify DKIM key exists
+      ansible.builtin.stat:
+        path: /var/lib/dkim/example.com/mail.key
+      register: dkim_key
+      failed_when: not dkim_key.stat.exists
+
+    - name: Verify DKIM key has correct owner (_rspamd)
+      ansible.builtin.stat:
+        path: /var/lib/dkim/example.com/mail.key
+      register: dkim_key_owner
+      failed_when: dkim_key_owner.stat.pw_name != '_rspamd'
+
+    - name: Verify rspamd DKIM configuration exists
+      ansible.builtin.stat:
+        path: /etc/rspamd/local.d/dkim_signing.conf
+      register: dkim_conf
+      failed_when: not dkim_conf.stat.exists
+
+    - name: Verify rspamd ARC configuration exists
+      ansible.builtin.stat:
+        path: /etc/rspamd/local.d/arc.conf
+      register: arc_conf
+      failed_when: not arc_conf.stat.exists
+
+    - name: Verify rspamd Redis configuration exists
+      ansible.builtin.stat:
+        path: /etc/rspamd/local.d/redis.conf
+      register: redis_conf
+      failed_when: not redis_conf.stat.exists
+
+    - name: Verify rspamd milter headers configuration exists
+      ansible.builtin.stat:
+        path: /etc/rspamd/local.d/milter_headers.conf
+      register: milter_conf
+      failed_when: not milter_conf.stat.exists
+
+    - name: Verify rspamd controller configuration exists
+      ansible.builtin.stat:
+        path: /etc/rspamd/local.d/worker-controller.inc
+      register: controller_conf
+      failed_when: not controller_conf.stat.exists
+
+    - name: Test rspamd socket is listening
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: 11332
+        timeout: 5
+
+    - name: Test rspamd web UI socket is listening
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: 11333
+        timeout: 5
+
+    - name: Verify DKIM key path in rspamd config
+      ansible.builtin.command: grep -q "/var/lib/dkim/example.com/mail.key" /etc/rspamd/local.d/dkim_signing.conf
+      changed_when: false
+
+    - name: Verify DKIM selector in rspamd config
+      ansible.builtin.command: grep -q 'selector = "mail"' /etc/rspamd/local.d/dkim_signing.conf
+      changed_when: false

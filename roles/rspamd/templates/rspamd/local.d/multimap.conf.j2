@@ -1,0 +1,27 @@
+WHITELIST_IP {
+    type = "ip";
+    map = "$CONFDIR/local.d/whitelist_ip.map";
+    description = "Local ip whitelist";
+    action = "accept";
+}
+
+WHITELIST_FROM {
+    type = "from";
+    map = "$CONFDIR/local.d/whitelist_from.map";
+    description = "Local from whitelist";
+    action = "accept";
+}
+
+BLACKLIST_IP {
+    type = "ip";
+    map = "$CONFDIR/local.d/blacklist_ip.map";
+    description = "Local ip blacklist";
+    action = "reject";
+}
+
+BLACKLIST_FROM {
+    type = "from";
+    map = "$CONFDIR/local.d/blacklist_from.map";
+    description = "Local from blacklist";
+    action = "reject";
+}

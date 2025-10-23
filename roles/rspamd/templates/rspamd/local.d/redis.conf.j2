@@ -1,0 +1,4 @@
+servers = "{{ rspamd_redis_servers }}";
+{% if rspamd_redis_db is defined %}
+db = {{ rspamd_redis_db }};
+{% endif %}
