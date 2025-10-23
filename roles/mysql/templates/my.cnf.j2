@@ -137,6 +137,12 @@ read_only = 0
 gtid_mode = on
 enforce-gtid-consistency = true
 {% endif %}
+{% if mysql_enable_native_password %}
+
+# Enable mysql_native_password plugin for compatibility with MariaDB client libraries
+# (e.g., Postfix using libmariadb3)
+mysql-native-password = ON
+{% endif %}
 
 # InnoDB settings.
 innodb_file_per_table = {{ mysql_innodb_file_per_table }}

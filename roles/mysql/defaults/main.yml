@@ -172,6 +172,11 @@ mysql_obsoleted_conflicted_files:
   - "{{ mysql_config_mysql_include_dir }}/mysql.cnf"
   - "{{ mysql_config_mysql_include_dir }}/mysqld.cnf"
 
+# Enable mysql_native_password plugin for compatibility with MariaDB client libraries
+# Required for Postfix (using libmariadb3) to connect to MySQL 8.4+
+# MySQL 8.4+ has this plugin disabled by default
+mysql_enable_native_password: false
+
 # enable zabbix monitoring
 zabbix_monitoring: false
 zabbix_agent_home: /var/lib/zabbix

@@ -102,7 +102,7 @@
         state: directory
 
 # required for mysql mysql_secure_file_priv
-- name: Add mysql user to matomo group for pool {{ pool.name }}
+- name: Add mysql user to matomo group
   ansible.builtin.user:
     name: mysql
     groups: '{{ matomo_group }}'
