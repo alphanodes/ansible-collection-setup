@@ -84,3 +84,25 @@
     - name: Verify DKIM selector in rspamd config
       ansible.builtin.command: grep -q 'selector = "mail"' /etc/rspamd/local.d/dkim_signing.conf
       changed_when: false
+
+    - name: Verify nginx vhost file exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/rspamd.conf
+      register: nginx_vhost
+      failed_when: not nginx_vhost.stat.exists
+
+    - name: Verify nginx vhost is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/rspamd.conf
+      register: nginx_enabled
+      failed_when: not nginx_enabled.stat.exists
+
+    - name: Verify htpasswd file exists
+      ansible.builtin.stat:
+        path: /etc/nginx/.htpasswd_rspamd
+      register: htpasswd_file
+      failed_when: not htpasswd_file.stat.exists
+
+    - name: Verify nginx configuration is valid
+      ansible.builtin.command: nginx -t
+      changed_when: false

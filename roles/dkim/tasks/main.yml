@@ -20,7 +20,7 @@
     group: root
 
 - name: Include DKIM key generation tasks
-  ansible.builtin.include_tasks: generate_key.yml
+  ansible.builtin.include_tasks: "{{ role_path }}/tasks/generate_key.yml"
   loop: "{{ dkim_domains }}"
   loop_control:
     loop_var: dkim_domain

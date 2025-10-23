@@ -14,6 +14,9 @@
     # Redis role (dependency of rspamd)
     - role: alphanodes.setup.redis_server
 
+    # nginx_mono role (for rspamd web UI)
+    - role: alphanodes.setup.nginx_mono
+
     # Rspamd role (includes DKIM setup automatically)
     - role: alphanodes.setup.rspamd
       vars:
@@ -25,4 +28,7 @@
         rspamd_dkim_key: /var/lib/dkim/example.com/mail.key
         rspamd_dkim_selector: mail
         rspamd_enable_service: true
-        rspamd_vhost_server: ''  # Disable vhost for testing
+        rspamd_vhost_server: 'rspamd.example.com'  # Enable vhost for nginx_mono testing
+        rspamd_vhost_location: '/'  # Full vhost mode
+        rspamd_web_user: 'rspamd'
+        rspamd_web_password: 'testpassword'

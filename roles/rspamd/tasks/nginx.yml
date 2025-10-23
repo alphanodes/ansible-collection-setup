@@ -1,87 +1,26 @@
 ---
-- name: Update rspamd user access
-  community.general.htpasswd:
-    path: /etc/nginx/.htpasswd_rspamd
-    name: '{{ rspamd_web_user }}'
-    password: '{{ rspamd_web_password }}'
-    owner: root
-    group: "{{ nginx_group }}"
-    mode: '0640'
-  when: rspamd_web_password | length > 0
-  notify: Restart nginx
-
-- name: Remove htpasswd file, if no password is set
-  ansible.builtin.file:
-    path: /etc/nginx/.htpasswd_rspamd
-    state: absent
-  when: rspamd_web_password | length == 0
-  notify: Restart nginx
-
-- name: Activate block
+# Setup nginx vhost using nginx_mono role
+- name: Setup nginx vhost for rspamd
   when:
     - rspamd_vhost_server is defined
     - rspamd_vhost_server | length > 0
-  block:
-    - name: Set TLS files for letsencrypt
-      ansible.builtin.set_fact:
-        vhost_letsencrypt_cert: "{{ rspamd_vhost_letsencrypt_cert }}"
-        vhost_letsencrypt_trusted_cert: "{{ rspamd_vhost_letsencrypt_trusted_cert }}"
-        vhost_letsencrypt_key: "{{ rspamd_vhost_letsencrypt_key }}"
-        force_letsencrypt: true
-      when:
-        - rspamd_vhost_letsencrypt is defined
-        - rspamd_vhost_letsencrypt
-
-    - name: Check trusted TLS cert
-      ansible.builtin.stat:
-        path: /etc/ssl/certs/{{ rspamd_vhost_ssl_cert }}_trusted.crt
-      register: trusted_cert
-      when: rspamd_vhost_letsencrypt is undefined or not rspamd_vhost_letsencrypt
-
-    - name: Set TLS files
-      ansible.builtin.set_fact:
-        vhost_ssl_cert: "{{ rspamd_vhost_ssl_cert }}"
-        vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
-      when: rspamd_vhost_letsencrypt is undefined or not rspamd_vhost_letsencrypt
-
-    - name: Provide rspamd vhost nginx configuration
-      ansible.builtin.template:
-        src: nginx/vhost.j2
-        dest: /etc/nginx/sites-available/rspamd.conf
-        mode: '0644'
-      notify: Reload nginx
-
-    - name: Ensure rspamd vhost is enabled
-      ansible.builtin.file:
-        src: /etc/nginx/sites-available/rspamd.conf
-        dest: /etc/nginx/sites-enabled/rspamd.conf
-        state: link
-      notify: Reload nginx
-
-
-- name: Provide rspamd subdirectory nginx configuration
-  ansible.builtin.template:
-    src: nginx/subdirectory.j2
-    dest: /etc/nginx/rspamd.conf
-    mode: '0644'
-  notify: Reload nginx
-  when: rspamd_vhost_location != '/'
-
-# cleanup
-
-- name: Remove vhost nginx configuration (if subdirectory is used)
-  ansible.builtin.file:
-    path: '{{ item }}'
-    state: absent
-  notify: Reload nginx
-  loop:
-    - /etc/nginx/sites-enabled/rspamd.conf
-    - /etc/nginx/sites-available/rspamd.conf
-  when: rspamd_vhost_server is undefined or (rspamd_vhost_server | length == 0)
-
-- name: Remove rspamd subdirectory nginx configuration (if vhost only is used)
-  ansible.builtin.file:
-    path: /etc/nginx/rspamd.conf
-    state: absent
-  notify: Reload nginx
-  when: rspamd_vhost_server is defined and rspamd_vhost_location == '/'
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nginx_mono
+  vars:
+    nginx_mono_service_name: rspamd
+    nginx_mono_service_enabled: "{{ rspamd_enable_service }}"
+    nginx_mono_include_mode: "{{ rspamd_vhost_location != '/' }}"
+    nginx_mono_service_config:
+      server_name: "{{ rspamd_vhost_server }}"
+      listen_ip: "{{ rspamd_vhost_listen_ip | default('') }}"
+      root: /usr/share/rspamd/www
+      index: index.html
+      proxy_pass: "http://127.0.0.1:11333"
+      proxy_location: "{{ rspamd_vhost_location }}"
+      vhost_users: "{{ [{'user': rspamd_web_user, 'password': rspamd_web_password}] if rspamd_web_password | length > 0 else [] }}"
+      vhost_for_zabbix: "{{ rspamd_vhost_for_zabbix | default(false) }}"
+      letsencrypt: "{{ rspamd_vhost_letsencrypt | default(false) }}"
+      letsencrypt_cert: "{{ rspamd_vhost_letsencrypt_cert | default('') }}"
+      letsencrypt_key: "{{ rspamd_vhost_letsencrypt_key | default('') }}"
+      letsencrypt_trusted_cert: "{{ rspamd_vhost_letsencrypt_trusted_cert | default('') }}"
+      ssl_cert: "{{ rspamd_vhost_ssl_cert | default('') }}"
