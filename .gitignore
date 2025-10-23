@@ -35,5 +35,6 @@ tmp/
 *_key
 *_key.*
 !*_key.pub
+!generate_key.yml
 .env
 .mcp.json

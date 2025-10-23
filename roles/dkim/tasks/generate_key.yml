@@ -1,0 +1,87 @@
+---
+- name: Set DKIM variables for {{ dkim_domain.domain }}
+  ansible.builtin.set_fact:
+    _dkim_selector: "{{ dkim_domain.selector | default(dkim_default_selector) }}"
+    _dkim_key_size: "{{ dkim_domain.key_size | default(dkim_default_key_size) }}"
+    _dkim_domain_dir: "{{ dkim_base_dir }}/{{ dkim_domain.domain }}"
+    _dkim_private_key: "{{ dkim_base_dir }}/{{ dkim_domain.domain }}/{{ dkim_domain.selector | default(dkim_default_selector) }}.key"
+    _dkim_public_key: "{{ dkim_base_dir }}/{{ dkim_domain.domain }}/{{ dkim_domain.selector | default(dkim_default_selector) }}.txt"
+
+- name: Create domain directory for {{ dkim_domain.domain }}
+  ansible.builtin.file:
+    path: "{{ _dkim_domain_dir }}"
+    state: directory
+    mode: "{{ dkim_dir_mode }}"
+    owner: "{{ dkim_user }}"
+    group: "{{ dkim_group }}"
+
+- name: Check if DKIM private key exists for {{ dkim_domain.domain }}
+  ansible.builtin.stat:
+    path: "{{ _dkim_private_key }}"
+  register: _dkim_key_stat
+
+- name: Generate DKIM key pair for {{ dkim_domain.domain }}
+  when: not _dkim_key_stat.stat.exists or dkim_force_regenerate
+  block:
+    - name: Generate RSA private key for {{ dkim_domain.domain }}
+      community.crypto.openssl_privatekey:
+        path: "{{ _dkim_private_key }}"
+        size: "{{ _dkim_key_size }}"
+        type: RSA
+        mode: "{{ dkim_key_mode }}"
+        owner: "{{ dkim_user }}"
+        group: "{{ dkim_group }}"
+
+    - name: Extract public key from private key for {{ dkim_domain.domain }}
+      ansible.builtin.shell: |
+        set -o pipefail
+        openssl rsa -in {{ _dkim_private_key }} -pubout -outform PEM 2>/dev/null | \
+        grep -v '^-----' | tr -d '\n'
+      args:
+        executable: /bin/bash
+      register: _dkim_pubkey_raw
+      changed_when: false
+
+    - name: Create DNS TXT record file for {{ dkim_domain.domain }}
+      ansible.builtin.copy:
+        content: |
+          ; DKIM DNS TXT Record for {{ dkim_domain.domain }}
+          ; Selector: {{ _dkim_selector }}
+          ; Add this to your DNS zone:
+
+          {{ _dkim_selector }}._domainkey.{{ dkim_domain.domain }}. IN TXT "v=DKIM1; k=rsa; p={{ _dkim_pubkey_raw.stdout }}"
+
+          ; Alternative format (if your DNS provider requires quotes around long values):
+          {{ _dkim_selector }}._domainkey.{{ dkim_domain.domain }}. IN TXT (
+            "v=DKIM1; k=rsa; "
+            "p={{ _dkim_pubkey_raw.stdout }}"
+          )
+
+          ; Verify with: dig +short TXT {{ _dkim_selector }}._domainkey.{{ dkim_domain.domain }}
+        dest: "{{ _dkim_public_key }}"
+        mode: '0644'
+        owner: "{{ dkim_user }}"
+        group: "{{ dkim_group }}"
+
+    - name: Display DKIM public key for {{ dkim_domain.domain }}
+      ansible.builtin.debug:
+        msg: |
+          ========================================
+          DKIM Public Key for {{ dkim_domain.domain }}
+          Selector: {{ _dkim_selector }}
+          ========================================
+
+          DNS TXT Record:
+          {{ _dkim_selector }}._domainkey.{{ dkim_domain.domain }}. IN TXT "v=DKIM1; k=rsa; p={{ _dkim_pubkey_raw.stdout }}"
+
+          Public key file saved to: {{ _dkim_public_key }}
+          ========================================
+      when: dkim_show_public_keys
+
+- name: Ensure DKIM private key has correct permissions
+  ansible.builtin.file:
+    path: "{{ _dkim_private_key }}"
+    state: file
+    mode: "{{ dkim_key_mode }}"
+    owner: "{{ dkim_user }}"
+    group: "{{ dkim_group }}"
