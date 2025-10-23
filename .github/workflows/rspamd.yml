@@ -11,10 +11,6 @@ name: "alphanodes.setup.rspamd"
       - 'molecule/rspamd/**'
       - '.github/workflows/rspamd.yml'
 
-defaults:
-  run:
-    working-directory: 'rspamd'
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -32,8 +28,6 @@ jobs:
     steps:
       - name: Check out the codebase.
         uses: actions/checkout@v5
-        with:
-          path: 'rspamd'
 
       - name: Set up Python 3.
         uses: actions/setup-python@v5
