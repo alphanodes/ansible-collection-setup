@@ -150,10 +150,10 @@ registry_nginx['listen_addresses'] = {{ gitlab_registry_nginx_listen_addresses |
 {% if gitlab_registry_storage is defined %}
 registry['storage'] = {{ gitlab_registry_storage }}
 {% endif %}
-{% if postgres_exporter_enable is defined %}
+{% if gitlab_registry_nginx_ssl_certificate is defined %}
 registry_nginx['ssl_certificate'] = '{{ gitlab_registry_nginx_ssl_certificate }}'
 {% endif %}
-{% if postgres_exporter_enable is defined %}
+{% if gitlab_registry_nginx_ssl_certificate_key is defined %}
 registry_nginx['ssl_certificate_key'] = '{{ gitlab_registry_nginx_ssl_certificate_key }}'
 {% endif %}
 
