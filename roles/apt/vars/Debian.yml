@@ -7,4 +7,4 @@ __unattended_origins_patterns:
   - 'origin=Debian,codename=${distro_codename}-backports,label=Debian Backports'
   - 'origin=Zabbix,codename=${distro_codename},label=zabbix'
   - 'origin=apt.postgresql.org,codename=${distro_codename}-pgdg,label=PostgreSQL for Debian/Ubuntu repository'
-  - "origin=MySQL,codename=${distro_codename},component={{ mysql_apt_components | default('mysql-8.0') }}"
+  - "origin=MySQL,codename=${distro_codename},component={{ mysql_apt_components | default('mysql-8.4-lts') }}"
