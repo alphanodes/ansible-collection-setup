@@ -1,26 +1,56 @@
 ---
 # Setup nginx vhost using nginx_mono role
-- name: Setup nginx vhost for rspamd
+- name: Build nginx_mono configuration for rspamd
   when:
     - rspamd_vhost_server is defined
     - rspamd_vhost_server | length > 0
-  ansible.builtin.include_role:
-    name: alphanodes.setup.nginx_mono
-  vars:
-    nginx_mono_service_name: rspamd
-    nginx_mono_service_enabled: "{{ rspamd_enable_service }}"
-    nginx_mono_include_mode: "{{ rspamd_vhost_location != '/' }}"
-    nginx_mono_service_config:
-      server_name: "{{ rspamd_vhost_server }}"
-      listen_ip: "{{ rspamd_vhost_listen_ip | default('') }}"
-      root: /usr/share/rspamd/www
-      index: index.html
-      proxy_pass: "http://127.0.0.1:11333"
-      proxy_location: "{{ rspamd_vhost_location }}"
-      vhost_users: "{{ [{'user': rspamd_web_user, 'password': rspamd_web_password}] if rspamd_web_password | length > 0 else [] }}"
-      vhost_for_zabbix: "{{ rspamd_vhost_for_zabbix | default(false) }}"
-      letsencrypt: "{{ rspamd_vhost_letsencrypt | default(false) }}"
-      letsencrypt_cert: "{{ rspamd_vhost_letsencrypt_cert | default('') }}"
-      letsencrypt_key: "{{ rspamd_vhost_letsencrypt_key | default('') }}"
-      letsencrypt_trusted_cert: "{{ rspamd_vhost_letsencrypt_trusted_cert | default('') }}"
-      ssl_cert: "{{ rspamd_vhost_ssl_cert | default('') }}"
+  block:
+    - name: Set base nginx configuration
+      ansible.builtin.set_fact:
+        rspamd_nginx_config:
+          server_name: "{{ rspamd_vhost_server }}"
+          listen_ip: "{{ rspamd_vhost_listen_ip | default('') }}"
+          root: /usr/share/rspamd/www
+          index: index.html
+          proxy_pass: "http://127.0.0.1:11333"
+          proxy_location: "{{ rspamd_vhost_location }}"
+          vhost_users: "{{ [{'user': rspamd_web_user, 'password': rspamd_web_password}] if rspamd_web_password | length > 0 else [] }}"
+          vhost_for_zabbix: "{{ rspamd_vhost_for_zabbix | default(false) }}"
+          letsencrypt: "{{ rspamd_vhost_letsencrypt | default(false) }}"
+
+    - name: Add Let's Encrypt certificate path if defined
+      when:
+        - rspamd_vhost_letsencrypt_cert is defined
+        - rspamd_vhost_letsencrypt_cert | length > 0
+      ansible.builtin.set_fact:
+        rspamd_nginx_config: "{{ rspamd_nginx_config | combine({'letsencrypt_cert': rspamd_vhost_letsencrypt_cert}) }}"
+
+    - name: Add Let's Encrypt key path if defined
+      when:
+        - rspamd_vhost_letsencrypt_key is defined
+        - rspamd_vhost_letsencrypt_key | length > 0
+      ansible.builtin.set_fact:
+        rspamd_nginx_config: "{{ rspamd_nginx_config | combine({'letsencrypt_key': rspamd_vhost_letsencrypt_key}) }}"
+
+    - name: Add Let's Encrypt trusted certificate path if defined
+      when:
+        - rspamd_vhost_letsencrypt_trusted_cert is defined
+        - rspamd_vhost_letsencrypt_trusted_cert | length > 0
+      ansible.builtin.set_fact:
+        rspamd_nginx_config: "{{ rspamd_nginx_config | combine({'letsencrypt_trusted_cert': rspamd_vhost_letsencrypt_trusted_cert}) }}"
+
+    - name: Add SSL certificate path if defined
+      when:
+        - rspamd_vhost_ssl_cert is defined
+        - rspamd_vhost_ssl_cert | length > 0
+      ansible.builtin.set_fact:
+        rspamd_nginx_config: "{{ rspamd_nginx_config | combine({'ssl_cert': rspamd_vhost_ssl_cert}) }}"
+
+    - name: Setup nginx vhost for rspamd
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: rspamd
+        nginx_mono_service_enabled: "{{ rspamd_enable_service }}"
+        nginx_mono_include_mode: "{{ rspamd_vhost_location != '/' }}"
+        nginx_mono_service_config: "{{ rspamd_nginx_config }}"
