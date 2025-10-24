@@ -1,0 +1,25 @@
+# Rspamd greylisting module configuration
+# see https://docs.rspamd.com/modules/greylisting
+
+{% if rspamd_greylisting_enabled %}
+# Enable greylisting
+enabled = true;
+
+# Greylist expiration time (1 day default)
+expire = {{ rspamd_greylisting_expire }};
+
+# Retry timeout (5 minutes default)
+timeout = {{ rspamd_greylisting_timeout }};
+
+# IPv4 netmask for greylisting (19 = /19 network)
+ipv4_mask = {{ rspamd_greylisting_ipv4_mask }};
+
+# IPv6 netmask for greylisting (64 = /64 network)
+ipv6_mask = {{ rspamd_greylisting_ipv6_mask }};
+
+# Only greylist messages with score >= greylist threshold
+# (defined in actions.conf)
+{% else %}
+# Greylisting is disabled
+enabled = false;
+{% endif %}

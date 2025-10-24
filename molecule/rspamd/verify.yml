@@ -83,16 +83,46 @@
       register: controller_conf
       failed_when: not controller_conf.stat.exists
 
-    - name: Test rspamd socket is listening
+    - name: Verify rspamd proxy worker configuration exists
+      ansible.builtin.stat:
+        path: /etc/rspamd/local.d/worker-proxy.inc
+      register: proxy_conf
+      failed_when: not proxy_conf.stat.exists
+
+    - name: Verify rspamd actions configuration exists
+      ansible.builtin.stat:
+        path: /etc/rspamd/local.d/actions.conf
+      register: actions_conf
+      failed_when: not actions_conf.stat.exists
+
+    - name: Verify rspamd options configuration exists
+      ansible.builtin.stat:
+        path: /etc/rspamd/local.d/options.inc
+      register: options_conf
+      failed_when: not options_conf.stat.exists
+
+    - name: Verify rspamd greylist configuration exists
+      ansible.builtin.stat:
+        path: /etc/rspamd/local.d/greylist.conf
+      register: greylist_conf
+      failed_when: not greylist_conf.stat.exists
+
+    - name: Verify rspamd ratelimit configuration exists
+      ansible.builtin.stat:
+        path: /etc/rspamd/local.d/ratelimit.conf
+      register: ratelimit_conf
+      failed_when: not ratelimit_conf.stat.exists
+
+    - name: Test rspamd proxy worker socket is listening (Postfix milter)
       ansible.builtin.wait_for:
         host: 127.0.0.1
         port: 11332
         timeout: 5
 
-    - name: Test rspamd web UI socket is listening
+    - name: Test rspamd web UI socket is listening (controller)
       ansible.builtin.wait_for:
         host: 127.0.0.1
-        port: 11333
+        port: 11334
         timeout: 5
 
     - name: Verify DKIM path pattern in rspamd config (multi-domain with $domain variable)

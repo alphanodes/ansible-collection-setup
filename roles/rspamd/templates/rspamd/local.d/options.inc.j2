@@ -1,0 +1,23 @@
+# Rspamd general options
+# see https://docs.rspamd.com/configuration/options
+
+# DNS configuration - use local unbound resolver
+dns {
+  # Use local unbound DNS resolver (avoid public DNS like 8.8.8.8)
+  nameserver = ["127.0.0.1:53"];
+
+  # DNS timeout
+  timeout = 1s;
+
+  # Number of retransmits for failed requests
+  retransmits = 5;
+
+  # Enable DNSSEC validation
+  enable_dnssec = {{ rspamd_dns_enable_dnssec | default('true') }};
+}
+
+# Local networks (trusted for some checks)
+local_addrs = "{{ rspamd_local_addrs | default('127.0.0.0/8, ::1') }}";
+
+# Disable URL redirector by default (can be enabled if needed)
+url_redirector_timeout = {{ rspamd_url_redirector_timeout | default(10) }};

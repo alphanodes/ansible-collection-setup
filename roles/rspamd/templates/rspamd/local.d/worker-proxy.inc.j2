@@ -1,0 +1,23 @@
+# Rspamd proxy worker - Milter protocol for Postfix integration
+# see https://docs.rspamd.com/workers/rspamd_proxy
+
+# Enable milter protocol
+milter = yes;
+
+# Timeout for processing
+timeout = 120s;
+
+# Upstream configuration
+upstream "local" {
+  # Use this upstream by default
+  default = yes;
+
+  # Scan on the same host (self_scan mode)
+  self_scan = yes;
+}
+
+# Bind to localhost only (security)
+bind_socket = "localhost:11332";
+
+# Maximum message size (500MB - should match postfix_message_size_limit)
+max_retries = 5;

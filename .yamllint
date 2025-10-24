@@ -7,6 +7,7 @@ ignore:
   - '.ansible'
   - '.venv'
   - 'node_modules/'
+  - '**/*.j2'  # Jinja2 templates are not valid YAML
 
 rules:
   line-length: disable

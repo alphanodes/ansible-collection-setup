@@ -1,0 +1,13 @@
+# Rspamd actions configuration - Score thresholds
+# see https://docs.rspamd.com/configuration/metrics
+
+# Reject mail with score >= 15 (hard bounce)
+reject = {{ rspamd_action_reject | default(15) }};
+
+# Add spam headers for score >= 6 (deliver with X-Spam headers)
+add_header = {{ rspamd_action_add_header | default(6) }};
+
+# Apply greylisting for score >= 4 (temporary delay)
+{% if rspamd_greylisting_enabled %}
+greylist = {{ rspamd_action_greylist | default(4) }};
+{% endif %}

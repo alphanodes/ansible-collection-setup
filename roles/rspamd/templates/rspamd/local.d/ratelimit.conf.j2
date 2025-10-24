@@ -1,0 +1,47 @@
+# Rspamd ratelimiting module configuration
+# see https://docs.rspamd.com/modules/ratelimit
+
+{% if rspamd_ratelimit_enabled %}
+# Enable ratelimiting
+enabled = true;
+
+# Rate limits configuration
+rates {
+  # Limit per recipient
+  to = {
+    bucket = [
+      {
+        burst = 100;  # Allow burst of 100 messages
+        rate = "10 / 1m";  # 10 messages per minute sustained
+      }
+    ]
+  };
+
+  # Limit per sender IP
+  to_ip = {
+    bucket = [
+      {
+        burst = 30;  # Allow burst of 30 messages
+        rate = "3 / 1m";  # 3 messages per minute sustained
+      }
+    ]
+  };
+
+  # Limit per sender address
+  to_ip_from = {
+    bucket = [
+      {
+        burst = 50;
+        rate = "5 / 1m";
+      }
+    ]
+  };
+}
+
+# Use soft reject action when rate limit is reached
+# (temporary failure, client should retry)
+symbol = "RATELIMIT";
+{% else %}
+# Ratelimiting is disabled
+enabled = false;
+{% endif %}

@@ -64,17 +64,6 @@
     - arc
   notify: Restart rspamd
 
-- name: Configuration files for override.d
-  ansible.builtin.template:
-    src: rspamd/override.d/classifier-bayes.conf.j2
-    dest: /etc/rspamd/override.d/classifier-bayes.conf
-    mode: '0644'
-    owner: root
-    group: root
-  notify: Restart rspamd
-  loop:
-    - classifier-bayes.conf
-
 - name: Configuration files for local.d
   ansible.builtin.template:
     src: rspamd/local.d/{{ item }}.j2
@@ -85,10 +74,14 @@
   notify: Restart rspamd
   loop:
     - worker-controller.inc
-    - classifier-bayes.conf
+    - worker-proxy.inc
     - milter_headers.conf
     - redis.conf
     - logging.inc
+    - actions.conf
+    - options.inc
+    - greylist.conf
+    - ratelimit.conf
 
 - name: Configure manual whitelists and blacklists
   ansible.builtin.template:

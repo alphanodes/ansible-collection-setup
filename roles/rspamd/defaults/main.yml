@@ -79,3 +79,26 @@ rspamd_blacklist_from: []
 # rspamd_worker_controller_password:
 
 rspamd_worker_controller_secure_ip: 127.0.0.1
+
+# Actions - Score thresholds for spam filtering
+# see https://docs.rspamd.com/configuration/metrics
+rspamd_action_reject: 15  # Hard reject (bounce) at score >= 15
+rspamd_action_add_header: 6  # Add X-Spam headers at score >= 6
+rspamd_action_greylist: 4  # Greylist (delay) at score >= 4
+
+# Greylisting configuration
+# see https://docs.rspamd.com/modules/greylisting
+rspamd_greylisting_enabled: true  # Enable greylisting (recommended for production)
+rspamd_greylisting_expire: 86400  # 1 day in seconds
+rspamd_greylisting_timeout: 300  # 5 minutes in seconds
+rspamd_greylisting_ipv4_mask: 19  # IP netmask for greylisting
+rspamd_greylisting_ipv6_mask: 64  # IPv6 netmask for greylisting
+
+# Ratelimiting configuration
+# see https://docs.rspamd.com/modules/ratelimit
+rspamd_ratelimit_enabled: false  # Enable rate limiting (recommended for production)
+
+# DNS options
+rspamd_dns_enable_dnssec: true  # Enable DNSSEC validation
+rspamd_local_addrs: '127.0.0.0/8, ::1'  # Local networks
+rspamd_url_redirector_timeout: 10  # URL redirector timeout in seconds
