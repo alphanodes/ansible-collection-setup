@@ -10,7 +10,9 @@ smtp      inet  n       -       y       -       1       postscreen
 smtpd      pass  -       -       y       -       -       smtpd
 # Reject non-FQDN HELOs on Port 25 (after passing postscreen process)
   -o smtpd_helo_restrictions=permit_mynetworks,reject_non_fqdn_helo_hostname
-  -o smtpd_proxy_filter=127.0.0.1:10024
+{% if postfix_smtpd_proxy_filter_smtp | length > 0 %}
+  -o smtpd_proxy_filter={{ postfix_smtpd_proxy_filter_smtp }}
+{% endif %}
   -o smtpd_client_connection_count_limit=10
   -o smtpd_proxy_options=speed_adjust
 {% else %}
@@ -50,7 +52,9 @@ submission inet n       -       y       -       -       smtpd
   -o smtpd_client_restrictions=$mua_client_restrictions
   -o smtpd_sender_restrictions=$mua_sender_restrictions
   -o smtpd_relay_restrictions=$mua_relay_restrictions
-  -o smtpd_proxy_filter=127.0.0.1:10025
+{% if postfix_smtpd_proxy_filter_submission | length > 0 %}
+  -o smtpd_proxy_filter={{ postfix_smtpd_proxy_filter_submission }}
+{% endif %}
   -o smtpd_client_connection_count_limit=10
   -o smtpd_proxy_options=speed_adjust
 {% if postfix_header_cleanup %}
@@ -96,6 +100,7 @@ lmtps     unix  -       -       y       -       -       lmtp
   -o lmtp_send_xforward_command=yes
   -o lmtp_tls_security_level=encrypt
   -o lmtp_tls_note_starttls_offer=yes
+{% if not postfix_with_rspamd %}
 # Amavis reinjection, maximal 5 smtpd Prozesse, muss den Amavis Prozessen entsprechen!
 127.0.0.1:10035 inet    n       -       y       -       5       smtpd
   -o smtpd_authorized_xforward_hosts=127.0.0.0/8
@@ -106,6 +111,7 @@ lmtps     unix  -       -       y       -       -       lmtp
   -o smtpd_data_restrictions=
   -o mynetworks=127.0.0.0/8
   -o receive_override_options=no_unknown_recipient_checks
+{% endif %}
 {% endif %}
 
 {% if postfix_header_cleanup %}

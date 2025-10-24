@@ -21,6 +21,14 @@ postfix_header_cleanup: false
 
 postfix_with_rspamd: false
 
+# SMTP proxy filter configuration (for content filtering)
+# Used by amavisd-new or other before-queue filters
+# Set to empty string to disable proxy filtering (e.g., when using rspamd with milter protocol)
+# When using rspamd with milter protocol, proxy_filter should be disabled
+# (rspamd integration happens via smtpd_milters in main.cf instead)
+postfix_smtpd_proxy_filter_smtp: '127.0.0.1:10024'      # For port 25 (external mail)
+postfix_smtpd_proxy_filter_submission: '127.0.0.1:10025' # For port 587 (authenticated users)
+
 # port 465 (TLS, NOT STARTSSL)
 postfix_with_smtps: false
 
