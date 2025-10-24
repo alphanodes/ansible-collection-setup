@@ -1,9 +1,18 @@
 ---
+# DKIM key generation and management
+# Supports multi-domain DKIM with shared group access
+
+- name: Create dkim system group
+  ansible.builtin.group:
+    name: dkim
+    system: true
+    state: present
+
 # Support two modes:
 # 1. dkim_domain (string) - single domain lookup from dkim_domains dictionary
-# 2. dkim_domains (list) - direct list of domains with config (legacy/batch mode)
+# 2. dkim_domains (dict) - process all domains from dictionary
 
-- name: Build domain list from dkim_domain lookup
+- name: Build domain list from dkim_domain lookup (single domain mode)
   when:
     - dkim_domain is defined
     - dkim_domain | length > 0
@@ -15,15 +24,28 @@
         selector: "{{ dkim_domains[dkim_domain].selector }}"
         key_size: "{{ dkim_domains[dkim_domain].key_size | default(2048) }}"
 
-- name: Use dkim_domains list directly (legacy mode)
-  when: dkim_domains_to_process is not defined
+- name: Build domain list from dkim_domains dictionary (multi-domain mode)
+  when:
+    - dkim_domains_to_process is not defined
+    - dkim_domains is defined
+    - dkim_domains is mapping
   ansible.builtin.set_fact:
-    dkim_domains_to_process: "{{ dkim_domains }}"
+    dkim_domains_to_process: |
+      {% set result = [] %}
+      {% for domain_name, domain_config in dkim_domains.items() %}
+      {%   set _ = result.append({
+             'domain': domain_name,
+             'selector': domain_config.selector,
+             'key_size': domain_config.key_size | default(2048)
+           }) %}
+      {% endfor %}
+      {{ result }}
 
 - name: Validate DKIM configuration
   ansible.builtin.fail:
-    msg: "No DKIM domains configured. Set dkim_domain or dkim_domains variable."
-  when: dkim_domains_to_process | length == 0
+    msg: "No DKIM domains configured. Define dkim_domains dictionary in host_vars."
+  when:
+    - dkim_domains_to_process is not defined or dkim_domains_to_process | length == 0
 
 - name: Ensure required packages are installed
   ansible.builtin.apt:

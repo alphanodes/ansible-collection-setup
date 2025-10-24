@@ -61,6 +61,9 @@ server {
 {% if nginx_with_ssl %}
 {% include 'includes/ssl.inc.j2' %}
 {% endif %}
+{% if nginx_with_security_headers %}
+{% include 'includes/security_headers.inc.j2' %}
+{% endif %}
 {% if instance.additional_headers is defined %}
 {% for header in instance.additional_headers %}
   add_header {{ header }};

@@ -51,6 +51,9 @@ nginx_force_ssl: true
 
 # protect dot files and block spammers
 nginx_with_protection: true
+# security headers (X-Frame-Options, X-Content-Type-Options, X-XSS-Protection)
+# disable if application sets these headers itself to avoid duplicates
+nginx_with_security_headers: true
 # some external reverse proxies require this disable
 # because of wrong configuration (e.g. srtechnik)
 nginx_with_proxy_forwarded_for: true

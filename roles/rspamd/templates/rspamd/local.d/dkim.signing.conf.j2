@@ -1,5 +1,7 @@
-# DKIM key path (managed by alphanodes.setup.dkim role)
-path = "{{ rspamd_dkim_key }}"
+# DKIM multi-domain configuration (managed by alphanodes.setup.dkim role)
+# $domain variable is replaced by rspamd at runtime with the sender's domain
+# This enables automatic per-domain DKIM signing
+path = "/var/lib/dkim/$domain/{{ rspamd_dkim_selector }}.key"
 selector = "{{ rspamd_dkim_selector }}"
 
 ### Enable DKIM signing for alias sender addresses

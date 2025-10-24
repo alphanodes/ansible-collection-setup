@@ -12,7 +12,7 @@
           listen_ip: "{{ rspamd_vhost_listen_ip | default('') }}"
           root: /usr/share/rspamd/www
           index: index.html
-          proxy_pass: "http://127.0.0.1:11333"
+          proxy_pass: "http://127.0.0.1:11334"
           proxy_location: "{{ rspamd_vhost_location }}"
           vhost_users: "{{ [{'user': rspamd_web_user, 'password': rspamd_web_password}] if rspamd_web_password | length > 0 else [] }}"
           vhost_for_zabbix: "{{ rspamd_vhost_for_zabbix | default(false) }}"

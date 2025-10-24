@@ -29,7 +29,7 @@ rspamd_log_level: warning
 # DKIM is optional - rspamd works fine without it for spam filtering
 # Only configure DKIM if you want to sign outgoing emails
 #
-# 1. Define centralized dkim_domains dictionary in host_vars:
+# Define centralized dkim_domains dictionary in host_vars:
 #   dkim_domains:
 #     alphanodes.com:
 #       selector: dkim_key
@@ -38,13 +38,9 @@ rspamd_log_level: warning
 #       selector: mail
 #       key_size: 4096
 #
-# 2. Set rspamd_dkim_domain to specify which domain to use:
-#   rspamd_dkim_domain: alphanodes.com
-#
-# The dkim role will be called automatically and generates key at:
-#   /var/lib/dkim/{{ rspamd_dkim_domain }}/{{ selector }}.key
-#
-rspamd_dkim_domain: ''  # Leave empty to disable DKIM signing
+# The dkim role (dependency in meta/main.yml) will be called automatically
+# and generates keys at: /var/lib/dkim/$domain/{{ selector }}.key
+# Rspamd uses the $domain variable at runtime for multi-domain DKIM signing
 
 rspamd_remove: false
 

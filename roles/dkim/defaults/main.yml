@@ -6,13 +6,11 @@
 dkim_base_dir: /var/lib/dkim
 
 # User/Group for DKIM key files
-# Note: Different mail systems use different users
-# - Rspamd: _rspamd
-# - OpenDKIM: opendkim
-# - Postfix: postfix
-# Override this in your host_vars based on your mail stack
+# Keys are owned by root:dkim (system group)
+# Mail services add their users to the dkim group for read access
+# Example: usermod -a -G dkim _rspamd
 dkim_user: root
-dkim_group: root
+dkim_group: dkim
 
 # DKIM domains configuration
 # Each domain can have its own selector and key size

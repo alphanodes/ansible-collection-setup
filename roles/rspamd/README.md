@@ -35,26 +35,22 @@ rspamd_worker_controller_password: '$2$...'
 
 ### DKIM Configuration
 
-**Option 1: Automatic DKIM setup (recommended)**
+DKIM configuration uses the centralized `dkim_domains` dictionary in host_vars.
+The dkim role (automatic dependency) generates keys for all domains.
 
 ```yaml
-# Rspamd will automatically setup DKIM using alphanodes.setup.dkim role
-rspamd_dkim_domains:
-  - domain: example.com
+# Define in host_vars (e.g., host_vars/mailserver.yml)
+dkim_domains:
+  example.com:
     selector: mail
     key_size: 2048
-  - domain: example.org
+  example.org:
     selector: default
     key_size: 2048
 ```
 
-**Option 2: Use existing DKIM keys**
-
-```yaml
-# Point to pre-existing DKIM keys
-rspamd_dkim_key: /var/lib/dkim/example.com/mail.key
-rspamd_dkim_selector: mail
-```
+Rspamd uses the `$domain` variable at runtime for automatic multi-domain DKIM signing.
+Keys are generated at `/var/lib/dkim/$domain/{{ selector }}.key`.
 
 ### Optional Variables
 
@@ -87,36 +83,42 @@ This role automatically includes:
 
 - `alphanodes.setup.common` - Common setup tasks
 - `alphanodes.setup.redis_server` - Redis server for statistics
-- `alphanodes.setup.dkim` - DKIM key management (when `rspamd_dkim_domains` is defined)
+- `alphanodes.setup.dkim` - DKIM key management (when `dkim_domains` is defined in host_vars)
 
 ## Example Playbook
 
 ### Basic Setup with DKIM
 
 ```yaml
+# host_vars/mailserver.yml
+dkim_domains:
+  example.com:
+    selector: mail
+    key_size: 2048
+
+# playbook.yml
 - hosts: mail_servers
   roles:
     - role: alphanodes.setup.rspamd
       vars:
         rspamd_worker_controller_password: '$2$...'
-        rspamd_dkim_domains:
-          - domain: example.com
-            selector: mail
-            key_size: 2048
 ```
 
 ### Advanced Setup
 
 ```yaml
+# host_vars/mailserver.yml
+dkim_domains:
+  example.com:
+    selector: mail
+    key_size: 2048
+
+# playbook.yml
 - hosts: mail_servers
   roles:
     - role: alphanodes.setup.rspamd
       vars:
         rspamd_worker_controller_password: '$2$...'
-        rspamd_dkim_domains:
-          - domain: example.com
-            selector: mail
-            key_size: 2048
         rspamd_log_level: info
         rspamd_whitelist_ip:
           - 192.168.1.0/24
@@ -124,18 +126,6 @@ This role automatically includes:
         rspamd_vhost_server: spam.example.com
         rspamd_web_user: admin
         rspamd_web_password: 'secure_password_hash'
-```
-
-### Migration from existing DKIM
-
-```yaml
-- hosts: mail_servers
-  roles:
-    - role: alphanodes.setup.rspamd
-      vars:
-        rspamd_worker_controller_password: '$2$...'
-        rspamd_dkim_key: /var/lib/dkim/example.com/mail.key
-        rspamd_dkim_selector: mail
 ```
 
 ## Postfix Integration

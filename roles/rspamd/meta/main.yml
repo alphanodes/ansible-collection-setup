@@ -3,6 +3,8 @@ dependencies:
   - role: alphanodes.setup.common
     public: true
   - role: alphanodes.setup.redis_server
+  - role: alphanodes.setup.dkim
+    public: true
 
 galaxy_info:
   description: Setup rspamd

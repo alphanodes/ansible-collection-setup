@@ -18,14 +18,10 @@
         key_size: 2048
 
   roles:
-    # Redis role (dependency of rspamd)
-    - role: alphanodes.setup.redis_server
-
-    # Rspamd role (calls dkim role automatically via include_role)
+    # Rspamd role (includes redis_server and dkim roles automatically via meta/main.yml)
     - role: alphanodes.setup.rspamd
       vars:
         rspamd_worker_controller_password: '$2$testpasswordhash'
-        rspamd_dkim_domain: example.com  # Lookup key in dkim_domains dict
         rspamd_enable_service: true
         rspamd_vhost_server: 'rspamd.example.com'  # Enable vhost for nginx_mono testing
         rspamd_vhost_location: '/'  # Full vhost mode

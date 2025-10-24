@@ -36,31 +36,21 @@
     name: '{{ rspamd_packages }}'
     state: present
 
-# DKIM configuration via dkim role (if rspamd_dkim_domain is set)
-# Must run AFTER rspamd package installation because package creates _rspamd user
-- name: Setup DKIM key via dkim role
-  when:
-    - rspamd_dkim_domain is defined
-    - rspamd_dkim_domain | length > 0
-    - dkim_domains is defined
-    - rspamd_dkim_domain in dkim_domains
-  ansible.builtin.include_role:
-    name: alphanodes.setup.dkim
-  vars:
-    dkim_domain: "{{ rspamd_dkim_domain }}"
-    dkim_user: "{{ rspamd_user }}"
-    dkim_group: "{{ rspamd_user }}"
-    dkim_show_public_keys: true
+# Add rspamd user to dkim group for key access
+# DKIM keys are managed by alphanodes.setup.dkim role (via meta/main.yml dependency)
+- name: Add rspamd user to dkim group
+  when: dkim_domains is defined and dkim_domains | length > 0
+  ansible.builtin.user:
+    name: "{{ rspamd_user }}"
+    groups: '{{ dkim_group }}'
+    append: true
 
-- name: Set DKIM key path from dkim_domains dictionary
-  when:
-    - rspamd_dkim_domain is defined
-    - rspamd_dkim_domain | length > 0
-    - dkim_domains is defined
-    - rspamd_dkim_domain in dkim_domains
+# Set selector for rspamd template (from first domain in dkim_domains)
+# All domains use same selector format, rspamd uses $domain variable at runtime
+- name: Set DKIM selector from dkim_domains dictionary
+  when: dkim_domains is defined and dkim_domains | length > 0
   ansible.builtin.set_fact:
-    rspamd_dkim_key: "/var/lib/dkim/{{ rspamd_dkim_domain }}/{{ dkim_domains[rspamd_dkim_domain].selector }}.key"
-    rspamd_dkim_selector: "{{ dkim_domains[rspamd_dkim_domain].selector }}"
+    rspamd_dkim_selector: "{{ (dkim_domains | dict2items | first).value.selector }}"
 
 - name: Customize dkim and arc configuration
   ansible.builtin.template:
