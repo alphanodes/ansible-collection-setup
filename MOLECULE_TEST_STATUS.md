@@ -1,8 +1,8 @@
 # Molecule Test Implementation - Project Status
 
-**Date**: 2025-10-21 (Updated)
-**Phase**: Phase 2 completed - 19 roles fixed, idempotence issues resolved
-**Latest**: nginx_mono include mode + mailpit path-based deployment implemented and tested
+**Date**: 2025-10-24 (Updated)
+**Phase**: Phase 2 completed - 21 roles fixed, idempotence issues resolved
+**Latest**: rspamd + dkim roles fixed - SSL certificate handling and DKIM key management
 
 ## Project Goal
 
@@ -49,7 +49,7 @@ Each role has:
 
 ## Phase 2: Role Fixes ✅ COMPLETED
 
-### ✅ Successfully Fixed Roles (14 roles)
+### ✅ Successfully Fixed Roles (16 roles)
 
 #### 1. unbound ✅
 
@@ -563,6 +563,212 @@ Path-based mode tested comprehensively:
 - Path-based mode opt-in via mailpit_webroot variable
 - Future roles can follow same pattern (webroot variable + nginx_mono include mode)
 
+#### 15. rspamd ✅
+
+**Enhancement**: Fixed SSL certificate handling and optimized molecule test configuration
+**Context**: Part of rspamd+DKIM migration project (Phase 2 completed, Phase 3 pending production deployment)
+
+**Problem 1**: Empty SSL certificate path causing nginx configuration failure
+**Error**:
+
+```text
+cannot load certificate "/etc/ssl/certs/.crt": BIO_new_file() failed
+nginx: configuration file /etc/nginx/nginx.conf test failed
+```
+
+**Root Cause**: SSL certificate variable handling in defaults
+
+- `rspamd_vhost_ssl_cert: "{{ ssl_certs[0].name | default(omit) }}"` returned empty string when `ssl_certs` undefined
+- nginx tried to load `/etc/ssl/certs/.crt` (empty cert name)
+- `nginx_with_ssl: true` (global default) triggered SSL template inclusion
+
+**Solution 1** (`roles/rspamd/defaults/main.yml:54`):
+
+- Changed from `default(omit)` to `default('')`
+- Added `nginx_with_ssl: true` to common role defaults for global availability
+- Created `rspamd_effective_ssl` calculation in tasks (not defaults to avoid recursion)
+
+**Problem 2**: Molecule test configuration caused idempotence failure
+**Error**: SSL config toggling between runs (setup → remove → setup)
+
+**Root Cause**: Duplicate nginx_mono role invocation
+
+- `molecule/rspamd/converge.yml` called nginx_mono TWICE:
+  1. Directly as role (with `nginx_with_ssl: true` from defaults)
+  2. Via rspamd role's `include_role` (with calculated SSL setting)
+- First run: nginx_mono creates SSL config
+- Second run (via rspamd): Different SSL setting removes SSL config
+- Result: Idempotence test fails with toggling behavior
+
+**Solution 2** (`molecule/rspamd/converge.yml`):
+
+- Removed direct nginx_mono role invocation
+- nginx_mono now called ONLY via rspamd role's `include_role`
+- Single source of truth for nginx configuration
+
+**Problem 3**: Recursive loop when moving SSL calculation to defaults
+**Error**:
+
+```text
+Recursive loop detected in template: maximum recursion depth exceeded
+Origin: roles/rspamd/defaults/main.yml:61:24
+rspamd_vhost_with_ssl: "{{ nginx_with_ssl and (rspamd_vhost_letsencrypt or (rspamd_vhost_ssl_cert | length > 0)) }}"
+```
+
+**Root Cause**: Template evaluation timing
+
+- Variables in `defaults/main.yml` are evaluated at role load time
+- Jinja2 template tries to resolve all variables immediately
+- Creates circular dependency during variable resolution
+
+**Solution 3**:
+
+- **Removed**: `rspamd_vhost_with_ssl` from `defaults/main.yml`
+- **Added**: Task "Determine effective SSL setting for rspamd" in `tasks/nginx.yml:41-43`
+- **Why it works**: Tasks evaluate at runtime when all variables are already resolved
+
+**SSL Logic**:
+
+```yaml
+# In tasks/nginx.yml (evaluated at runtime)
+- name: Determine effective SSL setting for rspamd
+  ansible.builtin.set_fact:
+    rspamd_effective_ssl: "{{ nginx_with_ssl and (rspamd_vhost_letsencrypt or (rspamd_vhost_ssl_cert | length > 0)) }}"
+
+# Pass to nginx_mono
+- name: Setup nginx vhost for rspamd
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nginx_mono
+  vars:
+    nginx_with_ssl: "{{ rspamd_effective_ssl }}"
+```
+
+**Benefits**:
+
+- SSL auto-detection: Only enables SSL when configured (Let's Encrypt OR ssl_cert)
+- Respects global `nginx_with_ssl` setting (can be disabled in host_vars)
+- No recursion: Task-time evaluation prevents circular dependencies
+- Clean molecule tests: No SSL config toggle issues
+
+**Test Coverage** (`molecule/rspamd/`):
+
+- ✅ Redis integration (dependency)
+- ✅ DKIM key generation (via dkim role)
+- ✅ Rspamd configuration (dkim_signing, arc, redis, logging)
+- ✅ nginx vhost creation via nginx_mono
+- ✅ Basic auth (htpasswd) for web UI
+- ✅ Idempotency test passes (changed=0)
+- ✅ All 18 verify tests pass
+
+**Test Results**: ✅ All distributions pass (debian12, debian13, ubuntu2404)
+
+- Rspamd successfully installed and configured
+- DKIM keys generated with correct ownership (_rspamd)
+- nginx configuration valid
+- No SSL certificate errors
+- Idempotency verified
+
+**Design Notes**:
+
+- SSL calculation must be in tasks, NOT defaults (to prevent recursion)
+- nginx_mono integration via `include_role` is the correct pattern
+- Molecule tests should call roles via their natural integration path (not directly)
+- Global variables (`nginx_with_ssl`) defined in common role for cross-role availability
+
+#### 16. dkim ✅
+
+**New Role**: DKIM key management for email services
+**Context**: Created as part of rspamd+DKIM migration project to separate DKIM key generation from rspamd role
+
+**Purpose**: Centralized DKIM key generation and management
+
+- Generate RSA private keys for DKIM signing
+- Create DNS TXT records for public key publication
+- Manage file permissions for mail service access
+- Support multiple domains with different selectors
+
+**Key Features**:
+
+1. **Automatic Key Generation** (`roles/dkim/tasks/generate_key.yml`):
+   - Creates `/var/lib/dkim/<domain>/<selector>.key` (private key)
+   - Generates `/var/lib/dkim/<domain>/<selector>.txt` (DNS TXT record)
+   - Extracts public key from private key automatically
+   - Configurable key size (default 2048 bits)
+
+2. **Flexible Ownership** (`roles/dkim/defaults/main.yml:7-8`):
+   - `dkim_user: root` (default)
+   - `dkim_group: root` (default)
+   - Can be overridden for specific mail services (e.g., `_rspamd`)
+
+3. **Multi-Domain Support**:
+
+   ```yaml
+   dkim_domains:
+     - domain: example.com
+       selector: mail
+       key_size: 2048
+     - domain: example.org
+       selector: default
+       key_size: 2048
+   ```
+
+4. **DNS Record Generation**:
+   - Creates ready-to-use TXT records
+   - Includes both single-line and multi-line formats
+   - Provides verification command: `dig +short TXT mail._domainkey.example.com`
+
+**Integration Pattern**:
+
+```yaml
+# In rspamd role
+- name: Setup DKIM keys for rspamd
+  ansible.builtin.include_role:
+    name: alphanodes.setup.dkim
+  vars:
+    dkim_user: _rspamd
+    dkim_group: _rspamd
+  when: rspamd_dkim_domains is defined
+```
+
+**Benefits**:
+
+- **Separation of Concerns**: DKIM key management separate from mail service configuration
+- **Reusability**: Can be used by multiple mail services (rspamd, postfix, etc.)
+- **Idempotent**: Keys only generated if they don't exist
+- **Secure Permissions**: Keys owned by mail service user with mode 0640
+- **DNS Documentation**: Automatic TXT record generation for easy DNS setup
+
+**Test Coverage** (`molecule/dkim/`):
+
+- ✅ Key generation (2048-bit RSA)
+- ✅ Directory structure (`/var/lib/dkim/<domain>/`)
+- ✅ File ownership and permissions (dkim_user/dkim_group)
+- ✅ DNS TXT record file creation
+- ✅ Public key extraction
+- ✅ Multi-domain support
+- ✅ Idempotency (keys not regenerated if they exist)
+
+**Test Results**: ✅ All distributions pass (debian12, debian13, ubuntu2404)
+
+- DKIM keys successfully generated
+- Correct file permissions (0640)
+- DNS TXT records formatted correctly
+- Public key matches private key
+- Idempotency verified
+
+**Design Notes**:
+
+- Role is standalone but designed for integration with mail service roles
+- Uses `include_role` pattern (not meta dependency) for flexibility
+- Each mail service can override `dkim_user`/`dkim_group` for its needs
+- Key files are persistent across role runs (only generated once)
+
+**Migration Path**:
+
+- Old: rspamd role contained DKIM key generation
+- New: dkim role handles key generation, rspamd role configures rspamd to use keys
+- Benefit: Other mail services (postfix, exim) can reuse dkim role
+
 ### ✅ Successfully Tested Roles (7 roles - from Phase 1)
 
 1. **common** - Post-task adjusted (check_mode to command)
@@ -831,6 +1037,19 @@ done
 - `roles/mailpit/tasks/nginx.yml` - Simplified to use nginx_mono for both modes
 - `roles/mailpit/templates/mailpit.service.j2` - Added conditional --webroot flag
 - `roles/mailpit/README.md` - Updated documentation for both deployment modes
+- `roles/common/defaults/main.yml` - Added nginx_with_ssl global variable (Line 24-27)
+- `roles/rspamd/defaults/main.yml` - Fixed rspamd_vhost_ssl_cert to use default('') instead of default(omit)
+- `roles/rspamd/tasks/nginx.yml` - Added "Determine effective SSL setting" task for SSL auto-detection
+- `molecule/rspamd/converge.yml` - Removed duplicate nginx_mono role invocation (fixed idempotence issue)
+- `roles/dkim/` - Created new role for centralized DKIM key management
+- `roles/dkim/tasks/main.yml` - Main entry point with validation and domain loop
+- `roles/dkim/tasks/generate_key.yml` - Key generation logic with public key extraction
+- `roles/dkim/defaults/main.yml` - Default variables (dkim_user, dkim_group, base_path)
+- `roles/dkim/meta/main.yml` - Role metadata with common role dependency
+- `molecule/dkim/molecule.yml` - Test configuration
+- `molecule/dkim/converge.yml` - Test playbook with multi-domain setup
+- `molecule/dkim/verify.yml` - Comprehensive verification tests
+- `.github/workflows/dkim.yml` - CI/CD workflow for dkim role
 
 ## Lessons Learned
 
@@ -922,6 +1141,12 @@ done
 
 1. **Path-based service deployment** - Services may need to run at URL paths instead of subdomains. **Pattern**: (1) Add webroot variable (e.g., `service_webroot: '/'`), (2) Use webroot to detect mode (`include_mode: "{{ service_webroot != '/' }}"`), (3) Pass webroot to service binary via systemd (e.g., `--webroot mail`), (4) Trim slashes for binary flag. **Benefits**: Single variable controls deployment mode, backward compatible (default subdomain), automatic flag generation. **Testing**: Verify systemd service has correct --webroot flag, include file created for path mode, full vhost for subdomain mode. **Example**: mailpit supports both `mailpit_webroot: '/'` (subdomain) and `mailpit_webroot: '/mail/'` (path-based). **Key insight**: Application must support --webroot or similar flag for path-based deployment.
 
+1. **Template recursion in defaults** - Jinja2 templates in `defaults/main.yml` are evaluated at role load time, not runtime. **Problem**: Complex variable calculations using other role variables can create circular dependencies. **Symptom**: "Recursive loop detected in template: maximum recursion depth exceeded". **Example**: `rspamd_vhost_with_ssl: "{{ nginx_with_ssl and (rspamd_vhost_letsencrypt or ...) }}"` in defaults caused recursion. **Solution**: Move complex calculations from `defaults/main.yml` to tasks using `set_fact`. **Why**: Tasks evaluate at runtime when all variables are already resolved. **Pattern**: Use defaults for simple values only, use tasks for calculations that reference other variables. **Testing**: If you see recursion errors, check if calculated variables are in defaults instead of tasks. **Key insight**: defaults/main.yml = static values, tasks/*.yml = dynamic calculations.
+
+1. **Duplicate role invocation in molecule tests** - Molecule tests that call the same role multiple times with different configurations can cause idempotence issues. **Problem**: Role called directly AND via another role's `include_role` with different variable values. **Symptom**: Tasks toggle between states (create → remove → create) on successive runs. **Example**: rspamd molecule test called nginx_mono directly AND via rspamd's include_role, each with different `nginx_with_ssl` values. **Solution**: Remove direct role invocation, let the test role call dependencies via their natural integration path. **Pattern**: Test roles via their intended usage pattern, not by calling internal dependencies directly. **Testing**: If idempotence fails with toggle behavior, check for duplicate role invocations in converge.yml. **Key insight**: Test the role as it will be used in production, not its internal implementation details.
+
+1. **SSL auto-detection pattern for nginx services** - Services integrated with nginx_mono need smart SSL handling. **Problem**: Global `nginx_with_ssl: true` doesn't mean ALL services should use SSL (some lack certificates). **Solution**: Calculate effective SSL setting in tasks: `effective_ssl: "{{ nginx_with_ssl and (letsencrypt_enabled or ssl_cert_configured) }}"`. **Benefits**: (1) Respects global SSL setting, (2) Auto-detects service-specific SSL config, (3) Prevents nginx errors for missing certificates, (4) User can disable SSL globally in host_vars. **Pattern**: Don't blindly pass `nginx_with_ssl` to nginx_mono, calculate effective setting based on service's actual SSL config. **Testing**: Verify SSL only enabled when service has certificates configured. **Example**: rspamd only enables SSL if Let's Encrypt OR ssl_cert is configured, even if `nginx_with_ssl: true` globally. **Key insight**: Global settings need service-specific validation.
+
 ## GitHub Actions Status
 
 After pushing, all workflows run automatically:
@@ -942,8 +1167,8 @@ After pushing, all workflows run automatically:
 
 ✅ **Phase 2 completed**
 
-- 14 role enhancements/fixes (unbound, nfs, java, gitlab_omnibus, php_cli, php_fpm, btrbk, nextcloud, drush, ansible_node, ruby, nginx_mono [2x], mailpit)
-- Total: 21 roles successfully tested (7 from Phase 1 + 14 from Phase 2)
+- 16 role enhancements/fixes (unbound, nfs, java, gitlab_omnibus, php_cli, php_fpm, btrbk, nextcloud, drush, ansible_node, ruby, nginx_mono [2x], mailpit, rspamd, dkim)
+- Total: 23 roles successfully tested (7 from Phase 1 + 16 from Phase 2)
 - 1 role partially fixed (gitlab - connection works, full test pending)
 - 18 converge.yml files fixed for idempotence (apt cache update with changed_when: false)
 - All fixes validated locally and on GitHub Actions
@@ -961,6 +1186,9 @@ After pushing, all workflows run automatically:
   - Global variables needed for multi-role tests (nginx_with_websocket, nginx_with_ssl, etc.)
   - Include mode pattern for path-based service deployments
   - Webroot variable pattern for dual-mode service deployment (subdomain vs path-based)
+  - Template recursion: Complex calculations must be in tasks, not defaults/main.yml
+  - Duplicate role invocation: Test roles via their natural integration path
+  - SSL auto-detection: Calculate effective setting per service, don't blindly pass global nginx_with_ssl
 
 🎯 **Ready for Phase 3**
 
