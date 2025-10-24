@@ -29,11 +29,29 @@
       register: dkim_key
       failed_when: not dkim_key.stat.exists
 
-    - name: Verify DKIM key has correct owner (_rspamd)
+    - name: Verify DKIM key has correct owner (root)
       ansible.builtin.stat:
         path: /var/lib/dkim/example.com/dkim_key.key
       register: dkim_key_owner
-      failed_when: dkim_key_owner.stat.pw_name != '_rspamd'
+      failed_when: dkim_key_owner.stat.pw_name != 'root'
+
+    - name: Verify DKIM key has correct group (dkim)
+      ansible.builtin.stat:
+        path: /var/lib/dkim/example.com/dkim_key.key
+      register: dkim_key_group
+      failed_when: dkim_key_group.stat.gr_name != 'dkim'
+
+    - name: Verify DKIM key has correct permissions (0640)
+      ansible.builtin.stat:
+        path: /var/lib/dkim/example.com/dkim_key.key
+      register: dkim_key_perms
+      failed_when: dkim_key_perms.stat.mode != '0640'
+
+    - name: Verify _rspamd user is member of dkim group
+      ansible.builtin.command: groups _rspamd
+      register: rspamd_groups
+      changed_when: false
+      failed_when: "'dkim' not in rspamd_groups.stdout"
 
     - name: Verify rspamd DKIM configuration exists
       ansible.builtin.stat:
@@ -77,12 +95,16 @@
         port: 11333
         timeout: 5
 
-    - name: Verify DKIM key path in rspamd config
-      ansible.builtin.command: grep -q "/var/lib/dkim/example.com/dkim_key.key" /etc/rspamd/local.d/dkim_signing.conf
+    - name: Verify DKIM path pattern in rspamd config (multi-domain with $domain variable)
+      ansible.builtin.command: grep -q 'path = "/var/lib/dkim/\$domain/' /etc/rspamd/local.d/dkim_signing.conf
       changed_when: false
 
     - name: Verify DKIM selector in rspamd config
       ansible.builtin.command: grep -q 'selector = "dkim_key"' /etc/rspamd/local.d/dkim_signing.conf
+      changed_when: false
+
+    - name: Verify allow_username_mismatch is enabled (for alias support)
+      ansible.builtin.command: grep -q 'allow_username_mismatch = true' /etc/rspamd/local.d/dkim_signing.conf
       changed_when: false
 
     - name: Verify nginx vhost file exists

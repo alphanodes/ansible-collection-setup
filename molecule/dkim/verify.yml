@@ -84,8 +84,11 @@
         name: alphanodes.setup.dkim
       vars:
         dkim_domains:
-          - domain: example.com
+          example.com:
             selector: mail
+            key_size: 2048
+          example.org:
+            selector: default
             key_size: 2048
 
     - name: Test idempotence - stat key after re-run

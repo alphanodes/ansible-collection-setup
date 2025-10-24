@@ -14,10 +14,10 @@
     - role: alphanodes.setup.dkim
       vars:
         dkim_domains:
-          - domain: example.com
+          example.com:
             selector: mail
             key_size: 2048
-          - domain: example.org
+          example.org:
             selector: default
             key_size: 2048
         dkim_show_public_keys: true
