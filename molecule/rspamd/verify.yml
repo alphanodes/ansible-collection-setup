@@ -25,13 +25,13 @@
 
     - name: Verify DKIM key exists
       ansible.builtin.stat:
-        path: /var/lib/dkim/example.com/mail.key
+        path: /var/lib/dkim/example.com/dkim_key.key
       register: dkim_key
       failed_when: not dkim_key.stat.exists
 
     - name: Verify DKIM key has correct owner (_rspamd)
       ansible.builtin.stat:
-        path: /var/lib/dkim/example.com/mail.key
+        path: /var/lib/dkim/example.com/dkim_key.key
       register: dkim_key_owner
       failed_when: dkim_key_owner.stat.pw_name != '_rspamd'
 
@@ -78,11 +78,11 @@
         timeout: 5
 
     - name: Verify DKIM key path in rspamd config
-      ansible.builtin.command: grep -q "/var/lib/dkim/example.com/mail.key" /etc/rspamd/local.d/dkim_signing.conf
+      ansible.builtin.command: grep -q "/var/lib/dkim/example.com/dkim_key.key" /etc/rspamd/local.d/dkim_signing.conf
       changed_when: false
 
     - name: Verify DKIM selector in rspamd config
-      ansible.builtin.command: grep -q 'selector = "mail"' /etc/rspamd/local.d/dkim_signing.conf
+      ansible.builtin.command: grep -q 'selector = "dkim_key"' /etc/rspamd/local.d/dkim_signing.conf
       changed_when: false
 
     - name: Verify nginx vhost file exists

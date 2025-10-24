@@ -10,20 +10,22 @@
         cache_valid_time: 600
       changed_when: false
 
+  vars:
+    # Central DKIM domains dictionary
+    dkim_domains:
+      example.com:
+        selector: dkim_key
+        key_size: 2048
+
   roles:
     # Redis role (dependency of rspamd)
     - role: alphanodes.setup.redis_server
 
-    # Rspamd role (includes nginx_mono setup automatically via include_role)
+    # Rspamd role (calls dkim role automatically via include_role)
     - role: alphanodes.setup.rspamd
       vars:
         rspamd_worker_controller_password: '$2$testpasswordhash'
-        rspamd_dkim_domains:
-          - domain: example.com
-            selector: mail
-            key_size: 2048
-        rspamd_dkim_key: /var/lib/dkim/example.com/mail.key
-        rspamd_dkim_selector: mail
+        rspamd_dkim_domain: example.com  # Lookup key in dkim_domains dict
         rspamd_enable_service: true
         rspamd_vhost_server: 'rspamd.example.com'  # Enable vhost for nginx_mono testing
         rspamd_vhost_location: '/'  # Full vhost mode
