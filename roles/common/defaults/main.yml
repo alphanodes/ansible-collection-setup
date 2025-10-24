@@ -21,6 +21,11 @@ software_path: '{{ srv_path }}/software'
 nginx_user: www-data
 nginx_group: www-data
 
+# Global nginx SSL configuration
+# Set to false to disable SSL globally for all services
+# Per-service roles will auto-detect SSL based on their configuration if not explicitly set
+nginx_with_ssl: true
+
 # set no_log (e.g. for passwords used)
 hide_sensitive_data: true
 

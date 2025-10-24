@@ -38,6 +38,10 @@
       ansible.builtin.set_fact:
         rspamd_nginx_config: "{{ rspamd_nginx_config | combine({'ssl_cert': rspamd_vhost_ssl_cert}) }}"
 
+    - name: Determine effective SSL setting for rspamd
+      ansible.builtin.set_fact:
+        rspamd_effective_ssl: "{{ nginx_with_ssl and (rspamd_vhost_letsencrypt or (rspamd_vhost_ssl_cert | length > 0)) }}"
+
     - name: Setup nginx vhost for rspamd
       ansible.builtin.include_role:
         name: alphanodes.setup.nginx_mono
@@ -46,3 +50,4 @@
         nginx_mono_service_enabled: "{{ rspamd_enable_service }}"
         nginx_mono_include_mode: "{{ rspamd_vhost_location != '/' }}"
         nginx_mono_service_config: "{{ rspamd_nginx_config }}"
+        nginx_with_ssl: "{{ rspamd_effective_ssl }}"
