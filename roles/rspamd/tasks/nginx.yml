@@ -34,7 +34,7 @@
         rspamd_nginx_config: "{{ rspamd_nginx_config | combine({'letsencrypt_trusted_cert': rspamd_vhost_letsencrypt_trusted_cert}) }}"
 
     - name: Add SSL certificate path if defined
-      when: (rspamd_vhost_ssl_cert | default('', true)) | length > 0
+      when: rspamd_vhost_ssl_cert is defined and rspamd_vhost_ssl_cert != omit and rspamd_vhost_ssl_cert | length > 0
       ansible.builtin.set_fact:
         rspamd_nginx_config: "{{ rspamd_nginx_config | combine({'ssl_cert': rspamd_vhost_ssl_cert}) }}"
 
