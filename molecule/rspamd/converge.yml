@@ -14,10 +14,7 @@
     # Redis role (dependency of rspamd)
     - role: alphanodes.setup.redis_server
 
-    # nginx_mono role (for rspamd web UI)
-    - role: alphanodes.setup.nginx_mono
-
-    # Rspamd role (includes DKIM setup automatically)
+    # Rspamd role (includes nginx_mono setup automatically via include_role)
     - role: alphanodes.setup.rspamd
       vars:
         rspamd_worker_controller_password: '$2$testpasswordhash'
