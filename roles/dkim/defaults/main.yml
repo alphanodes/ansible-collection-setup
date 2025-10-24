@@ -34,6 +34,12 @@ dkim_default_selector: mail
 # Higher values (4096) are more secure but may cause DNS issues
 dkim_default_key_size: 2048
 
+# DKIM TXT record flags (optional tags)
+# See https://datatracker.ietf.org/doc/html/rfc6376#section-3.6.1
+# s=email: Restricts key to email signing only (recommended)
+# Note: We do NOT use t=s (strict) because mail.alphanodes.com signs for alphanodes.com (subdomain signing)
+dkim_txt_service_type: email  # Service type (email = only for email, * = all services)
+
 # Force regeneration of existing keys
 # WARNING: Only set to true when rotating keys!
 # Old signatures will fail validation after rotation

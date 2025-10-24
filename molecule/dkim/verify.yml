@@ -59,15 +59,15 @@
       changed_when: false
       failed_when: key_check.rc != 0
 
-    - name: Verify public key file contains DKIM DNS record
-      ansible.builtin.command: grep -q "v=DKIM1; k=rsa; p=" /var/lib/dkim/example.com/mail.txt
+    - name: Verify public key file contains DKIM DNS record with s=email tag
+      ansible.builtin.command: grep -q "v=DKIM1; k=rsa; s=email; p=" /var/lib/dkim/example.com/mail.txt
       changed_when: false
       failed_when: false
       register: dns_record_check
 
-    - name: Fail if DNS record not found
+    - name: Fail if DNS record with s=email tag not found
       ansible.builtin.fail:
-        msg: "DKIM DNS record not found in public key file"
+        msg: "DKIM DNS record with s=email tag not found in public key file"
       when: dns_record_check.rc != 0
 
     - name: Verify selector in DNS record

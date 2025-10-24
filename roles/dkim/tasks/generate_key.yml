@@ -49,11 +49,11 @@
           ; Selector: {{ _dkim_selector }}
           ; Add this to your DNS zone:
 
-          {{ _dkim_selector }}._domainkey.{{ dkim_domain_item.domain }}. IN TXT "v=DKIM1; k=rsa; p={{ _dkim_pubkey_raw.stdout }}"
+          {{ _dkim_selector }}._domainkey.{{ dkim_domain_item.domain }}. IN TXT "v=DKIM1; k=rsa; s={{ dkim_txt_service_type }}; p={{ _dkim_pubkey_raw.stdout }}"
 
           ; Alternative format (if your DNS provider requires quotes around long values):
           {{ _dkim_selector }}._domainkey.{{ dkim_domain_item.domain }}. IN TXT (
-            "v=DKIM1; k=rsa; "
+            "v=DKIM1; k=rsa; s={{ dkim_txt_service_type }}; "
             "p={{ _dkim_pubkey_raw.stdout }}"
           )
 
@@ -72,7 +72,7 @@
           ========================================
 
           DNS TXT Record:
-          {{ _dkim_selector }}._domainkey.{{ dkim_domain_item.domain }}. IN TXT "v=DKIM1; k=rsa; p={{ _dkim_pubkey_raw.stdout }}"
+          {{ _dkim_selector }}._domainkey.{{ dkim_domain_item.domain }}. IN TXT "v=DKIM1; k=rsa; s={{ dkim_txt_service_type }}; p={{ _dkim_pubkey_raw.stdout }}"
 
           Public key file saved to: {{ _dkim_public_key }}
           ========================================
