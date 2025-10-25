@@ -59,6 +59,7 @@
     mode: '0644'
     owner: root
     group: root
+    validate: rspamadm configtest -c %s
   loop:
     - dkim_signing
     - arc
@@ -71,6 +72,7 @@
     mode: '0644'
     owner: root
     group: root
+    validate: rspamadm configtest -c %s
   notify: Restart rspamd
   loop:
     - worker-controller.inc
@@ -82,6 +84,7 @@
     - options.inc
     - greylist.conf
     - ratelimit.conf
+    - dmarc.conf
 
 - name: Configure manual whitelists and blacklists
   ansible.builtin.template:
@@ -90,6 +93,7 @@
     mode: '0644'
     owner: root
     group: root
+    validate: rspamadm configtest -c %s
   notify: Restart rspamd
 
 - name: Import setup for whitelist and backlist tasks

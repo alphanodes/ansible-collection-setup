@@ -1,0 +1,30 @@
+#jinja2: lstrip_blocks: True
+# Ansible managed
+#
+# DMARC module configuration
+# see https://docs.rspamd.com/modules/dmarc
+
+{% if rspamd_dmarc_reporting_enabled %}
+# DMARC Reporting Configuration
+reporting {
+  enabled = true;
+  email = '{{ rspamd_dmarc_reporting_email }}';
+  domain = '{{ rspamd_dmarc_reporting_domain }}';
+  org_name = '{{ rspamd_dmarc_reporting_org_name }}';
+{% if rspamd_dmarc_reporting_helo | length > 0 %}
+  helo = '{{ rspamd_dmarc_reporting_helo }}';
+{% endif %}
+{% if rspamd_dmarc_reporting_smtp | length > 0 %}
+  smtp = '{{ rspamd_dmarc_reporting_smtp }}';
+{% endif %}
+{% if rspamd_dmarc_reporting_smtp_port > 0 %}
+  smtp_port = {{ rspamd_dmarc_reporting_smtp_port }};
+{% endif %}
+{% if rspamd_dmarc_reporting_max_entries > 0 %}
+  max_entries = {{ rspamd_dmarc_reporting_max_entries }};
+{% endif %}
+{% if rspamd_dmarc_reporting_keys_expire > 0 %}
+  keys_expire = {{ rspamd_dmarc_reporting_keys_expire }};
+{% endif %}
+}
+{% endif %}

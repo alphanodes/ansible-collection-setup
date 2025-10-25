@@ -102,3 +102,16 @@ rspamd_ratelimit_enabled: false  # Enable rate limiting (recommended for product
 rspamd_dns_enable_dnssec: true  # Enable DNSSEC validation
 rspamd_local_addrs: '127.0.0.0/8, ::1'  # Local networks
 rspamd_url_redirector_timeout: 10  # URL redirector timeout in seconds
+
+# DMARC Reporting configuration
+# see https://docs.rspamd.com/modules/dmarc
+# Rspamd can send DMARC aggregate reports to other domains when receiving mail
+rspamd_dmarc_reporting_enabled: false  # Enable DMARC reporting (requires Redis)
+rspamd_dmarc_reporting_email: 'postmaster@example.com'  # From address for reports
+rspamd_dmarc_reporting_domain: 'example.com'  # Domain for DMARC reports
+rspamd_dmarc_reporting_org_name: 'Example Organization'  # Organization name in reports
+rspamd_dmarc_reporting_helo: ''  # SMTP HELO/EHLO (optional, defaults to hostname)
+rspamd_dmarc_reporting_smtp: ''  # SMTP server (optional, defaults to localhost)
+rspamd_dmarc_reporting_smtp_port: 0  # SMTP port (optional, defaults to 25)
+rspamd_dmarc_reporting_max_entries: 0  # Max entries per domain (optional, default 1000)
+rspamd_dmarc_reporting_keys_expire: 0  # Redis keys expire time in seconds (optional, default 2d)
