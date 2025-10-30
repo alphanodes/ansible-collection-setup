@@ -63,8 +63,8 @@ config.active_job.queue_adapter = :{{ queue_adapter }}
 {% endif %}
 if defined? Bullet
 {% if instance.with_bullet is defined and instance.with_bullet %}
-  Bullet.alert = true
+  Bullet.enable = true
 {% else %}
-  Bullet.alert = false
+  Bullet.enable = false
 {% endif %}
 end
