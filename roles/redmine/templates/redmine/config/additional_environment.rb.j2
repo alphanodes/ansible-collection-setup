@@ -7,7 +7,12 @@ config.logger = Journald::TraceLogger.new('{{ instance_name }}')
 config.logger.level = Logger::{{ instance.log_level | default('warn') | upper }}
 {% endif %}
 {% if instance.use_logger is undefined or instance.use_logger == 'syslog' %}
-config.logger = Syslog::Logger.new('{{ instance_name }}')
+begin
+  require 'syslog/logger'
+  config.logger = Syslog::Logger.new('{{ instance_name }}') if defined?(Syslog::Logger)
+rescue LoadError
+  # Syslog not available, Rails uses default logger
+end
 config.logger.level = Logger::{{ instance.log_level | default('warn') | upper }}
 {% endif %}
 {% if active_to_time_preserves_timezone %}
