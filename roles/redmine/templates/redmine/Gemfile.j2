@@ -1,10 +1,9 @@
 # {{ managed_by_ansible }}
-{% if instance.use_logger is undefined %}
-gem 'journald-logger'
-{% else %}
-{% if instance.use_logger != 'log' %}
-gem '{{ instance.use_logger }}'
+{% if instance.use_logger is defined and instance.use_logger != 'syslog' %}
+gem '{{instance.use_logger}}'
 {% endif %}
+{% if instance.use_logger is undefined or instance.use_logger == 'syslog' %}
+# NOTE: Syslog::Logger without gem is used
 {% endif %}
 {% if instance.rails_env is undefined or (instance.rails_env != 'test') %}
 gem 'puma'
