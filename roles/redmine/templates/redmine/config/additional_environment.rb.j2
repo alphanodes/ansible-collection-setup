@@ -61,3 +61,10 @@ config.active_job.queue_adapter = ActiveJob::QueueAdapters::AsyncAdapter.new min
 config.active_job.queue_adapter = :{{ queue_adapter }}
 {% endif %}
 {% endif %}
+if defined? Bullet
+{% if instance.with_bullet is defined and instance.with_bullet %}
+  Bullet.alert = true
+{% else %}
+  Bullet.alert = false
+{% endif %}
+end
