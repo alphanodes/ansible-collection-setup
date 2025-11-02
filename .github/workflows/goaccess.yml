@@ -7,6 +7,7 @@ name: "alphanodes.setup.goaccess"
       - main
     paths:
       - 'roles/goaccess/**'
+      - 'roles/common/**'
       - 'molecule/goaccess/**'
       - '.github/workflows/goaccess.yml'
 

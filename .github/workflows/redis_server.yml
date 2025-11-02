@@ -7,6 +7,7 @@ name: "alphanodes.setup.redis_server"
       - main
     paths:
       - 'roles/redis_server/**'
+      - 'roles/common/**'
       - 'molecule/redis_server/**'
       - '.github/workflows/redis_server.yml'
 

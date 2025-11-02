@@ -7,6 +7,7 @@ name: "alphanodes.setup.systemd_timer"
       - main
     paths:
       - 'roles/systemd_timer/**'
+      - 'roles/common/**'
       - 'molecule/systemd_timer/**'
       - '.github/workflows/systemd_timer.yml'
 

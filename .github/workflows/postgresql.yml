@@ -7,6 +7,7 @@ name: "alphanodes.setup.postgresql"
       - main
     paths:
       - 'roles/postgresql/**'
+      - 'roles/common/**'
       - 'roles/postgresql_client/**'
       - 'molecule/postgresql/**'
       - 'molecule/postgresql_client/**'

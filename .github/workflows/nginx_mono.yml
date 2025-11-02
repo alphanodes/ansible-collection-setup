@@ -7,6 +7,7 @@ name: "alphanodes.setup.nginx_mono"
       - main
     paths:
       - 'roles/nginx_mono/**'
+      - 'roles/common/**'
       - 'molecule/nginx_mono/**'
       - '.github/workflows/nginx_mono.yml'
 

@@ -8,6 +8,7 @@ name: "alphanodes.setup.mongodb"
     paths:
       - 'plugins/modules/mongodb_replication.py'
       - 'roles/mongodb/**'
+      - 'roles/common/**'
       - 'molecule/mongodb/**'
       - '.github/workflows/mongodb.yml'
 

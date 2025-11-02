@@ -7,6 +7,7 @@ name: "alphanodes.setup.rsync"
       - main
     paths:
       - 'roles/rsync/**'
+      - 'roles/common/**'
       - 'molecule/rsync/**'
       - '.github/workflows/rsync.yml'
 

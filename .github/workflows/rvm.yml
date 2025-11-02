@@ -7,6 +7,7 @@ name: "alphanodes.setup.rvm"
       - main
     paths:
       - 'roles/rvm/**'
+      - 'roles/common/**'
       - 'molecule/rvm/**'
       - '.github/workflows/rvm.yml'
 

@@ -7,6 +7,7 @@ name: "alphanodes.setup.postgresql_client"
       - main
     paths:
       - 'roles/postgresql_client/**'
+      - 'roles/common/**'
       - 'molecule/postgresql_client/**'
       - '.github/workflows/postgresql_client.yml'
 

@@ -7,6 +7,7 @@ name: "alphanodes.setup.python"
       - main
     paths:
       - 'roles/python/**'
+      - 'roles/common/**'
       - 'molecule/python/**'
       - '.github/workflows/python.yml'
 

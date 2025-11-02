@@ -7,6 +7,7 @@ name: "alphanodes.setup.gitlab_omnibus"
       - main
     paths:
       - 'roles/gitlab_omnibus/**'
+      - 'roles/common/**'
       - 'molecule/gitlab_omnibus/**'
       - '.github/workflows/gitlab_omnibus.yml'
 

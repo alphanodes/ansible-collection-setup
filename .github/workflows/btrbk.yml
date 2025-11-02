@@ -7,6 +7,7 @@ name: "alphanodes.setup.btrbk"
       - main
     paths:
       - 'roles/btrbk/**'
+      - 'roles/common/**'
       - 'molecule/btrbk/**'
       - '.github/workflows/btrbk.yml'
 

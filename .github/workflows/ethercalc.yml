@@ -7,6 +7,7 @@ name: "alphanodes.setup.ethercalc"
       - main
     paths:
       - 'roles/ethercalc/**'
+      - 'roles/common/**'
       - 'roles/nginx_mono/**'
       - 'molecule/ethercalc/**'
       - '.github/workflows/ethercalc.yml'

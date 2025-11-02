@@ -75,7 +75,7 @@
         fail_msg: "ClamAV virus database is missing"
 
     - name: Ping ClamAV daemon via socket
-      ansible.builtin.command: clamdscan --ping 5 --wait
+      ansible.builtin.command: clamdscan --ping 3
       register: clamav_ping
       changed_when: false
 

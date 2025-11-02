@@ -7,6 +7,7 @@ name: "alphanodes.setup.hedgedoc"
       - main
     paths:
       - 'roles/hedgedoc/**'
+      - 'roles/common/**'
       - 'molecule/hedgedoc/**'
       - '.github/workflows/hedgedoc.yml'
 

@@ -7,6 +7,7 @@ name: "alphanodes.setup.postfix"
       - main
     paths:
       - 'roles/postfix/**'
+      - 'roles/common/**'
       - 'molecule/postfix/**'
       - '.github/workflows/postfix.yml'
 

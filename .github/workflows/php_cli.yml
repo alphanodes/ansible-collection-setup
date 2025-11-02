@@ -7,6 +7,7 @@ name: "alphanodes.setup.php_cli"
       - main
     paths:
       - 'roles/php_cli/**'
+      - 'roles/common/**'
       - 'molecule/php_cli/**'
       - '.github/workflows/php_cli.yml'
 

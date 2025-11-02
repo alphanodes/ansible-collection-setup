@@ -7,6 +7,7 @@ name: "alphanodes.setup.ruby"
       - main
     paths:
       - 'roles/ruby/**'
+      - 'roles/common/**'
       - 'molecule/ruby/**'
       - '.github/workflows/ruby.yml'
 

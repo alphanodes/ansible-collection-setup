@@ -7,6 +7,7 @@ name: "alphanodes.setup.apt"
       - main
     paths:
       - 'roles/apt/**'
+      - 'roles/common/**'
       - 'molecule/apt/**'
       - '.github/workflows/apt.yml'
 

@@ -7,6 +7,7 @@ name: "alphanodes.setup.sudo"
       - main
     paths:
       - 'roles/sudo/**'
+      - 'roles/common/**'
       - 'molecule/sudo/**'
       - '.github/workflows/sudo.yml'
 

@@ -7,6 +7,7 @@ name: "alphanodes.setup.clamav"
       - main
     paths:
       - 'roles/clamav/**'
+      - 'roles/common/**'
       - 'molecule/clamav/**'
       - '.github/workflows/clamav.yml'
 

@@ -7,6 +7,7 @@ name: "alphanodes.setup.drupal"
       - main
     paths:
       - 'roles/drupal/**'
+      - 'roles/common/**'
       - 'molecule/drupal/**'
       - '.github/workflows/drupal.yml'
 

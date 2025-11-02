@@ -7,6 +7,7 @@ name: "alphanodes.setup.mailpit"
       - main
     paths:
       - 'roles/mailpit/**'
+      - 'roles/common/**'
       - 'roles/nginx_mono/**'
       - 'molecule/mailpit/**'
       - '.github/workflows/mailpit.yml'

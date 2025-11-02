@@ -7,6 +7,7 @@ name: "alphanodes.setup.dendrite"
       - main
     paths:
       - 'roles/dendrite/**'
+      - 'roles/common/**'
       - 'roles/nginx_mono/**'
       - 'roles/systemd_timer/**'
       - 'molecule/dendrite/**'

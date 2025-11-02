@@ -7,6 +7,7 @@ name: "alphanodes.setup.matomo"
       - main
     paths:
       - 'roles/matomo/**'
+      - 'roles/common/**'
       - 'molecule/matomo/**'
       - '.github/workflows/matomo.yml'
 

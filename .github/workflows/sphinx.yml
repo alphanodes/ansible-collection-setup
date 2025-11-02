@@ -7,6 +7,7 @@ name: "alphanodes.setup.sphinx"
       - main
     paths:
       - 'roles/sphinx/**'
+      - 'roles/common/**'
       - 'molecule/sphinx/**'
       - '.github/workflows/sphinx.yml'
 

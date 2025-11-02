@@ -7,6 +7,7 @@ name: "alphanodes.setup.grafana"
       - main
     paths:
       - 'roles/grafana/**'
+      - 'roles/common/**'
       - 'roles/nginx_mono/**'
       - 'molecule/grafana/**'
       - '.github/workflows/grafana.yml'

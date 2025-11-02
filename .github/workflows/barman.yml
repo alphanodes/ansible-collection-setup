@@ -7,6 +7,7 @@ name: "alphanodes.setup.barman"
       - main
     paths:
       - 'roles/barman/**'
+      - 'roles/common/**'
       - 'molecule/barman/**'
       - '.github/workflows/barman.yml'
 

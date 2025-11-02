@@ -8,6 +8,7 @@ name: "alphanodes.setup.matrix_room_cleaner"
       - main
     paths:
       - 'roles/dendrite/**'
+      - 'roles/common/**'
       - 'roles/systemd_timer/**'
       - 'molecule/matrix_room_cleaner/**'
       - '.github/workflows/matrix_room_cleaner.yml'

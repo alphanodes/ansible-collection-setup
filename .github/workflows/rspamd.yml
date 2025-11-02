@@ -7,6 +7,7 @@ name: "alphanodes.setup.rspamd"
       - main
     paths:
       - 'roles/rspamd/**'
+      - 'roles/common/**'
       - 'roles/dkim/**'
       - 'roles/nginx_mono/**'
       - 'molecule/rspamd/**'

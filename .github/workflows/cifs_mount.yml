@@ -7,6 +7,7 @@ name: "alphanodes.setup.cifs_mount"
       - main
     paths:
       - 'roles/cifs_mount/**'
+      - 'roles/common/**'
       - 'molecule/cifs_mount/**'
       - '.github/workflows/cifs_mount.yml'
 

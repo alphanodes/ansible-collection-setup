@@ -7,6 +7,7 @@ name: "alphanodes.setup.element_web"
       - main
     paths:
       - 'roles/element_web/**'
+      - 'roles/common/**'
       - 'roles/nginx_mono/**'
       - 'molecule/element_web/**'
       - '.github/workflows/element_web.yml'

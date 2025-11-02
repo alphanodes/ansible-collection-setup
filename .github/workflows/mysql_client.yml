@@ -7,6 +7,7 @@ name: "alphanodes.setup.mysql_client"
       - main
     paths:
       - 'roles/mysql_client/**'
+      - 'roles/common/**'
       - 'molecule/mysql_client/**'
       - '.github/workflows/mysql_client.yml'
 
