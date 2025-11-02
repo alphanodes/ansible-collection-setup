@@ -52,10 +52,15 @@ jobs:
       # Important: This sets up your GITHUB_WORKSPACE environment variable
       - uses: actions/checkout@v5
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
       - name: Lint Ansible Playbook
         uses: ansible/ansible-lint@main
         with:
-          setup_python: "true"
+          setup_python: "false"
           requirements_file: "requirements.yml"
 
   markdownlint:
