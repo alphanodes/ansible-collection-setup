@@ -1,0 +1,12 @@
+# {{ ansible_managed }}
+[Unit]
+Description=ClamAV virus database update timer
+Documentation=man:freshclam(1) man:freshclam.conf(5)
+
+[Timer]
+OnCalendar={{ clamav_freshclam_on_calendar }}
+RandomizedDelaySec={{ clamav_freshclam_randomized_delay_sec }}
+Persistent=true
+
+[Install]
+WantedBy=timers.target

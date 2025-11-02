@@ -1,0 +1,130 @@
+---
+- name: Ensure ClamAV packages are installed
+  ansible.builtin.apt:
+    name: '{{ clamav_packages }}'
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Stop freshclam service if running (will be replaced by timer)
+  ansible.builtin.systemd_service:
+    name: '{{ clamav_freshclam_service_name }}'
+    state: stopped
+    enabled: false
+  failed_when: false
+
+- name: Setup clamd configuration
+  ansible.builtin.template:
+    src: clamd.conf.j2
+    dest: '{{ clamav_clamd_conf }}'
+    owner: '{{ clamav_user }}'
+    group: '{{ clamav_group }}'
+    mode: '0644'
+  notify: Restart clamav-daemon
+
+- name: Setup freshclam configuration
+  ansible.builtin.template:
+    src: freshclam.conf.j2
+    dest: '{{ clamav_freshclam_conf }}'
+    owner: '{{ clamav_user }}'
+    group: '{{ clamav_group }}'
+    mode: '0644'
+
+- name: Ensure ClamAV runtime directory exists
+  ansible.builtin.file:
+    path: '{{ clamav_run_dir }}'
+    state: directory
+    owner: '{{ clamav_user }}'
+    group: '{{ clamav_group }}'
+    mode: '0755'
+
+- name: Ensure ClamAV database directory exists
+  ansible.builtin.file:
+    path: '{{ clamav_db_dir }}'
+    state: directory
+    owner: '{{ clamav_user }}'
+    group: '{{ clamav_group }}'
+    mode: '0755'
+
+- name: Check if virus database exists
+  ansible.builtin.stat:
+    path: '{{ clamav_db_dir }}/main.cvd'
+  register: clamav_db_stat
+
+- name: Run initial freshclam update if database is missing
+  ansible.builtin.command: freshclam --quiet
+  when: not clamav_db_stat.stat.exists
+  changed_when: true
+  become: true
+  become_user: '{{ clamav_user }}'
+
+- name: Setup freshclam systemd service
+  ansible.builtin.template:
+    src: systemd/freshclam.service.j2
+    dest: /etc/systemd/system/clamav-freshclam.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload systemd
+
+- name: Setup freshclam systemd timer
+  ansible.builtin.template:
+    src: systemd/freshclam.timer.j2
+    dest: /etc/systemd/system/clamav-freshclam.timer
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Reload systemd
+    - Restart freshclam timer
+
+- name: Ensure freshclam timer is enabled and started
+  ansible.builtin.systemd_service:
+    name: clamav-freshclam.timer
+    state: started
+    enabled: true
+    daemon_reload: true
+
+- name: Ensure clamav-daemon is enabled and started
+  block:
+    - name: Start and enable clamav-daemon service
+      ansible.builtin.systemd_service:
+        name: '{{ clamav_service_name }}'
+        state: '{{ clamav_service_state }}'
+        enabled: '{{ clamav_service_enabled }}'
+        daemon_reload: true
+  rescue:
+    - name: Show clamav-daemon service status for diagnostics
+      ansible.builtin.command: systemctl status {{ clamav_service_name }} --no-pager
+      register: clamav_service_status_cmd
+      changed_when: false
+      failed_when: false
+
+    - name: Show recent clamav-daemon journal logs for diagnostics
+      ansible.builtin.command: journalctl -u {{ clamav_service_name }} --no-pager -n 200
+      register: clamav_journal_logs
+      changed_when: false
+      failed_when: false
+
+    - name: Fail with clamav-daemon service diagnostics
+      ansible.builtin.fail:
+        msg: |
+          ClamAV daemon service failed to start.
+          systemctl status:
+          {{ clamav_service_status_cmd.stdout | default('') }}
+          journalctl:
+          {{ clamav_journal_logs.stdout | default('') }}
+
+- name: Wait for ClamAV socket to be available
+  ansible.builtin.wait_for:
+    path: '{{ clamav_socket_path }}'
+    state: present
+    timeout: 30
+
+- name: Test ClamAV daemon is working via socket
+  ansible.builtin.command: clamdscan --ping 3
+  register: clamav_ping_test
+  changed_when: false
+  retries: 5
+  delay: 3
+  until: clamav_ping_test.rc == 0

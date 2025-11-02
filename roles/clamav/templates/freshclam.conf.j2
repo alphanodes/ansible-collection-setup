@@ -1,0 +1,51 @@
+# {{ ansible_managed }}
+# FreshClam configuration
+# See freshclam.conf(5) for details
+
+# Database directory
+DatabaseDirectory {{ clamav_db_dir }}
+
+# Update log file
+{% if clamav_freshclam_log_syslog %}
+LogSyslog yes
+LogFacility {{ clamav_freshclam_log_facility }}
+{% else %}
+LogSyslog no
+UpdateLogFile /var/log/clamav/freshclam.log
+{% endif %}
+LogVerbose {{ 'yes' if clamav_freshclam_log_verbose else 'no' }}
+LogTime {{ 'yes' if clamav_freshclam_log_time else 'yes' }}
+
+# PID file
+PidFile {{ clamav_run_dir }}/freshclam.pid
+
+# User and group
+DatabaseOwner {{ clamav_user }}
+
+# Database mirrors
+{% for mirror in clamav_freshclam_database_mirror %}
+DatabaseMirror {{ mirror }}
+{% endfor %}
+
+# Number of database checks per day
+Checks {{ clamav_freshclam_checks_per_day }}
+
+# Proxy settings (if needed)
+#HTTPProxyServer proxy.example.com
+#HTTPProxyPort 8080
+
+# Timeouts
+ConnectTimeout 30
+ReceiveTimeout 0
+
+# Test databases before replacing
+TestDatabases yes
+
+# Scripted updates (deprecated, but kept for compatibility)
+ScriptedUpdates yes
+
+# Bytecode security
+Bytecode yes
+
+# Foreground mode (not used with timer, but set for manual runs)
+Foreground no

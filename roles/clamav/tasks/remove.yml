@@ -1,0 +1,58 @@
+---
+- name: Stop clamav-daemon service
+  ansible.builtin.systemd_service:
+    name: '{{ clamav_service_name }}'
+    state: stopped
+    enabled: false
+  failed_when: false
+
+- name: Stop freshclam timer
+  ansible.builtin.systemd_service:
+    name: clamav-freshclam.timer
+    state: stopped
+    enabled: false
+  failed_when: false
+
+- name: Stop freshclam service
+  ansible.builtin.systemd_service:
+    name: clamav-freshclam.service
+    state: stopped
+    enabled: false
+  failed_when: false
+
+- name: Remove systemd service files
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/systemd/system/clamav-freshclam.service
+    - /etc/systemd/system/clamav-freshclam.timer
+    - /etc/systemd/system/multi-user.target.wants/clamav-freshclam.timer
+    - /etc/systemd/system/timers.target.wants/clamav-freshclam.timer
+  notify: Reload systemd
+
+- name: Remove ClamAV configuration files
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - '{{ clamav_clamd_conf }}'
+    - '{{ clamav_freshclam_conf }}'
+
+- name: Remove ClamAV packages
+  ansible.builtin.apt:
+    name: '{{ clamav_packages }}'
+    state: absent
+    purge: true
+    autoremove: true
+
+- name: Remove ClamAV database directory
+  ansible.builtin.file:
+    path: '{{ clamav_db_dir }}'
+    state: absent
+  when: clamav_remove_database | default(true)
+
+- name: Remove ClamAV runtime directory
+  ansible.builtin.file:
+    path: '{{ clamav_run_dir }}'
+    state: absent

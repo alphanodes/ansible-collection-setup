@@ -1,0 +1,23 @@
+# {{ ansible_managed }}
+[Unit]
+Description=ClamAV virus database updater
+Documentation=man:freshclam(1) man:freshclam.conf(5)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User={{ clamav_user }}
+ExecStart=/usr/bin/freshclam --quiet
+StandardOutput=journal
+StandardError=journal
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths={{ clamav_db_dir }}
+RuntimeDirectory=clamav
+RuntimeDirectoryMode=0755
+
+[Install]
+WantedBy=multi-user.target

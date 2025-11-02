@@ -1,0 +1,16 @@
+---
+# handlers file for clamav
+
+- name: Reload systemd
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+
+- name: Restart clamav-daemon
+  ansible.builtin.systemd_service:
+    name: '{{ clamav_service_name }}'
+    state: restarted
+
+- name: Restart freshclam timer
+  ansible.builtin.systemd_service:
+    name: clamav-freshclam.timer
+    state: restarted

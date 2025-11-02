@@ -1,0 +1,68 @@
+---
+# defaults file for clamav
+
+# Set to true to remove ClamAV completely from the system
+clamav_remove: false
+
+# When removing ClamAV, also remove virus database directory (300MB+)
+clamav_remove_database: true
+
+clamav_packages:
+  - clamav-daemon
+  - clamav-freshclam
+  - clamdscan
+
+# clamd configuration
+clamav_socket_path: /var/run/clamav/clamd.ctl
+clamav_socket_group: clamav
+clamav_socket_mode: '0660'
+
+# Resource limits for clamd to prevent excessive memory usage
+# ClamAV can use 500MB-1GB+ RAM, so we set reasonable limits
+clamav_max_threads: 12
+clamav_max_file_size: 100M
+clamav_max_scan_size: 400M
+clamav_stream_max_length: 100M
+clamav_max_recursion: 16
+clamav_max_files: 10000
+
+# Logging configuration
+clamav_log_syslog: true
+clamav_log_facility: LOG_LOCAL6
+clamav_log_verbose: false
+clamav_log_time: true
+
+# Daemon configuration
+clamav_tcp_socket: false
+clamav_tcp_addr: 127.0.0.1
+clamav_tcp_port: 3310
+
+# Scan options
+clamav_scan_pe: true
+clamav_scan_elf: true
+clamav_scan_ole2: true
+clamav_scan_pdf: true
+clamav_scan_html: true
+clamav_scan_mail: true
+clamav_scan_archive: true
+clamav_detect_pua: false
+clamav_algorithmic_detection: true
+clamav_scan_swf: true
+
+# freshclam configuration
+clamav_freshclam_update_interval: 1h
+clamav_freshclam_checks_per_day: 24
+clamav_freshclam_database_mirror:
+  - database.clamav.net
+clamav_freshclam_log_syslog: true
+clamav_freshclam_log_facility: LOG_LOCAL6
+clamav_freshclam_log_verbose: false
+clamav_freshclam_log_time: true
+
+# systemd timer configuration
+clamav_freshclam_on_calendar: hourly
+clamav_freshclam_randomized_delay_sec: 900
+
+# Service management
+clamav_service_enabled: true
+clamav_service_state: started

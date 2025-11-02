@@ -1,0 +1,134 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check ClamAV daemon service status
+      ansible.builtin.systemd_service:
+        name: clamav-daemon
+      register: clamav_service
+
+    - name: Assert ClamAV daemon service is running
+      ansible.builtin.assert:
+        that:
+          - clamav_service.status.ActiveState == 'active'
+          - clamav_service.status.SubState == 'running'
+        fail_msg: "ClamAV daemon service is not running"
+
+    - name: Check freshclam timer status
+      ansible.builtin.systemd_service:
+        name: clamav-freshclam.timer
+      register: freshclam_timer
+
+    - name: Assert freshclam timer is active
+      ansible.builtin.assert:
+        that:
+          - freshclam_timer.status.ActiveState == 'active'
+        fail_msg: "Freshclam timer is not active"
+
+    - name: Verify Unix socket exists
+      ansible.builtin.stat:
+        path: /var/run/clamav/clamd.ctl
+      register: clamav_socket
+
+    - name: Assert Unix socket exists
+      ansible.builtin.assert:
+        that:
+          - clamav_socket.stat.exists
+          - clamav_socket.stat.issock
+        fail_msg: "ClamAV Unix socket is missing"
+
+    - name: Verify ClamAV config exists
+      ansible.builtin.stat:
+        path: /etc/clamav/clamd.conf
+      register: clamav_conf
+
+    - name: Assert ClamAV config file exists
+      ansible.builtin.assert:
+        that:
+          - clamav_conf.stat.exists
+          - clamav_conf.stat.isreg
+        fail_msg: "ClamAV configuration file is missing"
+
+    - name: Verify freshclam config exists
+      ansible.builtin.stat:
+        path: /etc/clamav/freshclam.conf
+      register: freshclam_conf
+
+    - name: Assert freshclam config file exists
+      ansible.builtin.assert:
+        that:
+          - freshclam_conf.stat.exists
+          - freshclam_conf.stat.isreg
+        fail_msg: "Freshclam configuration file is missing"
+
+    - name: Verify virus database exists
+      ansible.builtin.stat:
+        path: /var/lib/clamav/main.cvd
+      register: clamav_db
+
+    - name: Assert virus database exists
+      ansible.builtin.assert:
+        that:
+          - clamav_db.stat.exists
+          - clamav_db.stat.isreg
+        fail_msg: "ClamAV virus database is missing"
+
+    - name: Ping ClamAV daemon via socket
+      ansible.builtin.command: clamdscan --ping 5 --wait
+      register: clamav_ping
+      changed_when: false
+
+    - name: Assert ClamAV daemon responds to ping
+      ansible.builtin.assert:
+        that:
+          - clamav_ping.rc == 0
+        fail_msg: "ClamAV daemon did not respond to ping"
+
+    - name: Create EICAR test virus file
+      ansible.builtin.copy:
+        content: 'X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*'
+        dest: /tmp/eicar.txt
+        mode: '0644'
+      changed_when: false
+
+    - name: Scan EICAR test virus (should detect)
+      ansible.builtin.command: clamdscan --no-summary /tmp/eicar.txt
+      register: eicar_scan
+      changed_when: false
+      failed_when: false
+
+    - name: Assert EICAR virus was detected
+      ansible.builtin.assert:
+        that:
+          - eicar_scan.rc == 1
+          - "'FOUND' in eicar_scan.stdout"
+        fail_msg: "ClamAV did not detect EICAR test virus"
+
+    - name: Create clean test file
+      ansible.builtin.copy:
+        content: 'This is a clean test file without any malware.'
+        dest: /tmp/clean.txt
+        mode: '0644'
+      changed_when: false
+
+    - name: Scan clean file (should pass)
+      ansible.builtin.command: clamdscan --no-summary /tmp/clean.txt
+      register: clean_scan
+      changed_when: false
+
+    - name: Assert clean file passed scan
+      ansible.builtin.assert:
+        that:
+          - clean_scan.rc == 0
+          - "'OK' in clean_scan.stdout"
+        fail_msg: "ClamAV incorrectly flagged clean file"
+
+    - name: Cleanup test files
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /tmp/eicar.txt
+        - /tmp/clean.txt
+      changed_when: false

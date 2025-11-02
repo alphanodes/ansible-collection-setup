@@ -1,0 +1,73 @@
+# {{ ansible_managed }}
+# ClamAV daemon configuration
+# See clamd.conf(5) for details
+
+# Unix socket configuration
+LocalSocket {{ clamav_socket_path }}
+LocalSocketGroup {{ clamav_socket_group }}
+LocalSocketMode {{ clamav_socket_mode }}
+
+# TCP socket configuration (disabled by default)
+{% if clamav_tcp_socket %}
+TCPSocket {{ clamav_tcp_port }}
+TCPAddr {{ clamav_tcp_addr }}
+{% else %}
+#TCPSocket 3310
+#TCPAddr 127.0.0.1
+{% endif %}
+
+# Logging
+{% if clamav_log_syslog %}
+LogSyslog yes
+LogFacility {{ clamav_log_facility }}
+{% else %}
+LogSyslog no
+LogFile /var/log/clamav/clamav.log
+{% endif %}
+LogVerbose {{ 'yes' if clamav_log_verbose else 'no' }}
+LogTime {{ 'yes' if clamav_log_time else 'no' }}
+
+# Database directory
+DatabaseDirectory {{ clamav_db_dir }}
+
+# Temporary directory
+TemporaryDirectory /tmp
+
+# PID file
+PidFile {{ clamav_run_dir }}/clamd.pid
+
+# User and group
+User {{ clamav_user }}
+
+# Resource limits to prevent excessive memory usage
+MaxThreads {{ clamav_max_threads }}
+MaxFileSize {{ clamav_max_file_size }}
+MaxScanSize {{ clamav_max_scan_size }}
+StreamMaxLength {{ clamav_stream_max_length }}
+MaxRecursion {{ clamav_max_recursion }}
+MaxFiles {{ clamav_max_files }}
+
+# Scan options
+ScanPE {{ 'yes' if clamav_scan_pe else 'no' }}
+ScanELF {{ 'yes' if clamav_scan_elf else 'no' }}
+ScanOLE2 {{ 'yes' if clamav_scan_ole2 else 'no' }}
+ScanPDF {{ 'yes' if clamav_scan_pdf else 'no' }}
+ScanHTML {{ 'yes' if clamav_scan_html else 'no' }}
+ScanMail {{ 'yes' if clamav_scan_mail else 'no' }}
+ScanArchive {{ 'yes' if clamav_scan_archive else 'no' }}
+DetectPUA {{ 'yes' if clamav_detect_pua else 'no' }}
+AlgorithmicDetection {{ 'yes' if clamav_algorithmic_detection else 'no' }}
+ScanSWF {{ 'yes' if clamav_scan_swf else 'no' }}
+
+# Exit on OOM (Out Of Memory)
+ExitOnOOM yes
+
+# Foreground mode (required for systemd)
+Foreground yes
+
+# Cross-filesystem support
+CrossFilesystems yes
+
+# Follow symlinks
+FollowDirectorySymlinks no
+FollowFileSymlinks no

@@ -1,0 +1,13 @@
+---
+- name: Include vars
+  ansible.builtin.import_tasks: include-vars.yml
+
+- name: Include setup tasks
+  ansible.builtin.import_tasks: setup.yml
+  tags: clamav
+  when: not clamav_remove
+
+- name: Include remove tasks
+  ansible.builtin.import_tasks: remove.yml
+  tags: clamav
+  when: clamav_remove

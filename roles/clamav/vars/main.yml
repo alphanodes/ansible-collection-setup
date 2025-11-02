@@ -1,0 +1,9 @@
+---
+clamav_service_name: clamav-daemon
+clamav_freshclam_service_name: clamav-freshclam
+clamav_user: clamav
+clamav_group: clamav
+clamav_db_dir: /var/lib/clamav
+clamav_run_dir: /var/run/clamav
+clamav_clamd_conf: /etc/clamav/clamd.conf
+clamav_freshclam_conf: /etc/clamav/freshclam.conf
