@@ -65,6 +65,12 @@ if defined? Bullet
 {% if instance.with_bullet is defined and instance.with_bullet %}
   Bullet.enable = true
 {% else %}
-  Bullet.enable = false
+  # Disable Bullet for this environment
+  # IMPORTANT: Must be in after_initialize block to override development.rb settings
+  config.after_initialize do
+    if defined? Bullet
+      Bullet.enable = false
+    end
+  end
 {% endif %}
 end
