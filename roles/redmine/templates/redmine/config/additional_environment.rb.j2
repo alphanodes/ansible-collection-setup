@@ -61,16 +61,8 @@ config.active_job.queue_adapter = ActiveJob::QueueAdapters::AsyncAdapter.new min
 config.active_job.queue_adapter = :{{ queue_adapter }}
 {% endif %}
 {% endif %}
+{% if instance.with_bullet is defined %}
 if defined? Bullet
-{% if instance.with_bullet is defined and instance.with_bullet %}
-  Bullet.enable = true
-{% else %}
-  # Disable Bullet for this environment
-  # IMPORTANT: Must be in after_initialize block to override development.rb settings
-  config.after_initialize do
-    if defined? Bullet
-      Bullet.enable = false
-    end
-  end
-{% endif %}
+  Bullet.enable = {{ instance.with_bullet | bool | lower }}
 end
+{% endif %}
