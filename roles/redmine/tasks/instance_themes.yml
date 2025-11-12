@@ -1,5 +1,10 @@
 ---
 
+- name: Remove obsolete themes directory
+  ansible.builtin.file:
+    path: "{{ redmine_app_dir }}/public/themes"
+    state: absent
+
 - name: Set preferred_git_url
   ansible.builtin.set_fact:
     preferred_git_url: "{{ 'write_url' if redmine_plugin_access == 'write' else 'url' }}"
