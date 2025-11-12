@@ -12,9 +12,6 @@ gem 'puma'
 {% if instance.without_dalli is undefined or not instance.without_dalli %}
 gem 'dalli'
 {% endif %}
-{% if active_redmine_repo_version != '6.0-stable' %}
-gem 'connection_pool'
-{% endif %}
 {% endif %}
 {% if instance.with_mysql2postgres is defined and instance.with_mysql2postgres %}
 gem 'mysql2postgres'
