@@ -85,7 +85,7 @@
 
 - name: Set redmine_theme_dir - {{ instance_name }}
   ansible.builtin.set_fact:
-    redmine_theme_dir: "{{ redmine_app_dir }}{{ '/themes' if active_redmine_repo_version == '6.0-stable' else '/public/themes' }}"
+    redmine_theme_dir: "{{ redmine_app_dir }}/themes"
 
 - name: Correct db_host and db_encoding facts - {{ instance_name }}
   ansible.builtin.set_fact:
