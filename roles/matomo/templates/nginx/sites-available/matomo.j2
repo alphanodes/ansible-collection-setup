@@ -53,7 +53,7 @@ server {
 {% endif %}
 
   ## disable all access to the following directories
-  location ~ ^/(config|tmp|core|lang) {
+  location ~ ^/(console|config|tmp|core|lang) {
     deny all;
     return 403; # replace with 404 to not show these directories exist
   }
