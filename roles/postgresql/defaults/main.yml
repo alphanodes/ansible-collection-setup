@@ -50,9 +50,15 @@ postgresql_effective_cache_size: 1GB
 postgresql_max_connections: 50
 postgresql_listen_addresses: localhost
 postgresql_port: 5432
+
+# default: peer
+postgresql_local_access_method: trust
+
 # see https://www.postgresql.org/docs/current/runtime-config-autovacuum.html
 postgresql_autovacuum: true
 postgresql_autovacuum_max_workers: 3
+# PostgreSQL 18+ only: autovacuum worker slots (should be >= autovacuum_max_workers)
+# postgresql_autovacuum_worker_slots: 16
 postgresql_autovacuum_naptime: 1min
 postgresql_autovacuum_analyze_scale_factor: 0.01
 postgresql_autovacuum_analyze_threshold: 50
@@ -125,6 +131,11 @@ postgresql_pg_stat_statements_track: all
 #  effective_io_concurrency = 200
 # postgresql_random_page_cost: 1.0
 postgresql_effective_io_concurrency: '2'
+# PostgreSQL 18+ only: I/O settings
+# postgresql_maintenance_io_concurrency: 16
+# postgresql_io_method: worker  # worker, io_uring, sync
+# postgresql_vacuum_buffer_usage_limit: 256kB
+# postgresql_transaction_timeout: 0  # in milliseconds, 0 is disabled
 
 postgresql_ssl_ca_file: ''
 postgresql_ssl_cert_file: '/etc/ssl/certs/ssl-cert-snakeoil.pem'

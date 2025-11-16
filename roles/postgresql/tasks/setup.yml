@@ -33,7 +33,7 @@
     state: started
     enabled: true
 
-- name: Update PostgreSQL configuration
+- name: Update PostgreSQL configuration (version 17 and below)
   ansible.builtin.template:
     src: postgresql.j2
     dest: '/etc/postgresql/{{ postgresql_version }}/main/postgresql.conf'
@@ -41,6 +41,17 @@
     owner: '{{ postgresql_user }}'
     group: '{{ postgresql_group }}'
   notify: Restart postgresql
+  when: postgresql_version | int < 18
+
+- name: Update PostgreSQL configuration (version 18+)
+  ansible.builtin.template:
+    src: postgresql18.j2
+    dest: '/etc/postgresql/{{ postgresql_version }}/main/postgresql.conf'
+    mode: '0644'
+    owner: '{{ postgresql_user }}'
+    group: '{{ postgresql_group }}'
+  notify: Restart postgresql
+  when: postgresql_version | int >= 18
 
 - name: Update PostgreSQL hba configuration
   ansible.builtin.template:
