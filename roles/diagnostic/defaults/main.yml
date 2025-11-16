@@ -33,5 +33,5 @@ btop_source_version: main
 btop_source_force_rebuild: false
 
 # btop static
-btop_static_version: v1.3.0
+btop_static_version: v1.4.5
 btop_static_url: https://github.com/aristocratos/btop/releases/download/{{ btop_static_version }}/btop-x86_64-linux-musl.tbz
