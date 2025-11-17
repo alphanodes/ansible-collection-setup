@@ -62,6 +62,8 @@
     password: "{{ postgresql_barman_password }}"
     role_attr_flags: 'SUPERUSER,CREATEDB'
     state: present
+  environment:
+    PGOPTIONS: "-c password_encryption={{ postgresql_barman_password_encryption }}"
   no_log: '{{ hide_sensitive_data }}'
 
 - name: Connection check (ssh) to barman Server

@@ -206,6 +206,11 @@ postgresql_barman_dir: /var/lib/barman
 # you have to set a password
 # postgresql_barman_password:
 
+# Password encryption method for barman user
+# Options: scram-sha-256 (recommended), md5 (legacy)
+# This sets the PGOPTIONS environment variable when creating/updating the barman user
+postgresql_barman_password_encryption: scram-sha-256
+
 # ssh public key, which get access to postgres user
 postgresql_barman_ssh_public_key: ''
 postgresql_barman_wals_dir: ''
