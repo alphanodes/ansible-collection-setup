@@ -12,7 +12,7 @@
 
   vars:
     # Test configuration for PostgreSQL
-    postgresql_version: '17'
+    postgresql_version: '18'
     postgresql_shared_buffers: 128MB
     postgresql_effective_cache_size: 512MB
     postgresql_max_connections: 100
