@@ -1,0 +1,85 @@
+---
+- name: Test edge cases for composer role
+  hosts: all
+  vars:
+    php_executable: php
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      when: ansible_os_family == 'Debian'
+
+    - name: Install PHP and dependencies
+      ansible.builtin.package:
+        name:
+          - php-cli
+          - php-json
+          - php-mbstring
+          - php-xml
+          - php-zip
+          - git
+          - unzip
+        state: present
+
+    - name: Test 1 - Undefined composer_version (should work)
+      ansible.builtin.include_role:
+        name: alphanodes.setup.composer
+      vars:
+        # composer_version is NOT defined - testing the | length > 0 check
+        composer_keep_updated: false
+
+    - name: Remove composer to test next scenario
+      ansible.builtin.file:
+        path: /usr/local/bin/composer
+        state: absent
+
+    - name: Test 2 - Empty string composer_version
+      ansible.builtin.include_role:
+        name: alphanodes.setup.composer
+      vars:
+        composer_version: ''
+        composer_keep_updated: false
+
+    - name: Verify composer was installed
+      ansible.builtin.command:
+        cmd: composer --version
+      register: result_empty_version
+      changed_when: false
+
+    - name: Remove composer again
+      ansible.builtin.file:
+        path: /usr/local/bin/composer
+        state: absent
+
+    - name: Test 3 - Specific version installation
+      ansible.builtin.include_role:
+        name: alphanodes.setup.composer
+      vars:
+        composer_version: '2.8.4'
+        composer_keep_updated: false
+
+    - name: Check specific version was installed
+      ansible.builtin.command:
+        cmd: composer --version
+      register: specific_version_result
+      changed_when: false
+
+    - name: Verify specific version
+      ansible.builtin.assert:
+        that:
+          - "'2.8.4' in specific_version_result.stdout"
+        fail_msg: "Expected version 2.8.4 but got {{ specific_version_result.stdout }}"
+
+    - name: Test 4 - Command module syntax changes (chdir and creates)
+      ansible.builtin.stat:
+        path: /usr/local/bin/composer
+      register: composer_final
+
+    - name: Verify composer exists after command module changes
+      ansible.builtin.assert:
+        that:
+          - composer_final.stat.exists
+          - composer_final.stat.executable
+        fail_msg: "Composer not properly installed with new command syntax"

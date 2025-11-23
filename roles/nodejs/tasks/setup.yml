@@ -34,6 +34,12 @@
     - /etc/apt/sources.list.d/deb_nodesource_com_node_{{ nodejs_version | replace(".", "_") }}.list
     - /etc/apt/trusted.gpg.d/nodejs.asc
 
+- name: Remove NodeSource repository if native packages should be used
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/nodesource.sources
+    state: absent
+  when: not nodejs_apt_source_update
+
 - name: Update node.js apt source
   when: nodejs_apt_source_update | bool
   block:
@@ -64,7 +70,7 @@
 
 - name: Ensure Node.js and npm are installed.
   ansible.builtin.apt:
-    name: nodejs
+    name: "{{ nodejs_packages }}"
     allow_downgrades: true
     state: present
 

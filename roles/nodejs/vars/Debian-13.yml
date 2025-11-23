@@ -1,0 +1,10 @@
+---
+
+# Debian 13+ splits nodejs and npm into separate packages
+# See: https://github.com/nodesource/distributions/issues/1865
+nodejs_packages:
+  - nodejs
+  - npm
+
+# Disable NodeSource repository for Debian 13+ (incompatible GPG signatures)
+nodejs_apt_source_update: false

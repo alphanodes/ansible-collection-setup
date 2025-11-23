@@ -1,0 +1,36 @@
+---
+- name: Converge
+  hosts: all
+  vars:
+    # We need php_executable for composer
+    php_executable: php
+    # Test with a specific Composer version
+    composer_version: ''
+    composer_keep_updated: true
+    # Test global package installation
+    composer_global_packages:
+      - { name: phpunit/phpunit, release: "@stable" }
+    composer_add_to_path: true
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      when: ansible_os_family == 'Debian'
+
+    - name: Install PHP and dependencies
+      ansible.builtin.package:
+        name:
+          - php-cli
+          - php-json
+          - php-mbstring
+          - php-xml
+          - php-zip
+          - git
+          - unzip
+        state: present
+
+    - name: Include composer role
+      ansible.builtin.include_role:
+        name: alphanodes.setup.composer

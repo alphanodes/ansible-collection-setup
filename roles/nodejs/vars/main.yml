@@ -2,3 +2,7 @@
 
 # path to node (this is fixed by used debian packages)
 nodejs_bin: /usr/bin/node
+
+# Default packages for most distributions (NodeSource bundles npm with nodejs)
+nodejs_packages:
+  - nodejs

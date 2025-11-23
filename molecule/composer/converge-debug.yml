@@ -1,0 +1,82 @@
+---
+- name: Debug composer version installation
+  hosts: all
+  vars:
+    php_executable: php
+    composer_version: '2.8.4'
+    composer_keep_updated: false
+    composer_version_branch: '--2'
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      when: ansible_os_family == 'Debian'
+
+    - name: Install PHP and dependencies
+      ansible.builtin.package:
+        name:
+          - php-cli
+          - php-json
+          - php-mbstring
+          - php-xml
+          - php-zip
+          - git
+          - unzip
+        state: present
+
+    - name: Debug - Show composer_version value
+      ansible.builtin.debug:
+        msg: "composer_version = '{{ composer_version }}'"
+
+    - name: Debug - Show composer_version_branch value
+      ansible.builtin.debug:
+        msg: "composer_version_branch = '{{ composer_version_branch }}'"
+
+    - name: Debug - Check version length
+      ansible.builtin.debug:
+        msg: "composer_version | length = {{ composer_version | length }}"
+
+    - name: Debug - Show command that will be run
+      ansible.builtin.debug:
+        msg: >
+          Command: php composer-installer.php{% if composer_version_branch %} {{ composer_version_branch }}{% elif composer_version %} --version={{ composer_version }}{% endif %}
+
+    - name: Get Composer installer signature
+      ansible.builtin.uri:
+        url: https://composer.github.io/installer.sig
+        return_content: true
+      register: composer_installer_signature
+
+    - name: Download Composer installer
+      ansible.builtin.get_url:
+        url: https://getcomposer.org/installer
+        dest: /tmp/composer-installer.php
+        mode: '0755'
+        checksum: "sha384:{{ composer_installer_signature.content }}"
+
+    - name: Test the actual command
+      ansible.builtin.shell: |
+        cd /tmp
+        echo "Running: php composer-installer.php{% if composer_version_branch %} {{ composer_version_branch }}{% elif composer_version %} --version={{ composer_version }}{% endif %}"
+        php composer-installer.php{% if composer_version_branch %} {{ composer_version_branch }}{% elif composer_version %} --version={{ composer_version }}{% endif %}
+      register: install_result
+
+    - name: Show install output
+      ansible.builtin.debug:
+        var: install_result.stdout_lines
+
+    - name: Move composer
+      ansible.builtin.command:
+        cmd: mv /tmp/composer.phar /usr/local/bin/composer
+        creates: /usr/local/bin/composer
+
+    - name: Check installed version
+      ansible.builtin.command:
+        cmd: composer --version
+      register: version_check
+
+    - name: Show installed version
+      ansible.builtin.debug:
+        msg: "Installed: {{ version_check.stdout }}"

@@ -1,0 +1,59 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check if Composer is installed
+      ansible.builtin.command:
+        cmd: which composer
+      register: composer_installed
+      changed_when: false
+
+    - name: Verify Composer is found
+      ansible.builtin.assert:
+        that:
+          - composer_installed.rc == 0
+        fail_msg: "Composer is not installed"
+
+    - name: Check Composer version
+      ansible.builtin.command:
+        cmd: composer --version
+      register: composer_version_output
+      changed_when: false
+
+    - name: Display Composer version
+      ansible.builtin.debug:
+        msg: "{{ composer_version_output.stdout }}"
+
+    - name: Check if PHPUnit was installed globally
+      ansible.builtin.stat:
+        path: /root/.composer/vendor/phpunit/phpunit
+      register: phpunit_installed
+
+    - name: Verify PHPUnit is installed
+      ansible.builtin.assert:
+        that:
+          - phpunit_installed.stat.exists
+        fail_msg: "PHPUnit was not installed globally"
+
+    - name: Check if composer PATH script exists
+      ansible.builtin.stat:
+        path: /etc/profile.d/composer.sh
+      register: composer_path_script
+
+    - name: Verify PATH script exists
+      ansible.builtin.assert:
+        that:
+          - composer_path_script.stat.exists
+        fail_msg: "Composer PATH script was not created"
+
+    - name: Test Composer functionality
+      ansible.builtin.command:
+        cmd: composer diagnose
+      register: composer_diagnose
+      changed_when: false
+      ignore_errors: true
+
+    - name: Display Composer diagnose output
+      ansible.builtin.debug:
+        msg: "{{ composer_diagnose.stdout_lines }}"

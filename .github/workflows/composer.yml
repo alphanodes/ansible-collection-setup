@@ -1,0 +1,46 @@
+---
+name: composer
+
+"on":
+  pull_request:
+  push:
+    branches:
+      - master
+    paths:
+      - 'roles/composer/**'
+      - 'molecule/composer/**'
+      - '.github/workflows/composer.yml'
+  schedule:
+    - cron: 20 4 * * 2
+
+jobs:
+  molecule:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        distro:
+          - ubuntu2404
+          - debian12
+          - debian13
+
+    steps:
+      - name: Check out the codebase
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install test dependencies
+        run: pip install 'ansible<10' molecule molecule-plugins[docker] docker
+
+      - name: Run Molecule tests
+        run: |
+          cd "${{ github.repository }}"
+          molecule test -s composer
+        env:
+          PY_COLORS: '1'
+          ANSIBLE_FORCE_COLOR: '1'
+          MOLECULE_DISTRO: ${{ matrix.distro }}
