@@ -4,6 +4,7 @@
 
 - `php` (version 5.4+) should be installed and working
 - `git` should be installed and working
+- `unzip` (required when using `composer_global_packages`)
 
 ## Role Variables
 
