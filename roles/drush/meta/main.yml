@@ -3,7 +3,7 @@ dependencies:
   - role: alphanodes.setup.common
     public: true
   - role: alphanodes.setup.php_cli
-  - role: geerlingguy.composer
+  - role: alphanodes.setup.composer
     tags:
       - drush
       - composer

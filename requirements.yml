@@ -6,7 +6,3 @@ collections:
   - name: community.postgresql
   - name: community.mysql
   - name: community.zabbix
-roles:
-  - name: geerlingguy.composer
-    src: https://github.com/geerlingguy/ansible-role-composer
-    version: master

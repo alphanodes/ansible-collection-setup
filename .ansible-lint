@@ -13,5 +13,3 @@ enable_list:
 
 exclude_paths:
   - .cache/ # implicit unless exclude_paths is defined in config
-  - .ansible/roles/geerlingguy.composer
-  - .ansible/roles/geerlingguy.certbot

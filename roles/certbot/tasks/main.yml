@@ -1,0 +1,37 @@
+---
+- name: Install certbot package
+  ansible.builtin.apt:
+    name: certbot
+    state: present
+
+- name: Set certbot script variable
+  ansible.builtin.set_fact:
+    certbot_script: certbot
+
+- name: Include nginx integration tasks
+  ansible.builtin.include_tasks: nginx-integration.yml
+  when:
+    - certbot_nginx_integration
+    - certbot_create_method == 'webroot'
+
+- name: Include standalone certificate tasks
+  ansible.builtin.include_tasks: cert-standalone.yml
+  loop: "{{ certbot_certs }}"
+  loop_control:
+    loop_var: cert_item
+  when:
+    - certbot_create_if_missing
+    - certbot_create_method == 'standalone'
+
+- name: Include webroot certificate tasks
+  ansible.builtin.include_tasks: cert-webroot.yml
+  loop: "{{ certbot_certs }}"
+  loop_control:
+    loop_var: cert_item
+  when:
+    - certbot_create_if_missing
+    - certbot_create_method == 'webroot'
+
+- name: Include renewal cron tasks
+  ansible.builtin.include_tasks: renew-cron.yml
+  when: certbot_auto_renew

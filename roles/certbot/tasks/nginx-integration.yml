@@ -1,0 +1,20 @@
+---
+# This task configures the acme-challenge location for webroot validation.
+# It creates the webroot directory and configures nginx to serve it.
+
+- name: Ensure webroot directory exists
+  ansible.builtin.file:
+    path: "{{ certbot_webroot }}"
+    state: directory
+    mode: "0755"
+    owner: "{{ nginx_user | default('www-data') }}"
+    group: "{{ nginx_group | default('www-data') }}"
+
+- name: Create acme-challenge nginx include
+  ansible.builtin.template:
+    src: acme-challenge.conf.j2
+    dest: /etc/nginx/acme-challenge.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload nginx

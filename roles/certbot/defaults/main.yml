@@ -1,0 +1,73 @@
+---
+# Certbot auto-renew using systemd timer (Debian's built-in certbot.timer).
+# The timer runs twice daily with a random delay up to 12 hours.
+certbot_auto_renew: true
+
+# Remove legacy cron job if it exists (from previous installations).
+certbot_remove_cron_job: true
+
+# Global deploy hook - runs after successful certificate renewal.
+# Example: "systemctl reload nginx"
+certbot_deploy_hook: ""
+
+# Test mode uses Let's Encrypt staging servers (no rate limits).
+certbot_testmode: false
+
+# Enable HSTS header.
+certbot_hsts: false
+
+# Parameters used when creating new Certbot certs.
+certbot_create_if_missing: false
+certbot_create_method: webroot
+certbot_create_extra_args: ""
+certbot_admin_email: email@example.com
+
+# Expand existing certificates with new domains.
+certbot_expand: false
+
+# Default webroot for acme-challenge, can be overwritten per cert.
+certbot_webroot: /var/www/letsencrypt
+
+# List of certificates to create.
+# Example:
+# certbot_certs:
+#   - name: example.com
+#     email: admin@example.com
+#     webroot: "/var/www/html/"
+#     domains:
+#       - example.com
+#       - www.example.com
+#   - domains:
+#       - example2.com
+certbot_certs: []
+
+# Services to stop/start for standalone mode.
+# Only used when certbot_create_method == 'standalone'.
+# Example: [nginx] if nginx is running but standalone mode is needed.
+certbot_create_standalone_stop_services: []
+
+# The certbot command constructed from variables.
+# Can be overwritten for special use cases.
+certbot_create_command: >-
+  {{ certbot_script }} certonly --{{ certbot_create_method }}
+  {{ '--hsts' if certbot_hsts else '' }}
+  {{ '--test-cert' if certbot_testmode else '' }}
+  --noninteractive --agree-tos
+  --email {{ cert_item.email | default(certbot_admin_email) }}
+  {{ '--webroot-path ' ~ (cert_item.webroot | default(certbot_webroot)) if certbot_create_method == 'webroot' else '' }}
+  {{ certbot_create_extra_args }}
+  --cert-name {{ cert_item_name }}
+  -d {{ cert_item.domains | join(',') }}
+  {{ '--expand' if certbot_expand else '' }}
+  {{ '--pre-hook /etc/letsencrypt/renewal-hooks/pre/stop_services'
+    if certbot_create_standalone_stop_services and certbot_create_method == 'standalone'
+  else '' }}
+  {{ '--post-hook /etc/letsencrypt/renewal-hooks/post/start_services'
+    if certbot_create_standalone_stop_services and certbot_create_method == 'standalone'
+  else '' }}
+  {{ "--deploy-hook '" ~ cert_item.deploy_hook ~ "'"
+    if cert_item.deploy_hook | default('')
+  else '' }}
+
+# nginx_mono integration: configure webroot location in nginx.
+certbot_nginx_integration: true

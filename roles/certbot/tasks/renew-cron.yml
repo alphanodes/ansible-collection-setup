@@ -1,0 +1,51 @@
+---
+# Use Debian's built-in certbot.timer instead of cron.
+# The timer runs twice daily with RandomizedDelaySec=43200 (12h jitter).
+
+- name: Check if crontab is available
+  ansible.builtin.command:
+    cmd: which crontab
+  register: crontab_check
+  changed_when: false
+  failed_when: false
+  when: certbot_remove_cron_job
+
+- name: Remove legacy certbot cron job if exists
+  ansible.builtin.cron:
+    name: Certbot automatic renewal
+    user: root
+    state: absent
+  when:
+    - certbot_remove_cron_job
+    - crontab_check.rc == 0
+
+- name: Ensure renewal-hooks deploy directory exists
+  ansible.builtin.file:
+    path: /etc/letsencrypt/renewal-hooks/deploy
+    state: directory
+    mode: "0755"
+    owner: root
+    group: root
+  when: certbot_deploy_hook | length > 0
+
+- name: Create global deploy hook
+  ansible.builtin.template:
+    src: deploy-hook.sh.j2
+    dest: /etc/letsencrypt/renewal-hooks/deploy/reload_services
+    owner: root
+    group: root
+    mode: "0755"
+  when: certbot_deploy_hook | length > 0
+
+- name: Remove deploy hook if not configured
+  ansible.builtin.file:
+    path: /etc/letsencrypt/renewal-hooks/deploy/reload_services
+    state: absent
+  when: certbot_deploy_hook | length == 0
+
+- name: Enable and start certbot.timer
+  ansible.builtin.systemd:
+    name: certbot.timer
+    enabled: true
+    state: started
+    daemon_reload: true

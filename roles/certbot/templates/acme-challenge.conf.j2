@@ -1,0 +1,13 @@
+# {{ ansible_managed }}
+# Include this in your vhost: include /etc/nginx/acme-challenge.conf;
+
+location ^~ /.well-known/acme-challenge/ {
+    default_type "text/plain";
+    root {{ certbot_webroot }};
+    allow all;
+}
+
+# Hide other well-known locations
+location = /.well-known/ {
+    return 404;
+}

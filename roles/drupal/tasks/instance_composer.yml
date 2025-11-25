@@ -17,7 +17,7 @@
 
 - name: Install composer, if instance use composer_path  {{ instance.name }}
   ansible.builtin.include_role:
-    name: geerlingguy.composer
+    name: alphanodes.setup.composer
   vars:
     composer_path: "{{ real_composer_bin }}"
     composer_home_path: "{{ instance.composer_home_path | default(omit) }}"

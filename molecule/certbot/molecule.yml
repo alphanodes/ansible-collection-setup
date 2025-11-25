@@ -24,7 +24,7 @@ verifier:
   name: ansible
 
 scenario:
-  name: composer
+  name: certbot
   test_sequence:
     - destroy
     - create

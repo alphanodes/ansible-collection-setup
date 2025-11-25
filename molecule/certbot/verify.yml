@@ -1,0 +1,123 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check if certbot is installed
+      ansible.builtin.command:
+        cmd: which certbot
+      register: certbot_installed
+      changed_when: false
+
+    - name: Verify certbot is found
+      ansible.builtin.assert:
+        that:
+          - certbot_installed.rc == 0
+        fail_msg: "Certbot is not installed"
+
+    - name: Check certbot package is installed
+      ansible.builtin.command:
+        cmd: dpkg -l certbot
+      register: certbot_package
+      changed_when: false
+
+    - name: Verify certbot package
+      ansible.builtin.assert:
+        that:
+          - certbot_package.rc == 0
+          - "'certbot' in certbot_package.stdout"
+        fail_msg: "Certbot package is not installed"
+
+    - name: Check if certbot.timer is enabled
+      ansible.builtin.command:
+        cmd: systemctl is-enabled certbot.timer
+      register: timer_enabled
+      changed_when: false
+
+    - name: Verify certbot.timer is enabled
+      ansible.builtin.assert:
+        that:
+          - timer_enabled.rc == 0
+          - "'enabled' in timer_enabled.stdout"
+        fail_msg: "Certbot timer is not enabled"
+
+    - name: Check if certbot.timer is active
+      ansible.builtin.command:
+        cmd: systemctl is-active certbot.timer
+      register: timer_active
+      changed_when: false
+
+    - name: Verify certbot.timer is active
+      ansible.builtin.assert:
+        that:
+          - timer_active.rc == 0
+          - "'active' in timer_active.stdout"
+        fail_msg: "Certbot timer is not active"
+
+    - name: Check certbot.timer status
+      ansible.builtin.command:
+        cmd: systemctl status certbot.timer --no-pager
+      register: timer_status
+      changed_when: false
+
+    - name: Display certbot.timer status
+      ansible.builtin.debug:
+        msg: "{{ timer_status.stdout_lines }}"
+
+    - name: Check if deploy hook exists
+      ansible.builtin.stat:
+        path: /etc/letsencrypt/renewal-hooks/deploy/reload_services
+      register: deploy_hook
+
+    - name: Verify deploy hook exists
+      ansible.builtin.assert:
+        that:
+          - deploy_hook.stat.exists
+          - deploy_hook.stat.executable
+        fail_msg: "Deploy hook does not exist or is not executable"
+
+    - name: Read deploy hook content
+      ansible.builtin.slurp:
+        src: /etc/letsencrypt/renewal-hooks/deploy/reload_services
+      register: deploy_hook_content
+
+    - name: Verify deploy hook content
+      ansible.builtin.assert:
+        that:
+          - "'systemctl reload nginx' in (deploy_hook_content.content | b64decode)"
+        fail_msg: "Deploy hook does not contain expected command"
+
+    - name: Check if webroot directory exists
+      ansible.builtin.stat:
+        path: /var/www/letsencrypt
+      register: webroot_dir
+
+    - name: Verify webroot directory exists
+      ansible.builtin.assert:
+        that:
+          - webroot_dir.stat.exists
+          - webroot_dir.stat.isdir
+        fail_msg: "Webroot directory does not exist"
+
+    - name: Check if nginx acme-challenge config exists
+      ansible.builtin.stat:
+        path: /etc/nginx/acme-challenge.conf
+      register: acme_config
+
+    - name: Verify acme-challenge config exists
+      ansible.builtin.assert:
+        that:
+          - acme_config.stat.exists
+        fail_msg: "ACME challenge nginx config not found"
+
+    - name: Read acme-challenge config
+      ansible.builtin.slurp:
+        src: /etc/nginx/acme-challenge.conf
+      register: acme_config_content
+
+    - name: Verify acme-challenge config content
+      ansible.builtin.assert:
+        that:
+          - "'.well-known/acme-challenge' in (acme_config_content.content | b64decode)"
+          - "'/var/www/letsencrypt' in (acme_config_content.content | b64decode)"
+        fail_msg: "ACME challenge config has incorrect content"

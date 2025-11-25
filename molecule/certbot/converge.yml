@@ -1,0 +1,31 @@
+---
+- name: Converge
+  hosts: all
+  vars:
+    # Test auto-renew systemd timer configuration
+    certbot_auto_renew: true
+    certbot_remove_cron_job: true
+    # Test deploy hook (reload nginx after certificate renewal)
+    certbot_deploy_hook: "systemctl reload nginx"
+    # Test nginx integration
+    certbot_nginx_integration: true
+    certbot_create_method: webroot
+    certbot_webroot: /var/www/letsencrypt
+    # Do not create certificates (no real Let's Encrypt in test)
+    certbot_create_if_missing: false
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      when: ansible_os_family == 'Debian'
+
+    - name: Install nginx for integration test
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+
+    - name: Include certbot role
+      ansible.builtin.include_role:
+        name: alphanodes.setup.certbot

@@ -1,5 +1,5 @@
 ---
-name: composer
+name: certbot
 
 "on":
   pull_request:
@@ -7,11 +7,11 @@ name: composer
     branches:
       - master
     paths:
-      - 'roles/composer/**'
-      - 'molecule/composer/**'
-      - '.github/workflows/composer.yml'
+      - 'roles/certbot/**'
+      - 'molecule/certbot/**'
+      - '.github/workflows/certbot.yml'
   schedule:
-    - cron: 20 4 * * 2
+    - cron: 25 4 * * 2
 
 jobs:
   molecule:
@@ -39,7 +39,7 @@ jobs:
       - name: Run Molecule tests
         run: |
           cd "${{ github.repository }}"
-          molecule test -s composer
+          molecule test -s certbot
         env:
           PY_COLORS: '1'
           ANSIBLE_FORCE_COLOR: '1'
