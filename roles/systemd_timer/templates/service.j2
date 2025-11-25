@@ -16,7 +16,7 @@ After={{ timer.after_service }}
 {% endif %}
 
 [Service]
-Type=oneshot
+Type={{ timer.type | default('oneshot') }}
 {% if timer.user is defined %}
 User={{ timer.user }}
 {% endif %}
@@ -40,7 +40,13 @@ ExecStartPre={{ item }}
 ExecStartPre={{ timer.exec_start_pre }}
 {% endif %}
 {% endif %}
+{% if timer.exec_start is iterable and timer.exec_start is not string %}
+{% for item in timer.exec_start %}
+ExecStart={{ item }}
+{% endfor %}
+{% else %}
 ExecStart={{ timer.exec_start }}
+{% endif %}
 {% if timer.exec_start_post is defined %}
 {% if timer.exec_start_post is iterable and timer.exec_start_post is not string %}
 {% for item in timer.exec_start_post %}
