@@ -5,7 +5,7 @@ name: certbot
   pull_request:
   push:
     branches:
-      - master
+      - main
     paths:
       - 'roles/certbot/**'
       - 'molecule/certbot/**'

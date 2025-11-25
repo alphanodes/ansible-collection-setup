@@ -5,7 +5,7 @@ name: composer
   pull_request:
   push:
     branches:
-      - master
+      - main
     paths:
       - 'roles/composer/**'
       - 'molecule/composer/**'
