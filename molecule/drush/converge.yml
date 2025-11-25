@@ -11,20 +11,36 @@
       changed_when: false
 
   vars:
-    # php-zip needed for composer to avoid git fallback
+    # Drush 13.x requires php-zip and php-xml (ext-dom)
     php_extra_modules:
       - php-zip
+      - php-xml
+    # Drush 8.x is not compatible with PHP 8.2+
+    # Use Drush 13.x for modern PHP versions
+    drush_version: 13.x
 
   roles:
     - role: alphanodes.setup.common
     - role: alphanodes.setup.drush
 
   post_tasks:
-    - name: Verify drush is installed
-      ansible.builtin.command: /root/.config/composer/vendor/bin/drush --version
-      changed_when: false
-      register: drush_version
+    - name: Verify drush binary exists
+      ansible.builtin.stat:
+        path: /root/.config/composer/vendor/bin/drush
+      register: drush_binary
 
-    - name: Display drush version
+    - name: Assert drush is installed
+      ansible.builtin.assert:
+        that:
+          - drush_binary.stat.exists
+          - drush_binary.stat.executable
+        fail_msg: "Drush binary not found or not executable"
+
+    - name: Verify composer shows drush package
+      ansible.builtin.command: /usr/local/bin/composer global show drush/drush
+      changed_when: false
+      register: drush_package
+
+    - name: Display drush package info
       ansible.builtin.debug:
-        var: drush_version.stdout
+        var: drush_package.stdout_lines
