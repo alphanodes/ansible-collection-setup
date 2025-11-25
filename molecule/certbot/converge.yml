@@ -21,9 +21,11 @@
         cache_valid_time: 600
       when: ansible_os_family == 'Debian'
 
-    - name: Install nginx for integration test
+    - name: Install nginx and cron for integration test
       ansible.builtin.apt:
-        name: nginx
+        name:
+          - nginx
+          - cron
         state: present
 
     - name: Include certbot role
