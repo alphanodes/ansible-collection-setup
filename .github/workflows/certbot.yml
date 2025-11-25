@@ -37,9 +37,7 @@ jobs:
         run: pip install 'ansible<10' molecule molecule-plugins[docker] docker
 
       - name: Run Molecule tests
-        run: |
-          cd "${{ github.repository }}"
-          molecule test -s certbot
+        run: molecule test -s certbot
         env:
           PY_COLORS: '1'
           ANSIBLE_FORCE_COLOR: '1'
