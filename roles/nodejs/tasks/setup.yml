@@ -1,5 +1,40 @@
 ---
 
+# Migrate from NodeSource to native Debian packages if needed
+- name: Check if NodeSource nodejs is installed
+  ansible.builtin.shell:
+    cmd: set -o pipefail && dpkg -l nodejs 2>/dev/null | grep -q nodesource && echo "nodesource" || echo "native"
+    executable: /bin/bash
+  register: nodejs_source_check
+  changed_when: false
+  failed_when: false
+  when: not nodejs_apt_source_update
+
+- name: Remove NodeSource nodejs before installing native packages
+  when:
+    - not nodejs_apt_source_update
+    - nodejs_source_check.stdout | default('') == 'nodesource'
+  block:
+    - name: Remove NodeSource nodejs package
+      ansible.builtin.apt:
+        name: nodejs
+        state: absent
+        purge: true
+
+    - name: Remove NodeSource repository
+      ansible.builtin.file:
+        path: /etc/apt/sources.list.d/nodesource.sources
+        state: absent
+
+    - name: Remove NodeSource pinning
+      ansible.builtin.file:
+        path: /etc/apt/preferences.d/nodesource
+        state: absent
+
+    - name: Update apt cache after removing NodeSource
+      ansible.builtin.apt:
+        update_cache: true
+
 - name: Define nodejs_install_npm_user
   ansible.builtin.set_fact:
     nodejs_install_npm_user: "{{ ansible_user | default(lookup('env', 'USER')) }}"
