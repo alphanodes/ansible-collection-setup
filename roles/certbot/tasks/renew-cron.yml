@@ -12,7 +12,7 @@
 
 - name: Remove legacy certbot cron job if exists
   ansible.builtin.cron:
-    name: Certbot automatic renewal
+    name: Certbot automatic renewal.
     user: root
     state: absent
   when:
