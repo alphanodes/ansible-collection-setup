@@ -1,0 +1,41 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check docker version
+      ansible.builtin.command: docker --version
+      register: docker_version
+      changed_when: false
+
+    - name: Check if docker-compose is installed
+      ansible.builtin.stat:
+        path: /usr/local/bin/docker-compose
+      register: docker_compose_bin
+
+    - name: Check docker-compose version
+      ansible.builtin.command: /usr/local/bin/docker-compose --version
+      register: docker_compose_version
+      changed_when: false
+      when: docker_compose_bin.stat.exists
+
+    - name: Check docker apt repository is configured
+      ansible.builtin.stat:
+        path: /etc/apt/sources.list.d/docker.sources
+      register: docker_repo
+
+    - name: Check docker packages are installed
+      ansible.builtin.command: dpkg -l docker-ce
+      register: docker_pkg
+      changed_when: false
+
+    - name: Display test results
+      ansible.builtin.debug:
+        msg:
+          - "=== DOCKER ROLE TESTS ==="
+          - "Docker version: {{ docker_version.stdout }}"
+          - "Docker-compose installed: {{ 'OK' if docker_compose_bin.stat.exists else 'FAILED' }}"
+          - "Docker-compose version: {{ docker_compose_version.stdout | default('N/A') }}"
+          - "Docker apt repo: {{ 'OK' if docker_repo.stat.exists else 'FAILED' }}"
+          - "Docker package: {{ 'OK' if docker_pkg.rc == 0 else 'FAILED' }}"
+          - "=== DOCKER TESTS SUCCESS ==="

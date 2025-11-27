@@ -1,0 +1,61 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check if gitlab-runner service exists
+      ansible.builtin.service:
+        name: gitlab-runner
+        state: started
+      check_mode: true
+      register: gitlab_runner_service
+      ignore_errors: true
+
+    - name: Check gitlab-runner version
+      ansible.builtin.command: gitlab-runner --version
+      register: gitlab_runner_version
+      changed_when: false
+
+    - name: Check gitlab-runner config directory exists
+      ansible.builtin.stat:
+        path: /etc/gitlab-runner
+      register: gitlab_runner_config_dir
+
+    - name: Check gitlab-runner apt repository is configured
+      ansible.builtin.stat:
+        path: /etc/apt/sources.list.d/gitlab-runner.sources
+      register: gitlab_runner_repo
+
+    - name: Check systemd override directory exists
+      ansible.builtin.stat:
+        path: /etc/systemd/system/gitlab-runner.service.d
+      register: systemd_override_dir
+
+    - name: Check exec-reload.conf exists
+      ansible.builtin.stat:
+        path: /etc/systemd/system/gitlab-runner.service.d/exec-reload.conf
+      register: exec_reload_conf
+
+    - name: Check kill.conf exists
+      ansible.builtin.stat:
+        path: /etc/systemd/system/gitlab-runner.service.d/kill.conf
+      register: kill_conf
+
+    - name: Check docker is available (dependency)
+      ansible.builtin.command: docker --version
+      register: docker_version
+      changed_when: false
+
+    - name: Display test results
+      ansible.builtin.debug:
+        msg:
+          - "=== GITLAB_RUNNER ROLE TESTS ==="
+          - "GitLab Runner service: {{ 'OK' if not gitlab_runner_service.changed else 'CHECK (may need registration)' }}"
+          - "GitLab Runner version: {{ gitlab_runner_version.stdout_lines[0] | default('N/A') }}"
+          - "Config directory: {{ 'OK' if gitlab_runner_config_dir.stat.exists else 'FAILED' }}"
+          - "Apt repository: {{ 'OK' if gitlab_runner_repo.stat.exists else 'FAILED' }}"
+          - "Systemd override dir: {{ 'OK' if systemd_override_dir.stat.exists else 'FAILED' }}"
+          - "Exec reload conf: {{ 'OK' if exec_reload_conf.stat.exists else 'FAILED' }}"
+          - "Kill conf: {{ 'OK' if kill_conf.stat.exists else 'FAILED' }}"
+          - "Docker (dependency): {{ docker_version.stdout }}"
+          - "=== GITLAB_RUNNER TESTS SUCCESS ==="

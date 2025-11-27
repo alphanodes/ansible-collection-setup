@@ -1,0 +1,13 @@
+---
+
+- name: Include Docker setup tasks
+  ansible.builtin.import_tasks: setup.yml
+  tags:
+    - docker
+  when: not docker_remove
+
+- name: Include Docker remove tasks
+  ansible.builtin.import_tasks: remove.yml
+  tags:
+    - docker
+  when: docker_remove

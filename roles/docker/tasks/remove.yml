@@ -1,0 +1,27 @@
+---
+
+- name: Stop docker service, if started
+  ansible.builtin.systemd_service:
+    name: docker
+    state: stopped
+    enabled: false
+  ignore_errors: true
+
+- name: Remove docker apt repository
+  ansible.builtin.deb822_repository:
+    name: docker
+    state: absent
+
+- name: Ensure Docker packages are removed
+  ansible.builtin.apt:
+    name: '{{ docker_packages }}'
+    purge: true
+    state: absent
+
+- name: Remove directories
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/docker
+    - /var/lib/docker

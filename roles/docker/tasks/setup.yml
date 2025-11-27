@@ -1,0 +1,44 @@
+---
+
+- name: Remove obsolete docker packages
+  ansible.builtin.apt:
+    name: '{{ docker_obsolete_packages }}'
+    purge: true
+    state: absent
+
+- name: Remove old apt repository files
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/apt/sources.list.d/download_docker_com_linux_ubuntu.list
+    - /etc/apt/sources.list.d/download_docker_com_linux_debian.list
+    - /etc/apt/trusted.gpg.d/docker.asc
+
+# see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/deb822_repository_module.html
+- name: Add docker apt repository
+  ansible.builtin.deb822_repository:
+    name: docker
+    uris: '{{ docker_apt_url }}'
+    types: deb
+    suites: '{{ docker_apt_suites }}'
+    components: '{{ docker_apt_components }}'
+    signed_by: '{{ docker_apt_signed_by }}'
+    state: present
+  register: docker_repo
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+  when: docker_repo.changed
+  tags:
+    - skip_ansible_lint
+
+- name: Ensure Docker packages are installed
+  ansible.builtin.apt:
+    name: '{{ docker_packages }}'
+    state: present
+
+- name: Compose tasks
+  ansible.builtin.include_tasks: compose.yml
+  when: docker_with_compose | bool

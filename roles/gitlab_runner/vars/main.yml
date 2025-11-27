@@ -1,0 +1,16 @@
+---
+
+gitlab_runner_package_name: 'gitlab-runner'
+gitlab_runner_executable: "/usr/bin/{{ gitlab_runner_package_name }}"
+
+gitlab_runner_runtime_owner: gitlab-runner
+gitlab_runner_runtime_group: gitlab-runner
+gitlab_runner_restart_state: reloaded
+gitlab_runner_timeout_stop_seconds: 720
+
+gitlab_runner_config_dir: /etc/gitlab-runner
+gitlab_runner_config_file: '{{ gitlab_runner_config_dir }}/config.toml'
+
+# Useful default paths for config files on Mac/Linux platforms
+__gitlab_runner_config_file_system_mode: "/etc/gitlab-runner/config.toml"
+__gitlab_runner_config_file_user_mode: "~/.gitlab-runner/config.toml"

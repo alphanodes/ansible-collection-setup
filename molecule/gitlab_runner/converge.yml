@@ -1,0 +1,20 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  vars:
+    # Skip Hetzner fleeting plugin installation in test
+    gitlab_runner_with_hetzner_fleed: false
+    # Skip config.toml template (requires external file)
+    gitlab_runner_apt_pinning: false
+
+  roles:
+    - role: alphanodes.setup.gitlab_runner

@@ -1,0 +1,19 @@
+---
+dependencies:
+  - role: alphanodes.setup.common
+    public: true
+  - role: alphanodes.setup.docker
+
+galaxy_info:
+  author: AlphaNodes
+  description: Setup GitLab Runner with optional Hetzner Fleeting Plugin
+  license: MIT
+  min_ansible_version: '2.18'
+  platforms:
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+    - name: Ubuntu
+      versions:
+        - noble

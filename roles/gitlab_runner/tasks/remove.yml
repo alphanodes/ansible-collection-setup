@@ -1,0 +1,22 @@
+---
+
+- name: Remove gitlab-runner apt repository
+  ansible.builtin.deb822_repository:
+    name: gitlab-runner
+    state: absent
+
+- name: Remove gitlab-runner package
+  ansible.builtin.apt:
+    name: gitlab-runner
+    purge: true
+    state: absent
+
+- name: Remove gitlab-runner config
+  ansible.builtin.file:
+    path: /etc/gitlab-runner
+    state: absent
+
+- name: Remove pinning file
+  ansible.builtin.file:
+    path: /etc/apt/preferences.d/gitlab-runner
+    state: absent

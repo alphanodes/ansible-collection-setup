@@ -1,0 +1,54 @@
+---
+name: "alphanodes.setup.gitlab_runner"
+'on':
+  pull_request:
+  push:
+    branches:
+      - main
+    paths:
+      - 'roles/gitlab_runner/**'
+      - 'roles/docker/**'
+      - 'roles/common/**'
+      - 'molecule/gitlab_runner/**'
+      - '.github/workflows/gitlab_runner.yml'
+
+defaults:
+  run:
+    working-directory: 'gitlab_runner'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      PY_COLORS: 1
+      ANSIBLE_FORCE_COLOR: 1
+
+    strategy:
+      matrix:
+        distro:
+          - ubuntu2404
+          - debian12
+          - debian13
+
+    steps:
+      - name: Check out the codebase.
+        uses: actions/checkout@v5
+        with:
+          path: 'gitlab_runner'
+
+      - name: Set up Python 3.
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install test dependencies.
+        run: |
+          python -m pip install --no-cache-dir --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Run Molecule tests.
+        run: |
+          molecule --version
+          molecule test -s gitlab_runner
+        env:
+          MOLECULE_DISTRO: ${{ matrix.distro }}

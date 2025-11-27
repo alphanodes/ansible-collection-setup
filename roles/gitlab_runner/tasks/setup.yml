@@ -1,0 +1,86 @@
+---
+# tasks/setup.yml: Main tasks for gitlab_runner
+
+- name: Remove old apt repository files
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/apt/sources.list.d/runner_gitlab-runner.list
+    - /etc/apt/trusted.gpg.d/gitlab-runner.asc
+
+- name: Use apt repository
+  when: gitlab_runner_apt
+  block:
+    # see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/deb822_repository_module.html
+    - name: Add gitlab-runner apt repository
+      ansible.builtin.deb822_repository:
+        name: gitlab-runner
+        uris: '{{ gitlab_runner_apt_url }}'
+        types: deb
+        suites: '{{ gitlab_runner_apt_suites }}'
+        components: '{{ gitlab_runner_apt_components }}'
+        signed_by: '{{ gitlab_runner_apt_signed_by }}'
+        state: present
+      register: runner_repo
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+      when: runner_repo.changed
+      tags:
+        - skip_ansible_lint
+
+- name: Pinning gitlab-runner
+  ansible.builtin.template:
+    src: gitlab-runner-pinning.j2
+    dest: /etc/apt/preferences.d/gitlab-runner
+    mode: '0644'
+  when: gitlab_runner_apt_pinning | bool
+
+- name: Remove pinning, if not used
+  ansible.builtin.file:
+    path: /etc/apt/preferences.d/gitlab-runner
+    state: absent
+  when: not gitlab_runner_apt_pinning | bool
+
+- name: Be sure required gitlab-runner packages are installed
+  ansible.builtin.apt:
+    name: '{{ gitlab_runner_packages }}'
+    state: present
+
+- name: Create gitlab-runner configuration directory
+  ansible.builtin.file:
+    path: '{{ gitlab_runner_config_dir }}'
+    state: directory
+    mode: '0755'
+
+- name: Check if config.toml is provided for host
+  ansible.builtin.stat:
+    path: "{{ playbook_dir }}/files/gitlab-runner/{{ inventory_hostname }}.toml.j2"
+  register: config_file_host
+  delegate_to: localhost
+  become: false
+
+- name: Setup config.toml for host (if provided)
+  ansible.builtin.template:
+    src: '{{ config_file_host.stat.path }}'
+    dest: '{{ gitlab_runner_config_file }}'
+    mode: '0600'
+  when: config_file_host.stat.exists
+  notify:
+    - Restart gitlab runner
+
+- name: Make sure Hetzner fleed plugin is installed
+  ansible.builtin.command: gitlab-runner fleeting install
+  when: gitlab_runner_with_hetzner_fleed
+  changed_when: false
+
+# see https://github.com/riemers/ansible-gitlab-runner/blob/master/tasks/install-debian.yml#L45
+- name: (Debian) Remove ~/gitlab-runner/.bash_logout
+  ansible.builtin.file:
+    path: /home/gitlab-runner/.bash_logout
+    state: absent
+
+- name: Set systemd reload options
+  ansible.builtin.import_tasks: systemd-reload.yml

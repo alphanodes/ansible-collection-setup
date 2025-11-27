@@ -1,0 +1,40 @@
+---
+# defaults file for gitlab_runner
+
+gitlab_runner_coordinator_url: ''
+gitlab_runner_registration_token: ''
+
+gitlab_runner_packages:
+  - gitlab-runner
+
+# see https://docs.hetzner.com/cloud/general/locations/
+gitlab_runner_hetzner_server_location: nbg1
+# see https://www.hetzner.com/de/cloud/
+gitlab_runner_hetzner_server_type: cx22
+gitlab_runner_hetzner_ruby_server_type: '{{ gitlab_runner_hetzner_server_type }}'
+gitlab_runner_hetzner_image: debian-13
+gitlab_runner_hetzner_api_token: ''
+# see https://docs.hetzner.cloud/#labels
+gitlab_runner_hetzner_label: 'env=test'
+
+# see https://community.hetzner.com/tutorials/howto-setup-gitlab-ci-auto-scaling-infrastructure
+# see https://gitlab.com/hetznercloud/fleeting-plugin-hetzner/-/blob/main/docs/guides/quickstart.md
+# see https://gitlab.com/hetznercloud/fleeting-plugin-hetzner/-/blob/main/docs/reference/configuration.md
+gitlab_runner_with_hetzner_fleed: true
+gitlab_runner_hetzner_fleed_plugin: "hetznercloud/fleeting-plugin-hetzner:latest"
+gitlab_runner_timezone: "{{ ntp_timezone | default('Europe/Berlin') }}"
+
+gitlab_runner_registry_mirror: ''
+
+# Maximum number of global jobs to run concurrently
+gitlab_runner_concurrent: '{{ ansible_processor_nproc }}'
+
+# see https://packages.gitlab.com/runner/gitlab-runner
+gitlab_runner_apt: true
+gitlab_runner_apt_pinning: false
+gitlab_runner_apt_url: https://packages.gitlab.com/runner/gitlab-runner/{{ ansible_distribution | lower }}
+gitlab_runner_apt_signed_by: https://packages.gitlab.com/runner/gitlab-runner/gpgkey
+gitlab_runner_apt_suites: '{{ ansible_distribution_release }}'
+gitlab_runner_apt_components: main
+
+gitlab_runner_remove: false

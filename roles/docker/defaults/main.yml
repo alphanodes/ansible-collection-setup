@@ -1,0 +1,26 @@
+---
+# defaults file for docker role
+
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+
+docker_apt_url: https://download.docker.com/linux/{{ ansible_distribution | lower }}
+docker_apt_signed_by: https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg
+docker_apt_suites: '{{ ansible_distribution_release }}'
+docker_apt_components: stable
+
+docker_obsolete_packages:
+  - docker
+  - docker-engine
+  - docker.io
+  - containerd
+  - runc
+
+docker_remove: false
+
+docker_with_compose: false
+docker_compose_version: '2.39.2'
+docker_compose_url: https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-linux-{{ ansible_architecture }}
+docker_compose_path: /usr/local/bin/docker-compose
