@@ -10,7 +10,7 @@ gitlab_runner_packages:
 # see https://docs.hetzner.com/cloud/general/locations/
 gitlab_runner_hetzner_server_location: nbg1
 # see https://www.hetzner.com/de/cloud/
-gitlab_runner_hetzner_server_type: cx22
+gitlab_runner_hetzner_server_type: cx23
 gitlab_runner_hetzner_ruby_server_type: '{{ gitlab_runner_hetzner_server_type }}'
 gitlab_runner_hetzner_image: debian-13
 gitlab_runner_hetzner_api_token: ''

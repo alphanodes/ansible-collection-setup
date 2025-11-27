@@ -50,7 +50,7 @@ When `gitlab_runner_with_hetzner_fleed: true`, the Hetzner Fleeting Plugin is in
 Key variables:
 
 - `gitlab_runner_hetzner_server_location`: Hetzner datacenter (default: `nbg1`)
-- `gitlab_runner_hetzner_server_type`: Server type (default: `cx22`)
+- `gitlab_runner_hetzner_server_type`: Server type (default: `cx23`)
 - `gitlab_runner_hetzner_image`: OS image (default: `debian-13`)
 - `gitlab_runner_hetzner_api_token`: Hetzner Cloud API token
 
