@@ -1,0 +1,73 @@
+# nginx status info
+#
+# NOTE: This template contains inlined FastCGI configuration that was previously
+# included via external templates (templates/nginx/fpm.inc.j2, fpm_location.inc.j2).
+# The inline approach is less DRY but necessary for collection independence.
+# If nginx_mono provides shared FPM includes in the future, consider refactoring.
+#
+location = /basic_status {
+  access_log off;
+  stub_status on;
+  server_tokens on;
+  allow 127.0.0.1;
+  allow ::1;
+  deny all;
+}
+
+{% if php_installed -%}
+
+# php status info
+location = /php_status {
+  access_log off;
+  allow 127.0.0.1;
+  allow ::1;
+  deny all;
+  # see https://www.zabbix.com/forum/zabbix-help/416476-php-fpm-php-fpm_ping-wrong-value-always-down
+  chunked_transfer_encoding off;
+  fastcgi_split_path_info ^(.+\.php)(/.+)$;
+  include fastcgi_params;
+  fastcgi_param SCRIPT_FILENAME $fastcgi_script_name;
+  fastcgi_param SERVER_NAME $host;
+  fastcgi_intercept_errors on;
+  fastcgi_pass unix:{{ php_fpm_listen }};
+}
+
+location = /php_ping {
+  access_log off;
+  allow 127.0.0.1;
+  allow ::1;
+  deny all;
+  # see https://www.zabbix.com/forum/zabbix-help/416476-php-fpm-php-fpm_ping-wrong-value-always-down
+  chunked_transfer_encoding off;
+  fastcgi_split_path_info ^(.+\.php)(/.+)$;
+  include fastcgi_params;
+  fastcgi_param SCRIPT_FILENAME $fastcgi_script_name;
+  fastcgi_param SERVER_NAME $host;
+  fastcgi_intercept_errors on;
+  fastcgi_pass unix:{{ php_fpm_listen }};
+}
+
+# php script information
+location ^~ /php/ {
+  access_log off;
+  allow 127.0.0.1;
+  allow ::1;
+  deny all;
+  root {{ zabbix_addons_dir }}/conf;
+
+  # php-fpm configuration
+  location ~ \.php$ {
+    fastcgi_split_path_info ^(.+\.php)(/.+)$;
+    include fastcgi_params;
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    fastcgi_param SERVER_NAME $host;
+    fastcgi_intercept_errors on;
+    fastcgi_pass unix:{{ php_fpm_listen }};
+  }
+
+  location ~ \..*/.*\.php$ {
+    deny all;
+  }
+}
+
+{% endif -%}

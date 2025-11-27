@@ -1,0 +1,169 @@
+#!/bin/bash
+##################################
+# Zabbix monitoring script
+#
+# nginx:
+#  - check ssh configuration
+#  - check login accounts
+#
+##################################
+
+# Zabbix requested parameter
+ZBX_REQ_DATA="$1"
+ZBX_REQ_DATA_SOURCE="$2"
+ZBX_REQ_DATA_PARAM="$3"
+ZBX_REQ_DATA_PARAM2="$4"
+
+# SSH configuration
+SSHD_CONFIG=/etc/ssh/sshd_config
+
+#
+# Error handling:
+#  - need to be displayable in Zabbix (avoid NOT_SUPPORTED)
+#  - items need to be of type "float" (allow negative + float)
+#
+ERROR_WRONG_PARAM="-0.9902"
+
+if [ -z "$ZBX_REQ_DATA_SOURCE" ]; then
+  ZBX_REQ_DATA_SOURCE='performance'
+fi
+
+# get performance information
+get_performance(){
+	if [ -z "$ZBX_REQ_DATA" ]; then
+	  echo $ERROR_WRONG_PARAM
+	  exit 1
+	fi
+	if [ "$ZBX_REQ_DATA" == "server_name_in_hosts" ]; then
+    LBSA_HOSTNAME=`hostname`
+    if [ "`cat /etc/hosts | grep \"$LBSA_HOSTNAME\"`" = "" ]; then
+      value="no"
+    else
+      value="yes"
+    fi
+	else
+	  echo $ERROR_WRONG_PARAM
+	  exit 1
+	fi
+	[ -z "$value" ] && echo $ERROR_WRONG_PARAM || echo $value
+}
+
+# get ssl age validation days
+get_ssl(){
+	if [ -z "$ZBX_REQ_DATA" ]; then
+	  echo $ERROR_WRONG_PARAM
+	  exit 1
+	fi
+
+  if [ -z "$ZBX_REQ_DATA_PARAM" ]; then
+ 	   echo $ERROR_WRONG_PARAM
+	   exit 1
+  else
+	   SSL_HOST=$ZBX_REQ_DATA_PARAM
+  fi
+
+  if [ -z "$ZBX_REQ_DATA_PARAM2" ]; then
+     SSL_PORT=443
+  else
+     SSL_PORT=$ZBX_REQ_DATA_PARAM2
+  fi
+
+  end_date=`openssl s_client -servername $SSL_HOST -host $SSL_HOST -port $SSL_PORT -showcerts -prexit </dev/null 2>/dev/null |
+            sed -n '/BEGIN CERTIFICATE/,/END CERT/p' |
+            openssl x509 -text 2>/dev/null |
+            sed -n 's/ *Not After : *//p'`
+
+  if [ -n "$end_date" ]
+  then
+    end_date_seconds=`date '+%s' --date "$end_date"`
+    now_seconds=`date '+%s'`
+    echo "($end_date_seconds-$now_seconds)/24/3600" | bc
+  else
+    echo $ERROR_WRONG_PARAM
+  fi
+}
+
+# get security information
+get_security(){
+	if [ -z "$ZBX_REQ_DATA" ]; then
+	  echo $ERROR_WRONG_PARAM
+	  exit 1
+	fi
+	if [ "$ZBX_REQ_DATA" == "debian_updates" ]; then
+    value=`sudo apt-get -qq update && sudo apt-get -dqq dist-upgrade && apt-get -qq --simulate dist-upgrade | grep ^Inst | wc -l`
+	else
+	  echo $ERROR_WRONG_PARAM
+	  exit 1
+	fi
+	[ -z "$value" ] && echo $ERROR_WRONG_PARAM || echo $value
+}
+
+# get users
+get_users(){
+	if [ -z "$ZBX_REQ_DATA" ]; then
+	  echo $ERROR_WRONG_PARAM
+	  exit 1
+	fi
+	if [ "$ZBX_REQ_DATA" == "login_accounts" ]; then
+    USERLIST=`cat /etc/passwd | cut -f 1 -d ":"`
+    LOGINLIST=""
+    for USERNAME in $USERLIST
+    do
+        if [ "`sudo passwd -S $USERNAME | grep \" P \"`" != "" ]; then
+            if [ "$LOGINLIST" = "" ]; then
+                LOGINLIST="$USERNAME"
+            else
+                LOGINLIST="$LOGINLIST $USERNAME"
+            fi
+        fi
+    done
+    value=`echo $LOGINLIST | wc -w`
+	else
+	  echo $ERROR_WRONG_PARAM
+	  exit 1
+	fi
+	[ -z "$value" ] && echo $ERROR_WRONG_PARAM || echo $value
+}
+
+# get from sshd_config
+get_sshd_config(){
+	if [ -z "$ZBX_REQ_DATA" ]; then
+	  echo $ERROR_WRONG_PARAM
+	  exit 1
+	fi
+	value=`cat $SSHD_CONFIG | sed -n -e "/^[[:space:]]*$ZBX_REQ_DATA/{s/.*[[:space:]]//p}"`
+	[ -z "$value" ] && echo $ERROR_WRONG_PARAM || echo $value
+}
+
+# get file permission information
+get_file_permission(){
+
+	if [ -z "$ZBX_REQ_DATA" ]; then
+	  echo $ERROR_WRONG_PARAM
+	  exit 1
+	fi
+  if [ "$ZBX_REQ_DATA" == "world_write_etc" ]; then
+	  value_files=`sudo find /etc -type f -perm -002 | wc -l`
+	  value_dirs=`sudo find /etc -type d -perm -002 | wc -l`
+	  value=$(($value_files + $value_dirs))
+	else
+	  echo $ERROR_WRONG_PARAM
+	  exit 1
+	fi
+  [ -z "$value" ] && echo $ERROR_WRONG_PARAM || echo $value
+}
+
+#
+# Grab data for key ZBX_REQ_DATA
+#
+case $ZBX_REQ_DATA_SOURCE in
+  sshd_config)	get_sshd_config;;
+  ssl)          get_ssl;;
+  users)        get_users;;
+  perm)         get_file_permission;;
+  security)     get_security;;
+  performance)  get_performance;;
+  *) echo $ERROR_WRONG_PARAM; exit 1;;
+esac
+
+exit 0

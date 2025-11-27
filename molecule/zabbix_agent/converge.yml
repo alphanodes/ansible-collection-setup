@@ -1,0 +1,21 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  vars:
+    # Zabbix configuration for testing
+    zabbix_server_vhost: "zabbix.example.com"
+
+    # Disable API tasks for testing (no Zabbix server available)
+    zabbix_agent_server_api: false
+
+  roles:
+    - role: alphanodes.setup.zabbix_agent

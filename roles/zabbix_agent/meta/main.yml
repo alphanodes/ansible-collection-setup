@@ -1,0 +1,18 @@
+---
+galaxy_info:
+  author: AlphaNodes
+  description: Installs and configures Zabbix Agent 2
+  license: MIT
+  min_ansible_version: '2.18'
+  platforms:
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+    - name: Ubuntu
+      versions:
+        - noble
+
+dependencies:
+  - role: alphanodes.setup.common
+    public: true

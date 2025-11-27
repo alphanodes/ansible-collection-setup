@@ -1,0 +1,26 @@
+---
+- name: Include vars
+  ansible.builtin.import_tasks: include-vars.yml
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  tags:
+    - zabbix
+    - zabbix-agent
+  when: not zabbix_agent_remove
+
+- name: Include remove tasks
+  ansible.builtin.import_tasks: remove.yml
+  tags:
+    - zabbix
+    - zabbix-agent
+  when: zabbix_agent_remove
+
+- name: Include api tasks
+  ansible.builtin.import_tasks: api.yml
+  when:
+    - zabbix_agent_server_api
+    - not zabbix_agent_remove
+  tags:
+    - zabbix
+    - zabbix-agent

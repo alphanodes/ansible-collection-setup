@@ -1,0 +1,132 @@
+---
+# defaults file for zabbix_agent
+
+# used for agent, proxy and server
+zabbix_use_repo: true
+# only used, if zabbix_use_repo is yes
+zabbix_version: 7.4
+
+zabbix_repo_protocol: https
+zabbix_apt_url: "{{ zabbix_repo_protocol }}://repo.zabbix.com/zabbix/{{ zabbix_version }}/stable/{{ ansible_distribution | lower }}/"
+zabbix_apt_suites: "{{ ansible_distribution_release }}"
+zabbix_apt_components: main
+
+# local file is used, if not configured
+# zabbix_apt_signed_by: "{{ zabbix_repo_protocol }}://repo.zabbix.com/zabbix/{{ zabbix_version }}/{{ ansible_distribution | lower }}"
+
+# set pinned version, if required
+# zabbix_agent_version_pinning: "1:4.4.1*"
+zabbix_agent_version_pinning: ""
+
+zabbix_agent_server: "{{ zabbix_server_vhost }}"
+zabbix_agent_listen_port: 10050
+zabbix_agent_server_active: '{{ zabbix_server_vhost }}'
+zabbix_agent_hostname: '{{ hostname | default(ansible_host) }}'
+zabbix_agent_start_agents: 3
+
+zabbix_agent_source_ip: ''
+
+zabbix_agent_home: /var/lib/zabbix
+
+zabbix_agent_log_file: ''
+zabbix_agent_log_file_size: 0
+# only used with zabbix_use_repo is yes
+zabbix_agent_log_type: system
+zabbix_agent_debug_level: 3
+zabbix_agent_control_socket: /run/zabbix/agent.sock
+zabbix_agent_plugin_socket: /run/zabbix/agent.plugin.sock
+zabbix_agent_deny_key: 'system.run[*]'
+
+zabbix_addons_dir: /usr/share/zabbix_addons
+
+zabbix_agent_packages:
+  - libxml2-utils
+  - sudo
+  - wget
+  - whois
+  - zabbix-agent2
+
+zabbix_agent_packages_mode: present
+
+# add binaries, which should be installed from files/binaries
+# @see https://repo.zabbix.com/zabbix/4.4/ubuntu/pool/main/z/zabbix/
+# @see https://repo.zabbix.com/zabbix/4.4/debian/pool/main/z/zabbix/
+zabbix_agent_binary: ''
+
+# Zabbix API
+zabbix_agent_server_api: true
+zabbix_agent_create_hostgroup: false
+zabbix_agent_create_host: false
+zabbix_agent_macros: []
+
+zabbix_agent_host_groups:
+  - Linux servers
+
+zabbix_agent_link_templates:
+  - Linux System
+
+# Zabbix API stuff
+zabbix_agent_become_on_localhost: true
+zabbix_install_pip_packages: true
+
+zabbix_url: "https://{{ zabbix_server_vhost }}"
+zabbix_api_user: Admin
+zabbix_api_pass: zabbix
+zabbix_api_create_hostgroup: false
+zabbix_api_create_hosts: true
+# or absent
+zabbix_create_hostgroup: present
+# or absent
+zabbix_create_host: present
+zabbix_update_host: true
+# or disabled
+zabbix_host_status: enabled
+# or disabled or automatic
+zabbix_inventory_mode: manual
+zabbix_use_ip: 1
+zabbix_host_groups:
+  - Linux servers
+zabbix_link_templates:
+  - Linux by Zabbix agent
+
+# time out for scripts (drush needs log, if Drupal is used)
+zabbix_agent_timeout: 5
+
+agent_interfaces:
+#  - type: 1
+#    main: 1
+#    useip: "{{ zabbix_useuip }}"
+#    ip: "{{ agent_ip }}"
+#    dns: "{{ ansible_fqdn }}"
+#    port: "{{ agent_listenport }}"
+
+zabbix_cleanup_files:
+  - /etc/zabbix/zabbix_agentd.conf.dpkg-dist
+  - /etc/zabbix/zabbix_agent2.conf.dpkg-dist
+  - /etc/systemd/system/multi-user.target.wants/zabbix-agent.service
+  - /etc/logrotate.d/zabbix_log_monitor
+  - /etc/zabbix/zabbix_agentd.conf
+  - /etc/zabbix/zabbix_agentd.d
+  - /etc/logrotate.d/zabbix-agent
+  - /var/log/zabbix-agent
+  - /var/log/zabbix/zabbix_agent2.log
+  - /var/log/zabbix_log_monitor.log
+
+# do uninstall zabbix-agent with all data, set it to yes
+zabbix_agent_remove: false
+
+# if defined, this is used to host to zabbix server
+zabbix_host:
+
+zabbix_agent_journalctl_since: "4 hours ago"
+zabbix_agent_journalctl_options: '-o short --case-sensitive=false'
+zabbix_agent_journalctl_redmine_options: '-o json --output-fields=MESSAGE,CODE_FILE,CODE_FUNC,CODE_LINE --case-sensitive=false'
+
+# deprecated and will be removed: detect only mysql configuration
+zabbix_agent_journalctl_keywords: 'undefined|failed|warning|missing|NilClass|error|terminating connection|cannot allocate memory|out of memory|too many clients|killed|QueryCanceled|upstream timed out|deprecated and will be removed'
+zabbix_agent_journalctl_ignore: ''
+zabbix_agent_journalctl_ignore_all: 'RoutingError|WARNING\: Detected'
+
+zabbix_agent_redmine_log: '{{ zabbix_agent_journalctl_keywords }}'
+zabbix_agent_redmine_log_ignore: ''
+zabbix_agent_redmine_log_ignore_all: '{{ zabbix_agent_journalctl_ignore_all }}|Puma\:\:HttpParserError|Missing template wiki\/edit|ignoring zlib error|BBox has zero width or height|unrecognized font file starts with|error fetching PDF image|Image\: error|Form stream has unbalanced q\/Q operators|convert\-im6\.q16|mogrify\-im6\.q16|dynamic \:action segment in a route|bypass_ssl_verification|warning\: already initialized constant|warning\: previous definition|Failed login for|rolling restart|deprecated\: layouts\/base\.html\.erb|\[issue_update\]|\[issue_create\]|\[issue_destroy\]|\[wiki_page_update\]|Question as a proc|QuestionsAnswer as a proc|ContactNote as a proc|DealNote as a proc|Deal as a proc|ReportingLog\: Failed to resolve hostname|logged_type=>"AutomationRule"'

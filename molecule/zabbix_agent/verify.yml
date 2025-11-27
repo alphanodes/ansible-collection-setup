@@ -1,0 +1,53 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Check zabbix-agent2 is installed
+      ansible.builtin.command: dpkg -l zabbix-agent2
+      register: zabbix_package
+      changed_when: false
+      failed_when: zabbix_package.rc != 0
+
+    - name: Check zabbix-agent2 service is running
+      ansible.builtin.systemd:
+        name: zabbix-agent2
+      register: zabbix_service
+      failed_when: zabbix_service.status.ActiveState != "active"
+
+    - name: Check zabbix configuration file exists
+      ansible.builtin.stat:
+        path: /etc/zabbix/zabbix_agent2.conf
+      register: zabbix_conf
+      failed_when: not zabbix_conf.stat.exists
+
+    - name: Check zabbix addons directory exists
+      ansible.builtin.stat:
+        path: /usr/share/zabbix_addons/scripts
+      register: zabbix_addons
+      failed_when: not zabbix_addons.stat.exists
+
+    - name: Check linux_check.sh script exists
+      ansible.builtin.stat:
+        path: /usr/share/zabbix_addons/scripts/linux_check.sh
+      register: linux_check
+      failed_when: not linux_check.stat.exists
+
+    - name: Check sudoers configuration exists
+      ansible.builtin.stat:
+        path: /etc/sudoers.d/zabbix
+      register: zabbix_sudoers
+      failed_when: not zabbix_sudoers.stat.exists
+
+    - name: Check zabbix user exists
+      ansible.builtin.getent:
+        database: passwd
+        key: zabbix
+      register: zabbix_user
+
+    - name: Verify zabbix agent is listening on port 10050
+      ansible.builtin.wait_for:
+        port: 10050
+        timeout: 5

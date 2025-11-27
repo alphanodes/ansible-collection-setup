@@ -1,0 +1,171 @@
+---
+- name: Gather the package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Set installed software
+  ansible.builtin.set_fact:
+    nginx_installed: "{{ true if 'nginx-common' in ansible_facts.packages else false }}"
+    php_installed: "{{ true if zabbix_agent_check_php_package in ansible_facts.packages else false }}"
+    redmine_installed: "{{ true if redmine_instances is defined else false }}"
+    postgres_installed: "{{ true if 'postgresql-common' in ansible_facts.packages else false }}"
+    drupal_installed: "{{ True if drupal_instances is defined and drupal_instances | length > 0 else False }}"
+
+- name: Include rsync role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.rsync
+
+- name: Cleanup obsolete files (before installation)
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop: '{{ zabbix_cleanup_files }}'
+
+- name: Set php_fpm_listen socket
+  ansible.builtin.set_fact:
+    php_fpm_listen: "/run/php/{{ zabbix_agent_php_fpm_listen }}.sock"
+
+- name: Include setup apt tasks
+  ansible.builtin.import_tasks: setup_apt.yml
+
+- name: Remove old zabbix-agent package if installed
+  ansible.builtin.apt:
+    name: zabbix-agent
+    state: absent
+    purge: true
+
+- name: Ensure zabbix-agent packages are installed
+  ansible.builtin.apt:
+    name: '{{ zabbix_agent_packages }}'
+    state: '{{ zabbix_agent_packages_mode }}'
+
+- name: Install binary, if provided
+  when: zabbix_agent_binary | length > 0
+  block:
+    - name: Transfer binary file
+      ansible.builtin.copy:
+        src: 'binaries//{{ zabbix_agent_binary }}'
+        dest: /srv/software/
+        mode: '0644'
+
+    - name: Install binary file
+      ansible.builtin.apt:
+        deb: '/srv/software/{{ zabbix_agent_binary }}'
+        force: true
+
+- name: Ensure zabbix-addon directories exists
+  ansible.builtin.file:
+    path: '{{ item }}'
+    mode: '0755'
+    state: directory
+  loop:
+    - '{{ zabbix_addons_dir }}/conf'
+    - '{{ zabbix_addons_dir }}/scripts'
+
+- name: Install zabbix-addon php configuration
+  ansible.posix.synchronize:
+    src: zabbix-addons/conf/php
+    dest: '{{ zabbix_addons_dir }}/conf'
+    # NOTE: workaroud for string problem
+    # @SEE https://github.com/ansible-collections/ansible.posix/issues/376#issuecomment-1222046195
+    dest_port: "{{ lookup('ansible.builtin.vars', 'ansible_port', default=22) }}"
+  notify: Restart zabbix-agent
+  when: php_installed
+
+- name: Remove php configuration, if not required
+  ansible.builtin.file:
+    path: '{{ zabbix_addons_dir }}/conf/php'
+    state: absent
+  when: not php_installed
+
+- name: Make sure custom configuration directory exists
+  ansible.builtin.file:
+    path: /etc/zabbix/zabbix_agent2.d
+    state: directory
+    recurse: true
+
+- name: Update zabbix-agent configuration
+  ansible.builtin.template:
+    src: etc/zabbix/zabbix_agent2.conf.j2
+    dest: /etc/zabbix/zabbix_agent2.conf
+    mode: '0644'
+  notify: Restart zabbix-agent
+
+- name: Remove old mysql configuration query files
+  ansible.builtin.file:
+    path: /etc/zabbix/zabbix_agentd.d/{{ item }}
+    state: absent
+  loop:
+    - alphanodes.conf
+    - userparameter_mysql.conf.dpkg-dist
+
+- name: Make sure old configuration file is absent
+  ansible.builtin.file:
+    path: /usr/share/alphanodes/zabbix/conf/mysql_query.list
+    state: absent
+
+# nginx is not always used, handler cannot be use for all hosts!
+- name: Configuration for nginx monitoring
+  ansible.builtin.template:
+    src: zabbix-addons/conf/nginx-server-status.conf.j2
+    dest: '{{ zabbix_addons_dir }}/conf/nginx-server-status.conf'
+    mode: '0644'
+  # notify: "{{ 'Restart nginx' if nginx_installed else '[]' }}"
+  when: nginx_installed | bool
+  ignore_errors: true
+
+- name: Install zabbix scripts
+  ansible.builtin.template:
+    src: zabbix-addons/scripts/{{ item }}.j2
+    dest: '{{ zabbix_addons_dir }}/scripts/{{ item }}'
+    mode: '0755'
+    owner: root
+    group: zabbix
+  loop:
+    - linux_check.sh
+    - php_check.sh
+    - diskstats_lld.py
+  notify: Restart zabbix-agent
+
+- name: Install zabbix drush script
+  ansible.builtin.template:
+    src: zabbix-addons/scripts/drush_check.sh.j2
+    dest: '{{ zabbix_addons_dir }}/scripts/drush_check.sh'
+    mode: '0755'
+    owner: root
+    group: zabbix
+  when: drupal_installed | bool
+
+- name: Remove zabbix drush script
+  ansible.builtin.file:
+    path: '{{ zabbix_addons_dir }}/scripts/drush_check.sh'
+    state: absent
+  when: not drupal_installed | bool
+
+- name: Set zabbix user settings
+  ansible.builtin.user:
+    name: zabbix
+    home: '{{ zabbix_agent_home }}'
+    shell: /usr/sbin/nologin
+    groups:
+      - adm
+      - www-data
+    append: true
+
+- name: Install suoder zabbix configuration
+  ansible.builtin.template:
+    src: etc/sudoers.d/zabbix.j2
+    dest: /etc/sudoers.d/zabbix
+    mode: '0440'
+
+- name: Start the zabbix-agent2 service
+  ansible.builtin.systemd_service:
+    name: zabbix-agent2
+    state: started
+  register: systemd_rc
+
+- name: Cleanup obsolete files (after installation)
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop: '{{ zabbix_cleanup_files }}'

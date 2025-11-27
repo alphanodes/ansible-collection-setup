@@ -1,0 +1,2 @@
+---
+zabbix_apt_key_file: /etc/apt/trusted.gpg.d/zabbix.gpg

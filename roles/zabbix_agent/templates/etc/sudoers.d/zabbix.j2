@@ -1,0 +1,5 @@
+{{ managed_by_ansible | comment }}
+Defaults:zabbix !requiretty
+Cmnd_Alias ZABBIX = /usr/bin/test, /bin/cat, /usr/bin/stat, /usr/bin/find, /usr/bin/tail, /usr/bin/passwd -S *, /usr/sbin/smartctl
+Cmnd_Alias MON_APT = /usr/bin/apt-get -qq update, /usr/bin/apt-get -dqq dist-upgrade
+zabbix ALL = NOPASSWD:SETENV: ZABBIX, MON_APT

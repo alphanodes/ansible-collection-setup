@@ -80,6 +80,7 @@ All provided roles do not use docker as container system.
 - [alphanodes.setup.swapfile](roles/swapfile/) [![swapfile](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/swapfile.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/swapfile.yml)
 - [alphanodes.setup.systemd_timer](roles/systemd_timer/) [![systemd_timer](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/systemd_timer.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/systemd_timer.yml)
 - [alphanodes.setup.unbound](roles/unbound/) [![unbound](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/unbound.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/unbound.yml)
+- [alphanodes.setup.zabbix_agent](roles/zabbix_agent/) [![zabbix_agent](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/zabbix_agent.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/zabbix_agent.yml)
 - [alphanodes.setup.zsh](roles/zsh/) [![zsh](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/zsh.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/zsh.yml)
 
 ## Installation

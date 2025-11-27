@@ -1,0 +1,56 @@
+#!/bin/bash
+####################################
+# Zabbix monitoring script for drush
+
+# Zabbix requested parameter
+
+ZBX_REQ_DATA="$1"
+SCRIPT_PATH="$2"
+PARAM1="$3"
+PARAM2="$4"
+
+if [ "$ZBX_REQ_DATA" == "status" ]; then
+  if [ -z "$SCRIPT_PATH" ]; then
+    SCRIPT_PATH="{{ drush_path }}"
+  fi
+  sudo $SCRIPT_PATH status --format json
+elif [ "$ZBX_REQ_DATA" == "stats" ]; then
+  if [ -z "$SCRIPT_PATH" ]; then
+    SCRIPT_PATH="{{ drush_path }}"
+  fi
+
+  if [ -z "$PARAM1" ]; then
+	   DRUSH_PROFILE=""
+  else
+	   DRUSH_PROFILE="@$PARAM1"
+  fi
+
+  if [ -z "$PARAM2" ]; then
+     DRUSH_DB_PROFILE=""
+  else
+     DRUSH_DB_PROFILE="@$PARAM2"
+  fi
+
+  if [ -z "$DRUSH_DB_PROFILE" ]; then
+    DRUSH_DB_PROFILE="$DRUSH_PROFILE"
+  fi
+
+  cat << EndOfMessage
+{
+    "nodes": "`sudo $SCRIPT_PATH $DRUSH_DB_PROFILE sql-query "SELECT COUNT(*) AS num FROM node"`",
+    "inactive_nodes": "`sudo $SCRIPT_PATH $DRUSH_DB_PROFILE sql-query "SELECT COUNT(*) AS num FROM node JOIN node_field_data ON node.nid=node_field_data.nid WHERE status=0"`",
+    "users": "`sudo $SCRIPT_PATH $DRUSH_DB_PROFILE sql-query "SELECT COUNT(*) AS num FROM users WHERE uid>0"`",
+    "inactive_users": "`sudo $SCRIPT_PATH $DRUSH_DB_PROFILE sql-query "SELECT COUNT(*) AS num FROM users JOIN users_field_data ON users.uid=users_field_data.uid WHERE users.uid>0 AND status!=1"`",
+    "modules": "`sudo $SCRIPT_PATH $DRUSH_PROFILE pm-list --no-core --type=module --pipe | wc -l`",
+    "enabled_modules": "`sudo $SCRIPT_PATH $DRUSH_PROFILE pm-list --no-core --type=module  --status=enabled | wc -l`"
+}
+EndOfMessage
+
+elif [ "$ZBX_REQ_DATA" == "composer_version" ]; then
+  if [ -z "$SCRIPT_PATH" ]; then
+    SCRIPT_PATH="{{ composer_path }}"
+  fi
+  sudo COMPOSER_ALLOW_SUPERUSER=1 $SCRIPT_PATH -V | grep 'version' | head -1 | awk '{print $3}'
+fi
+
+exit 0

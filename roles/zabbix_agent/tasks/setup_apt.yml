@@ -1,0 +1,64 @@
+---
+
+- name: Remove old apt repository files
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/apt/sources.list.d/repo_zabbix_com.list
+    - /etc/apt/trusted.gpg.d/zabbix-official-repo.gpg
+
+- name: Repo setup
+  when: zabbix_use_repo
+  block:
+    - name: Add Zabbix apt repository to trusted.gpg.d
+      ansible.builtin.copy:
+        src: zabbix-repo.gpg
+        dest: '{{ zabbix_apt_key_file }}'
+        mode: '0644'
+      when: zabbix_apt_signed_by is undefined
+
+    # see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/deb822_repository_module.html
+    - name: Add zabbix apt repository
+      ansible.builtin.deb822_repository:
+        name: zabbix
+        uris: '{{ zabbix_apt_url }}'
+        types: deb
+        suites: '{{ zabbix_apt_suites }}'
+        components: '{{ zabbix_apt_components }}'
+        signed_by: '{{ zabbix_apt_signed_by | default(zabbix_apt_key_file) }}'
+        state: present
+      register: zabbix_repo
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+      when: zabbix_repo.changed
+      tags:
+        - skip_ansible_lint
+
+- name: Without repo setup
+  when: not zabbix_use_repo
+  block:
+    - name: Remove zabbix apt repository
+      ansible.builtin.deb822_repository:
+        name: zabbix
+        state: absent
+
+    - name: Remove apt key file
+      ansible.builtin.file:
+        path: '{{ zabbix_apt_key_file }}'
+        state: absent
+
+- name: Pinning zabbix packages
+  ansible.builtin.template:
+    src: etc/apt/preferences.d/zabbix.j2
+    dest: /etc/apt/preferences.d/zabbix
+    mode: '0644'
+  when: zabbix_agent_version_pinning | length > 0
+
+- name: Remove zabbix pinning
+  ansible.builtin.file:
+    path: /etc/apt/preferences.d/zabbix
+    state: absent
+  when: zabbix_agent_version_pinning | length == 0

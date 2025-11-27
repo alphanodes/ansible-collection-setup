@@ -1,0 +1,36 @@
+---
+- name: Remove zabbix-agent package
+  ansible.builtin.apt:
+    name: zabbix-agent
+    purge: true
+    state: absent
+
+- name: Remove log and config files
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/logrotate.d/zabbix-agent2
+    - /etc/logrotate.d/zabbix_log_monitor
+    - /etc/zabbix
+    - /etc/sudoers.d/zabbix
+    - /var/log/zabbix
+    - /etc/systemd/system/multi-user.target.wants/zabbix-agent2.service
+    - '{{ zabbix_apt_key_file }}'
+    - '{{ zabbix_addons_dir }}'
+
+- name: Remove zabbix apt repository.
+  ansible.builtin.deb822_repository:
+    name: zabbix
+    state: absent
+
+- name: Remove zabbix user
+  ansible.builtin.user:
+    name: zabbix
+    state: absent
+    remove: true
+
+- name: Remove zabbix group
+  ansible.builtin.group:
+    name: zabbix
+    state: absent

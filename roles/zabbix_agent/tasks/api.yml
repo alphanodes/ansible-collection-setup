@@ -1,0 +1,128 @@
+---
+
+- name: Detect controller OS is linux
+  ansible.builtin.set_fact:
+    controller_is_linux: "{{ False if lookup('env', 'LC_TERMINAL') == 'iTerm2' or lookup('env', 'TERM_PROGRAM') == 'vscode' else True }}"
+  delegate_to: localhost
+
+- name: Create hostgroups
+  community.zabbix.zabbix_group:
+    host_group: "{{ zabbix_host_groups }}"
+    state: "{{ zabbix_create_hostgroup }}"
+  when:
+    - zabbix_api_create_hostgroup | bool
+  vars:
+    ansible_network_os: community.zabbix.zabbix
+    ansible_connection: httpapi
+    ansible_httpapi_port: 443
+    ansible_httpapi_use_ssl: true
+    ansible_httpapi_validate_certs: "{{ zabbix_validate_certs | default(true) }}"
+    ansible_user: '{{ zabbix_api_user }}'
+    ansible_httpapi_pass: '{{ zabbix_api_pass }}'
+  delegate_to: '{{ zabbix_server_vhost }}'
+  tags:
+    - api
+
+- name: Inventory information
+  when: zabbix_inventory_mode == 'manual'
+  block:
+    - name: Get directories in root folder
+      ansible.builtin.find:
+        paths: '/'
+        recurse: false
+        file_type: directory
+      register: found_files
+
+    - name: Calc oldest directory
+      ansible.builtin.set_fact:
+        oldest_dir: "{{ found_files.files | sort(attribute='ctime') | first }}"
+
+    - name: Set linux installation timestamp
+      ansible.builtin.set_fact:
+        linux_install_timestamp: '{{ oldest_dir.ctime | int }}'
+      when: oldest_dir | length > 0
+
+    - name: Set linux installation date (Linux)
+      ansible.builtin.set_fact:
+        linux_install_date: "{{ lookup('pipe', 'date -d @' + linux_install_timestamp | string + ' +\"%Y-%m-%d\"') }}"
+      when: controller_is_linux
+
+    - name: Set linux installation date (OSX)
+      ansible.builtin.set_fact:
+        linux_install_date: "{{ lookup('pipe', 'date -r ' + linux_install_timestamp | string + ' +\"%Y-%m-%d\"') }}"
+      when: not controller_is_linux
+
+    - name: Create inventory information
+      ansible.builtin.set_fact:
+        zabbix_inventory_zabbix:
+          name: "{{ zabbix_visible_hostname | default(ansible_fqdn) }}"
+          vendor: "{{ hoster | default('unknown') }}"
+          os: "{{ ansible_distribution }}"
+          os_full: "{{ ansible_lsb.description }} {{ ansible_kernel }}"
+          os_short: "{{ ansible_distribution_release }}"
+          type: "{{ ansible_virtualization_type }}"
+          hw_arch: "{{ ansible_architecture }}"
+          hardware: "{{ ansible_system_vendor }}"
+          hardware_full: "{{ ansible_processor_threads_per_core }} x {{ ansible_processor.2 | default('unknown') }}\nRAM: {{ ansible_memory_mb.real.total / 1024 | round | int }} GB"
+          software_app_a: "Python {{ ansible_python_version }}"
+          serialno_b: "BIOS {{ ansible_bios_version }}"
+          chassis: "Product {{ ansible_product_name }}"
+          date_hw_install: "{{ linux_install_date | default('unknown') }}"
+          software_full: "BIOS {{ ansible_bios_version }}\nBIOS date: {{ ansible_bios_date }}"
+
+# see https://docs.ansible.com/ansible/latest/collections/community/zabbix/zabbix_host_module.html
+- name: Create a new host or update an existing host's info - {{ zabbix_url }}
+  community.zabbix.zabbix_host:
+    host_name: "{{ zabbix_agent_hostname }}"
+    host_groups: "{{ zabbix_host_groups }}"
+    link_templates: "{{ zabbix_link_templates }}"
+    status: "{{ 'absent' if zabbix_agent_remove else zabbix_host_status }}"
+    state: "{{ zabbix_create_host }}"
+    force: "{{ zabbix_update_host }}"
+    inventory_mode: "{{ zabbix_inventory_mode }}"
+    inventory_zabbix: "{{ zabbix_inventory_zabbix | default(omit) }}"
+    interfaces:
+      - type: 1
+        main: 1
+        useip: "{{ zabbix_use_ip }}"
+        ip: "{{ zabbix_agent_ip | default(ext_ip_address_v4) | default(ip_address_v4) }}"
+        dns: "{{ zabbix_agent_dns | default(ansible_fqdn) }}"
+        port: "{{ zabbix_port_ext | default(zabbix_agent_listen_port) }}"
+    visible_name: "{{ zabbix_visible_hostname | default(inventory_hostname) }}"
+    description: "{{ zabbix_agent_description | default(host_description) | default(omit) }}"
+  when:
+    - zabbix_api_create_hosts | bool
+  vars:
+    ansible_network_os: community.zabbix.zabbix
+    ansible_connection: httpapi
+    ansible_httpapi_port: 443
+    ansible_httpapi_use_ssl: true
+    ansible_httpapi_validate_certs: "{{ zabbix_validate_certs | default(true) }}"
+    ansible_user: '{{ zabbix_api_user }}'
+    ansible_httpapi_pass: '{{ zabbix_api_pass }}'
+  delegate_to: '{{ zabbix_server_vhost }}'
+  changed_when: false
+  tags:
+    - api
+
+- name: "Updating host configuration with macros"
+  community.zabbix.zabbix_hostmacro:
+    host_name: "{{ zabbix_agent_hostname }}"
+    macro_name: "{{ item.macro_key }}"
+    macro_value: "{{ item.macro_value }}"
+  loop: "{{ zabbix_macros | default([]) }}"
+  when:
+    - zabbix_api_create_hosts | bool
+    - zabbix_macros is defined
+    - item.macro_key is defined
+  vars:
+    ansible_network_os: community.zabbix.zabbix
+    ansible_connection: httpapi
+    ansible_httpapi_port: 443
+    ansible_httpapi_use_ssl: true
+    ansible_httpapi_validate_certs: "{{ zabbix_validate_certs | default(true) }}"
+    ansible_user: '{{ zabbix_api_user }}'
+    ansible_httpapi_pass: '{{ zabbix_api_pass }}'
+  delegate_to: '{{ zabbix_server_vhost }}'
+  tags:
+    - api

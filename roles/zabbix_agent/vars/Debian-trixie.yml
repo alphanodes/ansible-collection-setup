@@ -1,0 +1,3 @@
+---
+zabbix_agent_check_php_package: php8.4-common
+zabbix_agent_php_fpm_listen: php8.4-fpm
