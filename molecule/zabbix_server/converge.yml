@@ -33,8 +33,6 @@
     zabbix_server_vhost_letsencrypt: false
     zabbix_server_vhost_ssl_cert: zabbix
     zabbix_vhost_for_zabbix: false
-    # Molecule: ignore service errors (DB not initialized in test)
-    zabbix_server_ignore_service_errors: true
 
   pre_tasks:
     - name: Include ssl role to create self-signed certificate

@@ -17,6 +17,25 @@
     name: '{{ zabbix_server_db_name }}'
     owner: '{{ zabbix_server_db_user }}'
     state: present
+  register: zabbix_db_created
+
+- name: Check if Zabbix schema is already imported
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_query:
+    db: '{{ zabbix_server_db_name }}'
+    query: "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'users'"
+  register: zabbix_schema_check
+
+- name: Import Zabbix database schema
+  become_user: '{{ zabbix_server_db_user }}'
+  become: true
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      zcat /usr/share/zabbix-sql-scripts/postgresql/server.sql.gz | psql -d {{ zabbix_server_db_name }}
+    executable: /bin/bash
+  when: zabbix_schema_check.query_result[0].count == 0
 
 - name: Be sure timescaledb extension exists
   become_user: postgres

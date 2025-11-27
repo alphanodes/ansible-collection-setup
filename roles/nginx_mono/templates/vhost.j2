@@ -50,6 +50,13 @@ server {
 {% if nginx_with_protection %}
 {% include 'includes/protection.inc.j2' %}
 {% endif %}
+{% if instance.block_hidden_files | default(false) %}
+  # Disable .htaccess and other hidden files
+  location ~ /\. {
+    return 404;
+  }
+
+{% endif %}
 {% if instance.vhost_dnt_private_ip is defined and instance.vhost_dnt_private_ip %}
   set $dnt_header $http_dnt;
   if ($private_network) {

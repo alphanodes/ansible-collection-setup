@@ -6,4 +6,3 @@
   ansible.builtin.systemd_service:
     name: zabbix-server
     state: restarted
-  ignore_errors: "{{ ansible_check_mode or zabbix_server_ignore_service_errors | default(false) }}"

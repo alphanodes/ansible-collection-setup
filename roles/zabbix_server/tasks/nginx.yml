@@ -28,6 +28,8 @@
   vars:
     nginx_mono_service_name: zabbix
     nginx_mono_service_enabled: true
+    # Disable bot protection - Zabbix API needs Python access (ansible zabbix modules)
+    nginx_with_protection: false
     nginx_mono_service_config:
       server_name: "{{ zabbix_server_vhost }}"
       root: "{{ zabbix_server_ui_dir }}"
@@ -35,6 +37,7 @@
       with_fpm: www
       letsencrypt: "{{ zabbix_server_vhost_letsencrypt | default(false) }}"
       vhost_for_zabbix: "{{ zabbix_vhost_for_zabbix | default(false) }}"
+      block_hidden_files: true
       static_cache: true
       static_cache_expires: "33d"
       error_pages:
