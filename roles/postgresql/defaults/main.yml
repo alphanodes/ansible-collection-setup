@@ -9,18 +9,6 @@ postgresql_packages:
   - postgresql-{{ postgresql_version }}
   - libdbd-pg-perl
 
-# nginx is required, if postgresql_with_pgbadger: true
-postgresql_with_pgbadger: false
-postgresql_pgbadger_output_dir: /var/lib/pgbadger
-# nginx base auth user
-postgresql_pgbadger_user: pgbadger
-# nginx base auth passwords (leave empty, if you do not want base auth protection)
-postgresql_pgbadger_password: ''
-# debian packages
-postgresql_pgbadger_packages:
-  - pgbadger
-  - python3-passlib
-
 postgresql_with_postgis: false
 postgresql_postgis_packages:
   - postgresql-{{ postgresql_version }}-postgis-{{ postgresql_postgis_version }}

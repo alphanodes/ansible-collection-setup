@@ -15,14 +15,6 @@
   ansible.builtin.include_tasks: postgis.yml
   when: postgresql_with_postgis
 
-- name: Include pgbadger tasks
-  ansible.builtin.include_tasks: pgbadger.yml
-  when: postgresql_with_pgbadger
-
-- name: Include pgbadger cleanup tasks
-  ansible.builtin.include_tasks: cleanup_pgbadger.yml
-  when: not postgresql_with_pgbadger
-
 - name: Include TimescaleDB tasks
   ansible.builtin.include_tasks: timescaledb.yml
   when: postgresql_with_timescaledb
