@@ -3,7 +3,6 @@
 extends: default
 
 ignore:
-  - roles/alphanodes.mongodb/
   - '.ansible'
   - '.venv'
   - 'node_modules/'

@@ -35,9 +35,6 @@
 {% if backup_postgresql_password is defined %}
     backup_postgresql_password: {{ backup_postgresql_password }}
 {% endif %}
-{% if backup_with_mongodb is defined and backup_with_mongodb | bool %}
-    backup_with_mongodb: true
-{% endif %}
 {% if backup_with_mysql is defined and backup_with_mysql | bool %}
     backup_with_mysql: true
 {% if mysql_root_plugin is defined %}

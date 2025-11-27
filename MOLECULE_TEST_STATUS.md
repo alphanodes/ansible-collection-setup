@@ -338,7 +338,7 @@ fatal: [alphanodes-dev]: FAILED! => {"changed": false, "msg": "Task failed: 'ngi
 **Root Cause**: Design flaw in nginx_mono role architecture
 
 - nginx_mono has two operation modes:
-  1. **Service mode**: Used via `include_role` by service roles (mailpit, rocketchat, ethercalc)
+  1. **Service mode**: Used via `include_role` by service roles (mailpit, ethercalc)
   2. **Instance mode**: Used directly for `nginx_vhosts` processing (future: redmine, drupal instances)
 - Problem occurred when host had BOTH:
   - Service integration (e.g., mailpit via `include_role`)
@@ -354,7 +354,7 @@ fatal: [alphanodes-dev]: FAILED! => {"changed": false, "msg": "Task failed: 'ngi
 **Why it started now**:
 
 - mailpit was the first nginx_mono service deployed on a host that also had `nginx_vhosts` defined
-- Previous services (ethercalc, rocketchat) were deployed on hosts without `nginx_vhosts`
+- Previous services (ethercalc) were deployed on hosts without `nginx_vhosts`
 - Affected hosts: alphanodes-dev (and potentially alphanodes, atu, lmu-matomo-webfe1)
 
 **Solution**: Two-part fix
@@ -403,7 +403,7 @@ molecule/mailpit/
 - This is a pragmatic solution, not the most elegant architecture
 - Future improvement: Consider explicit mode parameter instead of implicit detection
 - Both operation modes (service + instance) are critical for nginx_mono's purpose:
-  - Service mode: For simple services (mailpit, rocketchat)
+  - Service mode: For simple services (mailpit)
   - Instance mode: For complex multi-instance services (redmine, drupal) - not yet migrated
 
 #### 13. nginx_mono (Include Mode Extension) ✅
@@ -1018,7 +1018,6 @@ done
   - molecule/mysql/converge.yml
   - molecule/element_web/converge.yml
   - molecule/nginx_mono/converge.yml
-  - molecule/rocketchat/converge.yml
   - molecule/nextcloud/converge.yml
 - `.github/workflows/drupal.yml` - Limited to ubuntu2404 and debian12 (MySQL packages not available for debian13)
 - `.github/workflows/mysql.yml` - Already limited to ubuntu2404 and debian12

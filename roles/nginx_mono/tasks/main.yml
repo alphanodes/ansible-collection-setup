@@ -17,7 +17,7 @@
     loop_var: instance
   when:
     - nginx_vhosts | length > 0
-    - nginx_mono_service_name is not defined  # Skip in service mode (mailpit, rocketchat, etc.)
+    - nginx_mono_service_name is not defined  # Skip in service mode (mailpit, etc.)
 
 - name: Include service integration tasks
   ansible.builtin.include_tasks: service.yml
