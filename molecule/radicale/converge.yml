@@ -1,0 +1,55 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  vars:
+    # nginx_mono configuration (defaults + testing)
+    nginx_with_ssl: false
+    nginx_with_ipv6: false
+    nginx_force_ssl: false
+    nginx_with_http3: false
+    nginx_with_reuseport: true
+    nginx_resolver: ['8.8.8.8', '8.8.4.4']
+    hoster: 'local'
+
+    # radicale configuration
+    radicale_vhost_server: radicale.local
+    radicale_vhost_letsencrypt: false
+    radicale_vhost_for_zabbix: false
+    radicale_users:
+      - user: testuser
+        password: testpass123
+      - user: admin
+        password: adminpass456
+
+    radicale_rights:
+      - name: admin
+        user: admin
+        collection: ''
+        permissions: RW
+      - name: principal
+        user: '.+'
+        collection: '{user}'
+        permissions: RW
+      - name: calendars
+        user: '.+'
+        collection: '{user}/[^/]+'
+        permissions: rw
+      - name: allow-everyone-read
+        user: '.+'
+        collection: ''
+        permissions: R
+
+    # No SSL certs needed for testing
+    ssl_certs: []
+
+  roles:
+    - role: alphanodes.setup.radicale

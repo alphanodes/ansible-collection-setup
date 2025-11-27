@@ -1,0 +1,21 @@
+{{ managed_by_ansible | comment }}
+# Rights management file for Radicale - A simple calendar server
+#
+# Configure via radicale_rights variable:
+# radicale_rights:
+#   - name: admin
+#     user: admin
+#     collection: ''
+#     permissions: RW
+#   - name: principal
+#     user: '.+'
+#     collection: '{user}'
+#     permissions: RW
+
+{% for rule in radicale_rights %}
+[{{ rule.name }}]
+user: {{ rule.user }}
+collection: {{ rule.collection }}
+permissions: {{ rule.permissions }}
+
+{% endfor %}

@@ -1,0 +1,93 @@
+---
+
+- name: Include python role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.python
+    public: true
+
+- name: Radicale group exists
+  ansible.builtin.group:
+    name: '{{ radicale_group }}'
+    state: present
+    system: true
+
+- name: Radicale user exists
+  ansible.builtin.user:
+    name: '{{ radicale_user }}'
+    group: '{{ radicale_group }}'
+    home: '{{ radicale_dir }}'
+    shell: /usr/sbin/nologin
+    state: present
+    system: true
+
+- name: Install radicale
+  ansible.builtin.pip:
+    name: '{{ radicale_pip_packages }}'
+    virtualenv: '{{ radicale_pip_venv_path }}'
+    state: '{{ python_pip_default_state }}'
+    virtualenv_site_packages: '{{ python_pip_virtualenv_site_packages }}'
+  become: true
+  become_user: '{{ radicale_user }}'
+
+- name: Check folder exists for /etc/radicale
+  ansible.builtin.file:
+    path: /etc/radicale
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Radicale collection folder exists
+  ansible.builtin.file:
+    path: '{{ radicale_collections_dir }}'
+    state: directory
+    owner: '{{ radicale_user }}'
+    group: '{{ radicale_group }}'
+    mode: '0750'
+
+- name: Configuration for radicale
+  ansible.builtin.template:
+    src: radicale/{{ item }}.j2
+    dest: /etc/radicale/{{ item }}
+    owner: '{{ radicale_user }}'
+    group: '{{ radicale_group }}'
+    mode: '0640'
+  loop:
+    - config
+    - rights
+  register: radicale_config_result
+
+- name: Systemd service is available
+  ansible.builtin.template:
+    src: systemd.service.j2
+    dest: /etc/systemd/system/{{ radicale_service_name }}.service
+    owner: root
+    group: root
+    mode: '0644'
+  register: radicale_service_result
+
+- name: Radicale service is enabled and started
+  ansible.builtin.systemd_service:
+    name: "{{ radicale_service_name }}"
+    state: "{{ 'restarted' if (radicale_config_result.changed or radicale_service_result.changed) else 'started' }}"
+    enabled: true
+    daemon_reload: true
+
+- name: Ensure pid directory exists after reboot
+  ansible.builtin.include_role:
+    name: alphanodes.setup.systemd_timer
+  vars:
+    timers:
+      radicale_directory:
+        exec_start: /usr/bin/install -g {{ radicale_group }} -o {{ radicale_user }} -d {{ radicale_pid_dir }}
+        on_boot_sec: 5s
+        before_service: "{{ radicale_service_name }}.service"
+
+- name: Remove obsolete cron file for pid directory
+  ansible.builtin.file:
+    path: /etc/cron.d/radicale_directory
+    state: absent
+
+- name: Import nginx tasks
+  ansible.builtin.import_tasks: nginx.yml
+  tags: nginx

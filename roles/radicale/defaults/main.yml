@@ -1,0 +1,73 @@
+---
+
+radicale_user: radicale
+radicale_group: '{{ radicale_user }}'
+radicale_dir: '/var/lib/{{ radicale_user }}'
+
+radicale_pip_packages:
+  - passlib
+  - bcrypt
+  - radicale
+
+radicale_collections_dir: '{{ radicale_dir }}/collections'
+radicale_pid_dir: /run/radicale
+
+# The service name can be altered to support multiple running instances
+radicale_service_name: radicale
+
+radicale_pip_venv_path: "{{ radicale_dir }}/.venv"
+radicale_service_bin: "{{ radicale_pip_venv_path }}/bin/python3 -m radicale"
+
+radicale_server_host: 127.0.0.1:5232
+radicale_server_max_connections: 20
+radicale_storage_type: multifilesystem
+
+# htpasswd or http_x_remote_user
+radicale_auth_type: http_x_remote_user
+# bcrypt, md5
+# if not set, default is used
+# radicale_htpasswd_encryption: bcrypt
+
+radicale_rights_type: from_file
+radicale_web_type: internal
+
+radicale_vhost_server: radicale.example.com
+radicale_users: []
+
+# debug | info | warning | error | critical
+radicale_logging_level: warning
+
+radicale_server_realm: Radicale - Password Required
+
+radicale_vhost_for_zabbix: false
+radicale_vhost_letsencrypt: false
+radicale_vhost_ssl_cert: ''
+radicale_vhost_letsencrypt_cert: "/etc/letsencrypt/live/{{ radicale_vhost_server }}/fullchain.pem"
+radicale_vhost_letsencrypt_key: "/etc/letsencrypt/live/{{ radicale_vhost_server }}/privkey.pem"
+radicale_vhost_letsencrypt_trusted_cert: "/etc/letsencrypt/live/{{ radicale_vhost_server }}/chain.pem"
+
+# Use can change it, if you use a proxy behind a proxy
+# e.g. $http_x_forwarded_for
+# default: $proxy_add_x_forwarded_for
+radicale_x_forwarded_for: $proxy_add_x_forwarded_for
+
+# Rights configuration - list of rights rules
+# Each rule has: name, user (regex), collection (regex), permissions
+# Default allows admin full access, users access to their own collections
+radicale_rights:
+  - name: admin
+    user: admin
+    collection: ''
+    permissions: RW
+  - name: principal
+    user: '.+'
+    collection: '{user}'
+    permissions: RW
+  - name: calendars
+    user: '.+'
+    collection: '{user}/[^/]+'
+    permissions: rw
+  - name: allow-everyone-read
+    user: '.+'
+    collection: ''
+    permissions: R

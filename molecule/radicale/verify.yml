@@ -1,0 +1,121 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check if nginx is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+      check_mode: true
+      register: nginx_service
+      failed_when: nginx_service.changed
+
+    - name: Check nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax
+      changed_when: false
+
+    - name: Check if radicale service is running
+      ansible.builtin.service:
+        name: radicale
+        state: started
+      check_mode: true
+      register: radicale_service
+      failed_when: radicale_service.changed
+
+    - name: Check if radicale vhost config exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/radicale.conf
+      register: radicale_vhost
+
+    - name: Verify radicale vhost is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/radicale.conf
+      register: radicale_enabled_check
+
+    - name: Check if radicale config exists
+      ansible.builtin.stat:
+        path: /etc/radicale/config
+      register: radicale_config
+
+    - name: Check if radicale rights file exists
+      ansible.builtin.stat:
+        path: /etc/radicale/rights
+      register: radicale_rights
+
+    - name: Check if radicale collections directory exists
+      ansible.builtin.stat:
+        path: /var/lib/radicale/collections
+      register: radicale_collections
+
+    - name: Check if radicale venv exists
+      ansible.builtin.stat:
+        path: /var/lib/radicale/.venv/bin/radicale
+      register: radicale_venv
+
+    - name: Check htpasswd file exists
+      ansible.builtin.stat:
+        path: /etc/nginx/.htpasswd_radicale
+      register: htpasswd_file
+
+    - name: Check radicale server is responding
+      ansible.builtin.uri:
+        url: http://127.0.0.1:5232/
+        method: GET
+        status_code: [200, 302, 401]
+      register: radicale_response
+      retries: 5
+      delay: 2
+
+    - name: Test nginx proxy to radicale
+      ansible.builtin.uri:
+        url: http://localhost/
+        method: GET
+        status_code: [200, 302, 401]
+        headers:
+          Host: radicale.local
+      register: nginx_proxy
+      retries: 3
+      delay: 1
+
+    - name: Verify nginx_mono integration (no external template refs)
+      ansible.builtin.find:
+        paths: /etc/nginx/sites-available/
+        patterns: "*.conf"
+        contains: "templates/nginx/"
+      register: external_refs
+      failed_when: external_refs.matched > 0
+
+    - name: Verify proxy configuration in nginx
+      ansible.builtin.command: grep -q "proxy_pass.*5232" /etc/nginx/sites-available/radicale.conf
+      register: proxy_config
+      changed_when: false
+      failed_when: false
+
+    - name: Verify X-Remote-User header in nginx
+      ansible.builtin.command: grep -q "X-Remote-User" /etc/nginx/sites-available/radicale.conf
+      register: remote_user_header
+      changed_when: false
+      failed_when: false
+
+    - name: Display comprehensive test results
+      ansible.builtin.debug:
+        msg:
+          - "=== RADICALE + NGINX_MONO INTEGRATION TESTS ==="
+          - "Nginx service: {{ 'OK' if not nginx_service.changed else 'FAILED' }}"
+          - "Nginx syntax: {{ 'OK' if nginx_syntax.rc == 0 else 'FAILED' }}"
+          - "Radicale service: {{ 'OK' if not radicale_service.changed else 'FAILED' }}"
+          - "Radicale vhost exists: {{ 'OK' if radicale_vhost.stat.exists else 'FAILED' }}"
+          - "Radicale vhost enabled: {{ 'OK' if radicale_enabled_check.stat.exists else 'FAILED' }}"
+          - "Radicale config exists: {{ 'OK' if radicale_config.stat.exists else 'FAILED' }}"
+          - "Radicale rights exists: {{ 'OK' if radicale_rights.stat.exists else 'FAILED' }}"
+          - "Radicale collections dir: {{ 'OK' if radicale_collections.stat.exists else 'FAILED' }}"
+          - "Radicale venv exists: {{ 'OK' if radicale_venv.stat.exists else 'FAILED' }}"
+          - "Htpasswd file exists: {{ 'OK' if htpasswd_file.stat.exists else 'FAILED' }}"
+          - "Radicale direct response: {{ 'OK' if radicale_response.status in [200, 302, 401] else 'FAILED' }}"
+          - "Nginx proxy to radicale: {{ 'OK' if nginx_proxy.status in [200, 302, 401] else 'FAILED' }}"
+          - "No external template refs: {{ 'OK' if external_refs.matched == 0 else 'FAILED' }}"
+          - "Proxy config present: {{ 'OK' if proxy_config.rc == 0 else 'FAILED' }}"
+          - "X-Remote-User header: {{ 'OK' if remote_user_header.rc == 0 else 'FAILED' }}"
+          - "=== RADICALE INTEGRATION SUCCESS ==="

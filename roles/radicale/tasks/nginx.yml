@@ -1,0 +1,44 @@
+---
+
+- name: Set TLS files for letsencrypt
+  ansible.builtin.set_fact:
+    vhost_letsencrypt_cert: "{{ radicale_vhost_letsencrypt_cert }}"
+    vhost_letsencrypt_trusted_cert: "{{ radicale_vhost_letsencrypt_trusted_cert }}"
+    vhost_letsencrypt_key: "{{ radicale_vhost_letsencrypt_key }}"
+    force_letsencrypt: true
+  when:
+    - radicale_vhost_letsencrypt is defined
+    - radicale_vhost_letsencrypt
+
+- name: Check trusted TLS cert
+  ansible.builtin.stat:
+    path: /etc/ssl/certs/{{ radicale_vhost_ssl_cert }}_trusted.crt
+  register: trusted_cert
+  when: radicale_vhost_letsencrypt is undefined or not radicale_vhost_letsencrypt
+
+- name: Set TLS files
+  ansible.builtin.set_fact:
+    vhost_ssl_cert: "{{ radicale_vhost_ssl_cert }}"
+    vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
+  when: radicale_vhost_letsencrypt is undefined or not radicale_vhost_letsencrypt
+
+- name: Setup nginx_mono and configure radicale vhost
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nginx_mono
+  vars:
+    nginx_mono_service_name: radicale
+    nginx_mono_service_enabled: true
+    nginx_mono_service_config:
+      server_name: "{{ radicale_vhost_server }}"
+      root: "{{ radicale_dir }}"
+      letsencrypt: "{{ radicale_vhost_letsencrypt | default(false) }}"
+      vhost_for_zabbix: "{{ radicale_vhost_for_zabbix | default(false) }}"
+      vhost_users: "{{ radicale_users }}"
+      proxy_pass: "http://{{ radicale_server_host }}/"
+      proxy_location: "/"
+      proxy_http_version: "1.1"
+      proxy_set_headers:
+        - "Host $http_host"
+        - "X-Forwarded-For {{ radicale_x_forwarded_for }}"
+        - "X-Remote-User $remote_user"
+      auth_basic_realm: "{{ radicale_server_realm }}"

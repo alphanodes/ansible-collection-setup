@@ -1,0 +1,19 @@
+---
+
+dependencies:
+  - role: alphanodes.setup.common
+    public: true
+
+galaxy_info:
+  author: AlphaNodes
+  description: Setup Radicale CalDAV/CardDAV server
+  license: MIT
+  min_ansible_version: '2.18'
+  platforms:
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+    - name: Ubuntu
+      versions:
+        - noble

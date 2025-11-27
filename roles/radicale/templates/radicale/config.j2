@@ -1,0 +1,77 @@
+{{ managed_by_ansible | comment }}
+# -*- mode: conf -*-
+# vim:ft=cfg
+# Config file for Radicale - A simple calendar server
+
+[server]
+
+# CalDAV server hostnames separated by a comma
+# IPv4 syntax: address:port
+# IPv6 syntax: [address]:port
+hosts = {{ radicale_server_host }}
+
+# Max parallel connections
+max_connections = {{ radicale_server_max_connections }}
+
+[encoding]
+
+# Encoding for responding requests
+#request = utf-8
+
+# Encoding for storing local collections
+#stock = utf-8
+
+[auth]
+
+# Authentication method
+# Value: none | htpasswd | remote_user | http_x_remote_user
+type = {{ radicale_auth_type }}
+
+{% if radicale_auth_type == 'htpasswd' %}
+# Htpasswd filename
+htpasswd_filename = /etc/nginx/.htpasswd_radicale
+
+# Htpasswd encryption method
+# Value: plain | sha1 | ssha | crypt | bcrypt | md5
+# Only bcrypt can be considered secure.
+# bcrypt and md5 require the passlib library to be installed.
+htpasswd_encryption = {{ radicale_htpasswd_encryption | default('bcrypt') }}
+{% endif %}
+
+# Message displayed in the client when a password is needed
+realm = {{ radicale_server_realm }}
+
+[rights]
+
+# Rights backend
+# Value: none | authenticated | owner_only | owner_write | from_file
+type = {{ radicale_rights_type }}
+
+# File for rights management from_file
+file = /etc/radicale/rights
+
+[storage]
+
+# Storage backend
+# Value: multifilesystem
+type = {{ radicale_storage_type }}
+
+# Folder for storing local collections, created if not present
+filesystem_folder = {{ radicale_collections_dir }}
+
+[web]
+
+# Web interface backend
+# Value: none | internal
+type = {{ radicale_web_type }}
+
+[logging]
+
+# Threshold for the logger
+# Value: debug | info | warning | error | critical
+level = {{ radicale_logging_level }}
+
+[headers]
+
+# Additional HTTP headers
+#Access-Control-Allow-Origin = *
