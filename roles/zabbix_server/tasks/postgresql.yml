@@ -27,15 +27,35 @@
     query: "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'users'"
   register: zabbix_schema_check
 
+- name: Find Zabbix SQL schema file
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop:
+    - /usr/share/zabbix/sql-scripts/postgresql/server.sql.gz
+    - /usr/share/zabbix-sql-scripts/postgresql/server.sql.gz
+  register: zabbix_sql_files
+  when: zabbix_schema_check.query_result[0].count == 0
+
+- name: Set Zabbix SQL schema path
+  ansible.builtin.set_fact:
+    zabbix_server_sql_schema: "{{ item.item }}"
+  loop: "{{ zabbix_sql_files.results | default([]) }}"
+  when:
+    - zabbix_schema_check.query_result[0].count == 0
+    - item.stat is defined
+    - item.stat.exists
+
 - name: Import Zabbix database schema
   become_user: '{{ zabbix_server_db_user }}'
   become: true
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      zcat /usr/share/zabbix-sql-scripts/postgresql/server.sql.gz | psql -d {{ zabbix_server_db_name }}
+      zcat {{ zabbix_server_sql_schema }} | psql -d {{ zabbix_server_db_name }}
     executable: /bin/bash
-  when: zabbix_schema_check.query_result[0].count == 0
+  when:
+    - zabbix_schema_check.query_result[0].count == 0
+    - zabbix_server_sql_schema is defined
 
 - name: Be sure timescaledb extension exists
   become_user: postgres

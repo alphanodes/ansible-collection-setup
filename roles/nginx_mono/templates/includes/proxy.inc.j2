@@ -1,8 +1,8 @@
 {% if instance.proxy_pass is defined and instance.proxy_pass | length > 0 %}
   location {{ instance.proxy_location | default('/') }} {
-{% if nginx_mono_include_mode and instance.vhost_users is defined and instance.vhost_users | length > 0 %}
-    # access protection (location level - only in include mode)
-    auth_basic "Restricted access only";
+{% if (nginx_mono_include_mode or instance.proxy_auth_basic | default(false)) and instance.vhost_users is defined and instance.vhost_users | length > 0 %}
+    # access protection (location level)
+    auth_basic "{{ instance.auth_basic_realm | default('Restricted access only') }}";
     auth_basic_user_file /etc/nginx/.htpasswd_{{ nginx_mono_service_name }};
 
 {% endif %}
@@ -13,7 +13,9 @@
 {% else %}
     proxy_set_header Host $host;
 {% endif %}
+{% if instance.proxy_headers is not defined or not (instance.proxy_headers | select('match', '^X-Forwarded-For ') | list) %}
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+{% endif %}
 {% if instance.proxy_forwarded_proto is defined %}
     proxy_set_header X-Forwarded-Proto {{ instance.proxy_forwarded_proto }};
 {% else %}

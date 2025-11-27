@@ -42,9 +42,12 @@ radicale_server_realm: Radicale - Password Required
 radicale_vhost_for_zabbix: false
 radicale_vhost_letsencrypt: false
 radicale_vhost_ssl_cert: ''
-radicale_vhost_letsencrypt_cert: "/etc/letsencrypt/live/{{ radicale_vhost_server }}/fullchain.pem"
-radicale_vhost_letsencrypt_key: "/etc/letsencrypt/live/{{ radicale_vhost_server }}/privkey.pem"
-radicale_vhost_letsencrypt_trusted_cert: "/etc/letsencrypt/live/{{ radicale_vhost_server }}/chain.pem"
+# Use radicale_letsencrypt_cert_name to specify a different certificate name
+# e.g. for multi-domain certificates stored under a different name
+radicale_letsencrypt_cert_name: "{{ radicale_vhost_server }}"
+radicale_vhost_letsencrypt_cert: "/etc/letsencrypt/live/{{ radicale_letsencrypt_cert_name }}/fullchain.pem"
+radicale_vhost_letsencrypt_key: "/etc/letsencrypt/live/{{ radicale_letsencrypt_cert_name }}/privkey.pem"
+radicale_vhost_letsencrypt_trusted_cert: "/etc/letsencrypt/live/{{ radicale_letsencrypt_cert_name }}/chain.pem"
 
 # Use can change it, if you use a proxy behind a proxy
 # e.g. $http_x_forwarded_for

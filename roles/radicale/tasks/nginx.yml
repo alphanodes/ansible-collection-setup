@@ -36,9 +36,9 @@
       vhost_users: "{{ radicale_users }}"
       proxy_pass: "http://{{ radicale_server_host }}/"
       proxy_location: "/"
-      proxy_http_version: "1.1"
-      proxy_set_headers:
-        - "Host $http_host"
+      proxy_host_header: "$http_host"
+      proxy_headers:
         - "X-Forwarded-For {{ radicale_x_forwarded_for }}"
         - "X-Remote-User $remote_user"
+      proxy_auth_basic: true
       auth_basic_realm: "{{ radicale_server_realm }}"
