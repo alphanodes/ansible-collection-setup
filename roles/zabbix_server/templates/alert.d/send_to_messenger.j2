@@ -1,0 +1,51 @@
+#!/bin/bash
+# {{ managed_by_ansible }}
+
+# Get the {{ messenger_name }} channel or user ($1) and Zabbix subject ($2 - hopefully either PROBLEM or RECOVERY)
+to="$1"
+subject="$2"
+
+# Change color emoji depending on the subject - Green (RECOVERY), Red (PROBLEM), Yellow (UPDATE)
+if [[ "$subject" == *"OK"* ]]; then
+  color="#00ff33"
+elif [[ "$subject" == 'RECOVERY' ]]; then
+  color="#00ff33"
+elif [[ "$subject" == *"UPDATE"* ]]; then
+  color="#ffcc00"
+elif [[ "$subject" == *"PROBLEM"* ]]; then
+  color="#ff2a00"
+fi
+
+icon_emoji=':grinning:'
+if [[ "$subject" == *"OK"* ]]; then
+        icon_emoji=':grinning:'
+elif  [[ "$subject" == *"UPDATE"* ]]; then
+        icon_emoji=':warning:'
+elif  [[ "$subject" == *"PROBLEM"* ]]; then
+        icon_emoji=':fearful:'
+fi
+
+# The message that we want to send to {{ messenger_name }} is the "subject" value ($2 / $subject - that we got earlier)
+#  followed by the message that Zabbix actually sent us ($3)
+message="${subject}: $3 <https://{{ zabbix_server_vhost }}/>"
+
+# Build our JSON payload and send it as a POST request to the {{ messenger_name }} incoming web-hook URL
+generate_payload_data()
+{
+  cat <<EOF
+{
+  "link_names": "1",
+{% if zabbix_server_messenger_icon | length > 0 %}
+  "icon_url": "{{ zabbix_server_messenger_icon }}",
+{% endif %}
+  "channel": "${to}",
+  "text": "Zabbix notification ${icon_emoji}",
+  "username": "{{ messenger_user }}",
+  "attachments": [{
+     "color": "${color}",
+     "text": "${message}" }]
+}
+EOF
+}
+
+curl -i -X POST --data-urlencode "payload=$(generate_payload_data)" {{ messenger_hook }}

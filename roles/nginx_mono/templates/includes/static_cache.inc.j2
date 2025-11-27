@@ -1,0 +1,8 @@
+
+  # Static asset caching
+  location ~* \.(jpg|jpeg|gif|png|ico|css|js|woff|woff2|ttf|svg|eot)$ {
+    access_log off;
+    log_not_found off;
+    expires {{ instance.static_cache_expires | default('30d') }};
+    add_header Cache-Control "public, immutable";
+  }

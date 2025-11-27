@@ -1,0 +1,47 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  vars:
+    # Zabbix Agent settings (dependency)
+    zabbix_agent_server_api: false
+    zabbix_agent_server_active: '127.0.0.1'
+    zabbix_host_groups:
+      - Linux servers
+    zabbix_link_templates:
+      - Linux by Zabbix agent
+
+    # PostgreSQL settings (dependency)
+    postgresql_with_pg_buffercache: true
+
+    # PHP-FPM settings (dependency)
+    php_fpm_listen: /run/php/php-fpm.sock
+
+    # nginx_mono configuration
+    nginx_with_ipv6: false
+    nginx_with_http3: false
+    nginx_ssl_protocols: 'TLSv1.3'
+    hoster: 'local'
+
+    # SSL configuration - self-signed certificate for testing
+    ssl_certs:
+      - name: zabbix
+        provider: selfsigned
+        subject_common_name: zabbix.local
+
+    # Zabbix Server settings
+    zabbix_server_vhost_letsencrypt: false
+    zabbix_server_vhost_ssl_cert: zabbix
+    zabbix_vhost_for_zabbix: false
+    # Molecule: ignore service errors (DB not initialized in test)
+    zabbix_server_ignore_service_errors: true
+
+  pre_tasks:
+    - name: Include ssl role to create self-signed certificate
+      ansible.builtin.include_role:
+        name: alphanodes.setup.ssl
+
+  tasks:
+    - name: Include zabbix_server role
+      ansible.builtin.include_role:
+        name: alphanodes.setup.zabbix_server

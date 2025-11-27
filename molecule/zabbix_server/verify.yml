@@ -1,0 +1,49 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Check zabbix-server package is installed
+      ansible.builtin.package:
+        name: zabbix-server-pgsql
+        state: present
+      check_mode: true
+      register: pkg_result
+      failed_when: pkg_result.changed
+
+    - name: Check zabbix-server service is running
+      ansible.builtin.systemd_service:
+        name: zabbix-server
+        state: started
+      check_mode: true
+      register: service_result
+      failed_when: service_result.changed
+
+    - name: Check zabbix-server configuration exists
+      ansible.builtin.stat:
+        path: /etc/zabbix/zabbix_server.conf
+      register: config_result
+      failed_when: not config_result.stat.exists
+
+    - name: Check zabbix web configuration exists
+      ansible.builtin.stat:
+        path: /etc/zabbix/web/zabbix.conf.php
+      register: web_config_result
+      failed_when: not web_config_result.stat.exists
+
+    - name: Check nginx vhost configuration exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/zabbix.conf
+      register: nginx_vhost_result
+      failed_when: not nginx_vhost_result.stat.exists
+
+    - name: Check nginx vhost is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/zabbix.conf
+      register: nginx_enabled_result
+      failed_when: not nginx_enabled_result.stat.exists
+
+    - name: Test nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      changed_when: false

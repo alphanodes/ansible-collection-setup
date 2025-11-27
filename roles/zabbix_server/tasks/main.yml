@@ -1,0 +1,7 @@
+---
+
+- name: Include PostgreSQL tasks
+  ansible.builtin.include_tasks: postgresql.yml
+
+- name: Include Setup tasks
+  ansible.builtin.include_tasks: setup.yml

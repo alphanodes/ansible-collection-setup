@@ -1,0 +1,35 @@
+---
+
+- name: Create Zabbix postgresql database user
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_user:
+    name: '{{ zabbix_server_db_user }}'
+    password: '{{ zabbix_server_db_password }}'
+    role_attr_flags: '{{ zabbix_server_db_role_flags }}'
+    state: present
+  no_log: '{{ hide_sensitive_data }}'
+
+- name: Be sure Zabbix postgresql databases exists
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_db:
+    name: '{{ zabbix_server_db_name }}'
+    owner: '{{ zabbix_server_db_user }}'
+    state: present
+
+- name: Be sure timescaledb extension exists
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_ext:
+    name: timescaledb
+    login_db: '{{ zabbix_server_db_name }}'
+  when: zabbix_server_with_timescaledb
+
+- name: Add extention pg_buffercache to Zabbix database
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_ext:
+    name: pg_buffercache
+    login_db: '{{ zabbix_server_db_name }}'
+    state: "{{ 'present' if postgresql_with_pg_buffercache else 'absent' }}"

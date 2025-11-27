@@ -1,0 +1,10 @@
+#!/bin/bash
+# {{ managed_by_ansible }}
+
+to=$1
+subject=$2
+body=$3
+
+cat <<EOF | mail -aFrom:{{ zabbix_server_mail_from }} -s "$subject" "$to"
+$body
+EOF

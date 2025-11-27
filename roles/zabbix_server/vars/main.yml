@@ -1,0 +1,6 @@
+---
+
+zabbix_server_datafiles_path: /usr/share/doc/zabbix-server-pgsql
+zabbix_server_pid_file: /run/zabbix/zabbix_server.pid
+zabbix_server_fping_location: /usr/bin/fping
+zabbix_server_fping6_location: /usr/bin/fping6

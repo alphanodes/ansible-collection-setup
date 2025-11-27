@@ -1,0 +1,107 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Check test-selfsigned certificate exists
+      ansible.builtin.stat:
+        path: /etc/ssl/certs/test-selfsigned.crt
+      register: cert_minimal
+
+    - name: Assert test-selfsigned certificate exists
+      ansible.builtin.assert:
+        that:
+          - cert_minimal.stat.exists
+          - cert_minimal.stat.mode == '0644'
+        fail_msg: "Self-signed certificate test-selfsigned.crt not found or wrong permissions"
+
+    - name: Check test-selfsigned key exists
+      ansible.builtin.stat:
+        path: /etc/ssl/private/test-selfsigned.key
+      register: key_minimal
+
+    - name: Assert test-selfsigned key exists
+      ansible.builtin.assert:
+        that:
+          - key_minimal.stat.exists
+          - key_minimal.stat.mode == '0640'
+        fail_msg: "Self-signed key test-selfsigned.key not found or wrong permissions"
+
+    - name: Check test-selfsigned-full certificate exists
+      ansible.builtin.stat:
+        path: /etc/ssl/certs/test-selfsigned-full.crt
+      register: cert_full
+
+    - name: Assert test-selfsigned-full certificate exists
+      ansible.builtin.assert:
+        that:
+          - cert_full.stat.exists
+          - cert_full.stat.mode == '0644'
+        fail_msg: "Self-signed certificate test-selfsigned-full.crt not found or wrong permissions"
+
+    - name: Check test-selfsigned-full key exists
+      ansible.builtin.stat:
+        path: /etc/ssl/private/test-selfsigned-full.key
+      register: key_full
+
+    - name: Assert test-selfsigned-full key exists
+      ansible.builtin.assert:
+        that:
+          - key_full.stat.exists
+          - key_full.stat.mode == '0640'
+        fail_msg: "Self-signed key test-selfsigned-full.key not found or wrong permissions"
+
+    - name: Verify test-selfsigned certificate content
+      ansible.builtin.command:
+        cmd: openssl x509 -in /etc/ssl/certs/test-selfsigned.crt -noout -subject
+      register: cert_subject_minimal
+      changed_when: false
+
+    - name: Assert test-selfsigned certificate has correct CN
+      ansible.builtin.assert:
+        that:
+          - "'test.local' in cert_subject_minimal.stdout"
+        fail_msg: "Certificate CN does not contain test.local"
+
+    - name: Verify test-selfsigned-full certificate content
+      ansible.builtin.command:
+        cmd: openssl x509 -in /etc/ssl/certs/test-selfsigned-full.crt -noout -subject
+      register: cert_subject_full
+      changed_when: false
+
+    - name: Assert test-selfsigned-full certificate has correct CN
+      ansible.builtin.assert:
+        that:
+          - "'full.test.local' in cert_subject_full.stdout"
+        fail_msg: "Certificate CN does not contain full.test.local"
+
+    - name: Verify test-selfsigned-full certificate has SAN
+      ansible.builtin.command:
+        cmd: openssl x509 -in /etc/ssl/certs/test-selfsigned-full.crt -noout -text
+      register: cert_text_full
+      changed_when: false
+
+    - name: Assert test-selfsigned-full certificate has SAN entries
+      ansible.builtin.assert:
+        that:
+          - "'DNS:full.test.local' in cert_text_full.stdout"
+          - "'DNS:www.full.test.local' in cert_text_full.stdout"
+        fail_msg: "Certificate does not contain expected SAN entries"
+
+    - name: Verify key and certificate match (test-selfsigned)
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          cert_mod=$(openssl x509 -noout -modulus -in /etc/ssl/certs/test-selfsigned.crt | openssl md5)
+          key_mod=$(openssl rsa -noout -modulus -in /etc/ssl/private/test-selfsigned.key | openssl md5)
+          [ "$cert_mod" = "$key_mod" ] && echo "match" || echo "mismatch"
+        executable: /bin/bash
+      register: key_cert_match
+      changed_when: false
+
+    - name: Assert key and certificate match
+      ansible.builtin.assert:
+        that:
+          - "'match' in key_cert_match.stdout"
+        fail_msg: "Certificate and key do not match"

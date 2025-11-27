@@ -116,6 +116,9 @@ server {
 {% include 'includes/proxy.inc.j2' %}
 {% include 'includes/rewrite_lines.inc.j2' %}
 {% include 'includes/error_handler.inc.j2' %}
+{% if instance.static_cache is defined and instance.static_cache %}
+{% include 'includes/static_cache.inc.j2' %}
+{% endif %}
 {% if instance.vhost_users is defined and instance.vhost_users | length > 0 %}
   # access protection (server level - protects entire vhost)
   auth_basic "Restricted access only";

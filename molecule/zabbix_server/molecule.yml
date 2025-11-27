@@ -12,6 +12,9 @@ platforms:
     privileged: true
     pre_build_image: true
     cgroupns_mode: host
+    published_ports:
+      - "443:443"
+      - "10051:10051"
 provisioner:
   name: ansible
   options:

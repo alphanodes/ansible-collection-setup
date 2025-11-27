@@ -1,0 +1,38 @@
+---
+
+- name: Ensure alert scripts directory exists
+  ansible.builtin.file:
+    path: '{{ zabbix_server_alert_scripts_path }}'
+    state: directory
+    owner: "{{ zabbix_server_user }}"
+    group: "{{ zabbix_server_user }}"
+    mode: '0750'
+
+- name: Install sendmail alert script
+  tags: alert
+  ansible.builtin.template:
+    src: alert.d/send_mail_with_sendmail.j2
+    dest: '{{ zabbix_server_alert_scripts_path }}/send_mail_with_sendmail.sh'
+    mode: '0750'
+    owner: "{{ zabbix_server_user }}"
+    group: "{{ zabbix_server_user }}"
+
+- name: Install Rocket.Chat alert script
+  tags: alert
+  ansible.builtin.template:
+    src: alert.d/send_to_messenger.j2
+    dest: '{{ zabbix_server_alert_scripts_path }}/send_to_rocketchat.sh'
+    mode: '0750'
+    owner: "{{ zabbix_server_user }}"
+    group: "{{ zabbix_server_user }}"
+  vars:
+    messenger_name: Rocket.Chat
+    messenger_user: '{{ zabbix_server_rocketchat_user }}'
+    messenger_hook: '{{ zabbix_server_rocketchat_hook }}'
+  when: zabbix_server_rocketchat_hook | length > 0
+
+- name: Remove unused Rocket.Chat alert script
+  ansible.builtin.file:
+    path: '{{ zabbix_server_alert_scripts_path }}/send_to_rocketchat.sh'
+    state: absent
+  when: zabbix_server_rocketchat_hook | length == 0

@@ -1,8 +1,10 @@
 
   # Error handler
-  {% if instance.error_497_redirect is defined -%}
-  error_page 497 {{ instance.error_497_redirect }};
-  {% endif -%}
+{% if instance.error_pages is defined %}
+{% for error_page in instance.error_pages %}
+  error_page {{ error_page.codes }} {{ error_page.uri }};
+{% endfor %}
+{% else %}
   {% if instance.error_404_page is defined -%}
   error_page 404 {{ instance.error_404_page }};
   location {{ instance.error_404_page }} {
@@ -34,4 +36,4 @@
   location = /502.html {
     root {{ nginx_error_pages_path }};
   }
-
+{% endif %}

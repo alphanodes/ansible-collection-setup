@@ -1,0 +1,90 @@
+---
+# defaults file for zabbix_server
+
+zabbix_server_packages:
+  - curl
+  - iputils-ping
+  - traceroute
+  - zabbix-frontend-php
+  - zabbix-get
+  - zabbix-server-pgsql
+  # required for timescaledb
+  - zabbix-sql-scripts
+
+zabbix_server_mail_from: monitor@example.com
+
+# we only support psql
+# Leave empty for socket
+zabbix_server_db_host: ''
+zabbix_server_db_name: zabbix
+zabbix_server_db_user: zabbix
+zabbix_server_db_password: '{{ [ansible_machine_id, ansible_hostname, "zabbix"] | join | hash("md5") }}'
+zabbix_server_db_socket: ''
+zabbix_server_allow_unsupported_db_versions: 1
+
+# you can disable it, if you have another default nginx host
+zabbix_vhost_for_zabbix: true
+
+# only used with PostgreSQL
+zabbix_server_db_role_flags: 'NOSUPERUSER,CREATEDB'
+
+# see https://docs.timescale.com/about/latest/timescaledb-editions/
+zabbix_server_with_timescaledb: false
+
+zabbix_server_log_type: system
+zabbix_server_log_file: /var/log/zabbix/zabbix_server.log
+zabbix_server_socket_dir: /run/zabbix
+zabbix_server_debug_level: 3
+zabbix_server_start_preprocessors: 4
+zabbix_server_start_pollers: 25
+zabbix_server_start_pollers_unreachable: 3
+zabbix_server_start_trappers: 15
+zabbix_server_start_pingers: 3
+zabbix_server_start_discoverers: 2
+# with zabbix 5.4 or newer 32M are not enough
+zabbix_server_cache_size: 128M
+zabbix_server_start_db_syncers: 6
+zabbix_server_history_cache_size: 32M
+zabbix_server_trend_cache_size: 16M
+zabbix_server_value_cache_size: 128M
+# problems with primes (with 10 seconds)
+zabbix_server_timeout: 20
+zabbix_server_unreachable_delay: 60
+zabbix_server_alert_scripts_path: /etc/zabbix/alert.d/
+zabbix_server_start_proxy_pollers: 0
+zabbix_server_proxy_config_frequency: 10
+zabbix_server_proxy_data_frequency: 1
+zabbix_server_enable_global_scripts: 1
+zabbix_server_start_lld_processors: 2
+zabbix_server_stats_allowed_ip: 127.0.0.1
+zabbix_server_user: zabbix
+
+# default 1
+zabbix_server_start_snmp_pollers: 0
+# default 1
+zabbix_server_housekeeping_frequency: 1
+# default 5000
+zabbix_server_max_housekeeper_delete: 50000
+# default 0 (disabled)
+zabbix_server_log_slow_queries: 3000
+
+# if higher then 0, zabbix_server_web_service_url is required
+zabbix_server_start_report_writers: 0
+zabbix_server_web_service_url: http://localhost:10053/report
+
+zabbix_server_ui_dir: /usr/share/zabbix/ui
+
+zabbix_server_port: 10051
+zabbix_server_name: Zabbix Server
+
+zabbix_server_vhost: 'zabbix.local'
+
+zabbix_server_vhost_letsencrypt: false
+zabbix_server_vhost_ssl_cert: '{{ ssl_certs[0].name | default(omit) }}'
+zabbix_server_vhost_letsencrypt_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/fullchain.pem
+zabbix_server_vhost_letsencrypt_key: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/privkey.pem
+zabbix_server_vhost_letsencrypt_trusted_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/chain.pem
+
+zabbix_server_messenger_icon: ''
+zabbix_server_rocketchat_hook: ''
+zabbix_server_rocketchat_user: zabbix

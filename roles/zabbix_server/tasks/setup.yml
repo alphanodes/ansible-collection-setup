@@ -1,0 +1,50 @@
+---
+
+- name: Be sure zabbix-server is installed
+  ansible.builtin.apt:
+    name: '{{ zabbix_server_packages }}'
+    state: present
+
+- name: Install startup zabbix-server configuration
+  ansible.builtin.copy:
+    src: default/zabbix-server
+    dest: /etc/default/zabbix-server
+    mode: '0644'
+  notify: Restart zabbix-server
+
+- name: Update zabbix-server configuration
+  ansible.builtin.template:
+    src: zabbix_server.conf.j2
+    dest: /etc/zabbix/zabbix_server.conf
+    owner: '{{ zabbix_server_user }}'
+    group: '{{ zabbix_server_user }}'
+    mode: '0640'
+  notify: Restart zabbix-server
+
+- name: Remove unused log directory
+  ansible.builtin.file:
+    path: /var/log/zabbix
+    state: absent
+  when: zabbix_server_log_type == 'system'
+
+- name: Update zabbix web configuration
+  ansible.builtin.template:
+    src: web/zabbix.conf.php.j2
+    dest: /etc/zabbix/web/zabbix.conf.php
+    owner: '{{ nginx_user }}'
+    group: '{{ nginx_group }}'
+    mode: '0640'
+
+- name: Write access for web server to assets
+  ansible.builtin.file:
+    path: '{{ zabbix_server_ui_dir }}/assets'
+    owner: "{{ nginx_user }}"
+    group: "{{ nginx_group }}"
+    recurse: true
+
+- name: Include alert tasks
+  ansible.builtin.include_tasks: alerts.yml
+
+- name: Include nginx tasks
+  ansible.builtin.include_tasks: nginx.yml
+  tags: nginx

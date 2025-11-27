@@ -1,0 +1,43 @@
+---
+
+- name: Set TLS files for letsencrypt
+  ansible.builtin.set_fact:
+    vhost_letsencrypt_cert: "{{ zabbix_server_vhost_letsencrypt_cert }}"
+    vhost_letsencrypt_trusted_cert: "{{ zabbix_server_vhost_letsencrypt_trusted_cert }}"
+    vhost_letsencrypt_key: "{{ zabbix_server_vhost_letsencrypt_key }}"
+    force_letsencrypt: true
+  when:
+    - zabbix_server_vhost_letsencrypt is defined
+    - zabbix_server_vhost_letsencrypt
+
+- name: Check trusted TLS cert
+  ansible.builtin.stat:
+    path: /etc/ssl/certs/{{ zabbix_server_vhost_ssl_cert }}_trusted.crt
+  register: trusted_cert
+  when: zabbix_server_vhost_letsencrypt is undefined or not zabbix_server_vhost_letsencrypt
+
+- name: Set TLS files
+  ansible.builtin.set_fact:
+    vhost_ssl_cert: "{{ zabbix_server_vhost_ssl_cert }}"
+    vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
+  when: zabbix_server_vhost_letsencrypt is undefined or not zabbix_server_vhost_letsencrypt
+
+- name: Setup nginx_mono and configure zabbix vhost
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nginx_mono
+  vars:
+    nginx_mono_service_name: zabbix
+    nginx_mono_service_enabled: true
+    nginx_mono_service_config:
+      server_name: "{{ zabbix_server_vhost }}"
+      root: "{{ zabbix_server_ui_dir }}"
+      index: "index.php"
+      with_fpm: www
+      letsencrypt: "{{ zabbix_server_vhost_letsencrypt | default(false) }}"
+      vhost_for_zabbix: "{{ zabbix_vhost_for_zabbix | default(false) }}"
+      static_cache: true
+      static_cache_expires: "33d"
+      error_pages:
+        - codes: "403 404 502 503 504"
+          uri: "/index.php"
+      locations: "{{ [{'name': '/', 'action': 'try_files $uri $uri/ =404'}] + (zabbix_server_locations | default([])) }}"

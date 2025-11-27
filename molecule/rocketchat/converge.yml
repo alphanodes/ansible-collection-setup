@@ -75,7 +75,9 @@
             - "Referer $http_referer"
             - "X-Forwarded-Ssl on"
             - "X-Nginx-Proxy true"
-          error_497_redirect: "https://$host:$server_port$request_uri"
+          error_pages:
+            - codes: "497"
+              uri: "https://$host:$server_port$request_uri"
           additional_headers:
             - "Referrer-Policy 'no-referrer'"
           vhost_users: []

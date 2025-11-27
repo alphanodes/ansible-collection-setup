@@ -11,14 +11,27 @@
       changed_when: false
 
   vars:
-    ssl_enabled: false  # Don't manage SSL certificates in test
+    ssl_certs:
+      # Test self-signed certificate with minimal config
+      - name: test-selfsigned
+        provider: selfsigned
+        subject_common_name: test.local
+
+      # Test self-signed certificate with full config
+      - name: test-selfsigned-full
+        provider: selfsigned
+        subject_common_name: full.test.local
+        country_name: DE
+        locality_name: Munich
+        state_or_province_name: Bavaria
+        organization_name: Test Organization
+        organizational_unit_name: IT
+        email_address: test@example.com
+        subject_alt_name:
+          - "DNS:full.test.local"
+          - "DNS:www.full.test.local"
+        days: "+365d"
 
   roles:
     - role: alphanodes.setup.common
     - role: alphanodes.setup.ssl
-
-  post_tasks:
-    - name: Check ssl role completed
-      ansible.builtin.debug:
-        msg: "SSL role executed successfully"
-    # TODO: SSL certificate management requires valid domains and Let's Encrypt setup
