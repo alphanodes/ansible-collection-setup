@@ -1,0 +1,6 @@
+---
+
+- name: Restart alloy
+  ansible.builtin.systemd:
+    name: alloy
+    state: restarted

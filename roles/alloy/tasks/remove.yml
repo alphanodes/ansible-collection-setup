@@ -1,0 +1,14 @@
+---
+
+- name: Remove alloy package
+  ansible.builtin.apt:
+    name: alloy
+    purge: true
+    state: absent
+
+- name: Remove configuration
+  ansible.builtin.file:
+    name: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/alloy

@@ -1,0 +1,39 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+    - name: Install gnupg for GPG key handling
+      ansible.builtin.apt:
+        name:
+          - gnupg
+          - curl
+        state: present
+
+  vars:
+    # Alloy configuration for testing
+    alloy_loki_url: "https://loki.example.com"
+    alloy_basic_user: testuser
+    alloy_basic_pass: testsecret123
+    alloy_label_owner: testowner
+    alloy_label_env: test
+
+    # Test with postgres and redmine filters enabled
+    alloy_with_postgres: true
+    alloy_with_redmine: true
+
+    # Add some local drop patterns to test merging
+    alloy_drop_local_system_regex:
+      - "test-local-pattern"
+    alloy_drop_local_redmine_regex:
+      - "test-redmine-local-pattern"
+
+  roles:
+    - role: alphanodes.setup.alloy

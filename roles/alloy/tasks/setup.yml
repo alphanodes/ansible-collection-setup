@@ -1,0 +1,60 @@
+---
+
+- name: Download Grafana GPG key
+  ansible.builtin.get_url:
+    url: "{{ alloy_apt_url }}/gpg.key"
+    dest: "{{ alloy_apt_signed_by }}"
+    mode: "0644"
+  when: ansible_distribution_release == 'trixie'
+
+- name: Download and convert Grafana GPG key
+  ansible.builtin.shell: >
+    set -o pipefail &&
+    curl -fsSL {{ alloy_apt_url }}/gpg.key | gpg --dearmor > {{ alloy_apt_signed_by }}
+  args:
+    creates: "{{ alloy_apt_signed_by }}"
+    executable: /bin/bash
+  when: ansible_distribution_release != 'trixie'
+
+# see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/deb822_repository_module.html
+- name: Add Grafana APT repo
+  ansible.builtin.deb822_repository:
+    name: grafana
+    uris: '{{ alloy_apt_url }}'
+    types: deb
+    suites: '{{ alloy_apt_suites }}'
+    components: '{{ alloy_apt_components }}'
+    signed_by: '{{ alloy_apt_signed_by }}'
+    state: present
+  register: alloy_repo
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+  when: alloy_repo.changed
+  tags:
+    - skip_ansible_lint
+
+- name: Install required packages
+  ansible.builtin.apt:
+    name: '{{ alloy_packages }}'
+    state: present
+
+- name: Allow alloy user to read journald
+  ansible.builtin.user:
+    name: alloy
+    groups: systemd-journal
+    append: true
+
+- name: Deploy /etc/alloy/config.alloy
+  ansible.builtin.template:
+    src: config.alloy.j2
+    dest: /etc/alloy/config.alloy
+    mode: "0644"
+  notify: Restart alloy
+
+- name: Enable and start Alloy
+  ansible.builtin.systemd:
+    name: alloy
+    enabled: true
+    state: started

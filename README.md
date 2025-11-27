@@ -18,6 +18,7 @@ All provided roles do not use docker as container system.
 
 ## Included content
 
+- [alphanodes.setup.alloy](roles/alloy/) [![alloy](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/alloy.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/alloy.yml)
 - [alphanodes.setup.ansible_node](roles/ansible_node/) [![ansible_node](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/ansible_node.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/ansible_node.yml)
 - [alphanodes.setup.apt](roles/apt/) [![apt](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/apt.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/apt.yml)
 - [alphanodes.setup.barman](roles/barman/) [![barman](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/barman.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/barman.yml)

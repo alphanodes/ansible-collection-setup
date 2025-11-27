@@ -1,0 +1,110 @@
+---
+
+alloy_apt_url: https://apt.grafana.com
+alloy_apt_signed_by: /etc/apt/keyrings/grafana.gpg
+alloy_apt_suites: stable
+alloy_apt_components: main
+
+alloy_packages:
+  - alloy
+
+alloy_remove: false
+
+alloy_logging_level: info
+alloy_logging_format: logfmt
+
+alloy_loki_url: "https://loki.local"
+alloy_loki_push_url: "{{ alloy_loki_url }}/loki/api/v1/push"
+alloy_basic_user: shipper
+alloy_basic_pass: "CHANGE_ME"
+
+alloy_label_owner: unknown
+alloy_label_env: prod
+
+# not used at the moment (whitelisting not working with alloy pipelines)
+alloy_allow_system_regex:
+  - undefined
+  - failed
+  - warning
+  - missing
+  - NilClass
+  - error
+  - terminating connection
+  - cannot allocate memory
+  - out of memory
+  - too many clients
+  - killed
+  - QueryCanceled
+  - mismatch
+
+alloy_with_postgres: false
+alloy_drop_postgres_regex:
+  - connection received
+  - connection authorized
+  - disconnection
+  - checkpoint
+  - autovacuum
+  - archive
+  - log file switched
+  - terminating connection due to administrator command
+
+alloy_drop_local_system_regex: []
+alloy_drop_system_regex:
+  - "systemd\\[1\\]: Started"
+  - "systemd\\[1\\]: Stopped"
+  - "systemd\\[1\\]: Reached target"
+  - "systemd\\[1\\]: Listening on"
+  - dhclient
+  - NetworkManager
+  - snapd
+  - packagekit
+  - update-notifier
+  - systemd-resolved
+  - systemd-timesyncd
+  - systemd-networkd
+  - systemd-logind
+  - rsyslog
+  - dbus
+  - chronyd
+  - "cron\\[.*\\]: \\(CRON\\) INFO"
+  - "postfix/pickup"
+  - "postfix/qmgr.*empty"
+  - "kernel: \\[.*\\] audit"
+  - apparmor
+  - systemd-sysv-generator
+  - "error: kex_exchange_identification"
+  - active check configuration
+
+alloy_with_redmine: false
+alloy_drop_local_redmine_regex: []
+alloy_drop_redmine_regex:
+  - RoutingError
+  - "WARNING: Detected"
+  - "Puma::HttpParserError"
+  - "Missing template wiki/edit"
+  - "ignoring zlib error"
+  - "BBox has zero width or height"
+  - "unrecognized font file starts with"
+  - "error fetching PDF image"
+  - "Image: error"
+  - "Form stream has unbalanced q/Q operators"
+  - "convert-im6\\.q16"
+  - "mogrify-im6\\.q16"
+  - "dynamic :action segment in a route"
+  - bypass_ssl_verification
+  - "warning: already initialized constant"
+  - "warning: previous definition"
+  - "Failed login for"
+  - "rolling restart"
+  - "deprecated: layouts/base\\.html\\.erb"
+  - '"issue_update"'
+  - '"issue_create"'
+  - '"issue_destroy"'
+  - '"wiki_page_update"'
+  - "Question as a proc"
+  - "QuestionsAnswer as a proc"
+  - "ContactNote as a proc"
+  - "DealNote as a proc"
+  - "Deal as a proc"
+  - "ReportingLog: Failed to resolve hostname"
+  - 'logged_type=>"AutomationRule"'

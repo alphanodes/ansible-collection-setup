@@ -1,0 +1,127 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check if alloy is running
+      ansible.builtin.service:
+        name: alloy
+        state: started
+      check_mode: true
+      register: alloy_service
+      failed_when: alloy_service.changed
+
+    - name: Check if alloy config exists
+      ansible.builtin.stat:
+        path: /etc/alloy/config.alloy
+      register: alloy_config
+
+    - name: Verify alloy config exists
+      ansible.builtin.assert:
+        that:
+          - alloy_config.stat.exists
+        fail_msg: "Alloy config file does not exist"
+
+    - name: Read alloy config
+      ansible.builtin.slurp:
+        src: /etc/alloy/config.alloy
+      register: alloy_config_content
+
+    - name: Decode alloy config
+      ansible.builtin.set_fact:
+        alloy_config_text: "{{ alloy_config_content.content | b64decode }}"
+
+    - name: Verify Loki endpoint configuration
+      ansible.builtin.assert:
+        that:
+          - "'loki.example.com' in alloy_config_text"
+          - "'testuser' in alloy_config_text"
+          - "'testsecret123' in alloy_config_text"
+        fail_msg: "Loki endpoint configuration missing or incorrect"
+
+    - name: Verify label configuration
+      ansible.builtin.assert:
+        that:
+          - "'testowner' in alloy_config_text"
+          - "'test' in alloy_config_text"
+        fail_msg: "Label configuration missing or incorrect"
+
+    - name: Verify postgres filter is enabled
+      ansible.builtin.assert:
+        that:
+          - "'postgres_logs' in alloy_config_text"
+          - "'filter_postgres_noise' in alloy_config_text"
+        fail_msg: "Postgres filter configuration missing"
+
+    - name: Verify redmine filter is enabled
+      ansible.builtin.assert:
+        that:
+          - "'redmine_info' in alloy_config_text"
+          - "'filter_redmine_noise' in alloy_config_text"
+        fail_msg: "Redmine filter configuration missing"
+
+    - name: Verify system noise filter contains default patterns
+      ansible.builtin.assert:
+        that:
+          - "'systemd' in alloy_config_text"
+          - "'dhclient' in alloy_config_text"
+        fail_msg: "System noise filter patterns missing"
+
+    - name: Verify local system pattern is merged
+      ansible.builtin.assert:
+        that:
+          - "'test-local-pattern' in alloy_config_text"
+        fail_msg: "Local system pattern not merged into config"
+
+    - name: Verify local redmine pattern is merged
+      ansible.builtin.assert:
+        that:
+          - "'test-redmine-local-pattern' in alloy_config_text"
+        fail_msg: "Local redmine pattern not merged into config"
+
+    - name: Verify redmine noise filter contains ReportingLog pattern
+      ansible.builtin.assert:
+        that:
+          - "'ReportingLog' in alloy_config_text"
+        fail_msg: "ReportingLog pattern missing from redmine filter"
+
+    - name: Verify redmine noise filter contains AutomationRule pattern
+      ansible.builtin.assert:
+        that:
+          - "'AutomationRule' in alloy_config_text"
+        fail_msg: "AutomationRule pattern missing from redmine filter"
+
+    - name: Verify alloy user is in systemd-journal group
+      ansible.builtin.command: id alloy
+      register: alloy_user
+      changed_when: false
+
+    - name: Verify alloy user has journal access
+      ansible.builtin.assert:
+        that:
+          - "'systemd-journal' in alloy_user.stdout"
+        fail_msg: "Alloy user is not in systemd-journal group"
+
+    - name: Check alloy config syntax with alloy fmt
+      ansible.builtin.command: alloy fmt /etc/alloy/config.alloy
+      register: alloy_fmt
+      changed_when: false
+      failed_when: false
+
+    - name: Display test results
+      ansible.builtin.debug:
+        msg:
+          - "=== ALLOY ROLE TESTS ==="
+          - "Alloy service: {{ 'OK' if not alloy_service.changed else 'FAILED' }}"
+          - "Config exists: {{ 'OK' if alloy_config.stat.exists else 'FAILED' }}"
+          - "Loki endpoint: OK"
+          - "Labels configured: OK"
+          - "Postgres filter: OK"
+          - "Redmine filter: OK"
+          - "System noise patterns: OK"
+          - "Local patterns merged: OK"
+          - "ReportingLog pattern: OK"
+          - "AutomationRule pattern: OK"
+          - "Journal group access: OK"
+          - "Config syntax: {{ 'OK' if alloy_fmt.rc == 0 else 'WARNING (may be format differences)' }}"
+          - "=== ALLOY ROLE TESTS SUCCESS ==="

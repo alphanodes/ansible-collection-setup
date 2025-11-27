@@ -1,0 +1,197 @@
+{{ managed_by_ansible | comment('c') }}
+
+logging {
+  level = "{{ alloy_logging_level }}"
+  format = "{{ alloy_logging_format }}"
+}
+
+// Push target (Loki)
+loki.write "default" {
+  endpoint {
+    url = "{{ alloy_loki_push_url }}"
+    basic_auth {
+      username = "{{ alloy_basic_user }}"
+      password = "{{ alloy_basic_pass }}"
+    }
+  }
+}
+
+loki.source.journal "system_logs" {
+  format_as_json = true
+  forward_to = [loki.process.add_service_labels.receiver]
+
+  matches = "PRIORITY=3"
+
+  labels = {
+    owner = "{{ alloy_label_owner }}",
+    env   = "{{ alloy_label_env }}",
+    app   = "system",
+    host  = env("HOSTNAME"),
+  }
+}
+
+loki.source.journal "system_warnings" {
+  format_as_json = true
+  forward_to = [loki.process.add_service_labels.receiver]
+
+  matches = "PRIORITY=4"
+
+  labels = {
+    owner = "{{ alloy_label_owner }}",
+    env   = "{{ alloy_label_env }}",
+    app   = "system",
+    host  = env("HOSTNAME"),
+  }
+}
+
+loki.process "add_service_labels" {
+  forward_to = [loki.process.filter_system_noise.receiver]
+
+  stage.json {
+    expressions = {
+      service = "SYSLOG_IDENTIFIER",
+    }
+  }
+
+  stage.labels {
+    values = {
+      service = "",
+    }
+  }
+}
+
+loki.source.file "package_logs" {
+  targets = [
+    {
+      __path__ = "/var/log/apt/history.log",
+      owner = "{{ alloy_label_owner }}",
+      env   = "{{ alloy_label_env }}",
+      app   = "apt",
+      host  = env("HOSTNAME"),
+      log_type = "history",
+    },
+    {
+      __path__ = "/var/log/dpkg.log",
+      owner = "{{ alloy_label_owner }}",
+      env   = "{{ alloy_label_env }}",
+      app   = "apt",
+      host  = env("HOSTNAME"),
+      log_type = "dpkg",
+    },
+  ]
+
+  tail_from_end = true
+  forward_to = [loki.process.filter_apt_noise.receiver]
+}
+
+loki.process "filter_apt_noise" {
+  forward_to = [loki.write.default.receiver]
+
+  // Drop empty lines
+  stage.drop {
+    expression = "^\\s*$"
+  }
+}
+{% if alloy_with_postgres %}
+
+loki.source.journal "postgres_logs" {
+  format_as_json = true
+  forward_to = [loki.process.add_postgres_service_labels.receiver]
+
+  matches = "_SYSTEMD_UNIT=postgresql.service"
+
+  labels = {
+    owner = "{{ alloy_label_owner }}",
+    env   = "{{ alloy_label_env }}",
+    app   = "postgres",
+    host  = env("HOSTNAME"),
+  }
+}
+
+loki.process "add_postgres_service_labels" {
+ forward_to = [loki.process.filter_postgres_noise.receiver]
+
+ stage.json {
+   expressions = {
+     service = "SYSLOG_IDENTIFIER",
+   }
+ }
+
+ stage.labels {
+   values = {
+     service = "",
+   }
+ }
+}
+
+loki.process "filter_postgres_noise" {
+  forward_to = [loki.write.default.receiver]
+
+  // Drop routine postgres noise
+  stage.drop {
+    expression = {{ ('(?i)(' + alloy_drop_postgres_regex | join('|') + ')') | to_json }}
+  }
+}
+{% endif %}
+{% if alloy_with_redmine %}
+
+loki.source.journal "redmine_info" {
+  format_as_json = true
+  forward_to = [loki.process.filter_redmine_noise.receiver]
+
+  matches = "_SYSTEMD_UNIT=puma-redmine.service PRIORITY=6"
+
+  labels = {
+    owner = "{{ alloy_label_owner }}",
+    env   = "{{ alloy_label_env }}",
+    app   = "redmine",
+    host  = env("HOSTNAME"),
+  }
+}
+
+loki.source.journal "redmine_warn" {
+  format_as_json = true
+  forward_to = [loki.process.filter_redmine_noise.receiver]
+
+  matches = "_SYSTEMD_UNIT=puma-redmine.service PRIORITY=4"
+
+  labels = {
+    owner = "{{ alloy_label_owner }}",
+    env   = "{{ alloy_label_env }}",
+    app   = "redmine",
+    host  = env("HOSTNAME"),
+  }
+}
+
+loki.source.journal "redmine_err" {
+  format_as_json = true
+  forward_to = [loki.process.filter_redmine_noise.receiver]
+
+  matches = "_SYSTEMD_UNIT=puma-redmine.service PRIORITY=3"
+
+  labels = {
+    owner = "{{ alloy_label_owner }}",
+    env   = "{{ alloy_label_env }}",
+    app   = "redmine",
+    host  = env("HOSTNAME"),
+  }
+}
+
+// Redmine Noise Filter
+loki.process "filter_redmine_noise" {
+  forward_to = [loki.write.default.receiver]
+
+  stage.drop {
+    expression = {{ ('(?i)(' + (alloy_drop_redmine_regex + alloy_drop_local_redmine_regex) | join('|') + ')') | to_json }}
+  }
+}
+{% endif %}
+
+// System Noise Filter
+loki.process "filter_system_noise" {
+  forward_to = [loki.write.default.receiver]
+
+  stage.drop {
+    expression = {{ ('(?i)(' + (alloy_drop_system_regex + alloy_drop_local_system_regex) | join('|') + ')') | to_json }}
+  }
+}
