@@ -21,7 +21,8 @@
 
     # MySQL settings for testing
     mysql_root_password: 'test_root_password'
-    mysql_root_plugin: mysql_native_password
+    # Use socket authentication for reliable connection in containers
+    mysql_socket_force: true
     # Use /tmp for tmpdir in Docker containers to avoid /run/mysqld permission issues
     mysql_server_tmpdir: /tmp
 
