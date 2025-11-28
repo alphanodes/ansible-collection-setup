@@ -5,7 +5,7 @@
   error_page {{ error_page.codes }} {{ error_page.uri }};
 {% endfor %}
 {% else %}
-  {% if instance.error_404_page is defined -%}
+{% if instance.error_404_page is defined %}
   error_page 404 {{ instance.error_404_page }};
   location {{ instance.error_404_page }} {
     set $error404 /404.html;
@@ -14,24 +14,18 @@
     }
     rewrite ^(.*)$ $error404 break;
   }
-  {% else %}
-
-  {% if instance.error_404_enabled is defined and instance.error_404_enabled -%}
+{% elif instance.error_404_enabled is defined and instance.error_404_enabled %}
   error_page 404 /404.html;
   location = /404.html {
     root {{ nginx_error_pages_path }};
   }
-  {% endif %}
-
-  {% endif %}
-
-  {% if instance.error_403_disabled is undefined or not instance.error_403_disabled -%}
+{% endif %}
+{% if instance.error_403_disabled is undefined or not instance.error_403_disabled %}
   error_page 403 /403.html;
   location = /403.html {
     root {{ nginx_error_pages_path }};
   }
-  {% endif %}
-
+{% endif %}
   error_page 502 /502.html;
   location = /502.html {
     root {{ nginx_error_pages_path }};
