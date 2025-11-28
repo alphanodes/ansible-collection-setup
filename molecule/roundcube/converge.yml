@@ -27,7 +27,12 @@
     mysql_server_tmpdir: /tmp
 
     # nodejs settings - use root user in container (runner user doesn't exist)
+    # roundcube needs lessc for CSS compilation
+    nodejs_version: '20.x'
     nodejs_install_npm_user: root
+    nodejs_npm_global_packages:
+      - name: less
+      - name: less-plugin-clean-css
 
     # roundcube configuration
     roundcube_vhost_server: roundcube.local

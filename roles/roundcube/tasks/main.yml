@@ -16,6 +16,7 @@
   ansible.builtin.include_tasks: setup_css.yml
   tags:
     - roundcube
+  when: roundcube_git_install
 
 - name: Include MySQL tasks
   ansible.builtin.include_tasks: mysql.yml
