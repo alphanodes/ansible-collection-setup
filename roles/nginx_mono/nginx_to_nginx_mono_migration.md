@@ -225,6 +225,68 @@ Every migrated role MUST have:
 2. **GitHub Actions workflow**: `.github/workflows/[service].yml`
 3. **Workflow must include**: `roles/nginx_mono/**` in path triggers
 
+## nginx_vhosts (Instance Mode)
+
+nginx_mono supports two modes of operation:
+
+### Service Mode (include_role)
+
+Used by service roles like ethercalc, roundcube, etc.:
+
+```yaml
+- name: Setup nginx_mono
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nginx_mono
+  vars:
+    nginx_mono_service_name: myservice
+    nginx_mono_service_config:
+      server_name: "example.com"
+      # ...
+```
+
+### Instance Mode (nginx_vhosts)
+
+Used for standalone vhosts like `_parking` or direct nginx configuration:
+
+```yaml
+- role: alphanodes.setup.nginx_mono
+  vars:
+    nginx_vhosts:
+      - name: parking
+        vhost_default: true
+        root: /srv/parking
+        index: index.html
+      - name: static_site
+        server_name: static.example.com
+        root: /srv/static
+        vhost_users:
+          - user: admin
+            password: secret
+```
+
+### Key Differences
+
+| Feature | Service Mode | Instance Mode |
+|---------|--------------|---------------|
+| Variable for instance | `nginx_mono_instance` | `instance` (from loop) |
+| htpasswd path | `.htpasswd_{{ nginx_mono_service_name }}` | `.htpasswd_{{ instance.name }}` |
+| Template comment | `# nginx {{ nginx_mono_service_name }}` | `# nginx {{ instance.name }}` |
+| Triggered by | `nginx_mono_service_name` defined | `nginx_vhosts` list |
+
+### Variable Scope Issue (Fixed 2024-11)
+
+**Problem**: When nginx_mono is called multiple times (e.g., first in service mode,
+then in instance mode), the `nginx_mono_instance` variable from the first call
+persisted and was incorrectly used in subsequent instance mode calls.
+
+**Solution**: `calculate_listen_config.yml` now explicitly checks if `instance`
+is defined and prefers it over `nginx_mono_instance`:
+
+```yaml
+vars:
+  _calc_source: "{{ instance if instance is defined else nginx_mono_instance | default({}) }}"
+```
+
 ## Troubleshooting
 
 ### Common Issues
@@ -233,3 +295,10 @@ Every migrated role MUST have:
 2. **Wrong SSL port**: Verify `server_port` in service config
 3. **WebSocket not working**: Ensure `nginx_with_websocket: true` and `proxy_websocket: true`
 4. **Template not found**: All includes must be in `roles/nginx_mono/templates/includes/`
+5. **`nginx_mono_service_name` undefined**: When using instance mode (nginx_vhosts),
+   templates use `instance.name` as fallback - ensure the variable scope fix is applied
+6. **No `listen` directive generated**: Check that `nginx_with_ssl` matches the expected
+   port. Without SSL, default port is 80; with SSL, default is 443.
+7. **`vhost_default` not applied**: Ensure the variable scope fix in
+   `calculate_listen_config.yml` is present - older versions had a bug where
+   `nginx_mono_instance` from a previous role call would override `instance`
