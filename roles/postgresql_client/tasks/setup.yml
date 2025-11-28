@@ -43,9 +43,12 @@
 - name: Check if PHP package is required
   ansible.builtin.set_fact:
     php_installed: "{{ true if postgresql_client_check_php_package in ansible_facts.packages else false }}"
+    php_pgsql_installed: "{{ true if postgresql_client_php_package in ansible_facts.packages else false }}"
 
 - name: Install PHP package (if required)
   ansible.builtin.apt:
     name: '{{ postgresql_client_php_package }}'
     state: present
-  when: php_installed
+  when:
+    - php_installed
+    - not php_pgsql_installed

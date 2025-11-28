@@ -63,12 +63,11 @@
     - '{{ zabbix_addons_dir }}/scripts'
 
 - name: Install zabbix-addon php configuration
-  ansible.posix.synchronize:
+  ansible.builtin.copy:
     src: zabbix-addons/conf/php
     dest: '{{ zabbix_addons_dir }}/conf'
-    # NOTE: workaroud for string problem
-    # @SEE https://github.com/ansible-collections/ansible.posix/issues/376#issuecomment-1222046195
-    dest_port: "{{ lookup('ansible.builtin.vars', 'ansible_port', default=22) }}"
+    mode: '0644'
+    directory_mode: '0755'
   notify: Restart zabbix-agent
   when: php_installed
 

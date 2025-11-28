@@ -20,6 +20,7 @@
     # nginx_mono configuration
     nginx_with_ipv6: false
     nginx_with_http3: false
+    nginx_with_protection: false
     nginx_ssl_protocols: 'TLSv1.3'
     hoster: 'local'
 

@@ -65,10 +65,32 @@
     login_db: '{{ zabbix_server_db_name }}'
   when: zabbix_server_with_timescaledb
 
+- name: Check if pg_buffercache extension exists
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_query:
+    db: '{{ zabbix_server_db_name }}'
+    query: "SELECT 1 FROM pg_extension WHERE extname = 'pg_buffercache'"
+  register: pg_buffercache_check
+
 - name: Add extention pg_buffercache to Zabbix database
   become_user: postgres
   become: true
   community.postgresql.postgresql_ext:
     name: pg_buffercache
-    login_db: '{{ zabbix_server_db_name }}'
-    state: "{{ 'present' if postgresql_with_pg_buffercache else 'absent' }}"
+    db: '{{ zabbix_server_db_name }}'
+    state: present
+  when:
+    - postgresql_with_pg_buffercache
+    - pg_buffercache_check.rowcount == 0
+
+- name: Remove extention pg_buffercache from Zabbix database
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_ext:
+    name: pg_buffercache
+    db: '{{ zabbix_server_db_name }}'
+    state: absent
+  when:
+    - not postgresql_with_pg_buffercache
+    - pg_buffercache_check.rowcount > 0

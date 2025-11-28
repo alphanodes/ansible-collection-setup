@@ -2,9 +2,10 @@
 dependencies:
   - role: alphanodes.setup.common
     public: true
-  - role: alphanodes.setup.zabbix_agent
-  - role: alphanodes.setup.postgresql
   - role: alphanodes.setup.php_fpm
+  - role: alphanodes.setup.postgresql
+  - role: alphanodes.setup.nginx_mono
+  - role: alphanodes.setup.zabbix_agent
 
 galaxy_info:
   description: Setup zabbix server
