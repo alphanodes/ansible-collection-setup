@@ -110,7 +110,7 @@ it MUST automatically generate the HTTP to HTTPS redirect for all SSL vhosts:
 ### WebSocket Support
 
 - Set `nginx_with_websocket: true` only for services that need it
-- Examples: ethercalc, rocketchat
+- Example: ethercalc
 - Creates `$connection_upgrade` variable and proper proxy headers
 
 ### Custom SSL Ports
@@ -121,7 +121,7 @@ it MUST automatically generate the HTTP to HTTPS redirect for all SSL vhosts:
 
 ### Instance vs Single Service Pattern
 
-- **Type 1 (Single vhost)**: ethercalc, rocketchat - one service per server
+- **Type 1 (Single vhost)**: ethercalc, grafana - one service per server
 - **Type 2 (Multiple vhosts)**: redmine, drupal - can manage multiple instances
 
 ## Migration Status
@@ -131,7 +131,6 @@ it MUST automatically generate the HTTP to HTTPS redirect for all SSL vhosts:
 | Role | Date | Notes |
 |------|------|-------|
 | ethercalc | 2024-10 | First migration, WebSocket support tested |
-| rocketchat | 2024-10 | WebSocket support |
 | roundcube | 2024-11 | PHP-FPM pattern |
 | dendrite | 2024-11 | Matrix server |
 | element_web | 2024-11 | Static files |
@@ -150,7 +149,6 @@ it MUST automatically generate the HTTP to HTTPS redirect for all SSL vhosts:
 |------|------------|----------------|
 | **redmine** | HIGH | Multiple instances (`redmine_instances`), complex vhost with many locations, custom proxy settings, socket paths |
 | drupal | MEDIUM | Multiple instances pattern, FPM configuration |
-| phpmyadmin | LOW | Simple PHP-FPM pattern |
 | gitlab | MEDIUM | Complex reverse proxy, WebSocket for action cable |
 | zabbix_web | LOW | PHP-FPM pattern |
 | typo3 | MEDIUM | PHP-FPM with special rewrites |
