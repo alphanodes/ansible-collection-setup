@@ -152,9 +152,91 @@
         path: /etc/nginx/.htpasswd_test_include
       register: include_htpasswd
 
+    # Instance mode (nginx_vhosts) tests
+    - name: Check if parking vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/parking.conf
+      register: parking_vhost
+
+    - name: Check if parking vhost is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/parking.conf
+      register: parking_enabled
+
+    - name: Verify parking vhost has default_server flag
+      ansible.builtin.shell: |
+        set -eo pipefail
+        grep -E 'listen [0-9]+ default_server|listen 80 default_server' /etc/nginx/sites-available/parking.conf
+      args:
+        executable: /bin/bash
+      register: parking_default
+      changed_when: false
+      failed_when: parking_default.rc != 0
+
+    - name: Verify parking vhost comment uses instance.name
+      ansible.builtin.shell: |
+        set -e
+        grep -F '# nginx parking vhost configuration' /etc/nginx/sites-available/parking.conf
+      register: parking_comment
+      changed_when: false
+      failed_when: parking_comment.rc != 0
+
+    - name: Check if static_site vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/static_site.conf
+      register: static_vhost
+
+    - name: Check if htpasswd for static_site exists (without nginx_ prefix)
+      ansible.builtin.stat:
+        path: /etc/nginx/.htpasswd_static_site
+      register: static_htpasswd
+
+    - name: Verify static_site vhost has auth_basic configured
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'auth_basic_user_file /etc/nginx/.htpasswd_static_site;' /etc/nginx/sites-available/static_site.conf
+      register: static_auth
+      changed_when: false
+      failed_when: static_auth.rc != 0
+
+    - name: Verify static_site has error_404 configured
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'error_page 404 /404.html;' /etc/nginx/sites-available/static_site.conf
+      register: static_error404
+      changed_when: false
+      failed_when: static_error404.rc != 0
+
+    - name: Check if php_app vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/php_app.conf
+      register: php_vhost
+
+    - name: Verify php_app vhost has FPM configuration
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'fastcgi_pass' /etc/nginx/sites-available/php_app.conf
+      register: php_fpm
+      changed_when: false
+      failed_when: php_fpm.rc != 0
+
+    - name: Check if proxy_app vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/proxy_app.conf
+      register: proxy_vhost
+
+    - name: Verify proxy_app vhost has proxy_pass configured
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'proxy_pass http://127.0.0.1:3000;' /etc/nginx/sites-available/proxy_app.conf
+      register: proxy_pass
+      changed_when: false
+      failed_when: proxy_pass.rc != 0
+
     - name: Display test results
       ansible.builtin.debug:
         msg:
+          - "=== Service Mode Tests ==="
           - "Nginx service: {{ 'OK' if not nginx_service.changed else 'FAILED' }}"
           - "Nginx syntax: {{ 'OK' if nginx_syntax.rc == 0 else 'FAILED' }}"
           - "Normalize actions: {{ 'OK' if normalize_check.rc == 0 else 'FAILED' }}"
@@ -168,6 +250,7 @@
           - "Proxy config: {{ 'OK' if not proxy_config.changed else 'FAILED' }}"
           - "Nginx connectivity: {{ 'OK' if nginx_connection is succeeded else 'FAILED' }}"
           - "No external refs: {{ 'OK' if external_refs.matched == 0 else 'FAILED' }}"
+          - "=== Include Mode Tests ==="
           - "Include file exists: {{ 'OK' if include_file.stat.exists else 'FAILED' }}"
           - "Include mode no vhost: {{ 'OK' if not include_vhost.stat.exists else 'FAILED' }}"
           - "Include mode no enabled: {{ 'OK' if not include_enabled.stat.exists else 'FAILED' }}"
@@ -175,3 +258,16 @@
           - "Include has proxy: {{ 'OK' if include_proxy.rc == 0 else 'FAILED' }}"
           - "Include no server block: {{ 'OK' if include_no_server.rc == 0 else 'FAILED' }}"
           - "Include htpasswd exists: {{ 'OK' if include_htpasswd.stat.exists else 'FAILED' }}"
+          - "=== Instance Mode (nginx_vhosts) Tests ==="
+          - "Parking vhost exists: {{ 'OK' if parking_vhost.stat.exists else 'FAILED' }}"
+          - "Parking vhost enabled: {{ 'OK' if parking_enabled.stat.exists else 'FAILED' }}"
+          - "Parking has default_server: {{ 'OK' if parking_default.rc == 0 else 'FAILED' }}"
+          - "Parking comment correct: {{ 'OK' if parking_comment.rc == 0 else 'FAILED' }}"
+          - "Static vhost exists: {{ 'OK' if static_vhost.stat.exists else 'FAILED' }}"
+          - "Static htpasswd exists: {{ 'OK' if static_htpasswd.stat.exists else 'FAILED' }}"
+          - "Static auth_basic correct: {{ 'OK' if static_auth.rc == 0 else 'FAILED' }}"
+          - "Static error_404 configured: {{ 'OK' if static_error404.rc == 0 else 'FAILED' }}"
+          - "PHP vhost exists: {{ 'OK' if php_vhost.stat.exists else 'FAILED' }}"
+          - "PHP FPM configured: {{ 'OK' if php_fpm.rc == 0 else 'FAILED' }}"
+          - "Proxy vhost exists: {{ 'OK' if proxy_vhost.stat.exists else 'FAILED' }}"
+          - "Proxy pass configured: {{ 'OK' if proxy_pass.rc == 0 else 'FAILED' }}"

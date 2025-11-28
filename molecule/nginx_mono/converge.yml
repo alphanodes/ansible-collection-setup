@@ -31,6 +31,10 @@
     nginx_resolver: ['8.8.8.8', '8.8.4.4']  # Fix undefined hoster variable
     hoster: 'local'  # Define hoster for testing
 
+    # PHP-FPM configuration (for nginx_vhosts FPM tests)
+    php_fpm_listen: /run/php/php-fpm.sock
+    php_fpm_base: /run/php/php-fpm
+
     # ethercalc configuration
     ethercalc_enabled: true
     ethercalc_vhost_server: test.local
@@ -95,3 +99,32 @@
               password: testpass
           vhost_for_zabbix: false
           letsencrypt: false
+
+    # Test 3: Instance mode with nginx_vhosts (like _parking vhost)
+    - role: alphanodes.setup.nginx_mono
+      vars:
+        nginx_vhosts:
+          - name: parking
+            vhost_default: true
+            root: /srv/parking
+            index: index.html
+            vhost_for_zabbix: false
+          - name: static_site
+            server_name: static.local
+            root: /srv/static
+            index: index.html
+            vhost_users:
+              - user: admin
+                password: secret123
+            error_404_enabled: true
+          - name: php_app
+            server_name: php.local
+            root: /srv/php
+            index: index.php index.html
+            with_fpm: true
+            vhost_for_zabbix: false
+          - name: proxy_app
+            server_name: proxy.local
+            proxy_pass: "http://127.0.0.1:3000"
+            proxy_location: "/"
+            vhost_for_zabbix: false
