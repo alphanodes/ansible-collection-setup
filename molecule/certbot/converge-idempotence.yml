@@ -1,0 +1,38 @@
+---
+# Test idempotence with duplicate domains (simulates real-world config)
+- name: Converge - Idempotence Test
+  hosts: all
+  vars:
+    certbot_auto_renew: true
+    certbot_remove_cron_job: true
+    certbot_deploy_hook: "systemctl reload nginx"
+    certbot_nginx_integration: true
+    certbot_create_method: webroot
+    certbot_webroot: /var/www/letsencrypt
+    # Do not create certificates (no real Let's Encrypt in test)
+    certbot_create_if_missing: false
+    # Test with duplicate domains (like roundcube_vhost_server = ansible_host)
+    certbot_certs:
+      - domains:
+          - mail.example.com
+          - mail.example.com
+          - webmail.example.com
+          - autoconfig.example.com
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+    - name: Install nginx and cron for integration test
+      ansible.builtin.apt:
+        name:
+          - nginx
+          - cron
+        state: present
+
+    - name: Include certbot role
+      ansible.builtin.include_role:
+        name: alphanodes.setup.certbot

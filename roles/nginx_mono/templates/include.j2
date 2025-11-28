@@ -1,5 +1,5 @@
 {{ managed_by_ansible | comment }}
-# nginx {{ nginx_mono_service_name }} include configuration
-# Include this in existing vhost via: vhost_includes: [{{ nginx_mono_service_name }}]
+# nginx {{ nginx_mono_service_name | default(instance.name) }} include configuration
+# Include this in existing vhost via: vhost_includes: [{{ nginx_mono_service_name | default(instance.name) }}]
 
 {% include 'includes/proxy.inc.j2' %}

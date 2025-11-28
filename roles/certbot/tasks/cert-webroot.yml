@@ -38,7 +38,7 @@
       ansible.builtin.set_fact:
         letsencrypt_cert_domains_changed: >-
           {{ letsencrypt_cert_domains != (cert_item.domains |
-             map('trim') | select('!=', '') | list | sort) }}
+             map('trim') | select('!=', '') | unique | list | sort) }}
 
 - name: Generate new certificate if one doesn't exist
   ansible.builtin.command: "{{ certbot_create_command }}"

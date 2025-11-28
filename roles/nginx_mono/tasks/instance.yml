@@ -44,7 +44,7 @@
   # restart required, because file can be not available before
 - name: Protect nginx vhost user - {{ instance.name }}
   community.general.htpasswd:
-    path: /etc/nginx/.htpasswd_nginx_{{ instance.name }}
+    path: /etc/nginx/.htpasswd_{{ instance.name }}
     name: '{{ item.user }}'
     password: '{{ item.password }}'
     owner: root
@@ -56,7 +56,7 @@
 
 - name: Remove htpasswd file, if no base auth is in use - {{ instance.name }}
   ansible.builtin.file:
-    path: /etc/nginx/.htpasswd_nginx_{{ instance.name }}
+    path: /etc/nginx/.htpasswd_{{ instance.name }}
     state: absent
   when: instance.vhost_users is undefined
   notify: Restart nginx
