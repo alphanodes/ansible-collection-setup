@@ -26,6 +26,9 @@
     # Use /tmp for tmpdir in Docker containers to avoid /run/mysqld permission issues
     mysql_server_tmpdir: /tmp
 
+    # nodejs settings - use root user in container (runner user doesn't exist)
+    nodejs_install_npm_user: root
+
     # roundcube configuration
     roundcube_vhost_server: roundcube.local
     roundcube_vhost_letsencrypt: false
