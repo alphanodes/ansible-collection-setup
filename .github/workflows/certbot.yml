@@ -1,6 +1,5 @@
 ---
-name: certbot
-
+name: "alphanodes.setup.certbot"
 "on":
   pull_request:
   push:

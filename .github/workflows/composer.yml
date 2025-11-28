@@ -1,6 +1,5 @@
 ---
-name: composer
-
+name: "alphanodes.setup.composer"
 "on":
   pull_request:
   push:
