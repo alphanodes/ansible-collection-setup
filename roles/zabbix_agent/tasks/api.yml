@@ -57,9 +57,9 @@
         zabbix_inventory_zabbix:
           name: "{{ zabbix_visible_hostname | default(ansible_fqdn) }}"
           vendor: "{{ hoster | default('unknown') }}"
-          os: "{{ ansible_distribution }}"
+          os: "{{ ansible_facts.distribution }}"
           os_full: "{{ ansible_lsb.description }} {{ ansible_kernel }}"
-          os_short: "{{ ansible_distribution_release }}"
+          os_short: "{{ ansible_facts.distribution_release }}"
           type: "{{ ansible_virtualization_type }}"
           hw_arch: "{{ ansible_architecture }}"
           hardware: "{{ ansible_system_vendor }}"

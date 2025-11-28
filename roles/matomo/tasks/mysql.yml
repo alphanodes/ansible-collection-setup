@@ -24,5 +24,5 @@
     regexp: '{{ matomo_dir }}/\*'
     insertbefore: 'Allow systemd notify messages'
     line: '  {{ matomo_dir }}/* rw,'
-  when: ansible_distribution == 'Ubuntu'
+  when: ansible_facts.distribution == 'Ubuntu'
   notify: Restart apparmor

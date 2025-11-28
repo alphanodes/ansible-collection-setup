@@ -28,7 +28,7 @@
 - name: Configure systemd-resolved for unbound
   when: >
     (server_resolver is defined and server_resolver == 'systemd_resolved')
-    or server_resolver is undefined and ansible_distribution == 'Ubuntu'
+    or server_resolver is undefined and ansible_facts.distribution == 'Ubuntu'
   block:
     - name: Make sure conf override dir exists
       ansible.builtin.file:

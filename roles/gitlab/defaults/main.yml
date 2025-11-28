@@ -16,7 +16,7 @@ gitlab_with_zsh: true
 gitlab_omniauth_enabled: false
 gitlab_omniauth_providers: []
 
-gitlab_repository_version: '18-5-stable'
+gitlab_repository_version: '18-6-stable'
 gitlab_ce_version: '{{ gitlab_repository_version }}'
 gitlab_ee_version: '{{ gitlab_repository_version }}-ee'
 gitlab_path: "{{ gitlab_home }}/gitlab"
@@ -70,7 +70,7 @@ gitlab_puma_max_threads: "{{ puma_max_threads | default(16) }}"
 gitlab_rvm_ruby: true
 gitlab_rvm_ruby_apt: false
 gitlab_rvm_ruby_apt_url: https://ppa.launchpadcontent.net/rael-gc/rvm/ubuntu
-gitlab_rvm_ruby_apt_suites: '{{ ansible_distribution_release }}'
+gitlab_rvm_ruby_apt_suites: '{{ ansible_facts.distribution_release }}'
 gitlab_rvm_ruby_apt_components: main
 gitlab_rvm_ruby_apt_signed_by: https://keyserver.ubuntu.com/pks/lookup?op=get&fingerprint=on&search=0x8094BB14F4E3FBBE
 
@@ -170,8 +170,8 @@ gitlab_packages:
 # NOTE: version should be tests in gitlab pipeline
 # SEE https://gitlab.com/gitlab-org/gitlab/-/blob/master/.gitlab/ci/workhorse.gitlab-ci.yml#L30
 # https://go.dev/dl/ -> linux-amd64.tar.gz
-gitlab_go_version: '1.24.8'
-gitlab_go_sha256_checksum: 6842c516ca66c89d648a7f1dbe28e28c47b61b59f8f06633eb2ceb1188e9251d
+gitlab_go_version: '1.24.10'
+gitlab_go_sha256_checksum: dd52b974e3d9c5a7bbfb222c685806def6be5d6f7efd10f9caa9ca1fa2f47955
 
 gitlab_nginx_auth_realm: 'Code access is restricted'
 gitlab_nginx_client_max_body_size: '0'

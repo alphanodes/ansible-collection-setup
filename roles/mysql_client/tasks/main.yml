@@ -5,7 +5,7 @@
 # mysql is available on ubuntu without additional repo
 - name: Include repo tasks for debian
   ansible.builtin.include_tasks: repo.yml
-  when: ansible_distribution == 'Debian'
+  when: ansible_facts.distribution == 'Debian'
   tags:
     - mysql
     - repo

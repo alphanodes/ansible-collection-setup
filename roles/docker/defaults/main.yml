@@ -6,9 +6,9 @@ docker_packages:
   - docker-ce-cli
   - containerd.io
 
-docker_apt_url: https://download.docker.com/linux/{{ ansible_distribution | lower }}
-docker_apt_signed_by: https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg
-docker_apt_suites: '{{ ansible_distribution_release }}'
+docker_apt_url: https://download.docker.com/linux/{{ ansible_facts.distribution | lower }}
+docker_apt_signed_by: https://download.docker.com/linux/{{ ansible_facts.distribution | lower }}/gpg
+docker_apt_suites: '{{ ansible_facts.distribution_release }}'
 docker_apt_components: stable
 
 docker_obsolete_packages:

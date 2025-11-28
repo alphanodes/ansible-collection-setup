@@ -57,8 +57,8 @@
   loop: '{{ nginx_disable_modules | default([]) }}'
   notify: Restart nginx
   when: >
-    ansible_distribution == 'Debian'
-    or ansible_distribution == 'Ubuntu' and ansible_distribution_major_version == '18'
+    ansible_facts.distribution == 'Debian'
+    or ansible_facts.distribution == 'Ubuntu' and ansible_facts.distribution_major_version == '18'
 
 - name: Remove default nginx vhost config file (if configured).
   ansible.builtin.file:

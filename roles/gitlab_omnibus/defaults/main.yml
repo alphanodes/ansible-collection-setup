@@ -160,7 +160,7 @@ gitlab_force_reconfigure: false
 
 # https://packages.gitlab.com/gitlab/gitlab-ee/debian/ bookworm main
 gitlab_apt_url: https://packages.gitlab.com/gitlab/gitlab-ee/debian/
-gitlab_apt_suites: '{{ ansible_distribution_release }}'
+gitlab_apt_suites: '{{ ansible_facts.distribution_release }}'
 gitlab_apt_components: main
 gitlab_apt_signed_by: https://packages.gitlab.com/gitlab/gitlab-ee/gpgkey
 

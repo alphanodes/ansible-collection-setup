@@ -2,22 +2,59 @@
 - name: Converge
   hosts: all
   become: true
+  vars:
+    # nginx_mono configuration
+    nginx_with_ipv6: false
+    nginx_with_http3: false
+    nginx_with_protection: false
+    nginx_ssl_protocols: 'TLSv1.3'
+    hoster: 'local'
+
+    # SSL configuration - self-signed certificate for testing
+    ssl_certs:
+      - name: goaccess
+        provider: selfsigned
+        subject_common_name: goaccess.local
+
+    # goaccess configuration
+    goaccess_with_geoip: false
+    goaccess_with_data_run: false
+    goaccess_password: 'testpassword'
+
+    # Test vhost configuration for goaccess include
+    test_vhost_server: goaccess.local
+    test_vhost_letsencrypt: false
+    test_vhost_ssl_cert: goaccess
 
   pre_tasks:
-    - name: Update apt cache.
+    - name: Update apt cache
       ansible.builtin.apt:
         update_cache: true
         cache_valid_time: 600
       changed_when: false
 
-  roles:
-    - role: alphanodes.setup.common
-    - role: alphanodes.setup.git
-    - role: alphanodes.setup.goaccess
+    - name: Include ssl role to create self-signed certificate
+      ansible.builtin.include_role:
+        name: alphanodes.setup.ssl
 
-  post_tasks:
-    - name: Verify goaccess is installed
-      ansible.builtin.command: goaccess --version
-      changed_when: false
-      failed_when: false
-      register: goaccess_version
+  tasks:
+    - name: Include goaccess role
+      ansible.builtin.include_role:
+        name: alphanodes.setup.goaccess
+
+    - name: Setup test vhost that includes goaccess location
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: test_goaccess
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: "{{ test_vhost_server }}"
+          root: /var/www/html
+          index: index.html
+          vhost_includes:
+            - goaccess
+          vhost_users: []
+          vhost_for_zabbix: false
+          letsencrypt: "{{ test_vhost_letsencrypt }}"
+          ssl_cert: "{{ test_vhost_ssl_cert }}"

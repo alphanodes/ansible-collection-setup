@@ -23,7 +23,7 @@ sysstat_enable_data_collecting: true
 
 # apt, source or static
 # debian bullseye has no apt version, in this case use static
-btop_install_type: "{{ 'static' if ansible_distribution_release == 'bullseye' else 'apt' }}"
+btop_install_type: "{{ 'static' if ansible_facts.distribution_release == 'bullseye' else 'apt' }}"
 # used for non apt install type
 btop_install_path: /usr
 

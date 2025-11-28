@@ -17,7 +17,7 @@ rspamd_user: _rspamd
 
 rspamd_apt_url: http://rspamd.com/apt-stable/
 rspamd_apt_signed_by: https://rspamd.com/apt-stable/gpg.key
-rspamd_apt_suites: "{{ ansible_distribution_release }}"
+rspamd_apt_suites: "{{ ansible_facts.distribution_release }}"
 rspamd_apt_components: main
 
 rspamd_enable_service: true

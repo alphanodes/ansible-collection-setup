@@ -14,5 +14,5 @@ postgresql_client_packages:
 postgresql_apt_url_protocol: https
 postgresql_apt_url: '{{ postgresql_apt_url_protocol }}://apt.postgresql.org/pub/repos/apt/'
 postgresql_apt_signed_by: https://www.postgresql.org/media/keys/ACCC4CF8.asc
-postgresql_apt_suites: '{{ ansible_distribution_release }}-pgdg'
+postgresql_apt_suites: '{{ ansible_facts.distribution_release }}-pgdg'
 postgresql_apt_components: main

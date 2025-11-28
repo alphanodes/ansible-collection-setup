@@ -1,7 +1,7 @@
 ---
 
 - name: Add distribution-specific variables
-  ansible.builtin.include_vars: "{{ ansible_distribution }}.yml"
+  ansible.builtin.include_vars: "{{ ansible_facts.distribution }}.yml"
 
 - name: Include setup tasks
   ansible.builtin.include_tasks: setup.yml

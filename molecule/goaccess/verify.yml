@@ -1,0 +1,127 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check if nginx is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+      check_mode: true
+      register: nginx_service
+      failed_when: nginx_service.changed
+
+    - name: Check nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax
+      changed_when: false
+
+    - name: Check if goaccess is installed
+      ansible.builtin.command: goaccess --version
+      register: goaccess_version
+      changed_when: false
+
+    - name: Check if goaccess configuration exists
+      ansible.builtin.stat:
+        path: /etc/goaccess/goaccess.conf
+      register: goaccess_conf
+
+    - name: Verify goaccess configuration exists
+      ansible.builtin.assert:
+        that:
+          - goaccess_conf.stat.exists
+        fail_msg: "goaccess configuration file not found"
+
+    - name: Check if goaccess nginx include exists
+      ansible.builtin.stat:
+        path: /etc/nginx/goaccess.conf
+      register: goaccess_nginx
+
+    - name: Verify goaccess nginx include exists
+      ansible.builtin.assert:
+        that:
+          - goaccess_nginx.stat.exists
+        fail_msg: "goaccess nginx include file not found"
+
+    - name: Check goaccess nginx include content
+      ansible.builtin.command: cat /etc/nginx/goaccess.conf
+      register: goaccess_nginx_content
+      changed_when: false
+
+    - name: Verify goaccess location is configured
+      ansible.builtin.assert:
+        that:
+          - "'location ^~ /goaccess' in goaccess_nginx_content.stdout"
+          - "'/var/www/goaccess' in goaccess_nginx_content.stdout"
+        fail_msg: "goaccess location not properly configured"
+
+    - name: Check if htpasswd file exists (password protection enabled)
+      ansible.builtin.stat:
+        path: /etc/nginx/.htpasswd_goaccess
+      register: htpasswd_file
+
+    - name: Verify htpasswd file exists
+      ansible.builtin.assert:
+        that:
+          - htpasswd_file.stat.exists
+        fail_msg: "htpasswd file not found"
+
+    - name: Check if goaccess output directory exists
+      ansible.builtin.stat:
+        path: /var/www/goaccess
+      register: goaccess_output_dir
+
+    - name: Verify goaccess output directory exists
+      ansible.builtin.assert:
+        that:
+          - goaccess_output_dir.stat.exists
+          - goaccess_output_dir.stat.isdir
+        fail_msg: "goaccess output directory not found"
+
+    - name: Check if test vhost config exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/test_goaccess.conf
+      register: test_vhost
+
+    - name: Verify test vhost is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/test_goaccess.conf
+      register: test_vhost_enabled
+
+    - name: Verify test vhost files exist
+      ansible.builtin.assert:
+        that:
+          - test_vhost.stat.exists
+          - test_vhost_enabled.stat.exists
+        fail_msg: "test vhost configuration not found"
+
+    - name: Check if vhost includes goaccess
+      ansible.builtin.command: grep -q "include goaccess.conf" /etc/nginx/sites-available/test_goaccess.conf
+      register: vhost_include_check
+      changed_when: false
+      failed_when: vhost_include_check.rc != 0
+
+    - name: Test goaccess endpoint returns 401 (password protected via HTTPS)
+      ansible.builtin.command: >
+        curl -sk -o /dev/null -w '%{http_code}' -H 'Host: goaccess.local'
+        https://127.0.0.1/goaccess/
+      register: goaccess_endpoint
+      changed_when: false
+      failed_when: goaccess_endpoint.stdout not in ['401', '403']
+
+    - name: Display test results
+      ansible.builtin.debug:
+        msg:
+          - "=== GOACCESS + NGINX_MONO INTEGRATION TESTS ==="
+          - "Nginx service: {{ 'OK' if not nginx_service.changed else 'FAILED' }}"
+          - "Nginx syntax: {{ 'OK' if nginx_syntax.rc == 0 else 'FAILED' }}"
+          - "Goaccess installed: {{ 'OK' if goaccess_version.rc == 0 else 'FAILED' }}"
+          - "Goaccess version: {{ goaccess_version.stdout_lines[0] | default('unknown') }}"
+          - "Goaccess config: {{ 'OK' if goaccess_conf.stat.exists else 'FAILED' }}"
+          - "Goaccess nginx include: {{ 'OK' if goaccess_nginx.stat.exists else 'FAILED' }}"
+          - "Htpasswd file: {{ 'OK' if htpasswd_file.stat.exists else 'FAILED' }}"
+          - "Output directory: {{ 'OK' if goaccess_output_dir.stat.exists else 'FAILED' }}"
+          - "Test vhost: {{ 'OK' if test_vhost.stat.exists else 'FAILED' }}"
+          - "Vhost includes goaccess: {{ 'OK' if vhost_include_check.rc == 0 else 'FAILED' }}"
+          - "Goaccess endpoint (401/403): {{ 'OK' if goaccess_endpoint.stdout in ['401', '403'] else 'FAILED' }}"
+          - "=== GOACCESS INTEGRATION SUCCESS ==="

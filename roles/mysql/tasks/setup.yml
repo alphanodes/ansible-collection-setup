@@ -56,7 +56,7 @@
     group: root
   when: >
     mysql_log_output == 'FILE'
-    and ansible_distribution == 'Debian'
+    and ansible_facts.distribution == 'Debian'
     and mysql_with_mysql_com
 
 - name: Disable logrotate support for mysql-server
@@ -65,7 +65,7 @@
     state: absent
   when: >
     mysql_log_output != 'FILE'
-    or (ansible_distribution == 'Debian' and not mysql_with_mysql_com)
+    or (ansible_facts.distribution == 'Debian' and not mysql_with_mysql_com)
 
 - name: Add mysql user to ssl-cert group
   ansible.builtin.user:
@@ -81,7 +81,7 @@
     owner: root
     group: root
     mode: '0644'
-  when: ansible_distribution == 'Ubuntu'
+  when: ansible_facts.distribution == 'Ubuntu'
 
 - name: Include configure tasks
   ansible.builtin.include_tasks: configure.yml

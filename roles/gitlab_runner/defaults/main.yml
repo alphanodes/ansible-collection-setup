@@ -32,9 +32,9 @@ gitlab_runner_concurrent: '{{ ansible_processor_nproc }}'
 # see https://packages.gitlab.com/runner/gitlab-runner
 gitlab_runner_apt: true
 gitlab_runner_apt_pinning: false
-gitlab_runner_apt_url: https://packages.gitlab.com/runner/gitlab-runner/{{ ansible_distribution | lower }}
+gitlab_runner_apt_url: https://packages.gitlab.com/runner/gitlab-runner/{{ ansible_facts.distribution | lower }}
 gitlab_runner_apt_signed_by: https://packages.gitlab.com/runner/gitlab-runner/gpgkey
-gitlab_runner_apt_suites: '{{ ansible_distribution_release }}'
+gitlab_runner_apt_suites: '{{ ansible_facts.distribution_release }}'
 gitlab_runner_apt_components: main
 
 gitlab_runner_remove: false

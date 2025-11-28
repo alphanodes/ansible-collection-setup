@@ -1,7 +1,7 @@
 ---
 
 - name: Use rvm repository for ruby for Ubuntu
-  when: ansible_distribution == 'Ubuntu' and redmine_rvm_apt
+  when: ansible_facts.distribution == 'Ubuntu' and redmine_rvm_apt
   block:
     - name: Remove old apt repository files
       ansible.builtin.file:
@@ -31,7 +31,7 @@
         - skip_ansible_lint
 
 - name: Do not use rvm apt repository for Ubuntu
-  when: ansible_distribution == 'Ubuntu' and not redmine_rvm_apt
+  when: ansible_facts.distribution == 'Ubuntu' and not redmine_rvm_apt
   ansible.builtin.deb822_repository:
     name: rvm
     state: absent

@@ -1,4 +1,4 @@
 {{ managed_by_ansible | comment }}
 Package: ruby*
-Pin: release n={{ ansible_distribution_release }}-backports
+Pin: release n={{ ansible_facts.distribution_release }}-backports
 Pin-Priority: 600

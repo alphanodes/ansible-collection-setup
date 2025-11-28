@@ -2,6 +2,6 @@
 - name: Load a variable file based on the OS type, or a default if not found.
   ansible.builtin.include_vars: "{{ item }}"
   with_first_found:
-    - "{{ ansible_distribution }}-{{ ansible_distribution_release }}.yml"
-    - "{{ ansible_distribution }}.yml"
+    - "{{ ansible_facts.distribution }}-{{ ansible_facts.distribution_release }}.yml"
+    - "{{ ansible_facts.distribution }}.yml"
     - "default.yml"

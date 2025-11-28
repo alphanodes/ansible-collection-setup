@@ -5,7 +5,7 @@
     url: "{{ alloy_apt_url }}/gpg.key"
     dest: "{{ alloy_apt_signed_by }}"
     mode: "0644"
-  when: ansible_distribution_release == 'trixie'
+  when: ansible_facts.distribution_release == 'trixie'
 
 - name: Download and convert Grafana GPG key
   ansible.builtin.shell: >
@@ -14,7 +14,7 @@
   args:
     creates: "{{ alloy_apt_signed_by }}"
     executable: /bin/bash
-  when: ansible_distribution_release != 'trixie'
+  when: ansible_facts.distribution_release != 'trixie'
 
 # see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/deb822_repository_module.html
 - name: Add Grafana APT repo

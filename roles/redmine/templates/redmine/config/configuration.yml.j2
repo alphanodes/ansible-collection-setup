@@ -30,7 +30,7 @@ default:
 {% if instance.database_cipher_key is defined and instance.database_cipher_key != '' %}
   database_cipher_key: "{{ instance.database_cipher_key }}"
 {% endif %}
-{% if ansible_distribution_release == 'trixie' %}
+{% if ansible_facts.distribution_release == 'trixie' %}
   imagemagick_convert_command: magick
 {% endif %}
 {% if instance.use_logger is undefined or instance.use_logger == 'syslog' %}

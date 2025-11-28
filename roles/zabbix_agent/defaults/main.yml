@@ -7,12 +7,12 @@ zabbix_use_repo: true
 zabbix_version: 7.4
 
 zabbix_repo_protocol: https
-zabbix_apt_url: "{{ zabbix_repo_protocol }}://repo.zabbix.com/zabbix/{{ zabbix_version }}/stable/{{ ansible_distribution | lower }}/"
-zabbix_apt_suites: "{{ ansible_distribution_release }}"
+zabbix_apt_url: "{{ zabbix_repo_protocol }}://repo.zabbix.com/zabbix/{{ zabbix_version }}/stable/{{ ansible_facts.distribution | lower }}/"
+zabbix_apt_suites: "{{ ansible_facts.distribution_release }}"
 zabbix_apt_components: main
 
 # local file is used, if not configured
-# zabbix_apt_signed_by: "{{ zabbix_repo_protocol }}://repo.zabbix.com/zabbix/{{ zabbix_version }}/{{ ansible_distribution | lower }}"
+# zabbix_apt_signed_by: "{{ zabbix_repo_protocol }}://repo.zabbix.com/zabbix/{{ zabbix_version }}/{{ ansible_facts.distribution | lower }}"
 
 # set pinned version, if required
 # zabbix_agent_version_pinning: "1:4.4.1*"

@@ -23,7 +23,7 @@ redmine_postgresql_packages:
 # (only used with ubuntu)
 redmine_rvm_apt: false
 redmine_rvm_apt_url: https://ppa.launchpadcontent.net/rael-gc/rvm/ubuntu
-redmine_rvm_apt_suites: '{{ ansible_distribution_release }}'
+redmine_rvm_apt_suites: '{{ ansible_facts.distribution_release }}'
 redmine_rvm_apt_components: main
 redmine_rvm_apt_signed_by: https://keyserver.ubuntu.com/pks/lookup?op=get&fingerprint=on&search=0x8094BB14F4E3FBBE
 

@@ -8,6 +8,9 @@ name: "alphanodes.setup.goaccess"
     paths:
       - 'roles/goaccess/**'
       - 'roles/common/**'
+      - 'roles/nginx_mono/**'
+      - 'roles/ssl/**'
+      - 'roles/git/**'
       - 'molecule/goaccess/**'
       - '.github/workflows/goaccess.yml'
 
