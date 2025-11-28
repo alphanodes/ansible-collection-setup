@@ -31,7 +31,6 @@ jobs:
     strategy:
       matrix:
         distro:
-          - ubuntu2404
           - debian13
 
     steps:
