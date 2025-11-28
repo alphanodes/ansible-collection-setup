@@ -1,0 +1,68 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  vars:
+    # nginx_mono configuration
+    nginx_with_ipv6: false
+    nginx_with_http3: false
+    nginx_with_protection: false
+    nginx_ssl_protocols: 'TLSv1.3'
+    hoster: 'local'
+
+    # SSL configuration - self-signed certificate for testing
+    ssl_certs:
+      - name: roundcube
+        provider: selfsigned
+        subject_common_name: roundcube.local
+
+    # PHP-FPM settings
+    php_fpm_listen: /run/php/php-fpm.sock
+
+    # MySQL settings for testing
+    mysql_root_password: 'test_root_password'
+    mysql_root_plugin: mysql_native_password
+
+    # roundcube configuration
+    roundcube_vhost_server: roundcube.local
+    roundcube_vhost_letsencrypt: false
+    roundcube_vhost_ssl_cert: roundcube
+    roundcube_vhost_for_zabbix: false
+    roundcube_git_install: false
+    roundcube_db_password: 'test_roundcube_password'
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+    - name: Create roundcube htdocs directory for testing
+      ansible.builtin.file:
+        path: /srv/roundcube
+        state: directory
+        mode: '0755'
+
+    - name: Create roundcube config directory for testing
+      ansible.builtin.file:
+        path: /srv/roundcube/config
+        state: directory
+        mode: '0755'
+
+    - name: Create roundcube images directory for testing
+      ansible.builtin.file:
+        path: /srv/roundcube/images
+        state: directory
+        mode: '0755'
+
+    - name: Create dummy index.php for testing
+      ansible.builtin.copy:
+        content: "<?php echo 'Roundcube Test';"
+        dest: /srv/roundcube/index.php
+        mode: '0644'
+
+  tasks:
+    - name: Include roundcube role
+      ansible.builtin.include_role:
+        name: alphanodes.setup.roundcube

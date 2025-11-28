@@ -1,0 +1,27 @@
+---
+
+- name: Setup nginx_mono and configure roundcube vhost
+  tags: nginx
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nginx_mono
+  vars:
+    nginx_mono_service_name: roundcube
+    nginx_mono_service_enabled: true
+    nginx_mono_service_config:
+      server_name: "{{ roundcube_vhost_server }}"
+      root: "{{ roundcube_htdocs }}"
+      index: "index.php index.html"
+      with_fpm: true
+      additional_headers:
+        - "Referrer-Policy 'same-origin'"
+      locations:
+        - name: "~ /(bin|config|temp|logs|installer|SQL|CHANGELOG|INSTALL|UPGRADING)"
+          action: "deny all"
+      redirects: "{{ roundcube_redirects | default([]) }}"
+      vhost_includes: "{{ roundcube_vhost_includes | default([]) }}"
+      vhost_for_zabbix: "{{ roundcube_vhost_for_zabbix | default(false) }}"
+      letsencrypt: "{{ roundcube_vhost_letsencrypt | default(false) }}"
+      letsencrypt_cert: "{{ roundcube_vhost_letsencrypt_cert | default('') }}"
+      letsencrypt_key: "{{ roundcube_vhost_letsencrypt_key | default('') }}"
+      letsencrypt_trusted_cert: "{{ roundcube_vhost_letsencrypt_trusted_cert | default('') }}"
+      ssl_cert: "{{ roundcube_vhost_ssl_cert | default('') }}"

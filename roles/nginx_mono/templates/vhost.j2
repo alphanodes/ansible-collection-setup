@@ -6,16 +6,17 @@ server {
 {# Clean listen configuration using pre-calculated variables #}
 {% set default_server_flag = ' default_server' if nginx_listen_config.default_server else '' -%}
 {% set reuseport_flag = ' reuseport' if nginx_listen_config.use_reuseport else '' -%}
+{% set ssl_port = nginx_listen_config.server_port | default(443) -%}
 
-{# SSL Configuration (443) #}
+{# SSL Configuration (standard 443 or custom SSL port) #}
 {% if nginx_listen_config.use_ssl %}
 {# SSL listen directives #}
-  listen 443 {{ nginx_ssl_listen_option }}{{ default_server_flag }}{{ reuseport_flag }};
+  listen {{ ssl_port }} {{ nginx_ssl_listen_option }}{{ default_server_flag }}{{ reuseport_flag }};
 {% if nginx_listen_config.use_ipv6 %}
-  listen [::]:443 {{ nginx_ssl_listen_option }}{{ default_server_flag }}{{ reuseport_flag }};
+  listen [::]:{{ ssl_port }} {{ nginx_ssl_listen_option }}{{ default_server_flag }}{{ reuseport_flag }};
 {% endif %}
-{# HTTP/3 QUIC support - reuseport only for primary service #}
-{% if nginx_listen_config.use_http3 %}
+{# HTTP/3 QUIC support - only for standard port 443, not custom ports #}
+{% if nginx_listen_config.use_http3 and ssl_port == 443 %}
 {%- set quic_reuseport = ' reuseport' if nginx_listen_config.use_reuseport else '' %}
   listen 443 quic{{ default_server_flag }}{{ quic_reuseport }};
 {% if nginx_listen_config.use_ipv6 %}
@@ -134,7 +135,7 @@ server {
 {% endif %}
 }
 
-{% if nginx_with_ssl and instance.server_port is defined %}
+{% if nginx_listen_config.use_ssl %}
 {% include 'includes/port_redirect.inc.j2' %}
 {% endif %}
 {% if instance.mappings is defined %}

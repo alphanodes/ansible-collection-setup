@@ -1,0 +1,27 @@
+---
+dependencies:
+  - role: alphanodes.setup.common
+    public: true
+  - role: alphanodes.setup.ssl
+  - role: alphanodes.setup.php_fpm
+  - role: alphanodes.setup.mysql
+  - role: alphanodes.setup.nginx_mono
+
+galaxy_info:
+  description: Setup roundcube
+  author: alexandermeindl
+  company: AlphaNodes GmbH
+  license: Apache License 2.0
+  min_ansible_version: '2.18'
+  platforms:
+    - name: Ubuntu
+      versions:
+        - jammy
+        - noble
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+        - trixie
+  galaxy_tags:
+    - roundcube

@@ -1,0 +1,146 @@
+---
+# Verify SSL and HTTP→HTTPS redirect functionality
+- name: Verify SSL Redirect Tests
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check if nginx is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+      check_mode: true
+      register: nginx_service
+      failed_when: nginx_service.changed
+
+    - name: Check nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax
+      changed_when: false
+
+    # Test 1: Standard SSL (port 443) - verify HTTP→HTTPS redirect exists
+    - name: Check standard SSL vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/test_ssl_standard.conf
+      register: standard_vhost
+
+    - name: Verify standard SSL vhost has listen 443 ssl
+      ansible.builtin.shell: |
+        set -e
+        grep -E '^\s*listen 443 ssl' /etc/nginx/sites-available/test_ssl_standard.conf
+      register: standard_listen_443
+      changed_when: false
+      failed_when: standard_listen_443.rc != 0
+
+    - name: Verify standard SSL vhost has HTTP→HTTPS redirect (listen 80 in redirect block)
+      ansible.builtin.shell: |
+        set -e
+        grep -E '^\s*listen 80;' /etc/nginx/sites-available/test_ssl_standard.conf
+      register: standard_listen_80
+      changed_when: false
+      failed_when: standard_listen_80.rc != 0
+
+    - name: Verify standard SSL vhost has return 301 https redirect
+      ansible.builtin.shell: |
+        set -e
+        grep -E '^\s*return 301 https://' /etc/nginx/sites-available/test_ssl_standard.conf
+      register: standard_redirect_301
+      changed_when: false
+      failed_when: standard_redirect_301.rc != 0
+
+    # Test 2: Custom SSL port (8443) - verify redirect from 80 to custom port
+    - name: Check custom port SSL vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/test_ssl_custom_port.conf
+      register: custom_vhost
+
+    - name: Verify custom port SSL vhost has listen 8443 ssl
+      ansible.builtin.shell: |
+        set -e
+        grep -E '^\s*listen 8443 ssl' /etc/nginx/sites-available/test_ssl_custom_port.conf
+      register: custom_listen_8443
+      changed_when: false
+      failed_when: custom_listen_8443.rc != 0
+
+    - name: Verify custom port SSL vhost has HTTP redirect (listen 80)
+      ansible.builtin.shell: |
+        set -e
+        grep -E '^\s*listen 80;' /etc/nginx/sites-available/test_ssl_custom_port.conf
+      register: custom_listen_80
+      changed_when: false
+      failed_when: custom_listen_80.rc != 0
+
+    - name: Verify custom port SSL vhost redirects to https with custom port
+      ansible.builtin.shell: |
+        set -e
+        grep -E '^\s*return 301 https://' /etc/nginx/sites-available/test_ssl_custom_port.conf
+      register: custom_redirect_301
+      changed_when: false
+      failed_when: custom_redirect_301.rc != 0
+
+    # Verify nginx accepts connections on expected ports
+    - name: Test nginx accepts connections on port 80
+      ansible.builtin.wait_for:
+        port: 80
+        host: localhost
+        delay: 1
+        timeout: 10
+      register: nginx_port_80
+
+    - name: Test nginx accepts connections on port 443
+      ansible.builtin.wait_for:
+        port: 443
+        host: localhost
+        delay: 1
+        timeout: 10
+      register: nginx_port_443
+
+    - name: Test nginx accepts connections on port 8443
+      ansible.builtin.wait_for:
+        port: 8443
+        host: localhost
+        delay: 1
+        timeout: 10
+      register: nginx_port_8443
+
+    # Functional redirect tests using curl
+    - name: Test HTTP→HTTPS redirect for standard SSL (port 443)
+      ansible.builtin.shell: |
+        set -e
+        curl -s -o /dev/null -w '%{http_code}' -H 'Host: test-ssl.local' http://localhost/
+      register: redirect_test_standard
+      changed_when: false
+      failed_when: redirect_test_standard.stdout != '301'
+
+    - name: Test HTTP→HTTPS redirect for custom port (8443)
+      ansible.builtin.shell: |
+        set -e
+        curl -s -o /dev/null -w '%{http_code}' -H 'Host: test-custom-port.local' http://localhost/
+      register: redirect_test_custom
+      changed_when: false
+      failed_when: redirect_test_custom.stdout != '301'
+
+    - name: Display test results
+      ansible.builtin.debug:
+        msg:
+          - "=== SSL Redirect Test Results ==="
+          - "Nginx service: {{ 'OK' if not nginx_service.changed else 'FAILED' }}"
+          - "Nginx syntax: {{ 'OK' if nginx_syntax.rc == 0 else 'FAILED' }}"
+          - ""
+          - "=== Standard SSL (port 443) ==="
+          - "Vhost exists: {{ 'OK' if standard_vhost.stat.exists else 'FAILED' }}"
+          - "Listen 443 ssl: {{ 'OK' if standard_listen_443.rc == 0 else 'FAILED' }}"
+          - "Listen 80 (redirect): {{ 'OK' if standard_listen_80.rc == 0 else 'FAILED' }}"
+          - "Return 301 https: {{ 'OK' if standard_redirect_301.rc == 0 else 'FAILED' }}"
+          - "HTTP→HTTPS redirect works: {{ 'OK' if redirect_test_standard.stdout == '301' else 'FAILED' }}"
+          - ""
+          - "=== Custom SSL Port (8443) ==="
+          - "Vhost exists: {{ 'OK' if custom_vhost.stat.exists else 'FAILED' }}"
+          - "Listen 8443 ssl: {{ 'OK' if custom_listen_8443.rc == 0 else 'FAILED' }}"
+          - "Listen 80 (redirect): {{ 'OK' if custom_listen_80.rc == 0 else 'FAILED' }}"
+          - "Return 301 https: {{ 'OK' if custom_redirect_301.rc == 0 else 'FAILED' }}"
+          - "HTTP→HTTPS redirect works: {{ 'OK' if redirect_test_custom.stdout == '301' else 'FAILED' }}"
+          - ""
+          - "=== Port Connectivity ==="
+          - "Port 80: {{ 'OK' if nginx_port_80 is succeeded else 'FAILED' }}"
+          - "Port 443: {{ 'OK' if nginx_port_443 is succeeded else 'FAILED' }}"
+          - "Port 8443: {{ 'OK' if nginx_port_8443 is succeeded else 'FAILED' }}"

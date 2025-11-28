@@ -1,0 +1,19 @@
+---
+
+- name: Be sure roundcube database exists
+  community.mysql.mysql_db:
+    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
+    name: '{{ roundcube_db_name }}'
+    state: present
+
+- name: Create roundcube mysql user
+  community.mysql.mysql_user:
+    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
+    name: '{{ roundcube_db_user }}'
+    plugin: caching_sha2_password
+    plugin_auth_string: "{{ roundcube_db_password }}"
+    salt: "{{ [ansible_machine_id, ansible_hostname, 'roundcube'] | join | hash('sha1') | truncate(20, true, '') }}"
+    host: '{{ roundcube_db_host }}'
+    priv: '{{ roundcube_db_name }}.*:ALL'
+    column_case_sensitive: true
+    state: present

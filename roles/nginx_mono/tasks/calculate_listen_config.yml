@@ -22,12 +22,17 @@
   when: not (nginx_with_reuseport | default(false))
 
 - name: Calculate listen configuration
+  vars:
+    _port: "{{ _listen_calc_instance.server_port | default(443) }}"
+    _is_ssl_port: "{{ nginx_with_ssl and (_port | int == 443 or _port | int > 1024) }}"
   ansible.builtin.set_fact:
     nginx_listen_config:
       use_ipv6: "{{ nginx_with_ipv6 | default(false) }}"
-      use_ssl: "{{ nginx_with_ssl and (_listen_calc_instance.server_port is undefined or _listen_calc_instance.server_port == 443) }}"
-      use_http: "{{ _listen_calc_instance.server_port is undefined or _listen_calc_instance.server_port == 80 }}"
+      use_ssl: "{{ _is_ssl_port }}"
+      use_http: "{{ _port | int == 80 }}"
       use_http3: "{{ nginx_with_http3 | default(false) }}"
       use_reuseport: "{{ service_uses_reuseport | default(false) }}"
       default_server: "{{ _listen_calc_instance.vhost_default is defined and _listen_calc_instance.vhost_default }}"
-      ssl_only: "{{ nginx_force_ssl and nginx_with_ssl and (_listen_calc_instance.server_port is undefined or _listen_calc_instance.server_port == 443) }}"
+      ssl_only: "{{ nginx_force_ssl and _is_ssl_port }}"
+      server_port: "{{ _port | int }}"
+      is_custom_ssl_port: "{{ _is_ssl_port and _port | int != 443 }}"

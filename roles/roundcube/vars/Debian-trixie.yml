@@ -1,0 +1,11 @@
+---
+
+roundcube_packages:
+  - aspell
+  - aspell-de
+  - aspell-en
+  - aspell-es
+  - aspell-it
+  - php-pear
+  - php8.4-enchant
+  - php8.4-intl

@@ -1,0 +1,30 @@
+---
+- name: Run lessc with styles.less
+  ansible.builtin.shell: >
+    {{ npm_config_prefix }}/bin/lessc --clean-css="--s1 --advanced" styles/styles.less > styles/styles.min.css
+  args:
+    chdir: '{{ roundcube_htdocs }}/skins/elastic'
+  environment:
+    NODE_ENV: '{{ roundcube_node_env }}'
+    NPM_CONFIG_PREFIX: '{{ npm_config_prefix }}'
+    NODE_PATH=$NODE_PATH: '{{ npm_config_prefix }}/lib/node_modules'
+
+- name: Run lessc with print.less
+  ansible.builtin.shell: >
+    {{ npm_config_prefix }}/bin/lessc --clean-css="--s1 --advanced" styles/print.less > styles/print.min.css
+  args:
+    chdir: '{{ roundcube_htdocs }}/skins/elastic'
+  environment:
+    NODE_ENV: '{{ roundcube_node_env }}'
+    NPM_CONFIG_PREFIX: '{{ npm_config_prefix }}'
+    NODE_PATH=$NODE_PATH: '{{ npm_config_prefix }}/lib/node_modules'
+
+- name: Run lessc with embed.less
+  ansible.builtin.shell: >
+    {{ npm_config_prefix }}/bin/lessc --clean-css="--s1 --advanced" styles/embed.less > styles/embed.min.css
+  args:
+    chdir: '{{ roundcube_htdocs }}/skins/elastic'
+  environment:
+    NODE_ENV: '{{ roundcube_node_env }}'
+    NPM_CONFIG_PREFIX: '{{ npm_config_prefix }}'
+    NODE_PATH=$NODE_PATH: '{{ npm_config_prefix }}/lib/node_modules'

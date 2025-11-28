@@ -1,0 +1,103 @@
+---
+
+- name: Be sure roundcube packages are installed
+  ansible.builtin.apt:
+    name: '{{ roundcube_packages }}'
+    state: present
+
+- name: Install roundcube
+  ansible.builtin.git:
+    repo: '{{ roundcube_git_repo }}'
+    dest: '{{ roundcube_htdocs }}'
+    version: '{{ roundcube_git_version | default(omit) }}'
+    accept_hostkey: true
+  notify: Run composer for roundcube
+  when: roundcube_git_install
+
+- name: Include nodejs role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nodejs
+    public: true
+
+- name: Install composer.json
+  ansible.builtin.copy:
+    src: '{{ roundcube_htdocs }}/composer.json-dist'
+    dest: '{{ roundcube_htdocs }}/composer.json'
+    mode: '0644'
+    remote_src: true
+    force: false
+  notify: Update roundcube js
+  when: roundcube_git_install
+
+- name: Check if roundcube configuration is provided by host
+  ansible.builtin.stat:
+    path: "{{ playbook_dir }}/files/roundcube/config/{{ inventory_hostname }}/config.inc.php"
+  ignore_errors: true
+  register: config_by_host
+  delegate_to: localhost
+
+- name: Check if roundcube configuration is provided by group
+  ansible.builtin.stat:
+    path: "{{ playbook_dir }}/files/roundcube/config/{{ group_names[0] }}/config.inc.php"
+  ignore_errors: true
+  register: config_by_group
+  delegate_to: localhost
+  when: not config_by_host.stat.exists
+
+- name: Generate roundcube configuration
+  ansible.builtin.template:
+    src: config.inc.php.j2
+    dest: '{{ roundcube_config_dir }}/config.inc.php'
+    mode: '0644'
+  when:
+    - not config_by_host.stat.exists
+    - not config_by_group.stat.exists | default(true)
+
+- name: Install provided roundcube configuration files by host
+  ansible.builtin.copy:
+    src: '{{ config_by_host.stat.path | dirname }}/{{ item }}'
+    dest: '{{ roundcube_config_dir }}/'
+    mode: '0644'
+  loop: '{{ roundcube_config_files }}'
+  when: config_by_host.stat.exists
+
+- name: Install provided roundcube configuration files by group
+  ansible.builtin.copy:
+    src: '{{ config_by_group.stat.path | dirname }}/{{ item }}'
+    dest: '{{ roundcube_config_dir }}/'
+    mode: '0644'
+  loop: '{{ roundcube_config_files }}'
+  when:
+    - not config_by_host.stat.exists
+    - config_by_group.stat.exists | default(false)
+
+- name: Check if roundcube logo is provided by host
+  ansible.builtin.stat:
+    path: "{{ playbook_dir }}/files/roundcube/logo/{{ inventory_hostname }}.png"
+  ignore_errors: true
+  register: logo_by_host
+  delegate_to: localhost
+
+- name: Check if roundcube logo is provided by group
+  ansible.builtin.stat:
+    path: "{{ playbook_dir }}/files/roundcube/logo/{{ group_names[0] }}.png"
+  ignore_errors: true
+  register: logo_by_group
+  delegate_to: localhost
+  when: not logo_by_host.stat.exists
+
+- name: Install roundcube logo (by host)
+  ansible.builtin.copy:
+    src: '{{ logo_by_host.stat.path }}'
+    dest: '{{ roundcube_logo_dir }}/logo.png'
+    mode: '0644'
+  when: logo_by_host.stat.exists
+
+- name: Install roundcube logo (by group)
+  ansible.builtin.copy:
+    src: '{{ logo_by_group.stat.path }}'
+    dest: '{{ roundcube_logo_dir }}/logo.png'
+    mode: '0644'
+  when:
+    - not logo_by_host.stat.exists
+    - logo_by_group.stat.exists | default(false)

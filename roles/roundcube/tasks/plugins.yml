@@ -1,0 +1,40 @@
+---
+
+- name: With carddav
+  when: roundcube_with_carddav
+  block:
+    # see https://www.c-rieger.de/roundcube-beside-nextcloud/
+    # and https://github.com/blind-coder/rcmcarddav
+    - name: Install rcmcarddav
+      ansible.builtin.git:
+        repo: https://github.com/blind-coder/rcmcarddav.git
+        dest: '{{ roundcube_plugins_dir }}/carddav'
+        version: 'v4'
+        accept_hostkey: true
+        force: true
+      notify: Run composer for roundcube carddav
+
+    - name: Configuration for rcmcarddav
+      ansible.builtin.template:
+        src: carddav_config.inc.php.j2
+        dest: '{{ roundcube_plugins_dir }}/carddav/config.inc.php'
+        owner: "{{ nginx_user }}"
+        group: "{{ nginx_group }}"
+        mode: '0640'
+
+# see https://plugins.roundcube.net/packages/johndoh/contextmenu
+- name: Install contextmenu
+  ansible.builtin.git:
+    repo: https://github.com/JohnDoh/Roundcube-Plugin-Context-Menu.git
+    dest: '{{ roundcube_plugins_dir }}/contextmenu'
+    accept_hostkey: true
+  when: roundcube_with_contextmenu
+
+- name: Configuration for password plugin
+  ansible.builtin.template:
+    src: password_config.inc.php.j2
+    dest: '{{ roundcube_plugins_dir }}/password/config.inc.php'
+    owner: "{{ nginx_user }}"
+    group: "{{ nginx_group }}"
+    mode: '0640'
+  when: roundcube_with_password

@@ -1,0 +1,115 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check if nginx is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+      check_mode: true
+      register: nginx_service
+      failed_when: nginx_service.changed
+
+    - name: Check nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax
+      changed_when: false
+
+    - name: Check if php-fpm is running
+      ansible.builtin.service:
+        name: php8.2-fpm
+        state: started
+      check_mode: true
+      register: phpfpm_service
+      failed_when: phpfpm_service.changed
+
+    - name: Check if mysql is running
+      ansible.builtin.service:
+        name: mysql
+        state: started
+      check_mode: true
+      register: mysql_service
+      failed_when: mysql_service.changed
+
+    - name: Check if roundcube vhost config exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/roundcube.conf
+      register: roundcube_vhost
+
+    - name: Verify roundcube vhost exists
+      ansible.builtin.assert:
+        that:
+          - roundcube_vhost.stat.exists
+        fail_msg: "roundcube vhost configuration not found"
+
+    - name: Verify roundcube vhost is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/roundcube.conf
+      register: roundcube_enabled
+
+    - name: Verify roundcube vhost is enabled
+      ansible.builtin.assert:
+        that:
+          - roundcube_enabled.stat.exists
+        fail_msg: "roundcube vhost not enabled"
+
+    - name: Check if roundcube config exists
+      ansible.builtin.stat:
+        path: /srv/roundcube/config/config.inc.php
+      register: roundcube_config
+
+    - name: Verify roundcube config exists
+      ansible.builtin.assert:
+        that:
+          - roundcube_config.stat.exists
+        fail_msg: "roundcube configuration file not found"
+
+    - name: Check roundcube database exists
+      ansible.builtin.command: >
+        mysql -e "SHOW DATABASES LIKE 'roundcube';"
+      register: roundcube_db
+      changed_when: false
+
+    - name: Verify roundcube database exists
+      ansible.builtin.assert:
+        that:
+          - "'roundcube' in roundcube_db.stdout"
+        fail_msg: "roundcube database not found"
+
+    - name: Test roundcube endpoint via HTTPS
+      ansible.builtin.command: >
+        curl -sk -o /dev/null -w '%{http_code}' -H 'Host: roundcube.local'
+        https://127.0.0.1/
+      register: roundcube_endpoint
+      changed_when: false
+      failed_when: roundcube_endpoint.stdout not in ['200', '302', '403']
+
+    - name: Check vhost has PHP-FPM configuration
+      ansible.builtin.command: grep -q "fastcgi_pass" /etc/nginx/sites-available/roundcube.conf
+      register: fpm_config
+      changed_when: false
+      failed_when: fpm_config.rc != 0
+
+    - name: Check vhost denies sensitive directories
+      ansible.builtin.command: grep -q "bin|config|temp|logs" /etc/nginx/sites-available/roundcube.conf
+      register: deny_config
+      changed_when: false
+      failed_when: deny_config.rc != 0
+
+    - name: Display test results
+      ansible.builtin.debug:
+        msg:
+          - "=== ROUNDCUBE + NGINX_MONO INTEGRATION TESTS ==="
+          - "Nginx service: {{ 'OK' if not nginx_service.changed else 'FAILED' }}"
+          - "Nginx syntax: {{ 'OK' if nginx_syntax.rc == 0 else 'FAILED' }}"
+          - "PHP-FPM service: {{ 'OK' if not phpfpm_service.changed else 'FAILED' }}"
+          - "MySQL service: {{ 'OK' if not mysql_service.changed else 'FAILED' }}"
+          - "Roundcube vhost: {{ 'OK' if roundcube_vhost.stat.exists else 'FAILED' }}"
+          - "Roundcube enabled: {{ 'OK' if roundcube_enabled.stat.exists else 'FAILED' }}"
+          - "Roundcube config: {{ 'OK' if roundcube_config.stat.exists else 'FAILED' }}"
+          - "Roundcube database: {{ 'OK' if 'roundcube' in roundcube_db.stdout else 'FAILED' }}"
+          - "Roundcube endpoint: {{ 'OK' if roundcube_endpoint.stdout in ['200', '302', '403'] else 'FAILED' }}"
+          - "PHP-FPM config: {{ 'OK' if fpm_config.rc == 0 else 'FAILED' }}"
+          - "Deny sensitive dirs: {{ 'OK' if deny_config.rc == 0 else 'FAILED' }}"
+          - "=== ROUNDCUBE INTEGRATION SUCCESS ==="

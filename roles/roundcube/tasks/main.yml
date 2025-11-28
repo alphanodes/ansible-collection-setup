@@ -1,0 +1,29 @@
+---
+- name: Include vars
+  ansible.builtin.import_tasks: include-vars.yml
+
+- name: Include plugins tasks
+  ansible.builtin.include_tasks: plugins.yml
+  tags:
+    - roundcube
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  tags:
+    - roundcube
+
+- name: Include css tasks
+  ansible.builtin.include_tasks: setup_css.yml
+  tags:
+    - roundcube
+
+- name: Include MySQL tasks
+  ansible.builtin.include_tasks: mysql.yml
+  tags:
+    - roundcube
+    - mysql
+
+- name: Include nginx tasks
+  ansible.builtin.include_tasks: nginx.yml
+  tags: roundcube
+  when: roundcube_with_nginx

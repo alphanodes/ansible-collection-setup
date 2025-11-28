@@ -1,0 +1,69 @@
+---
+# defaults file for roundcube
+
+roundcube_db_host: localhost
+roundcube_db_name: roundcube
+roundcube_db_user: roundcube
+roundcube_db_password: '{{ [ansible_machine_id, ansible_hostname, "roundcube"] | join | hash("md5") }}'
+
+roundcube_htdocs: /srv/roundcube
+roundcube_config_dir: '{{ roundcube_htdocs }}/config'
+roundcube_logo_dir: '{{ roundcube_htdocs }}/images'
+roundcube_plugins_dir: '{{ roundcube_htdocs }}/plugins'
+
+roundcube_git_install: false
+roundcube_git_version: release-1.6
+roundcube_git_repo: https://github.com/roundcube/roundcubemail.git
+
+roundcube_with_nginx: true
+roundcube_vhost_server: roundcube.local
+roundcube_vhost_for_zabbix: false
+
+# if files should be not automatically generated
+roundcube_config_files:
+  - config.inc.php
+  - calendar.inc.php
+  - managesieve.inc.php
+
+roundcube_vhost_letsencrypt: false
+roundcube_vhost_ssl_cert: '{{ ssl_certs[0].name | default(omit) }}'
+roundcube_vhost_letsencrypt_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/fullchain.pem
+roundcube_vhost_letsencrypt_key: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/privkey.pem
+roundcube_vhost_letsencrypt_trusted_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/chain.pem
+
+roundcube_imap_host: 'localhost:143'
+roundcube_smtp_host: 'localhost:587'
+
+roundcube_support_url: ''
+roundcube_product_name: 'Webmail'
+roundcube_skin_logo: images/logo.png
+roundcube_des_key: 'GNo-uOiEF5eNlBYUfDP8!HUZ'
+
+roundcube_plugins:
+  - additional_message_headers
+  - archive
+  - markasjunk
+  - newmail_notifier
+  - emoticons
+  - zipdownload
+
+roundcube_with_carddav: false
+roundcube_with_contextmenu: false
+
+roundcube_with_password: false
+roundcube_plugin_password_algorithm: clear
+
+# see https://groups.google.com/forum/#!msg/vimbadmin-discuss/UJuoJ0KOukE/DgyUZzewXsYJ
+# or
+# https://github.com/mailcow/mailcow/wiki/Configuring-Roundcube-Mailbox-Password-change
+roundcube_plugin_password_db_dsn: 'mysql://{{ dovecot_db_user }}:{{ dovecot_db_password }}@{{ dovecot_db_host }}/{{ dovecot_db_name }}'
+roundcube_plugin_password_query: 'UPDATE mailbox SET password=%D WHERE username=%u LIMIT 1;'
+roundcube_plugin_password_crypt_hash: sha512
+roundcube_plugin_password_idn_ascii: false
+roundcube_plugin_password_dovecotpw: '/usr/bin/doveadm pw'
+roundcube_plugin_password_dovecotpw_method: 'SHA512-CRYPT'
+roundcube_plugin_password_dovecotpw_with_method: false
+roundcube_plugin_password_hash_algorithm: sha512
+roundcube_plugin_password_hash_base64: false
+
+roundcube_node_env: production

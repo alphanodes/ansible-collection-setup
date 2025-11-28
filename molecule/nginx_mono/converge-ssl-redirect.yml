@@ -1,0 +1,76 @@
+---
+# Test SSL and HTTP→HTTPS redirect functionality
+- name: Converge SSL Redirect Tests
+  hosts: all
+  become: true
+  vars:
+    # nginx_mono configuration with SSL enabled
+    nginx_with_ipv6: false
+    nginx_with_http3: false
+    nginx_with_protection: false
+    nginx_ssl_protocols: 'TLSv1.3'
+    hoster: 'local'
+
+    # SSL configuration - self-signed certificate for testing
+    ssl_certs:
+      - name: test-ssl
+        provider: selfsigned
+        subject_common_name: test-ssl.local
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+    - name: Include ssl role to create self-signed certificate
+      ansible.builtin.include_role:
+        name: alphanodes.setup.ssl
+
+    - name: Create test document root
+      ansible.builtin.file:
+        path: /var/www/html
+        state: directory
+        mode: '0755'
+
+    - name: Create test index.html
+      ansible.builtin.copy:
+        content: "Test page"
+        dest: /var/www/html/index.html
+        mode: '0644'
+
+  tasks:
+    # Test 1: Standard SSL (port 443) - should create HTTP→HTTPS redirect
+    - name: Setup standard SSL vhost (port 443)
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: test_ssl_standard
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: "test-ssl.local"
+          root: "/var/www/html"
+          index: "index.html"
+          # No server_port defined = default 443
+          vhost_users: []
+          vhost_for_zabbix: false
+          letsencrypt: false
+          ssl_cert: test-ssl
+
+    # Test 2: Custom SSL port (8443) - should create redirect from port 80 to 8443
+    - name: Setup custom SSL port vhost (port 8443)
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: test_ssl_custom_port
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: "test-custom-port.local"
+          server_port: 8443
+          root: "/var/www/html"
+          index: "index.html"
+          vhost_users: []
+          vhost_for_zabbix: false
+          letsencrypt: false
+          ssl_cert: test-ssl

@@ -1,0 +1,16 @@
+---
+
+- name: Run composer for roundcube
+  ansible.builtin.command: composer update -n
+  args:
+    chdir: '{{ roundcube_htdocs }}'
+
+- name: Run composer for roundcube carddav
+  ansible.builtin.command: composer update -n
+  args:
+    chdir: '{{ roundcube_plugins_dir }}/carddav'
+
+- name: Update roundcube js
+  ansible.builtin.command: bin/install-jsdeps.sh
+  args:
+    chdir: '{{ roundcube_htdocs }}'
