@@ -4,8 +4,7 @@ Ansible role to install and configure Roundcube webmail.
 
 ## Requirements
 
-- Debian 12 (Bookworm) or Debian 13 (Trixie)
-- Ubuntu 24.04 (Noble)
+- Debian 13 (Trixie)
 
 ## Role Variables
 
