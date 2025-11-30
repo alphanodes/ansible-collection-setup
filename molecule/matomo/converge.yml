@@ -48,14 +48,21 @@
         cache_valid_time: 600
       changed_when: false
 
+    # Create mysql group FIRST so we can set correct permissions for matomo directory
+    # This is needed because matomo_with_mysql=true expects group 'mysql'
+    - name: Create mysql group for matomo directory permissions
+      ansible.builtin.group:
+        name: mysql
+        system: true
+
     # Note: matomo role sets group to 'mysql' when matomo_with_mysql=true and mode 0750
-    # We create with www-data here, role will adjust owner/group/mode as needed
+    # We create with mysql group here to match what the role expects (idempotent)
     - name: Create matomo directory for testing
       ansible.builtin.file:
         path: /srv/matomo
         state: directory
         owner: www-data
-        group: www-data
+        group: mysql
         mode: '0750'
 
     - name: Create matomo config directory for testing
