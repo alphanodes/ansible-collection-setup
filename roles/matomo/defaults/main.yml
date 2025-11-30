@@ -6,8 +6,8 @@ matomo_source_url: https://builds.matomo.org/
 
 matomo_dir: /srv/matomo
 
-matomo_user: "{{ nginx_user | default(nginx_user) | default('www-data') }}"
-matomo_group: "{{ nginx_group | default(nginx_group) | default('www-data') }}"
+matomo_user: "{{ nginx_user }}"
+matomo_group: "{{ nginx_group }}"
 
 matomo_config_file: "{{ matomo_dir }}/config/config.ini.php"
 matomo_config_file_mode: "0660"
