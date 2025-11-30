@@ -49,21 +49,14 @@
       changed_when: false
 
     # Note: matomo role sets group to 'mysql' when matomo_with_mysql=true and mode 0750
-    # We only create the directory here, role will set correct owner/group/mode
-    # Using a two-step approach for idempotency: create first, set perms only if created
+    # We create with www-data here, role will adjust owner/group/mode as needed
     - name: Create matomo directory for testing
       ansible.builtin.file:
         path: /srv/matomo
         state: directory
-      register: matomo_dir_result
-
-    - name: Set initial matomo directory permissions
-      ansible.builtin.file:
-        path: /srv/matomo
         owner: www-data
         group: www-data
         mode: '0750'
-      when: matomo_dir_result.changed
 
     - name: Create matomo config directory for testing
       ansible.builtin.file:

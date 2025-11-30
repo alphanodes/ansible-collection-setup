@@ -198,7 +198,7 @@ it MUST automatically generate the HTTP to HTTPS redirect for all SSL vhosts:
 | loki | 2024-11 | Log aggregation |
 | jekyll | 2024-11 | Static site generator |
 | mailpit | 2024-11 | Mail testing |
-| matomo | 2024-11 | Analytics |
+| matomo | 2025-11 | Analytics, FPM whitelist pattern, comprehensive security tests |
 | nextcloud | 2024-11 | Cloud storage |
 | radicale | 2024-11 | CalDAV/CardDAV |
 
@@ -262,12 +262,14 @@ Based on migration analysis, nginx_mono must support:
 - [x] HTTP to HTTPS redirect
 - [x] WebSocket proxying
 - [x] PHP-FPM integration
+- [x] **FPM Whitelist Pattern** - Per-location FPM (`location.with_fpm: true`)
 - [x] Static file serving
 - [x] Basic auth protection
 - [x] Custom locations
 - [x] Proxy configuration
 - [x] Security headers
 - [x] Error pages
+- [x] **Hidden files blocking** - Returns 404 (security best practice)
 
 ### Features to Implement/Verify
 
