@@ -1,4 +1,6 @@
 ---
+# Minimal test for hedgedoc nginx_mono integration
+# Full hedgedoc setup requires PostgreSQL, Node.js and more - tested separately
 - name: Converge
   hosts: all
   become: true
@@ -11,14 +13,90 @@
       changed_when: false
 
   vars:
-    hedgedoc_enabled: false  # Don't actually deploy HedgeDoc in test
+    hedgedoc_enabled: true
+    hedgedoc_vhost_server: hedgedoc.local
+    hedgedoc_vhost_for_zabbix: false
+    hedgedoc_path: /srv/hedgedoc
+    hedgedoc_host_name: localhost
+    hedgedoc_http_port: 50342
+    nginx_with_ssl: false  # No SSL in container test
+    nginx_with_websocket: true  # Hedgedoc requires WebSocket support
 
   roles:
     - role: alphanodes.setup.common
-    - role: alphanodes.setup.hedgedoc
+    - role: alphanodes.setup.ssl
+    - role: alphanodes.setup.nginx_mono
+
+  tasks:
+    # Simulate hedgedoc nginx.yml tasks directly (without full hedgedoc role)
+    - name: Set TLS files for letsencrypt
+      ansible.builtin.set_fact:
+        vhost_letsencrypt_cert: "{{ hedgedoc_vhost_letsencrypt_cert }}"
+        vhost_letsencrypt_trusted_cert: "{{ hedgedoc_vhost_letsencrypt_trusted_cert }}"
+        vhost_letsencrypt_key: "{{ hedgedoc_vhost_letsencrypt_key }}"
+        force_letsencrypt: true
+      when:
+        - hedgedoc_vhost_letsencrypt is defined
+        - hedgedoc_vhost_letsencrypt
+
+    - name: Check trusted TLS cert
+      ansible.builtin.stat:
+        path: /etc/ssl/certs/{{ hedgedoc_vhost_ssl_cert | default('test') }}_trusted.crt
+      register: trusted_cert
+      when: hedgedoc_vhost_letsencrypt is undefined or not hedgedoc_vhost_letsencrypt
+
+    - name: Set TLS files
+      ansible.builtin.set_fact:
+        vhost_ssl_cert: "{{ hedgedoc_vhost_ssl_cert | default('test') }}"
+        vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | default(false) | bool }}"
+      when: hedgedoc_vhost_letsencrypt is undefined or not hedgedoc_vhost_letsencrypt
+
+    - name: Build additional headers list
+      ansible.builtin.set_fact:
+        _hedgedoc_additional_headers: >-
+          {{
+            ['Content-Security-Policy "' ~ hedgedoc_content_security_policy ~ '"']
+            if hedgedoc_content_security_policy | default('') != ''
+            else []
+          }}
+
+    - name: Setup nginx_mono and configure hedgedoc vhost
+      tags: nginx
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_with_websocket: true
+        nginx_mono_service_name: hedgedoc
+        nginx_mono_service_enabled: "{{ hedgedoc_enabled }}"
+        nginx_mono_service_config:
+          server_name: "{{ hedgedoc_vhost_server }}"
+          root: "{{ hedgedoc_path }}"
+          index: "index.html"
+          proxy_pass: "http://{{ hedgedoc_host_name }}:{{ hedgedoc_http_port }}"
+          proxy_location: "/"
+          proxy_websocket: true
+          vhost_users: "{{ hedgedoc_vhost_users | default([]) }}"
+          vhost_for_zabbix: "{{ hedgedoc_vhost_for_zabbix | default(false) }}"
+          letsencrypt: "{{ hedgedoc_vhost_letsencrypt | default(false) }}"
+          redirects: "{{ hedgedoc_redirects | default([]) }}"
+          vhost_includes: "{{ hedgedoc_vhost_includes | default([]) }}"
+          additional_headers: "{{ _hedgedoc_additional_headers }}"
 
   post_tasks:
-    - name: Check hedgedoc role completed
-      ansible.builtin.debug:
-        msg: "HedgeDoc role executed successfully"
-    # TODO: Requires Node.js and database setup for complete testing
+    - name: Check nginx configuration is valid
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax
+      changed_when: false
+
+    - name: Check hedgedoc vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/hedgedoc.conf
+      register: hedgedoc_vhost
+
+    - name: Verify hedgedoc vhost configuration
+      ansible.builtin.assert:
+        that:
+          - nginx_syntax.rc == 0
+          - hedgedoc_vhost.stat.exists
+        fail_msg: "hedgedoc nginx configuration failed"
+        success_msg: "hedgedoc nginx_mono integration works correctly"

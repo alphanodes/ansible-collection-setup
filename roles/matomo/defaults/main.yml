@@ -60,9 +60,6 @@ matomo_multi_server_environment: false
 matomo_plugins: []
 #  - name: SecurityInfo
 
-matomo_cleanup_files:
-  - /etc/nginx/piwik.conf
-  - /etc/nginx/sites-available/piwik.conf
-  - /etc/nginx/sites-enabled/piwik.conf
+matomo_cleanup_files: []
 
 matomo_with_robots_txt: false

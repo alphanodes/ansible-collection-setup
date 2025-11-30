@@ -1,26 +1,6 @@
 ---
 
-# restart required, because file can be not available before
-- name: User protecction for hedgedoc vhost
-  community.general.htpasswd:
-    path: /etc/nginx/.htpasswd_hedgedoc
-    name: '{{ item.user }}'
-    password: '{{ item.password }}'
-    owner: root
-    group: '{{ nginx_group }}'
-    mode: '0640'
-  loop: '{{ hedgedoc_vhost_users | default([]) }}'
-  when:
-    - hedgedoc_vhost_users is defined
-    - hedgedoc_vhost_users | length > 0
-  notify: Restart nginx
-
-- name: Remove .htpasswd_hedgedoc, if no base auth is in use
-  ansible.builtin.file:
-    path: /etc/nginx/.htpasswd_hedgedoc
-    state: absent
-  when: hedgedoc_vhost_users | length < 1
-  notify: Restart nginx
+# Basic Auth handled by nginx_mono service.yml
 
 - name: Enable block
   when: hedgedoc_enabled
@@ -47,21 +27,36 @@
         vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
       when: hedgedoc_vhost_letsencrypt is undefined or not hedgedoc_vhost_letsencrypt
 
-    - name: Update hedgedoc vhost configuration
-      tags: nginx
-      ansible.builtin.template:
-        src: vhost.j2
-        dest: /etc/nginx/sites-available/hedgedoc.conf
-        mode: '0644'
-      notify: Reload nginx
+    - name: Build additional headers list
+      ansible.builtin.set_fact:
+        _hedgedoc_additional_headers: >-
+          {{
+            ['Content-Security-Policy "' ~ hedgedoc_content_security_policy ~ '"']
+            if hedgedoc_content_security_policy | default('') != ''
+            else []
+          }}
 
-    - name: Enable hedgedoc hedgedoc vhost
+    - name: Setup nginx_mono and configure hedgedoc vhost
       tags: nginx
-      ansible.builtin.file:
-        src: /etc/nginx/sites-available/hedgedoc.conf
-        dest: /etc/nginx/sites-enabled/hedgedoc.conf
-        state: link
-      notify: Reload nginx
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_with_websocket: true
+        nginx_mono_service_name: hedgedoc
+        nginx_mono_service_enabled: "{{ hedgedoc_enabled }}"
+        nginx_mono_service_config:
+          server_name: "{{ hedgedoc_vhost_server }}"
+          root: "{{ hedgedoc_path }}"
+          index: "index.html"
+          proxy_pass: "http://{{ hedgedoc_host_name }}:{{ hedgedoc_http_port }}"
+          proxy_location: "/"
+          proxy_websocket: true
+          vhost_users: "{{ hedgedoc_vhost_users | default([]) }}"
+          vhost_for_zabbix: "{{ hedgedoc_vhost_for_zabbix | default(false) }}"
+          letsencrypt: "{{ hedgedoc_vhost_letsencrypt | default(false) }}"
+          redirects: "{{ hedgedoc_redirects | default([]) }}"
+          vhost_includes: "{{ hedgedoc_vhost_includes | default([]) }}"
+          additional_headers: "{{ _hedgedoc_additional_headers }}"
 
 - name: Disable block
   when: not hedgedoc_enabled

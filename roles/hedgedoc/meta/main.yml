@@ -4,7 +4,6 @@ dependencies:
     public: true
   - role: alphanodes.setup.ssl
   - role: alphanodes.setup.postgresql
-  - role: alphanodes.setup.nginx
 
 galaxy_info:
   description: Setup hedgedoc
