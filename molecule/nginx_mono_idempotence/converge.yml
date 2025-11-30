@@ -1,0 +1,117 @@
+---
+# Test scenario: Multiple nginx_mono calls with different variable values
+# This tests idempotence when services override nginx_with_protection
+#
+# Scenario simulates alphanodes-monitor where:
+# - First call: standalone nginx_mono or service with default protection=true
+# - Second call: zabbix_server with nginx_with_protection=false
+# - Third call: another service with default protection=true
+#
+# Expected: protection.conf should always exist (maps are harmless)
+# and no changes should occur on second run (idempotence)
+
+- name: Converge - Test multi-service idempotence
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  vars:
+    # Common nginx settings
+    nginx_with_ssl: false
+    nginx_with_ipv6: false
+    nginx_force_ssl: false
+    nginx_resolver:
+      - '8.8.8.8'
+      - '8.8.4.4'
+    hoster: 'local'
+    ssl_certs: []
+
+  tasks:
+    # ==========================================================================
+    # Test 1: First nginx_mono call with default protection (true)
+    # ==========================================================================
+    - name: "Test 1 - First nginx_mono call (protection=true default)"
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: service_one
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: service-one.local
+          root: /srv/service_one
+          proxy_pass: "http://127.0.0.1:3001"
+          proxy_location: "/"
+          vhost_for_zabbix: false
+          letsencrypt: false
+
+    # ==========================================================================
+    # Test 2: Second nginx_mono call with protection=false (like zabbix_server)
+    # ==========================================================================
+    - name: "Test 2 - Second nginx_mono call (protection=false, like zabbix)"
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_with_protection: false  # This should NOT delete protection.conf
+        nginx_mono_service_name: service_zabbix
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: zabbix.local
+          root: /srv/zabbix
+          proxy_pass: "http://127.0.0.1:3002"
+          proxy_location: "/"
+          vhost_for_zabbix: false
+          letsencrypt: false
+
+    # ==========================================================================
+    # Test 3: Third nginx_mono call with default protection (true)
+    # ==========================================================================
+    - name: "Test 3 - Third nginx_mono call (protection=true default)"
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: service_three
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: service-three.local
+          root: /srv/service_three
+          proxy_pass: "http://127.0.0.1:3003"
+          proxy_location: "/"
+          vhost_for_zabbix: false
+          letsencrypt: false
+
+    # ==========================================================================
+    # Test 4: Standalone nginx_mono with nginx_vhosts (no service mode)
+    # ==========================================================================
+    - name: "Test 4 - Standalone nginx_mono with nginx_vhosts"
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_vhosts:
+          - name: standalone
+            server_name: standalone.local
+            root: /srv/standalone
+            vhost_for_zabbix: false
+
+    # ==========================================================================
+    # Test 5: Another service call with protection=false
+    # ==========================================================================
+    - name: "Test 5 - Another service with protection=false"
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_with_protection: false
+        nginx_mono_service_name: service_noprotect
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: noprotect.local
+          root: /srv/noprotect
+          proxy_pass: "http://127.0.0.1:3004"
+          proxy_location: "/"
+          vhost_for_zabbix: false
+          letsencrypt: false

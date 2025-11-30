@@ -76,6 +76,65 @@ flowchart TB
 
 ## Learnings and Best Practices
 
+### Global vs Per-Vhost Configuration
+
+**Critical Learning (2024-11)**: When nginx_mono is called multiple times on the
+same host with different variable values, global configuration files must be
+handled carefully.
+
+#### The Problem
+
+On hosts where nginx_mono is called multiple times (e.g., standalone + via
+service roles like zabbix_server), variable overrides in `include_role` can
+cause idempotence issues:
+
+```yaml
+# First call: nginx_with_protection defaults to true
+- role: alphanodes.setup.nginx_mono
+
+# Second call: zabbix_server overrides to false
+- ansible.builtin.include_role:
+    name: alphanodes.setup.nginx_mono
+  vars:
+    nginx_with_protection: false  # Zabbix API needs Python access
+```
+
+**Old behavior (buggy)**:
+
+1. First call: `protection.conf` created
+2. Second call: `protection.conf` deleted (because `nginx_with_protection: false`)
+3. Result: Directory timestamp changes every run → not idempotent
+
+**New behavior (fixed)**:
+
+- `protection.conf` is ALWAYS installed (no condition)
+- The maps (`$bad_bot`, `$bad_locations`, etc.) are harmless if not used
+- Per-vhost usage is controlled by `nginx_with_protection` in vhost template
+
+#### Design Principle
+
+| Config Type | Location | Managed By | Behavior |
+|-------------|----------|------------|----------|
+| **Global maps** | `/etc/nginx/conf.d/protection.conf` | Always installed | Passive - no effect unless vhost uses them |
+| **Global SSL** | `/etc/nginx/conf.d/ssl.conf` | First caller only | Uses `_nginx_mono_setup_done` fact |
+| **Per-vhost protection** | In vhost template | Each service | Controlled by `nginx_with_protection` variable |
+
+#### The `_nginx_mono_setup_done` Fact
+
+For configuration that should only be managed on the first nginx_mono call
+(like SSL settings), we use a fact to track completion:
+
+```yaml
+# At end of setup.yml
+- name: Mark nginx_mono setup as complete
+  ansible.builtin.set_fact:
+    _nginx_mono_setup_done: true
+  when: _nginx_mono_setup_done is not defined
+```
+
+This ensures that subsequent `include_role` calls from service roles don't
+override host-level SSL configuration.
+
 ### HTTP to HTTPS Redirect
 
 **Important Discovery**: In the old architecture, HTTP to HTTPS redirects were
@@ -225,6 +284,35 @@ Every migrated role MUST have:
 2. **GitHub Actions workflow**: `.github/workflows/[service].yml`
 3. **Workflow must include**: `roles/nginx_mono/**` in path triggers
 
+### Idempotence Testing
+
+nginx_mono has a dedicated idempotence test scenario that verifies correct
+behavior when the role is called multiple times with different variable values:
+
+```bash
+# Run the idempotence test
+MOLECULE_DISTRO=debian12 molecule test -s nginx_mono_idempotence
+```
+
+**What it tests:**
+
+- 5 sequential nginx_mono calls with varying `nginx_with_protection` values
+- Mix of service mode and instance mode (nginx_vhosts)
+- Verifies `protection.conf` exists after all calls
+- Checks idempotence (second run has `changed=0`)
+
+**Test scenario structure:**
+
+```text
+molecule/nginx_mono_idempotence/
+├── molecule.yml      # Docker test configuration
+├── converge.yml      # 5 nginx_mono calls with different configs
+└── verify.yml        # Assertions for idempotence
+```
+
+This test should be run after any changes to `setup.yml` or global
+configuration handling in nginx_mono
+
 ## nginx_vhosts (Instance Mode)
 
 nginx_mono supports two modes of operation:
@@ -302,3 +390,21 @@ vars:
 7. **`vhost_default` not applied**: Ensure the variable scope fix in
    `calculate_listen_config.yml` is present - older versions had a bug where
    `nginx_mono_instance` from a previous role call would override `instance`
+
+### Idempotence Issues
+
+1. **Directory timestamp changes on every run**: Check if `protection.conf` or
+   `ssl.conf` is being created/deleted repeatedly. This typically happens when:
+   - A service role overrides `nginx_with_protection` or `nginx_with_ssl` in
+     its `include_role` vars
+   - The role is called multiple times with conflicting variable values
+   - **Fix**: Global configs should not depend on service-specific variable
+     overrides. See "Global vs Per-Vhost Configuration" section above.
+
+2. **Config file deleted unexpectedly**: If a global config file disappears after
+   a service role runs, check if that role is setting `nginx_with_*: false` in
+   its include_role vars. The fix ensures `protection.conf` is always installed.
+
+3. **SSL config changes on second role call**: SSL configuration is only managed
+   on the first nginx_mono call (tracked by `_nginx_mono_setup_done` fact).
+   Subsequent service roles should not affect global SSL settings.

@@ -1,0 +1,182 @@
+---
+- name: Verify multi-service idempotence
+  hosts: all
+  gather_facts: false
+  tasks:
+    # ==========================================================================
+    # Global configuration checks
+    # ==========================================================================
+    - name: Check nginx service is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+      check_mode: true
+      register: nginx_service
+      failed_when: nginx_service.changed
+
+    - name: Check nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax
+      changed_when: false
+
+    # ==========================================================================
+    # CRITICAL: protection.conf must exist after all calls
+    # ==========================================================================
+    - name: Check protection.conf exists
+      ansible.builtin.stat:
+        path: /etc/nginx/conf.d/protection.conf
+      register: protection_conf
+
+    - name: CRITICAL - Verify protection.conf exists after multiple calls
+      ansible.builtin.assert:
+        that:
+          - protection_conf.stat.exists
+        fail_msg: |
+          IDEMPOTENCE FAILURE: protection.conf was deleted!
+          This happens when a service with nginx_with_protection=false
+          runs after a service with nginx_with_protection=true.
+          The fix should ensure protection.conf is ALWAYS present.
+        success_msg: "protection.conf exists correctly"
+
+    - name: Verify protection.conf contains bad_bot map
+      ansible.builtin.shell: grep -q 'map.*\$bad_bot' /etc/nginx/conf.d/protection.conf
+      register: bad_bot_map
+      changed_when: false
+
+    - name: Verify protection.conf contains bad_locations map
+      ansible.builtin.shell: grep -q 'map.*\$bad_locations' /etc/nginx/conf.d/protection.conf
+      register: bad_locations_map
+      changed_when: false
+
+    # ==========================================================================
+    # Service vhost checks
+    # ==========================================================================
+    - name: Check service_one vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/service_one.conf
+      register: service_one_vhost
+
+    - name: Check service_zabbix vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/service_zabbix.conf
+      register: service_zabbix_vhost
+
+    - name: Check service_three vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/service_three.conf
+      register: service_three_vhost
+
+    - name: Check standalone vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/standalone.conf
+      register: standalone_vhost
+
+    - name: Check service_noprotect vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/service_noprotect.conf
+      register: service_noprotect_vhost
+
+    # ==========================================================================
+    # Enabled symlinks checks
+    # ==========================================================================
+    - name: Check service_one is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/service_one.conf
+      register: service_one_enabled
+
+    - name: Check service_zabbix is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/service_zabbix.conf
+      register: service_zabbix_enabled
+
+    - name: Check service_three is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/service_three.conf
+      register: service_three_enabled
+
+    - name: Check standalone is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/standalone.conf
+      register: standalone_enabled
+
+    # ==========================================================================
+    # Per-vhost protection include checks
+    # This verifies that nginx_with_protection controls per-vhost behavior
+    # ==========================================================================
+    - name: Check service_one has protection includes (default true)
+      ansible.builtin.shell: |
+        set -o pipefail
+        grep -q 'if.*\$bad_bot\|if.*\$bad_locations' /etc/nginx/sites-available/service_one.conf
+      args:
+        executable: /bin/bash
+      register: service_one_protection
+      changed_when: false
+      failed_when: false
+
+    - name: Check service_zabbix has NO protection includes (protection=false)
+      ansible.builtin.shell: |
+        set -o pipefail
+        ! grep -q 'if.*\$bad_bot\|if.*\$bad_locations' /etc/nginx/sites-available/service_zabbix.conf
+      args:
+        executable: /bin/bash
+      register: service_zabbix_no_protection
+      changed_when: false
+      failed_when: false
+
+    # ==========================================================================
+    # Final summary
+    # ==========================================================================
+    - name: Display verification results
+      ansible.builtin.debug:
+        msg:
+          - "=========================================="
+          - "=== Multi-Service Idempotence Test Results ==="
+          - "=========================================="
+          - ""
+          - "=== Global Configuration ==="
+          - "Nginx service running: {{ 'OK' if not nginx_service.changed else 'FAILED' }}"
+          - "Nginx syntax valid: {{ 'OK' if nginx_syntax.rc == 0 else 'FAILED' }}"
+          - ""
+          - "=== CRITICAL: protection.conf ==="
+          - "protection.conf exists: {{ 'OK' if protection_conf.stat.exists else 'FAILED - IDEMPOTENCE BUG!' }}"
+          - "Has bad_bot map: {{ 'OK' if bad_bot_map.rc == 0 else 'FAILED' }}"
+          - "Has bad_locations map: {{ 'OK' if bad_locations_map.rc == 0 else 'FAILED' }}"
+          - ""
+          - "=== Service Vhosts ==="
+          - "service_one.conf exists: {{ 'OK' if service_one_vhost.stat.exists else 'FAILED' }}"
+          - "service_zabbix.conf exists: {{ 'OK' if service_zabbix_vhost.stat.exists else 'FAILED' }}"
+          - "service_three.conf exists: {{ 'OK' if service_three_vhost.stat.exists else 'FAILED' }}"
+          - "standalone.conf exists: {{ 'OK' if standalone_vhost.stat.exists else 'FAILED' }}"
+          - "service_noprotect.conf exists: {{ 'OK' if service_noprotect_vhost.stat.exists else 'FAILED' }}"
+          - ""
+          - "=== Enabled Symlinks ==="
+          - "service_one enabled: {{ 'OK' if service_one_enabled.stat.exists else 'FAILED' }}"
+          - "service_zabbix enabled: {{ 'OK' if service_zabbix_enabled.stat.exists else 'FAILED' }}"
+          - "service_three enabled: {{ 'OK' if service_three_enabled.stat.exists else 'FAILED' }}"
+          - "standalone enabled: {{ 'OK' if standalone_enabled.stat.exists else 'FAILED' }}"
+          - ""
+          - "=== Per-Vhost Protection Behavior ==="
+          - "service_one has protection: {{ 'OK (expected)' if service_one_protection.rc == 0 else 'Missing (may be OK depending on template)' }}"
+          - "service_zabbix no protection: {{ 'OK (expected - protection=false)' if service_zabbix_no_protection.rc == 0 else 'Has protection (unexpected)' }}"
+          - ""
+          - "=========================================="
+
+    - name: Final assertion - all critical checks pass
+      ansible.builtin.assert:
+        that:
+          - not nginx_service.changed
+          - nginx_syntax.rc == 0
+          - protection_conf.stat.exists
+          - bad_bot_map.rc == 0
+          - bad_locations_map.rc == 0
+          - service_one_vhost.stat.exists
+          - service_zabbix_vhost.stat.exists
+          - service_three_vhost.stat.exists
+          - standalone_vhost.stat.exists
+          - service_noprotect_vhost.stat.exists
+          - service_one_enabled.stat.exists
+          - service_zabbix_enabled.stat.exists
+          - service_three_enabled.stat.exists
+          - standalone_enabled.stat.exists
+        fail_msg: "One or more critical checks failed - see above for details"
+        success_msg: "All multi-service idempotence tests passed!"

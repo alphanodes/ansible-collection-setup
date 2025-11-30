@@ -28,18 +28,15 @@
     path: /etc/nginx/nginx.conf.dpkg-dist
     state: absent
 
+# Protection maps are always installed - they define nginx map variables
+# ($bad_bot, $bad_locations, $not_allowed_method, $private_network)
+# These maps have no effect unless a vhost explicitly uses them.
+# Per-vhost usage is controlled by nginx_with_protection in vhost.j2
 - name: Install maps configuration for protection
   ansible.builtin.copy:
     src: nginx/conf.d/protection.conf
     dest: /etc/nginx/conf.d/protection.conf
     mode: '0644'
-  when: nginx_with_protection
-
-- name: Remove protection maps because its disabled
-  ansible.builtin.file:
-    path: /etc/nginx/conf.d/protection.conf
-    state: absent
-  when: not nginx_with_protection
 
 - name: Get fastcgi_params.dpkg-dist file infos
   ansible.builtin.stat:
@@ -96,20 +93,27 @@
       when:
         - nginx_resolver | length < 1
 
+# SSL config is managed only on first nginx_mono call (host-level setting)
+# Services can set nginx_with_ssl in their include_role vars for their own vhost,
+# but this should not affect the global ssl.conf managed by the first caller
 - name: Setup SSL configuration
   ansible.builtin.template:
     src: ssl.j2
     dest: /etc/nginx/conf.d/ssl.conf
     mode: '0644'
   notify: Restart nginx
-  when: nginx_with_ssl
+  when:
+    - nginx_with_ssl
+    - _nginx_mono_setup_done is not defined
 
 - name: Remove SSL configuration
   ansible.builtin.file:
     path: /etc/nginx/conf.d/ssl.conf
     state: absent
   notify: Restart nginx
-  when: not nginx_with_ssl
+  when:
+    - not nginx_with_ssl
+    - _nginx_mono_setup_done is not defined
 
 - name: Remove obsolete configuration files
   ansible.builtin.file:
@@ -194,3 +198,9 @@
     - 403.html
     - 404.html
     - 502.html
+
+# Mark setup as done to prevent subsequent include_role calls from modifying global config
+- name: Mark nginx_mono setup as complete
+  ansible.builtin.set_fact:
+    _nginx_mono_setup_done: true
+  when: _nginx_mono_setup_done is not defined
