@@ -48,7 +48,7 @@ gitlab_nginx_listen_addresses:
   - '*'
   - '[::]'
 
-gitlab_nginx_ssl_protocols: "{{ nginx_ssl_protocols | default('TLSv1.2 TLSv1.3') }}"
+gitlab_nginx_ssl_protocols: "{{ nginx_ssl_protocols }}"
 
 gitlab_registry_nginx_listen_addresses: '{{ gitlab_nginx_listen_addresses }}'
 gitlab_pages_nginx_listen_addresses: '{{ gitlab_nginx_listen_addresses }}'

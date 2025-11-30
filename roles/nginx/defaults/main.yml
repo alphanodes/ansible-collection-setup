@@ -70,7 +70,7 @@ nginx_resolver: []
 # @see https://ssl-config.mozilla.org
 # @see https://cipherli.st/
 # @see https://www.sherbers.de/howto/nginx/
-nginx_ssl_protocols: 'TLSv1.2 TLSv1.3'
+# nginx_ssl_protocols is defined in common role
 nginx_ssl_ciphers: ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
 nginx_ssl_prefer_server_ciphers: false
 nginx_ssl_session_cache: 'shared:SSL:10m'
