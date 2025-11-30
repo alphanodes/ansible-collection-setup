@@ -37,6 +37,7 @@ common_packages:
 # caching_sha2_password or auth_socket
 mysql_root_plugin: caching_sha2_password
 mysql_socket: /run/mysqld/mysqld.sock
+mysql_socket_force: false
 
 nginx_ssl_listen_option: "ssl{{ ' http2' if ansible_facts.distribution != 'Debian' or ansible_facts.distribution_major_version != '13' else '' }}"
 
