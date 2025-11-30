@@ -1,0 +1,157 @@
+---
+# Verify for Cluster Frontend Mode: nginx + PHP-FPM, but NO MySQL server
+- name: Verify - Cluster Frontend
+  hosts: all
+  gather_facts: false
+  tasks:
+    # === SERVICE CHECKS ===
+
+    - name: Check if nginx is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+      check_mode: true
+      register: nginx_service
+      failed_when: nginx_service.changed
+
+    - name: Check nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax
+      changed_when: false
+
+    - name: Check if php-fpm is running
+      ansible.builtin.shell: systemctl is-active php*-fpm
+      register: phpfpm_service
+      changed_when: false
+      failed_when: phpfpm_service.rc != 0
+
+    # === MYSQL MUST NOT BE INSTALLED ===
+
+    - name: Check mysql server is NOT installed
+      ansible.builtin.command: which mysqld
+      register: mysqld_installed
+      changed_when: false
+      failed_when: mysqld_installed.rc == 0
+
+    - name: Check mysql service does NOT exist
+      ansible.builtin.command: systemctl list-units --type=service --all mysql.service
+      register: mysql_service_check
+      changed_when: false
+
+    - name: Verify mysql service is not active
+      ansible.builtin.assert:
+        that:
+          - "'mysql.service' not in mysql_service_check.stdout or 'not-found' in mysql_service_check.stdout or 'inactive' in mysql_service_check.stdout"
+        fail_msg: "MySQL server should NOT be installed in frontend cluster mode!"
+
+    # === MYSQL CLIENT SHOULD BE INSTALLED ===
+
+    - name: Check mysql client is installed
+      ansible.builtin.command: which mysql
+      register: mysql_client_installed
+      changed_when: false
+      failed_when: mysql_client_installed.rc != 0
+
+    # === VHOST CONFIGURATION CHECKS ===
+
+    - name: Check if matomo vhost config exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/matomo.conf
+      register: matomo_vhost
+
+    - name: Verify matomo vhost exists
+      ansible.builtin.assert:
+        that:
+          - matomo_vhost.stat.exists
+        fail_msg: "matomo vhost configuration not found"
+
+    - name: Verify matomo vhost is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/matomo.conf
+      register: matomo_enabled
+
+    - name: Verify matomo vhost is enabled
+      ansible.builtin.assert:
+        that:
+          - matomo_enabled.stat.exists
+        fail_msg: "matomo vhost not enabled"
+
+    # === PHP-FPM SOCKET CHECK ===
+
+    - name: Find PHP-FPM socket
+      ansible.builtin.shell: set -o pipefail && ls /run/php/php*-fpm.sock 2>/dev/null | head -1
+      args:
+        executable: /bin/bash
+      register: fpm_socket
+      changed_when: false
+
+    - name: Verify PHP-FPM socket exists
+      ansible.builtin.assert:
+        that:
+          - fpm_socket.stdout | length > 0
+        fail_msg: "PHP-FPM socket not found"
+
+    # === SECURITY LOCATION CHECKS ===
+
+    - name: Check vhost denies sensitive directories
+      ansible.builtin.command: grep -E "console|config|tmp|core|lang" /etc/nginx/sites-available/matomo.conf
+      register: deny_sensitive
+      changed_when: false
+      failed_when: deny_sensitive.rc != 0
+
+    # === HTTP ENDPOINT TESTS ===
+
+    - name: Test matomo index.php via HTTPS
+      ansible.builtin.command: >
+        curl -sk -o /dev/null -w '%{http_code}' -H 'Host: matomo.local'
+        https://127.0.0.1/index.php
+      register: test_index
+      changed_when: false
+      failed_when: test_index.stdout not in ['200', '302', '500']
+
+    # === SECURITY TESTS ===
+
+    - name: Test /config/ is denied
+      ansible.builtin.command: >
+        curl -sk -o /dev/null -w '%{http_code}' -H 'Host: matomo.local'
+        https://127.0.0.1/config/
+      register: test_config_denied
+      changed_when: false
+      failed_when: test_config_denied.stdout != '403'
+
+    # === ZABBIX VHOST CHECK (enabled in cluster frontend) ===
+
+    - name: Check Zabbix monitoring vhost is configured
+      ansible.builtin.command: grep -E "listen.*8443" /etc/nginx/sites-available/matomo.conf
+      register: zabbix_vhost
+      changed_when: false
+      # Don't fail - just check if present
+
+    # === DISPLAY RESULTS ===
+
+    - name: Display test results
+      ansible.builtin.debug:
+        msg:
+          - "=== MATOMO CLUSTER FRONTEND MODE TESTS ==="
+          - ""
+          - "--- Services ---"
+          - "Nginx service: {{ 'OK' if not nginx_service.changed else 'FAILED' }}"
+          - "Nginx syntax: {{ 'OK' if nginx_syntax.rc == 0 else 'FAILED' }}"
+          - "PHP-FPM service: {{ 'OK' if phpfpm_service.rc == 0 else 'FAILED' }}"
+          - ""
+          - "--- MySQL (Server NOT installed, Client installed) ---"
+          - "MySQL server NOT installed: {{ 'OK' if mysqld_installed.rc != 0 else 'FAILED - should not be here!' }}"
+          - "MySQL client installed: {{ 'OK' if mysql_client_installed.rc == 0 else 'FAILED' }}"
+          - ""
+          - "--- Configuration ---"
+          - "Matomo vhost exists: {{ 'OK' if matomo_vhost.stat.exists else 'FAILED' }}"
+          - "Matomo vhost enabled: {{ 'OK' if matomo_enabled.stat.exists else 'FAILED' }}"
+          - "PHP-FPM socket: {{ 'OK' if fpm_socket.stdout | length > 0 else 'FAILED' }}"
+          - "Zabbix vhost (8443): {{ 'OK' if zabbix_vhost.rc == 0 else 'Not configured' }}"
+          - ""
+          - "--- Security & Endpoints ---"
+          - "index.php accessible: {{ test_index.stdout }} {{ 'OK' if test_index.stdout in ['200', '302', '500'] else 'FAILED' }}"
+          - "/config/ denied: {{ test_config_denied.stdout }} {{ 'OK' if test_config_denied.stdout == '403' else 'SECURITY BREACH!' }}"
+          - "Deny sensitive dirs: {{ 'OK' if deny_sensitive.rc == 0 else 'FAILED' }}"
+          - ""
+          - "=== CLUSTER FRONTEND MODE SUCCESS ==="

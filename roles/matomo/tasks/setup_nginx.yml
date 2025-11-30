@@ -24,23 +24,68 @@
     vhost_ssl_with_trusted_cert: "{{ (trusted_cert.stat.exists | default(false)) | bool }}"
   when: not (matomo_vhost_letsencrypt | default(false) | bool)
 
-- name: Update matomo vhost configuration
-  ansible.builtin.template:
-    src: nginx/sites-available/matomo.j2
-    dest: /etc/nginx/sites-available/matomo.conf
-    mode: '0644'
+- name: Setup nginx_mono and configure matomo vhost
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nginx_mono
   vars:
     php_fpm_custom_listen: "{{ php_fpm_base + '-' + matomo_php_fpm_pool + '.sock' if matomo_php_fpm_pool is defined else php_fpm_listen }}"
-  notify: Reload nginx
-
-- name: Ensure matomo vhost is enabled
-  ansible.builtin.file:
-    src: /etc/nginx/sites-available/matomo.conf
-    dest: /etc/nginx/sites-enabled/matomo.conf
-    state: link
-  notify: Reload nginx
-
-- name: Remove subdiretory configuration file
-  ansible.builtin.file:
-    path: /etc/nginx/matomo.conf
-    state: absent
+    nginx_mono_service_name: matomo
+    nginx_mono_service_enabled: true
+    nginx_mono_service_config:
+      server_name: "{{ matomo_vhost_server }}"
+      root: "{{ matomo_dir }}"
+      index: "index.php"
+      vhost_default: "{{ matomo_vhost_default | default(false) }}"
+      vhost_for_zabbix: "{{ matomo_vhost_for_zabbix | default(false) }}"
+      letsencrypt: "{{ matomo_vhost_letsencrypt | default(false) }}"
+      letsencrypt_cert: "{{ matomo_vhost_letsencrypt_cert | default('') }}"
+      letsencrypt_key: "{{ matomo_vhost_letsencrypt_key | default('') }}"
+      letsencrypt_trusted_cert: "{{ matomo_vhost_letsencrypt_trusted_cert | default('') }}"
+      ssl_cert: "{{ matomo_vhost_ssl_cert | default('') }}"
+      ssl_only: "{{ matomo_vhost_ssl_only | default(true) }}"
+      access_log: "{{ matomo_with_access_log | default(true) }}"
+      block_hidden_files: true
+      additional_headers:
+        - "Referrer-Policy origin always"
+        - "X-Content-Type-Options 'nosniff' always"
+        - "X-XSS-Protection '1; mode=block' always"
+      vhost_includes: "{{ matomo_vhost_includes | default([]) }}"
+      locations:
+        # PHP-FPM for allowed files only
+        - name: "~ ^/(index|matomo|piwik|js/index|plugins/HeatmapSessionRecording/configs)\\.php$"
+          with_fpm: true
+        # Deny all other PHP files
+        - name: "~* ^.+\\.php$"
+          actions:
+            - "deny all"
+            - "return 403"
+        # Deny sensitive directories
+        - name: "~ ^/(console|config|tmp|core|lang)"
+          actions:
+            - "deny all"
+            - "return 403"
+        # Deny libs, vendor, plugins, misc, node_modules
+        - name: "~ ^/(libs|vendor|plugins|misc|node_modules)"
+          actions:
+            - "deny all"
+            - "return 403"
+        # Preview JS - no cache
+        - name: "~ js/container_.*_preview\\.js$"
+          raw_actions:
+            - "expires off;"
+            - "add_header Cache-Control 'private, no-cache, no-store';"
+        # Static files with cache
+        - name: "~ \\.(gif|ico|jpg|png|svg|js|css|htm|html|mp3|mp4|wav|ogg|avi|ttf|eot|woff|woff2)$"
+          raw_actions:
+            - "allow all;"
+            - "expires 1h;"
+            - "add_header Pragma public;"
+            - "add_header Cache-Control 'public';"
+        # Text files in root
+        - name: "~/(.*\\.md|LEGALNOTICE|LICENSE)"
+          raw_actions:
+            - "default_type text/plain;"
+        # Main location
+        - name: "/"
+          raw_actions:
+            - "try_files $uri $uri/ =404;"

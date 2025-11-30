@@ -3,17 +3,17 @@
 dependencies:
   - role: alphanodes.setup.common
     public: true
+  - role: alphanodes.setup.rsync
   - role: alphanodes.setup.ssl
-    when: matomo_with_nginx
-  - role: alphanodes.setup.mysql_client
-    # we always want mysql client on fronend
     when: matomo_with_nginx
   - role: alphanodes.setup.php_fpm
     when: matomo_with_nginx
   - role: alphanodes.setup.php_cli
     when: not matomo_with_nginx
-  - role: alphanodes.setup.nginx
-    when: matomo_with_nginx
+  # mysql_client must come AFTER php_cli/php_fpm so php-mysql driver gets installed
+  - role: alphanodes.setup.mysql_client
+    public: true
+  # Note: nginx is now installed via nginx_mono include_role in setup_nginx.yml
 
 galaxy_info:
   description: Setup matomo
@@ -24,10 +24,8 @@ galaxy_info:
   platforms:
     - name: Ubuntu
       versions:
-        - jammy
         - noble
     - name: Debian
       versions:
-        - bullseye
         - bookworm
         - trixie

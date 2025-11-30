@@ -1,5 +1,7 @@
 ---
-- name: Converge
+# Cluster Frontend Scenario: nginx + PHP-FPM, but NO MySQL server
+# Use case: Frontend/Tracker nodes connecting to external database
+- name: Converge - Cluster Frontend (no MySQL)
   hosts: all
   become: true
   vars:
@@ -19,27 +21,21 @@
     # PHP-FPM settings
     php_fpm_listen: /run/php/php-fpm.sock
 
-    # MySQL settings for testing
-    mysql_root_password: 'test_root_password'
-    # Use socket authentication for reliable connection in containers
-    mysql_socket_force: true
-    # Use /tmp for tmpdir in Docker containers to avoid /run/mysqld permission issues
-    mysql_server_tmpdir: /tmp
+    # MySQL client version for Debian (Ubuntu uses native repos)
     # MySQL 8.0 for Debian 12 (bookworm), 8.4-lts for Debian 13+ (trixie)
-    # Ubuntu uses native repos with MySQL 8.0 (no Oracle repo needed)
     mysql_apt_components: "{{ 'mysql-8.0' if ansible_facts.distribution_release == 'bookworm' else 'mysql-8.4-lts' }}"
 
-    # Matomo configuration - Standard mode (nginx + MySQL)
+    # Matomo configuration - Cluster Frontend mode (nginx, NO MySQL)
     matomo_with_nginx: true
-    matomo_with_mysql: true
-    # Skip core:update in tests - we don't have actual DB tables for upgrade testing
-    sync_master: true
+    matomo_with_mysql: false
     matomo_vhost_server: matomo.local
     matomo_vhost_letsencrypt: false
     matomo_vhost_ssl_cert: matomo
     matomo_vhost_ssl_only: true
-    matomo_vhost_for_zabbix: false
-    matomo_db_password: 'test_matomo_password'
+    matomo_vhost_for_zabbix: true
+    # External database connection (simulated)
+    matomo_db_host: 'db.example.com'
+    matomo_db_password: 'external_db_password'
 
   pre_tasks:
     - name: Update apt cache
@@ -48,22 +44,13 @@
         cache_valid_time: 600
       changed_when: false
 
-    # Note: matomo role sets group to 'mysql' when matomo_with_mysql=true and mode 0750
-    # We only create the directory here, role will set correct owner/group/mode
-    # Using a two-step approach for idempotency: create first, set perms only if created
     - name: Create matomo directory for testing
       ansible.builtin.file:
         path: /srv/matomo
         state: directory
-      register: matomo_dir_result
-
-    - name: Set initial matomo directory permissions
-      ansible.builtin.file:
-        path: /srv/matomo
         owner: www-data
         group: www-data
-        mode: '0750'
-      when: matomo_dir_result.changed
+        mode: '0755'
 
     - name: Create matomo config directory for testing
       ansible.builtin.file:
@@ -81,20 +68,18 @@
         group: www-data
         mode: '0755'
 
-    # Use force: false to not overwrite files on subsequent runs (idempotent)
     - name: Create dummy index.php for testing
       ansible.builtin.copy:
         content: |
           <?php
-          echo 'Matomo Test';
+          echo 'Matomo Cluster Frontend';
           phpinfo();
         dest: /srv/matomo/index.php
         owner: www-data
         group: www-data
         mode: '0644'
-        force: false
 
-    - name: Create dummy matomo.php for testing (allowed FPM location)
+    - name: Create dummy matomo.php for testing
       ansible.builtin.copy:
         content: |
           <?php
@@ -103,18 +88,6 @@
         owner: www-data
         group: www-data
         mode: '0644'
-        force: false
-
-    - name: Create dummy piwik.php for testing (legacy entry point)
-      ansible.builtin.copy:
-        content: |
-          <?php
-          echo 'Piwik Legacy Entry';
-        dest: /srv/matomo/piwik.php
-        owner: www-data
-        group: www-data
-        mode: '0644'
-        force: false
 
     - name: Create js directory for js/index.php testing
       ansible.builtin.file:
@@ -133,37 +106,8 @@
         owner: www-data
         group: www-data
         mode: '0644'
-        force: false
-
-    - name: Create plugins directory for testing
-      ansible.builtin.file:
-        path: /srv/matomo/plugins
-        state: directory
-        owner: www-data
-        group: www-data
-        mode: '0755'
-
-    - name: Create HeatmapSessionRecording plugin directory
-      ansible.builtin.file:
-        path: /srv/matomo/plugins/HeatmapSessionRecording
-        state: directory
-        owner: www-data
-        group: www-data
-        mode: '0755'
-
-    - name: Create configs.php for HeatmapSessionRecording testing
-      ansible.builtin.copy:
-        content: |
-          <?php
-          echo 'HeatmapSessionRecording Configs';
-        dest: /srv/matomo/plugins/HeatmapSessionRecording/configs.php
-        owner: www-data
-        group: www-data
-        mode: '0644'
-        force: false
 
     - name: Create sensitive directories for deny testing
-      # Note: console is NOT in this list because Matomo installs it as a file (PHP CLI)
       ansible.builtin.file:
         path: "/srv/matomo/{{ item }}"
         state: directory
@@ -171,18 +115,17 @@
         group: www-data
         mode: '0755'
       loop:
+        - console
         - config
         - tmp
         - core
         - lang
         - libs
         - vendor
+        - plugins
         - misc
         - node_modules
 
-    # Config with correct format matching what the matomo role expects:
-    # - Quotes around database values
-    # - show_update_notification_to_superusers_only setting
     - name: Create config.ini.php for matomo config
       ansible.builtin.copy:
         content: |
@@ -190,17 +133,15 @@
           force_ssl = 1
           salt = testsalt12345678
           [database]
-          host = "localhost"
-          username = "matomo"
-          password = "test_matomo_password"
-          dbname = "matomo"
+          host = db.example.com
+          username = matomo
+          password = external_db_password
+          dbname = matomo
           tables_prefix = piwik_
-          show_update_notification_to_superusers_only = 1
         dest: /srv/matomo/config/config.ini.php
         owner: www-data
         group: www-data
         mode: '0660'
-        force: false
 
   tasks:
     - name: Include matomo role

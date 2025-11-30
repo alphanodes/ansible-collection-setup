@@ -1,0 +1,122 @@
+---
+# Verify for Cluster Archiver Mode: NO nginx, NO MySQL
+- name: Verify - Cluster Archiver
+  hosts: all
+  gather_facts: false
+  tasks:
+    # === NGINX MUST NOT BE INSTALLED ===
+
+    - name: Check nginx is NOT installed
+      ansible.builtin.command: which nginx
+      register: nginx_installed
+      changed_when: false
+      failed_when: nginx_installed.rc == 0
+
+    - name: Check nginx service does NOT exist
+      ansible.builtin.command: systemctl list-units --type=service --all nginx.service
+      register: nginx_service_check
+      changed_when: false
+
+    - name: Verify nginx service is not active
+      ansible.builtin.assert:
+        that:
+          - "'nginx.service' not in nginx_service_check.stdout or 'not-found' in nginx_service_check.stdout or 'inactive' in nginx_service_check.stdout"
+        fail_msg: "nginx should NOT be installed in archiver mode!"
+
+    # === MYSQL MUST NOT BE INSTALLED ===
+
+    - name: Check mysql server is NOT installed
+      ansible.builtin.command: which mysqld
+      register: mysqld_installed
+      changed_when: false
+      failed_when: mysqld_installed.rc == 0
+
+    - name: Check mysql service does NOT exist
+      ansible.builtin.command: systemctl list-units --type=service --all mysql.service
+      register: mysql_service_check
+      changed_when: false
+
+    - name: Verify mysql service is not active
+      ansible.builtin.assert:
+        that:
+          - "'mysql.service' not in mysql_service_check.stdout or 'not-found' in mysql_service_check.stdout or 'inactive' in mysql_service_check.stdout"
+        fail_msg: "MySQL server should NOT be installed in archiver mode!"
+
+    # === PHP-CLI MUST BE INSTALLED ===
+
+    - name: Check PHP CLI is installed
+      ansible.builtin.command: which php
+      register: php_cli_installed
+      changed_when: false
+      failed_when: php_cli_installed.rc != 0
+
+    - name: Check PHP version
+      ansible.builtin.command: php -v
+      register: php_version
+      changed_when: false
+
+    - name: Verify PHP is working
+      ansible.builtin.assert:
+        that:
+          - "'PHP' in php_version.stdout"
+        fail_msg: "PHP CLI is not working"
+
+    # === MATOMO DIRECTORY STRUCTURE ===
+
+    - name: Check matomo directory exists
+      ansible.builtin.stat:
+        path: /srv/matomo
+      register: matomo_dir
+
+    - name: Verify matomo directory exists
+      ansible.builtin.assert:
+        that:
+          - matomo_dir.stat.exists
+          - matomo_dir.stat.isdir
+        fail_msg: "Matomo directory not found"
+
+    - name: Check matomo config exists
+      ansible.builtin.stat:
+        path: /srv/matomo/config/config.ini.php
+      register: matomo_config
+
+    - name: Verify matomo config exists
+      ansible.builtin.assert:
+        that:
+          - matomo_config.stat.exists
+        fail_msg: "Matomo config not found"
+
+    # === NO VHOST SHOULD EXIST ===
+
+    - name: Check matomo vhost does NOT exist
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/matomo.conf
+      register: matomo_vhost
+
+    - name: Verify no vhost in archiver mode
+      ansible.builtin.assert:
+        that:
+          - not matomo_vhost.stat.exists
+        fail_msg: "Matomo vhost should NOT exist in archiver mode!"
+
+    # === DISPLAY RESULTS ===
+
+    - name: Display test results
+      ansible.builtin.debug:
+        msg:
+          - "=== MATOMO CLUSTER ARCHIVER MODE TESTS ==="
+          - ""
+          - "--- Services NOT Installed (correct) ---"
+          - "nginx NOT installed: {{ 'OK' if nginx_installed.rc != 0 else 'FAILED - nginx should not be here!' }}"
+          - "MySQL NOT installed: {{ 'OK' if mysqld_installed.rc != 0 else 'FAILED - MySQL should not be here!' }}"
+          - ""
+          - "--- PHP-CLI (required) ---"
+          - "PHP CLI installed: {{ 'OK' if php_cli_installed.rc == 0 else 'FAILED' }}"
+          - "PHP version: {{ php_version.stdout_lines[0] | default('unknown') }}"
+          - ""
+          - "--- Matomo Structure ---"
+          - "Matomo directory: {{ 'OK' if matomo_dir.stat.exists else 'FAILED' }}"
+          - "Matomo config: {{ 'OK' if matomo_config.stat.exists else 'FAILED' }}"
+          - "No vhost (correct): {{ 'OK' if not matomo_vhost.stat.exists else 'FAILED - vhost should not exist!' }}"
+          - ""
+          - "=== CLUSTER ARCHIVER MODE SUCCESS ==="

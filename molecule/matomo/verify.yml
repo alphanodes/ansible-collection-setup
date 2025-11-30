@@ -1,0 +1,298 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    # === SERVICE CHECKS ===
+
+    - name: Check if nginx is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+      check_mode: true
+      register: nginx_service
+      failed_when: nginx_service.changed
+
+    - name: Check nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax
+      changed_when: false
+
+    - name: Find PHP-FPM service name
+      ansible.builtin.shell: set -o pipefail && systemctl list-units --type=service --state=running --no-legend | grep 'php.*fpm' | awk '{print $1}'
+      args:
+        executable: /bin/bash
+      register: php_fpm_service_name
+      changed_when: false
+
+    - name: Check if php-fpm is running
+      ansible.builtin.service:
+        name: "{{ php_fpm_service_name.stdout }}"
+        state: started
+      check_mode: true
+      register: phpfpm_service
+      failed_when: phpfpm_service.changed
+
+    - name: Check if mysql is running
+      ansible.builtin.service:
+        name: mysql
+        state: started
+      check_mode: true
+      register: mysql_service
+      failed_when: mysql_service.changed
+
+    # === VHOST CONFIGURATION CHECKS ===
+
+    - name: Check if matomo vhost config exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/matomo.conf
+      register: matomo_vhost
+
+    - name: Verify matomo vhost exists
+      ansible.builtin.assert:
+        that:
+          - matomo_vhost.stat.exists
+        fail_msg: "matomo vhost configuration not found"
+
+    - name: Verify matomo vhost is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/matomo.conf
+      register: matomo_enabled
+
+    - name: Verify matomo vhost is enabled
+      ansible.builtin.assert:
+        that:
+          - matomo_enabled.stat.exists
+        fail_msg: "matomo vhost not enabled"
+
+    # === PHP-FPM SOCKET CHECK ===
+
+    - name: Find PHP-FPM socket
+      ansible.builtin.shell: set -o pipefail && ls /run/php/php*-fpm.sock 2>/dev/null | head -1
+      args:
+        executable: /bin/bash
+      register: fpm_socket
+      changed_when: false
+
+    - name: Verify PHP-FPM socket exists
+      ansible.builtin.assert:
+        that:
+          - fpm_socket.stdout | length > 0
+        fail_msg: "PHP-FPM socket not found"
+
+    - name: Check vhost has PHP-FPM configuration
+      ansible.builtin.command: grep -q "fastcgi_pass" /etc/nginx/sites-available/matomo.conf
+      register: fpm_config
+      changed_when: false
+      failed_when: fpm_config.rc != 0
+
+    # === SECURITY LOCATION CHECKS (Critical!) ===
+
+    - name: Check vhost denies hidden files (.htaccess etc)
+      ansible.builtin.command: grep -E "location ~ /\\\." /etc/nginx/sites-available/matomo.conf
+      register: deny_hidden
+      changed_when: false
+      failed_when: deny_hidden.rc != 0
+
+    - name: Check vhost denies sensitive directories (console, config, tmp, core, lang)
+      ansible.builtin.command: grep -E "console|config|tmp|core|lang" /etc/nginx/sites-available/matomo.conf
+      register: deny_sensitive
+      changed_when: false
+      failed_when: deny_sensitive.rc != 0
+
+    - name: Check vhost denies libs/vendor/plugins/misc/node_modules
+      ansible.builtin.command: grep -E "libs|vendor|plugins|misc|node_modules" /etc/nginx/sites-available/matomo.conf
+      register: deny_libs
+      changed_when: false
+      failed_when: deny_libs.rc != 0
+
+    - name: Check vhost denies all other PHP files
+      ansible.builtin.command: grep -E "location.*\\.php\$" /etc/nginx/sites-available/matomo.conf
+      register: deny_php
+      changed_when: false
+      failed_when: deny_php.rc != 0
+
+    # === ALLOWED PHP LOCATIONS CHECK ===
+
+    - name: Check vhost allows index.php
+      ansible.builtin.command: grep -E "index.*\.php" /etc/nginx/sites-available/matomo.conf
+      register: allow_index
+      changed_when: false
+      failed_when: allow_index.rc != 0
+
+    - name: Check vhost allows matomo.php
+      ansible.builtin.command: grep -q "matomo" /etc/nginx/sites-available/matomo.conf
+      register: allow_matomo
+      changed_when: false
+      failed_when: allow_matomo.rc != 0
+
+    # === HTTP ENDPOINT TESTS ===
+
+    - name: Test matomo index.php via HTTPS (should work)
+      ansible.builtin.command: >
+        curl -sk -o /dev/null -w '%{http_code}' -H 'Host: matomo.local'
+        https://127.0.0.1/index.php
+      register: test_index
+      changed_when: false
+      failed_when: test_index.stdout not in ['200', '302', '500']
+
+    - name: Test matomo.php via HTTPS (should work)
+      ansible.builtin.command: >
+        curl -sk -o /dev/null -w '%{http_code}' -H 'Host: matomo.local'
+        https://127.0.0.1/matomo.php
+      register: test_matomo
+      changed_when: false
+      failed_when: test_matomo.stdout not in ['200', '302', '500']
+
+    - name: Test piwik.php via HTTPS (legacy, should work)
+      ansible.builtin.command: >
+        curl -sk -o /dev/null -w '%{http_code}' -H 'Host: matomo.local'
+        https://127.0.0.1/piwik.php
+      register: test_piwik
+      changed_when: false
+      failed_when: test_piwik.stdout not in ['200', '302', '500']
+
+    - name: Test js/index.php via HTTPS (tracker, should work)
+      ansible.builtin.command: >
+        curl -sk -o /dev/null -w '%{http_code}' -H 'Host: matomo.local'
+        https://127.0.0.1/js/index.php
+      register: test_js_index
+      changed_when: false
+      failed_when: test_js_index.stdout not in ['200', '302', '500']
+
+    # === SECURITY TESTS - DENY CHECKS ===
+
+    - name: Test /config/ is denied (SECURITY CRITICAL)
+      ansible.builtin.command: >
+        curl -sk -o /dev/null -w '%{http_code}' -H 'Host: matomo.local'
+        https://127.0.0.1/config/
+      register: test_config_denied
+      changed_when: false
+      failed_when: test_config_denied.stdout != '403'
+
+    - name: Test /config/config.php is denied (SECURITY CRITICAL)
+      ansible.builtin.command: >
+        curl -sk -o /dev/null -w '%{http_code}' -H 'Host: matomo.local'
+        https://127.0.0.1/config/config.php
+      register: test_config_php_denied
+      changed_when: false
+      failed_when: test_config_php_denied.stdout != '403'
+
+    - name: Test /tmp/ is denied
+      ansible.builtin.command: >
+        curl -sk -o /dev/null -w '%{http_code}' -H 'Host: matomo.local'
+        https://127.0.0.1/tmp/
+      register: test_tmp_denied
+      changed_when: false
+      failed_when: test_tmp_denied.stdout != '403'
+
+    - name: Test /core/ is denied
+      ansible.builtin.command: >
+        curl -sk -o /dev/null -w '%{http_code}' -H 'Host: matomo.local'
+        https://127.0.0.1/core/
+      register: test_core_denied
+      changed_when: false
+      failed_when: test_core_denied.stdout != '403'
+
+    - name: Test /vendor/ is denied
+      ansible.builtin.command: >
+        curl -sk -o /dev/null -w '%{http_code}' -H 'Host: matomo.local'
+        https://127.0.0.1/vendor/
+      register: test_vendor_denied
+      changed_when: false
+      failed_when: test_vendor_denied.stdout != '403'
+
+    - name: Test /.htaccess is denied (404 = hidden, security best practice)
+      ansible.builtin.command: >
+        curl -sk -o /dev/null -w '%{http_code}' -H 'Host: matomo.local'
+        https://127.0.0.1/.htaccess
+      register: test_htaccess_denied
+      changed_when: false
+      failed_when: test_htaccess_denied.stdout != '404'
+
+    - name: Test random PHP file is denied (e.g. /evil.php)
+      ansible.builtin.command: >
+        curl -sk -o /dev/null -w '%{http_code}' -H 'Host: matomo.local'
+        https://127.0.0.1/evil.php
+      register: test_random_php_denied
+      changed_when: false
+      failed_when: test_random_php_denied.stdout not in ['403', '404']
+
+    # === DATABASE CHECK ===
+
+    - name: Check matomo database exists
+      ansible.builtin.command: >
+        mysql -e "SHOW DATABASES LIKE 'matomo';"
+      register: matomo_db
+      changed_when: false
+
+    - name: Verify matomo database exists
+      ansible.builtin.assert:
+        that:
+          - "'matomo' in matomo_db.stdout"
+        fail_msg: "matomo database not found"
+
+    # === SSL CONFIGURATION CHECK ===
+
+    - name: Check SSL certificate configuration in vhost
+      ansible.builtin.command: grep -E "ssl_certificate" /etc/nginx/sites-available/matomo.conf
+      register: ssl_config
+      changed_when: false
+      failed_when: ssl_config.rc != 0
+
+    # === HTTP TO HTTPS REDIRECT CHECK ===
+
+    - name: Test HTTP to HTTPS redirect
+      ansible.builtin.command: >
+        curl -s -o /dev/null -w '%{http_code}' -H 'Host: matomo.local'
+        http://127.0.0.1/
+      register: test_http_redirect
+      changed_when: false
+      failed_when: test_http_redirect.stdout != '301'
+
+    # === DISPLAY RESULTS ===
+
+    - name: Display test results
+      ansible.builtin.debug:
+        msg:
+          - "=== MATOMO + NGINX INTEGRATION TESTS ==="
+          - ""
+          - "--- Service Status ---"
+          - "Nginx service: {{ 'OK' if not nginx_service.changed else 'FAILED' }}"
+          - "Nginx syntax: {{ 'OK' if nginx_syntax.rc == 0 else 'FAILED' }}"
+          - "PHP-FPM service: {{ 'OK' if not phpfpm_service.changed else 'FAILED' }}"
+          - "MySQL service: {{ 'OK' if not mysql_service.changed else 'FAILED' }}"
+          - ""
+          - "--- Configuration ---"
+          - "Matomo vhost exists: {{ 'OK' if matomo_vhost.stat.exists else 'FAILED' }}"
+          - "Matomo vhost enabled: {{ 'OK' if matomo_enabled.stat.exists else 'FAILED' }}"
+          - "PHP-FPM socket: {{ 'OK' if fpm_socket.stdout | length > 0 else 'FAILED' }}"
+          - "PHP-FPM in vhost: {{ 'OK' if fpm_config.rc == 0 else 'FAILED' }}"
+          - "SSL configured: {{ 'OK' if ssl_config.rc == 0 else 'FAILED' }}"
+          - "Database exists: {{ 'OK' if 'matomo' in matomo_db.stdout else 'FAILED' }}"
+          - ""
+          - "--- Security Locations (vhost config) ---"
+          - "Deny hidden files: {{ 'OK' if deny_hidden.rc == 0 else 'FAILED' }}"
+          - "Deny sensitive dirs: {{ 'OK' if deny_sensitive.rc == 0 else 'FAILED' }}"
+          - "Deny libs/vendor: {{ 'OK' if deny_libs.rc == 0 else 'FAILED' }}"
+          - "Deny other PHP: {{ 'OK' if deny_php.rc == 0 else 'FAILED' }}"
+          - ""
+          - "--- Allowed PHP Endpoints (HTTP) ---"
+          - "index.php: {{ test_index.stdout }} {{ 'OK' if test_index.stdout in ['200', '302', '500'] else 'FAILED' }}"
+          - "matomo.php: {{ test_matomo.stdout }} {{ 'OK' if test_matomo.stdout in ['200', '302', '500'] else 'FAILED' }}"
+          - "piwik.php: {{ test_piwik.stdout }} {{ 'OK' if test_piwik.stdout in ['200', '302', '500'] else 'FAILED' }}"
+          - "js/index.php: {{ test_js_index.stdout }} {{ 'OK' if test_js_index.stdout in ['200', '302', '500'] else 'FAILED' }}"
+          - ""
+          - "--- Security Tests (HTTP - must be 403) ---"
+          - "/config/: {{ test_config_denied.stdout }} {{ 'OK' if test_config_denied.stdout == '403' else 'SECURITY BREACH!' }}"
+          - "/config/config.php: {{ test_config_php_denied.stdout }} {{ 'OK' if test_config_php_denied.stdout == '403' else 'SECURITY BREACH!' }}"
+          - "/tmp/: {{ test_tmp_denied.stdout }} {{ 'OK' if test_tmp_denied.stdout == '403' else 'SECURITY BREACH!' }}"
+          - "/core/: {{ test_core_denied.stdout }} {{ 'OK' if test_core_denied.stdout == '403' else 'SECURITY BREACH!' }}"
+          - "/vendor/: {{ test_vendor_denied.stdout }} {{ 'OK' if test_vendor_denied.stdout == '403' else 'SECURITY BREACH!' }}"
+          - "/.htaccess: {{ test_htaccess_denied.stdout }} {{ 'OK' if test_htaccess_denied.stdout == '404' else 'SECURITY BREACH!' }}"
+          - "/evil.php: {{ test_random_php_denied.stdout }} {{ 'OK' if test_random_php_denied.stdout in ['403', '404'] else 'SECURITY BREACH!' }}"
+          - ""
+          - "--- Redirect ---"
+          - "HTTP→HTTPS: {{ test_http_redirect.stdout }} {{ 'OK' if test_http_redirect.stdout == '301' else 'FAILED' }}"
+          - ""
+          - "=== MATOMO INTEGRATION SUCCESS ==="

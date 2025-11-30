@@ -1,3 +1,21 @@
+{#
+  Custom Location Blocks
+  ======================
+
+  This template generates custom location blocks defined via instance.locations.
+
+  Each location can have:
+    - name: The location pattern (e.g., "= /index.php", "~ \.php$")
+    - rewrite: Optional rewrite rule
+    - action: Single nginx directive (e.g., "deny all")
+    - actions: List of nginx directives
+    - raw_actions: List of raw nginx directives (no semicolon added)
+    - return: HTTP return code/redirect
+    - with_fpm: FPM pool name for PHP processing (uses fpm.inc.j2)
+
+  with_fpm is used for whitelist FPM patterns where only specific PHP files
+  should be processed. See fpm.inc.j2 for documentation on FPM patterns.
+#}
   location = /favicon.ico {
     log_not_found off;
     access_log off;
@@ -42,6 +60,10 @@
 {% endif %}
 {% if location.return is defined %}
     return {{ location.return }};
+{% endif %}
+{% if location.with_fpm is defined and location.with_fpm %}
+{% set fpm_pool = location.with_fpm %}
+{% include 'includes/fpm.inc.j2' %}
 {% endif %}
   }
 {% endfor %}

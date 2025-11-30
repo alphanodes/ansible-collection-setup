@@ -1,0 +1,86 @@
+---
+# Cluster Archiver Scenario: NO nginx, NO MySQL - only PHP-CLI for cron jobs
+# Use case: Background archiver node running scheduled tasks via cron
+- name: Converge - Cluster Archiver (no nginx, no MySQL)
+  hosts: all
+  become: true
+  vars:
+    hoster: 'local'
+
+    # MySQL client version for Debian (Ubuntu uses native repos)
+    # MySQL 8.0 for Debian 12 (bookworm), 8.4-lts for Debian 13+ (trixie)
+    mysql_apt_components: "{{ 'mysql-8.0' if ansible_facts.distribution_release == 'bookworm' else 'mysql-8.4-lts' }}"
+
+    # Matomo configuration - Cluster Archiver mode (NO nginx, NO MySQL)
+    matomo_with_nginx: false
+    matomo_with_mysql: false
+    # Skip core:update in tests - we don't have actual DB tables for upgrade testing
+    sync_master: true
+    # External database connection (simulated)
+    matomo_db_host: 'db.example.com'
+    matomo_db_password: 'external_db_password'
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+    - name: Create matomo directory for testing
+      ansible.builtin.file:
+        path: /srv/matomo
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Create matomo config directory for testing
+      ansible.builtin.file:
+        path: /srv/matomo/config
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Create matomo misc directory for testing (geoip)
+      ansible.builtin.file:
+        path: /srv/matomo/misc
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Create matomo console script for testing
+      ansible.builtin.copy:
+        content: |
+          #!/usr/bin/env php
+          <?php
+          echo 'Matomo Console - Archiver Mode';
+        dest: /srv/matomo/console
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Create config.ini.php for matomo config
+      ansible.builtin.copy:
+        content: |
+          [General]
+          force_ssl = 1
+          salt = testsalt12345678
+          multi_server_environment = 1
+          [database]
+          host = db.example.com
+          username = matomo
+          password = external_db_password
+          dbname = matomo
+          tables_prefix = piwik_
+        dest: /srv/matomo/config/config.ini.php
+        owner: www-data
+        group: www-data
+        mode: '0660'
+
+  tasks:
+    - name: Include matomo role
+      ansible.builtin.include_role:
+        name: alphanodes.setup.matomo

@@ -10,14 +10,14 @@
     - mysql
   when: matomo_with_mysql
 
-- name: Include setup tasks
-  ansible.builtin.include_tasks: setup.yml
-  tags:
-    - matomo
-
 - name: Include MySQL tasks
   ansible.builtin.include_tasks: mysql.yml
   tags:
     - matomo
     - mysql
   when: matomo_with_mysql
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  tags:
+    - matomo

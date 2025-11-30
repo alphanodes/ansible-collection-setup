@@ -6,3 +6,4 @@
   ansible.builtin.systemd_service:
     name: apparmor
     state: restarted
+  ignore_errors: true

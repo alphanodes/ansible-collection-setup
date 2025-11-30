@@ -53,6 +53,7 @@ server {
 {% endif %}
 {% if instance.block_hidden_files | default(false) %}
   # Disable .htaccess and other hidden files
+  # Using 404 instead of 403 to not reveal file existence (security best practice)
   location ~ /\. {
     return 404;
   }
