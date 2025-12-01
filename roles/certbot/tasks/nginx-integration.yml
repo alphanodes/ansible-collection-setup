@@ -7,8 +7,8 @@
     path: "{{ certbot_webroot }}"
     state: directory
     mode: "0755"
-    owner: "{{ nginx_user }}"
-    group: "{{ nginx_group }}"
+    owner: root
+    group: root
 
 - name: Create acme-challenge nginx include
   ansible.builtin.template:
