@@ -64,6 +64,7 @@
 {% if location.with_fpm is defined and location.with_fpm %}
 {% set fpm_pool = location.with_fpm %}
 {% include 'includes/fpm.inc.j2' %}
+
 {% endif %}
   }
 {% endfor %}
