@@ -183,6 +183,93 @@ it MUST automatically generate the HTTP to HTTPS redirect for all SSL vhosts:
 - **Type 1 (Single vhost)**: ethercalc, grafana - one service per server
 - **Type 2 (Multiple vhosts)**: redmine, drupal - can manage multiple instances
 
+### Location Order is Critical (2025-12)
+
+**Critical Learning**: When migrating `locations` from old vhost templates to
+`nginx_mono_service_config.locations`, the **order of locations matters**!
+
+#### Why Order Matters
+
+In nginx, regex locations (`~` and `~*`) are evaluated in the order they appear
+in the config file. The **first match wins**. If a deny location comes before
+a static files location, assets can be blocked.
+
+**Example - Matomo Assets Blocked:**
+
+```nginx
+# WRONG ORDER (assets blocked):
+location ~ ^/(libs|vendor|plugins|misc|node_modules) {
+  deny all;
+  return 403;
+}
+
+location ~ \.(gif|ico|jpg|png|svg|js|css|...)$ {
+  allow all;
+  expires 1h;
+}
+```
+
+Request for `/plugins/Morpheus/images/logo.png`:
+
+1. First regex `~ ^/(libs|vendor|plugins|...)` matches → **403 Forbidden**
+2. Static files regex never reached!
+
+**Correct order:**
+
+```nginx
+# CORRECT ORDER (assets served):
+location ~ \.(gif|ico|jpg|png|svg|js|css|...)$ {
+  allow all;
+  expires 1h;
+}
+
+location ~ ^/(libs|vendor|plugins|misc|node_modules) {
+  deny all;
+  return 403;
+}
+```
+
+#### Migration Rule
+
+When migrating locations from old vhost templates:
+
+1. **Copy the exact order** from the working old template
+2. **Static file locations** must come BEFORE directory deny locations
+3. **Test with actual assets** after migration (icons, images, CSS, JS)
+4. **Compare generated config** with old working config side-by-side
+
+#### Reference Order for PHP Applications
+
+Based on working Matomo configuration:
+
+```yaml
+locations:
+  # 1. PHP-FPM whitelist (specific PHP files)
+  - name: "~ ^/(index|app)\\.php$"
+    with_fpm: true
+  # 2. Deny all other PHP
+  - name: "~* ^.+\\.php$"
+    actions: ["deny all", "return 403"]
+  # 3. Main location (try_files)
+  - name: "/"
+    raw_actions: ["try_files $uri $uri/ =404;"]
+  # 4. Deny sensitive directories (WITHOUT asset directories!)
+  - name: "~ ^/(config|tmp|core|lang)"
+    actions: ["deny all", "return 403"]
+  # 5. Special file handling (no-cache, etc.)
+  - name: "~ special_preview\\.js$"
+    raw_actions: ["expires off;"]
+  # 6. Static files - MUST come before libs/vendor/plugins!
+  - name: "~ \\.(gif|ico|jpg|png|svg|js|css|...)$"
+    raw_actions: ["allow all;", "expires 1h;"]
+  # 7. Deny libs/vendor/plugins - AFTER static files!
+  - name: "~ ^/(libs|vendor|plugins|misc|node_modules)"
+    actions: ["deny all", "return 403"]
+  # 8. Text files
+  - name: "~/(.*\\.md|LICENSE)"
+    raw_actions: ["default_type text/plain;"]
+```
+
 ## Migration Status
 
 ### Completed Migrations
