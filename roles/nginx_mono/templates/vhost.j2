@@ -38,7 +38,9 @@ server {
 {% endif %}
 {% if not nginx_vhost_with_access_log %}
   access_log off;
-{% elif instance.access_log is defined %}
+{% elif instance.access_log is defined and instance.access_log is sameas false %}
+  access_log off;
+{% elif instance.access_log is defined and instance.access_log is string %}
   access_log {{ instance.access_log }};
 {% endif %}
 {% if instance.root is defined %}
