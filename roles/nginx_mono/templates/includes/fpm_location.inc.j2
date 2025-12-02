@@ -2,6 +2,7 @@
   # php-fpm configuration
   location ~ \.php$ {
 {% include 'includes/fpm.inc.j2' %}
+
   }
 
   location ~ \..*/.*\.php$ {
