@@ -1,94 +1,92 @@
 ---
 
-- name: Get Gem.user_dir
-  ansible.builtin.command: ruby -e 'print Gem.user_dir'
-  register: gem_info
-  changed_when: false
-
-- name: Set facts
+# Set jekyll_dir first (needed for nginx config even when skipping build)
+- name: Set jekyll_dir fact
   ansible.builtin.set_fact:
-    jekyll_dir: "{{ instance.dir | default(jekyll_base_dir + '/' + instance.name) }}"
-    jekyll_env: "{{ instance.jekyll_env | default(jekyll_env) }}"
-    jekyll_ruby_gem_home: '{{ gem_info.stdout }}'
+    jekyll_dir: "{{ jekyll_instance.dir | default(jekyll_base_dir + '/' + jekyll_instance.name) }}"
 
-- name: Install bundler - {{ instance.name }}
-  community.general.gem:
-    name: bundler
-    state: present
-  environment:
-    GEM_HOME: '{{ jekyll_ruby_gem_home }}'
-
-- name: Install jekyll - {{ instance.name }}
-  ansible.builtin.git:
-    repo: '{{ instance.repo }}'
-    dest: '{{ jekyll_dir }}'
-    version: '{{ instance.repo_version | default(omit) }}'
-    accept_hostkey: true
-  register: git_result
-
-- name: Run build on env {{ jekyll_env }}
-  when: jekyll_run_clean or git_result.changed
-  environment:
-    JEKYLL_ENV: '{{ jekyll_env }}'
-    GEM_HOME: '{{ jekyll_ruby_gem_home }}'
-  tags:
-    - skip_ansible_lint
+# Build tasks - skipped when jekyll_skip_build is true (for testing)
+- name: Build Jekyll site - {{ jekyll_instance.name }}
+  when: not (jekyll_skip_build | default(false))
   block:
-    - name: Run bundle update for jekyll
-      ansible.builtin.command: bash -lc "bundle update"
-      args:
-        chdir: '{{ jekyll_dir }}'
+    - name: Get Gem.user_dir
+      ansible.builtin.command: ruby -e 'print Gem.user_dir'
+      register: gem_info
+      changed_when: false
 
-    - name: Run Jekyll clean - {{ instance.name }}
-      ansible.builtin.command: bash -lc "bundle exec jekyll clean"
-      args:
-        chdir: '{{ jekyll_dir }}'
+    - name: Set build facts
+      ansible.builtin.set_fact:
+        jekyll_env: "{{ jekyll_instance.jekyll_env | default(jekyll_env) }}"
+        jekyll_ruby_gem_home: '{{ gem_info.stdout }}'
 
-    - name: Run Jekyll build - {{ instance.name }}
-      ansible.builtin.command: bash -lc "bundle exec jekyll build"
-      args:
-        chdir: '{{ jekyll_dir }}'
+    - name: Install bundler - {{ jekyll_instance.name }}
+      community.general.gem:
+        name: bundler
+        state: present
+      environment:
+        GEM_HOME: '{{ jekyll_ruby_gem_home }}'
 
-    - name: Run Jekyll remove old release dir - {{ instance.name }}
-      ansible.builtin.file:
-        path: '{{ jekyll_dir }}/{{ jekyll_site_prod }}'
-        state: absent
+    - name: Install jekyll - {{ jekyll_instance.name }}
+      ansible.builtin.git:
+        repo: '{{ jekyll_instance.repo }}'
+        dest: '{{ jekyll_dir }}'
+        version: '{{ jekyll_instance.repo_version | default(omit) }}'
+        accept_hostkey: true
+      register: git_result
 
-    - name: Run Jekyll release dir - {{ instance.name }}
-      ansible.builtin.command: mv {{ jekyll_dir }}/_site {{ jekyll_dir }}/{{ jekyll_site_prod }}
+    - name: Run build on env {{ jekyll_env }}
+      when: jekyll_run_clean or git_result.changed
+      environment:
+        JEKYLL_ENV: '{{ jekyll_env }}'
+        GEM_HOME: '{{ jekyll_ruby_gem_home }}'
+      tags:
+        - skip_ansible_lint
+      block:
+        - name: Run bundle update for jekyll
+          ansible.builtin.command: bash -lc "bundle update"
+          args:
+            chdir: '{{ jekyll_dir }}'
 
-- name: Update jekyll vhost configuration - {{ instance.name }}
+        - name: Run Jekyll clean - {{ jekyll_instance.name }}
+          ansible.builtin.command: bash -lc "bundle exec jekyll clean"
+          args:
+            chdir: '{{ jekyll_dir }}'
+
+        - name: Run Jekyll build - {{ jekyll_instance.name }}
+          ansible.builtin.command: bash -lc "bundle exec jekyll build"
+          args:
+            chdir: '{{ jekyll_dir }}'
+
+        - name: Run Jekyll remove old release dir - {{ jekyll_instance.name }}
+          ansible.builtin.file:
+            path: '{{ jekyll_dir }}/{{ jekyll_site_prod }}'
+            state: absent
+
+        - name: Run Jekyll release dir - {{ jekyll_instance.name }}
+          ansible.builtin.command: mv {{ jekyll_dir }}/_site {{ jekyll_dir }}/{{ jekyll_site_prod }}
+
+- name: Setup nginx_mono for jekyll instance - {{ jekyll_instance.name }}
   tags: nginx
-  ansible.builtin.template:
-    src: vhost.j2
-    dest: /etc/nginx/sites-available/{{ instance.name }}.conf
-    mode: '0644'
-  notify: Reload nginx
-
-- name: Ensure jekyll vhost is enabled - {{ instance.name }}
-  tags: nginx
-  ansible.builtin.file:
-    src: /etc/nginx/sites-available/{{ instance.name }}.conf
-    dest: /etc/nginx/sites-enabled/{{ instance.name }}.conf
-    state: link
-  notify: Reload nginx
-
-# restart required, because file can be not available before
-- name: Jekyll vhost user protection - {{ instance.name }}
-  community.general.htpasswd:
-    path: /etc/nginx/.htpasswd_jekyll_{{ instance.name }}
-    name: '{{ item.user }}'
-    password: '{{ item.password }}'
-    owner: root
-    group: '{{ nginx_group }}'
-    mode: '0640'
-  loop: '{{ instance.vhost_users | default([]) }}'
-  when: instance.vhost_users is defined
-  notify: Restart nginx
-
-- name: Jekyll htpasswd file, if no base auth is in use - {{ instance.name }}
-  ansible.builtin.file:
-    path: /etc/nginx/.htpasswd_jekyll_{{ instance.name }}
-    state: absent
-  when: instance.vhost_users is undefined
-  notify: Restart nginx
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nginx_mono
+  vars:
+    nginx_mono_service_name: "{{ jekyll_instance.name }}"
+    nginx_mono_service_enabled: true
+    nginx_mono_service_config:
+      server_name: "{{ jekyll_instance.server_name }}"
+      server_alias: "{{ jekyll_instance.server_alias | default(omit) }}"
+      root: "{{ jekyll_dir }}/{{ jekyll_site_prod }}"
+      index: "index.html"
+      vhost_users: "{{ jekyll_instance.vhost_users | default([]) }}"
+      vhost_includes: "{{ jekyll_instance.vhost_includes | default(jekyll_vhost_includes) }}"
+      vhost_for_zabbix: "{{ jekyll_instance.vhost_for_zabbix | default(false) }}"
+      letsencrypt: "{{ jekyll_instance.letsencrypt | default(false) }}"
+      letsencrypt_cert: "{{ jekyll_instance.letsencrypt_cert | default(omit) }}"
+      letsencrypt_key: "{{ jekyll_instance.letsencrypt_key | default(omit) }}"
+      letsencrypt_trusted_cert: "{{ jekyll_instance.letsencrypt_trusted_cert | default(omit) }}"
+      ssl_cert: "{{ jekyll_instance.ssl_cert | default(omit) }}"
+      redirects: "{{ jekyll_instance.redirects | default([]) }}"
+      external_redirects: "{{ jekyll_instance.external_redirects | default([]) }}"
+      rewrite_lines: "{{ jekyll_instance.rewrite_lines | default([]) }}"
+      error_404_page: "{{ jekyll_instance.error_404_page | default(omit) }}"
+      locations: "{{ jekyll_instance.locations | default(jekyll_default_locations) }}"

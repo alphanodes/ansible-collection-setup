@@ -10,15 +10,60 @@
         cache_valid_time: 600
       changed_when: false
 
+    # Create mock Jekyll site directories (no actual Jekyll build needed for nginx tests)
+    - name: Create mock Jekyll site directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - /srv/jekyll
+        - /srv/jekyll/docs/_site_prod
+        - /srv/jekyll/docs/_site_prod/assets
+        - /srv/jekyll/blog/_site_prod
+        - /srv/jekyll/blog/_site_prod/assets
+
+    - name: Create mock index.html files
+      ansible.builtin.copy:
+        content: "<html><body>{{ item.name }}</body></html>"
+        dest: "{{ item.path }}/index.html"
+        mode: '0644'
+      loop:
+        - { name: "docs", path: "/srv/jekyll/docs/_site_prod" }
+        - { name: "blog", path: "/srv/jekyll/blog/_site_prod" }
+
   vars:
-    jekyll_enabled: false  # Don't actually deploy Jekyll in test
+    # Self-signed SSL certificates for testing
+    ssl_certs:
+      - name: jekyll_docs
+        provider: selfsigned
+        subject_common_name: docs.example.com
+      - name: jekyll_blog
+        provider: selfsigned
+        subject_common_name: blog.example.com
+
+    # Skip actual Jekyll build (Ruby/Git) - we only test nginx configuration
+    jekyll_skip_build: true
+
+    # Use TLSv1.3 only to avoid dhparams requirement in tests
+    nginx_ssl_protocols: 'TLSv1.3'
+
+    # Jekyll instances to test - this is what the Jekyll role will process
+    # Names must match mock directories created in pre_tasks
+    jekyll_instances:
+      - name: docs
+        server_name: docs.example.com
+        letsencrypt: false
+        ssl_cert: jekyll_docs
+      - name: blog
+        server_name: blog.example.com
+        server_alias: www.blog.example.com
+        letsencrypt: false
+        ssl_cert: jekyll_blog
 
   roles:
+    # Dependencies
     - role: alphanodes.setup.common
+    - role: alphanodes.setup.ssl
+    # The actual Jekyll role - this is what we're testing!
     - role: alphanodes.setup.jekyll
-
-  post_tasks:
-    - name: Check jekyll role completed
-      ansible.builtin.debug:
-        msg: "Jekyll role executed successfully"
-    # TODO: Requires Ruby/RVM setup for complete testing

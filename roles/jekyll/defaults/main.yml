@@ -15,6 +15,20 @@ jekyll_instances: []
 
 jekyll_vhost_includes: []
 
+# Default nginx locations for Jekyll (assets caching + static try_files)
+# Can be overridden per instance via jekyll_instances[].locations
+jekyll_default_locations:
+  - name: "^~ /assets/"
+    raw_actions:
+      - "log_not_found off;"
+      - 'add_header Cache-Control "public";'
+      - "expires max;"
+      - "gzip_static on;"
+      - "gzip_vary on;"
+  - name: "/"
+    raw_actions:
+      - "try_files $uri $uri.html $uri/ =404;"
+
 # use rvm_rubies default versions
 # jekyll_rvm_rubies:
 #  - 2.4.10

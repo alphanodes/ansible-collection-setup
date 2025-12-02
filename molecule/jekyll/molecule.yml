@@ -5,7 +5,7 @@ driver:
   name: docker
 platforms:
   - name: instance
-    image: "geerlingguy/docker-${MOLECULE_DISTRO:-centos7}-ansible:latest"
+    image: "geerlingguy/docker-${MOLECULE_DISTRO:-debian12}-ansible:latest"
     command: ${MOLECULE_DOCKER_COMMAND:-""}
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
@@ -21,3 +21,5 @@ provisioner:
       interpreter_python: auto_silent
   playbooks:
     converge: ${MOLECULE_PLAYBOOK:-converge.yml}
+verifier:
+  name: ansible

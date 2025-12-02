@@ -1,0 +1,243 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    # ===========================================
+    # Ruby and Jekyll Setup Tests
+    # ===========================================
+
+    - name: Check Ruby is installed
+      ansible.builtin.command: ruby --version
+      register: ruby_version
+      changed_when: false
+
+    - name: Verify Ruby version is 3.x
+      ansible.builtin.assert:
+        that:
+          - "'ruby 3' in ruby_version.stdout"
+        fail_msg: "Ruby 3.x not installed: {{ ruby_version.stdout }}"
+
+    - name: Check Gem is available
+      ansible.builtin.command: gem --version
+      register: gem_version
+      changed_when: false
+
+    - name: Verify Jekyll base directory exists
+      ansible.builtin.stat:
+        path: /srv/jekyll
+      register: jekyll_base
+      failed_when: not jekyll_base.stat.exists or not jekyll_base.stat.isdir
+
+    - name: Check Jekyll packages are installed
+      ansible.builtin.command: dpkg -l rubygems
+      register: rubygems_check
+      changed_when: false
+      failed_when: rubygems_check.rc != 0
+
+    # ===========================================
+    # nginx Configuration Tests
+    # ===========================================
+
+    - name: Check nginx is installed
+      ansible.builtin.command: nginx -v
+      register: nginx_version
+      changed_when: false
+
+    - name: Test nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      register: nginx_test
+      changed_when: false
+
+    - name: Verify docs vhost config exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/docs.conf
+      register: docs_vhost
+      failed_when: not docs_vhost.stat.exists
+
+    - name: Verify blog vhost config exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/blog.conf
+      register: blog_vhost
+      failed_when: not blog_vhost.stat.exists
+
+    - name: Verify docs vhost is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/docs.conf
+      register: docs_enabled
+      failed_when: not docs_enabled.stat.exists
+
+    - name: Verify blog vhost is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/blog.conf
+      register: blog_enabled
+      failed_when: not blog_enabled.stat.exists
+
+    # ===========================================
+    # Docs vhost Content Tests
+    # ===========================================
+
+    - name: Read docs vhost configuration
+      ansible.builtin.slurp:
+        src: /etc/nginx/sites-available/docs.conf
+      register: docs_config
+
+    - name: Verify docs vhost has correct server_name
+      ansible.builtin.assert:
+        that:
+          - "'server_name docs.example.com' in docs_config.content | b64decode"
+        fail_msg: "docs vhost missing correct server_name"
+
+    - name: Verify docs vhost has correct root
+      ansible.builtin.assert:
+        that:
+          - "'root /srv/jekyll/docs/_site_prod' in docs_config.content | b64decode"
+        fail_msg: "docs vhost missing correct root"
+
+    - name: Verify docs vhost has assets location with cache headers
+      ansible.builtin.assert:
+        that:
+          - "'location ^~ /assets/' in docs_config.content | b64decode"
+          - "'expires max' in docs_config.content | b64decode"
+          - "'gzip_static on' in docs_config.content | b64decode"
+        fail_msg: "docs vhost missing assets location with cache headers"
+
+    - name: Verify docs vhost has SSL configuration
+      ansible.builtin.assert:
+        that:
+          - "'listen 443 ssl' in docs_config.content | b64decode"
+          - "'ssl_certificate' in docs_config.content | b64decode"
+        fail_msg: "docs vhost missing SSL configuration"
+
+    - name: Verify docs vhost has HTTP to HTTPS redirect
+      ansible.builtin.assert:
+        that:
+          - "'listen 80' in docs_config.content | b64decode"
+          - "'return 301 https://' in docs_config.content | b64decode"
+        fail_msg: "docs vhost missing HTTP to HTTPS redirect"
+
+    - name: Verify docs vhost has index directive
+      ansible.builtin.assert:
+        that:
+          - "'index index.html' in docs_config.content | b64decode"
+        fail_msg: "docs vhost missing index directive"
+
+    - name: Verify docs vhost has static_try_files
+      ansible.builtin.assert:
+        that:
+          - "'try_files $uri $uri.html $uri/ =404' in docs_config.content | b64decode"
+        fail_msg: "docs vhost missing static_try_files configuration"
+
+    - name: Verify docs vhost has security headers
+      ansible.builtin.assert:
+        that:
+          - "'Strict-Transport-Security' in docs_config.content | b64decode"
+          - "'X-Frame-Options' in docs_config.content | b64decode"
+          - "'X-Content-Type-Options' in docs_config.content | b64decode"
+        fail_msg: "docs vhost missing security headers"
+
+    - name: Verify docs vhost has bot protection
+      ansible.builtin.assert:
+        that:
+          - "'bad_bot' in docs_config.content | b64decode"
+          - "'bad_locations' in docs_config.content | b64decode"
+        fail_msg: "docs vhost missing bot/location protection"
+
+    # ===========================================
+    # Blog vhost Content Tests
+    # ===========================================
+
+    - name: Read blog vhost configuration
+      ansible.builtin.slurp:
+        src: /etc/nginx/sites-available/blog.conf
+      register: blog_config
+
+    - name: Verify blog vhost has correct server_name with alias
+      ansible.builtin.assert:
+        that:
+          - "'server_name blog.example.com' in blog_config.content | b64decode"
+          - "'www.blog.example.com' in blog_config.content | b64decode"
+        fail_msg: "blog vhost missing correct server_name or alias"
+
+    - name: Verify blog vhost has correct root
+      ansible.builtin.assert:
+        that:
+          - "'root /srv/jekyll/blog/_site_prod' in blog_config.content | b64decode"
+        fail_msg: "blog vhost missing correct root"
+
+    - name: Verify blog vhost has assets location
+      ansible.builtin.assert:
+        that:
+          - "'location ^~ /assets/' in blog_config.content | b64decode"
+        fail_msg: "blog vhost missing assets location"
+
+    # ===========================================
+    # HTTP Response Tests
+    # ===========================================
+
+    - name: Ensure nginx is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+
+    - name: Test docs site responds with 200
+      ansible.builtin.command: >
+        curl -sk -o /dev/null -w '%{http_code}' -H 'Host: docs.example.com'
+        https://127.0.0.1/
+      register: test_docs_response
+      failed_when: test_docs_response.stdout != '200'
+      changed_when: false
+
+    - name: Test blog site responds with 200
+      ansible.builtin.command: >
+        curl -sk -o /dev/null -w '%{http_code}' -H 'Host: blog.example.com'
+        https://127.0.0.1/
+      register: test_blog_response
+      failed_when: test_blog_response.stdout != '200'
+      changed_when: false
+
+    - name: Test HTTP to HTTPS redirect for docs
+      ansible.builtin.command: >
+        curl -s -o /dev/null -w '%{http_code}' -H 'Host: docs.example.com'
+        http://127.0.0.1/
+      register: test_docs_redirect
+      failed_when: test_docs_redirect.stdout != '301'
+      changed_when: false
+
+    - name: Test HTTP to HTTPS redirect for blog
+      ansible.builtin.command: >
+        curl -s -o /dev/null -w '%{http_code}' -H 'Host: blog.example.com'
+        http://127.0.0.1/
+      register: test_blog_redirect
+      failed_when: test_blog_redirect.stdout != '301'
+      changed_when: false
+
+    # ===========================================
+    # Multi-Instance Isolation Tests
+    # ===========================================
+
+    - name: Verify docs and blog are separate vhosts
+      ansible.builtin.assert:
+        that:
+          - "docs_vhost.stat.inode != blog_vhost.stat.inode"
+        fail_msg: "docs and blog should be separate vhost files"
+
+    - name: Print test summary
+      ansible.builtin.debug:
+        msg: |
+          === Jekyll Role Tests Passed ===
+          Ruby: {{ ruby_version.stdout }}
+          Gem: {{ gem_version.stdout }}
+          Jekyll base directory: /srv/jekyll exists
+          Jekyll packages: rubygems installed
+          nginx: installed and configuration valid
+          Vhosts: docs.conf, blog.conf created and enabled
+          SSL: TLS configuration present
+          Redirects: HTTP to HTTPS working (301)
+          Static files: try_files and index configured
+          Security: HSTS, X-Frame-Options, X-Content-Type-Options
+          Protection: bad_bot and bad_locations filters active
+          Caching: assets location with expires max
+          Multi-instance: separate vhost files verified
