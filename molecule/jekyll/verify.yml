@@ -224,6 +224,55 @@
           - "docs_vhost.stat.inode != blog_vhost.stat.inode"
         fail_msg: "docs and blog should be separate vhost files"
 
+    # ===========================================
+    # Custom Locations Merge Tests (Production Bug Fix)
+    # Tests that custom locations are MERGED with defaults, not replaced
+    # ===========================================
+
+    - name: Verify custom vhost config exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/custom.conf
+      register: custom_vhost
+      failed_when: not custom_vhost.stat.exists
+
+    - name: Read custom vhost configuration
+      ansible.builtin.slurp:
+        src: /etc/nginx/sites-available/custom.conf
+      register: custom_config
+
+    - name: Verify custom vhost has CUSTOM locations (user-defined)
+      ansible.builtin.assert:
+        that:
+          - "'location = /downloads' in custom_config.content | b64decode"
+          - "'return 403' in custom_config.content | b64decode"
+          - "'location ^~ /special' in custom_config.content | b64decode"
+          - "'expires 30d' in custom_config.content | b64decode"
+        fail_msg: "custom vhost missing user-defined locations"
+
+    - name: Verify custom vhost ALSO has DEFAULT locations (merged, not replaced)
+      ansible.builtin.assert:
+        that:
+          - "'location ^~ /assets/' in custom_config.content | b64decode"
+          - "'gzip_static on' in custom_config.content | b64decode"
+          - "'try_files $uri $uri.html $uri/ =404' in custom_config.content | b64decode"
+        fail_msg: "CRITICAL: custom vhost missing default locations - they were replaced instead of merged!"
+
+    - name: Test custom site responds with 200
+      ansible.builtin.command: >
+        curl -sk -o /dev/null -w '%{http_code}' -H 'Host: custom.example.com'
+        https://127.0.0.1/
+      register: test_custom_response
+      failed_when: test_custom_response.stdout != '200'
+      changed_when: false
+
+    - name: Test custom /downloads returns 403 (custom location)
+      ansible.builtin.command: >
+        curl -sk -o /dev/null -w '%{http_code}' -H 'Host: custom.example.com'
+        https://127.0.0.1/downloads
+      register: test_custom_downloads
+      failed_when: test_custom_downloads.stdout != '403'
+      changed_when: false
+
     - name: Print test summary
       ansible.builtin.debug:
         msg: |
@@ -233,7 +282,7 @@
           Jekyll base directory: /srv/jekyll exists
           Jekyll packages: rubygems installed
           nginx: installed and configuration valid
-          Vhosts: docs.conf, blog.conf created and enabled
+          Vhosts: docs.conf, blog.conf, custom.conf created and enabled
           SSL: TLS configuration present
           Redirects: HTTP to HTTPS working (301)
           Static files: try_files and index configured
@@ -241,3 +290,4 @@
           Protection: bad_bot and bad_locations filters active
           Caching: assets location with expires max
           Multi-instance: separate vhost files verified
+          Custom locations: merged with defaults (not replaced)

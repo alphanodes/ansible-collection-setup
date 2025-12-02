@@ -22,6 +22,9 @@
         - /srv/jekyll/docs/_site_prod/assets
         - /srv/jekyll/blog/_site_prod
         - /srv/jekyll/blog/_site_prod/assets
+        - /srv/jekyll/custom/_site_prod
+        - /srv/jekyll/custom/_site_prod/assets
+        - /srv/jekyll/custom/_site_prod/downloads
 
     - name: Create mock index.html files
       ansible.builtin.copy:
@@ -31,6 +34,7 @@
       loop:
         - { name: "docs", path: "/srv/jekyll/docs/_site_prod" }
         - { name: "blog", path: "/srv/jekyll/blog/_site_prod" }
+        - { name: "custom", path: "/srv/jekyll/custom/_site_prod" }
 
   vars:
     # Self-signed SSL certificates for testing
@@ -41,6 +45,9 @@
       - name: jekyll_blog
         provider: selfsigned
         subject_common_name: blog.example.com
+      - name: jekyll_custom
+        provider: selfsigned
+        subject_common_name: custom.example.com
 
     # Skip actual Jekyll build (Ruby/Git) - we only test nginx configuration
     jekyll_skip_build: true
@@ -60,6 +67,19 @@
         server_alias: www.blog.example.com
         letsencrypt: false
         ssl_cert: jekyll_blog
+      # Third instance WITH custom locations - tests that defaults are still appended
+      # This mirrors the alphanodes-website use case (custom locations + default assets/try_files)
+      - name: custom
+        server_name: custom.example.com
+        letsencrypt: false
+        ssl_cert: jekyll_custom
+        locations:
+          - name: '= /downloads'
+            return: 403
+          - name: '^~ /special'
+            raw_actions:
+              - 'alias /srv/jekyll/custom/_site_prod/downloads;'
+              - 'expires 30d;'
 
   roles:
     # Dependencies
