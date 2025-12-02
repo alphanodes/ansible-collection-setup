@@ -270,6 +270,114 @@ locations:
     raw_actions: ["default_type text/plain;"]
 ```
 
+### Variable Shadowing in Multi-Instance Roles (2025-12)
+
+**Critical Learning**: When migrating roles that use `loop` with instances (like
+Jekyll, Redmine, Drupal), be careful with the `loop_var` name!
+
+#### The Shadowing Problem
+
+nginx_mono templates use `instance` as the variable name for configuration:
+
+```jinja2
+{% if instance.server_name is defined %}
+  server_name {{ instance.server_name }};
+{% endif %}
+```
+
+If a service role uses `loop_var: instance` for its own instance loop, the
+service's instance variable **shadows** nginx_mono's `nginx_mono_instance`:
+
+```yaml
+# Jekyll role - WRONG (causes variable shadowing):
+- name: Include instance tasks
+  ansible.builtin.include_tasks: instance.yml
+  loop: "{{ jekyll_instances }}"
+  loop_control:
+    loop_var: instance  # This shadows nginx_mono's 'instance'!
+```
+
+**Symptoms:**
+
+- vhost template missing `root`, `index`, `locations`
+- nginx config has server_name from Jekyll instance but nothing else
+- Confusing because SOME values work (those passed directly)
+
+#### The Solution
+
+Use a **unique loop_var name** for each service role:
+
+```yaml
+# Jekyll role - CORRECT:
+- name: Include instance tasks
+  ansible.builtin.include_tasks: instance.yml
+  loop: "{{ jekyll_instances }}"
+  loop_control:
+    loop_var: jekyll_instance  # Unique name, no shadowing
+```
+
+Then update all references in the instance tasks:
+
+```yaml
+# In instance.yml:
+nginx_mono_service_config:
+  server_name: "{{ jekyll_instance.server_name }}"
+  locations: "{{ jekyll_instance.locations | default(jekyll_default_locations) }}"
+```
+
+#### Multi-Instance Migration Rule
+
+When migrating multi-instance roles:
+
+1. **Rename `loop_var`** to `[role]_instance` (e.g., `jekyll_instance`, `redmine_instance`)
+2. **Update all references** in the instance tasks file
+3. **Test with multiple instances** to verify no shadowing
+
+### Use raw_actions Instead of New Variables (2025-12)
+
+**Design Principle**: Before adding new variables to nginx_mono, check if the
+functionality can be achieved with existing `locations` + `raw_actions`.
+
+#### Example: static_try_files
+
+Initially, we added `static_try_files` as a new nginx_mono variable:
+
+```yaml
+# WRONG - unnecessary new variable:
+nginx_mono_service_config:
+  static_try_files: "$uri $uri.html $uri/ =404"
+```
+
+This created a `location /` block in the template. But the same result can be
+achieved with existing functionality:
+
+```yaml
+# CORRECT - use existing locations with raw_actions:
+jekyll_default_locations:
+  - name: "^~ /assets/"
+    raw_actions:
+      - "log_not_found off;"
+      - 'add_header Cache-Control "public";'
+      - "expires max;"
+  - name: "/"
+    raw_actions:
+      - "try_files $uri $uri.html $uri/ =404;"
+```
+
+#### When to Add New Variables
+
+Only add new nginx_mono variables when:
+
+1. **Complex conditional logic** is needed (like `static_cache` with configurable expires)
+2. **Server-level directives** that can't be in locations (like `protection.inc.j2`)
+3. **Common patterns** used by many roles with configurable defaults
+
+Don't add new variables for:
+
+- Simple one-liner directives → use `raw_actions`
+- Location blocks without complex logic → use `locations`
+- Role-specific configuration → keep in role's defaults
+
 ## Migration Status
 
 ### Completed Migrations
@@ -283,7 +391,7 @@ locations:
 | hedgedoc | 2024-11 | Collaborative editor |
 | grafana | 2024-11 | Monitoring |
 | loki | 2024-11 | Log aggregation |
-| jekyll | 2024-11 | Static site generator |
+| jekyll | 2025-12 | Static site generator, multi-instance pattern, raw_actions for try_files |
 | mailpit | 2024-11 | Mail testing |
 | matomo | 2025-11 | Analytics, FPM whitelist pattern, comprehensive security tests |
 | nextcloud | 2024-11 | Cloud storage |
