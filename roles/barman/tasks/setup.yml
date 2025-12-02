@@ -90,7 +90,7 @@
     login_db: '{{ item.conninfo_dbname | default(barman_default_conninfo_dbname) }}'
     login_host: '{{ item.conninfo_host }}'
     login_user: '{{ item.conninfo_user | default(barman_postgresql_user) }}'
-    port: "{{ item.conninfo_port | default('5432') }}"
+    login_port: "{{ item.conninfo_port | default('5432') }}"
   loop: '{{ barman_db_servers }}'
   become_user: barman
   become: true
