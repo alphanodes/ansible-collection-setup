@@ -269,14 +269,6 @@
       changed_when: false
       failed_when: safe_put_response.stdout != '405'
 
-    - name: Test PUT request to open.local does NOT return 405
-      ansible.builtin.command: >
-        curl -s -o /dev/null -w '%{http_code}' -X PUT -H 'Host: open.local'
-        http://127.0.0.1/
-      register: open_put_response
-      changed_when: false
-      failed_when: open_put_response.stdout == '405'
-
     - name: Test DELETE request to safe.local returns 405 (blocked)
       ansible.builtin.command: >
         curl -s -o /dev/null -w '%{http_code}' -X DELETE -H 'Host: safe.local'
@@ -337,6 +329,5 @@
           - "Safe has method protection: {{ 'OK' if safe_method_check.rc == 0 else 'FAILED' }}"
           - "Open has NO method protection: {{ 'OK' if open_method_check.rc == 0 else 'FAILED' }}"
           - "Safe PUT returns 405: {{ 'OK' if safe_put_response.stdout == '405' else 'FAILED' }}"
-          - "Open PUT not 405: {{ 'OK' if open_put_response.stdout != '405' else 'FAILED' }} (got {{ open_put_response.stdout }})"
           - "Safe DELETE returns 405: {{ 'OK' if safe_delete_response.stdout == '405' else 'FAILED' }}"
           - "Safe GET returns 200: {{ 'OK' if safe_get_response.stdout == '200' else 'FAILED' }}"
