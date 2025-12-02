@@ -59,13 +59,12 @@
           actions:
             - "deny all"
             - "return 403"
+        # Main location
+        - name: "/"
+          raw_actions:
+            - "try_files $uri $uri/ =404;"
         # Deny sensitive directories
         - name: "~ ^/(console|config|tmp|core|lang)"
-          actions:
-            - "deny all"
-            - "return 403"
-        # Deny libs, vendor, plugins, misc, node_modules
-        - name: "~ ^/(libs|vendor|plugins|misc|node_modules)"
           actions:
             - "deny all"
             - "return 403"
@@ -74,18 +73,19 @@
           raw_actions:
             - "expires off;"
             - "add_header Cache-Control 'private, no-cache, no-store';"
-        # Static files with cache
+        # Static files with cache - MUST come before libs/vendor/plugins deny!
         - name: "~ \\.(gif|ico|jpg|png|svg|js|css|htm|html|mp3|mp4|wav|ogg|avi|ttf|eot|woff|woff2)$"
           raw_actions:
             - "allow all;"
             - "expires 1h;"
             - "add_header Pragma public;"
             - "add_header Cache-Control 'public';"
+        # Deny libs, vendor, plugins, misc, node_modules - AFTER static files!
+        - name: "~ ^/(libs|vendor|plugins|misc|node_modules)"
+          actions:
+            - "deny all"
+            - "return 403"
         # Text files in root
         - name: "~/(.*\\.md|LEGALNOTICE|LICENSE)"
           raw_actions:
             - "default_type text/plain;"
-        # Main location
-        - name: "/"
-          raw_actions:
-            - "try_files $uri $uri/ =404;"
