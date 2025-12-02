@@ -7,3 +7,11 @@
   if ($bad_locations) {
     return 404;
   }
+{% if instance.block_unsafe_methods | default(false) %}
+
+  # Protection against illegal HTTP methods. Out of the box only HEAD,
+  # GET and POST are allowed.
+  if ($not_allowed_method) {
+    return 405;
+  }
+{% endif %}

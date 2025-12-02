@@ -233,6 +233,66 @@
       changed_when: false
       failed_when: proxy_pass.rc != 0
 
+    # block_unsafe_methods tests
+    - name: Check if static_safe vhost exists (block_unsafe_methods enabled)
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/static_safe.conf
+      register: safe_vhost
+
+    - name: Check if static_open vhost exists (block_unsafe_methods disabled)
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/static_open.conf
+      register: open_vhost
+
+    - name: Verify static_safe has not_allowed_method protection
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'if ($not_allowed_method)' /etc/nginx/sites-available/static_safe.conf
+        grep -F 'return 405;' /etc/nginx/sites-available/static_safe.conf
+      register: safe_method_check
+      changed_when: false
+      failed_when: safe_method_check.rc != 0
+
+    - name: Verify static_open does NOT have not_allowed_method protection
+      ansible.builtin.shell: |
+        set -e
+        ! grep -q 'if ($not_allowed_method)' /etc/nginx/sites-available/static_open.conf
+      register: open_method_check
+      changed_when: false
+      failed_when: open_method_check.rc != 0
+
+    - name: Test PUT request to safe.local returns 405 (blocked)
+      ansible.builtin.command: >
+        curl -s -o /dev/null -w '%{http_code}' -X PUT -H 'Host: safe.local'
+        http://127.0.0.1/
+      register: safe_put_response
+      changed_when: false
+      failed_when: safe_put_response.stdout != '405'
+
+    - name: Test PUT request to open.local does NOT return 405
+      ansible.builtin.command: >
+        curl -s -o /dev/null -w '%{http_code}' -X PUT -H 'Host: open.local'
+        http://127.0.0.1/
+      register: open_put_response
+      changed_when: false
+      failed_when: open_put_response.stdout == '405'
+
+    - name: Test DELETE request to safe.local returns 405 (blocked)
+      ansible.builtin.command: >
+        curl -s -o /dev/null -w '%{http_code}' -X DELETE -H 'Host: safe.local'
+        http://127.0.0.1/
+      register: safe_delete_response
+      changed_when: false
+      failed_when: safe_delete_response.stdout != '405'
+
+    - name: Test GET request to safe.local works (allowed method)
+      ansible.builtin.command: >
+        curl -s -o /dev/null -w '%{http_code}' -X GET -H 'Host: safe.local'
+        http://127.0.0.1/
+      register: safe_get_response
+      changed_when: false
+      failed_when: safe_get_response.stdout != '200'
+
     - name: Display test results
       ansible.builtin.debug:
         msg:
@@ -271,3 +331,12 @@
           - "PHP FPM configured: {{ 'OK' if php_fpm.rc == 0 else 'FAILED' }}"
           - "Proxy vhost exists: {{ 'OK' if proxy_vhost.stat.exists else 'FAILED' }}"
           - "Proxy pass configured: {{ 'OK' if proxy_pass.rc == 0 else 'FAILED' }}"
+          - "=== block_unsafe_methods Tests ==="
+          - "Safe vhost exists: {{ 'OK' if safe_vhost.stat.exists else 'FAILED' }}"
+          - "Open vhost exists: {{ 'OK' if open_vhost.stat.exists else 'FAILED' }}"
+          - "Safe has method protection: {{ 'OK' if safe_method_check.rc == 0 else 'FAILED' }}"
+          - "Open has NO method protection: {{ 'OK' if open_method_check.rc == 0 else 'FAILED' }}"
+          - "Safe PUT returns 405: {{ 'OK' if safe_put_response.stdout == '405' else 'FAILED' }}"
+          - "Open PUT not 405: {{ 'OK' if open_put_response.stdout != '405' else 'FAILED' }} (got {{ open_put_response.stdout }})"
+          - "Safe DELETE returns 405: {{ 'OK' if safe_delete_response.stdout == '405' else 'FAILED' }}"
+          - "Safe GET returns 200: {{ 'OK' if safe_get_response.stdout == '200' else 'FAILED' }}"

@@ -17,6 +17,24 @@
           - redis-server
         state: present
 
+    - name: Create test directories for block_unsafe_methods tests
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - /srv/static_safe
+        - /srv/static_open
+
+    - name: Create test index files
+      ansible.builtin.copy:
+        content: "<html><body>{{ item.name }}</body></html>"
+        dest: "{{ item.path }}/index.html"
+        mode: '0644'
+      loop:
+        - { name: "safe", path: "/srv/static_safe" }
+        - { name: "open", path: "/srv/static_open" }
+
   vars:
     # nodejs configuration (fix for Docker container)
     nodejs_install_npm_user: root
@@ -100,7 +118,33 @@
           vhost_for_zabbix: false
           letsencrypt: false
 
-    # Test 3: Instance mode with nginx_vhosts (like _parking vhost)
+    # Test 3: block_unsafe_methods enabled (should reject PUT/DELETE with 405)
+    - role: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: static_safe
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: safe.local
+          root: /srv/static_safe
+          index: index.html
+          block_unsafe_methods: true
+          vhost_for_zabbix: false
+          letsencrypt: false
+
+    # Test 4: block_unsafe_methods disabled (default - should allow PUT/DELETE)
+    - role: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: static_open
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: open.local
+          root: /srv/static_open
+          index: index.html
+          # block_unsafe_methods: false  # default
+          vhost_for_zabbix: false
+          letsencrypt: false
+
+    # Test 5: Instance mode with nginx_vhosts (like _parking vhost)
     - role: alphanodes.setup.nginx_mono
       vars:
         nginx_vhosts:

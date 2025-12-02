@@ -90,3 +90,4 @@
       rewrite_lines: "{{ jekyll_instance.rewrite_lines | default([]) }}"
       error_404_page: "{{ jekyll_instance.error_404_page | default(omit) }}"
       locations: "{{ (jekyll_instance.locations | default([])) + jekyll_default_locations }}"
+      block_unsafe_methods: true
