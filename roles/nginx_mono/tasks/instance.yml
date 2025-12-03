@@ -15,6 +15,15 @@
     - nginx_with_ssl
     - instance.letsencrypt_cert is undefined or not instance.letsencrypt_cert
 
+# Reset vhost_ssl_with_trusted_cert for letsencrypt instances
+# Let's Encrypt ends OCSP support in 2025, so ssl_trusted_certificate is not needed
+- name: Disable trusted cert for letsencrypt instances
+  ansible.builtin.set_fact:
+    vhost_ssl_with_trusted_cert: false
+  when:
+    - nginx_with_ssl
+    - instance.letsencrypt_cert is defined and instance.letsencrypt_cert
+
 - name: Calculate listen configuration for instance
   ansible.builtin.include_tasks: calculate_listen_config.yml
 
