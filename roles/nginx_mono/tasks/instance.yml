@@ -22,7 +22,7 @@
     vhost_ssl_with_trusted_cert: false
   when:
     - nginx_with_ssl
-    - instance.letsencrypt_cert is defined and instance.letsencrypt_cert
+    - instance.letsencrypt is defined and instance.letsencrypt | bool
 
 - name: Calculate listen configuration for instance
   ansible.builtin.include_tasks: calculate_listen_config.yml
