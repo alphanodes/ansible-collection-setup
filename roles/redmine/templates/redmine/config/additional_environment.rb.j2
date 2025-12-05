@@ -28,9 +28,9 @@ config.cache_store = :mem_cache_store, '{{ instance.memcached_host | default(red
                                                             expires_in: {{ instance.memcache_expires_hours | default(redmine_memcache_expires_hours) }}.hours,
 {% if instance.db_pool is defined or real_db_pool != 0 %}
                                                             compress: true,
-                                                            pool_size: {{ instance.db_pool | default(real_db_pool) }} }
+                                                            pool: { size: {{ instance.db_pool | default(real_db_pool) }}, timeout: 5 } }
 {% else %}
-                                                            compress: true
+                                                            compress: true }
 {% endif %}
 {% endif %}
 {% if instance.with_dmsf is defined and instance.with_dmsf %}
