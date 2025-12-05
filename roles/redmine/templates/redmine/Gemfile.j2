@@ -21,3 +21,6 @@ gem 'mysql2postgres'
 {{ extra_line }}
 {% endfor %}
 {% endif %}
+# Fix bug with rails and connection_pool > 3
+# see https://github.com/rails/rails/pull/56294
+gem 'connection_pool', '< 3.0'
