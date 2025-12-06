@@ -8,7 +8,7 @@ Installs PostgreSQL server on Debian and Ubuntu servers.
     - hosts: all
 
       vars:
-        postgresql_version: '15'
+        postgresql_version: '18'
         postgresql_with_postgis: true
 
       roles:
