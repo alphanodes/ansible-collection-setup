@@ -347,8 +347,8 @@ PluginSocket={{ zabbix_agent_plugin_socket }}
 UserParameter=error_log[*], journalctl {{ zabbix_agent_journalctl_options }} -p3 --since "{{ zabbix_agent_journalctl_since }}" | grep -Ev '^--'
 UserParameter=security_log[*], journalctl {{ zabbix_agent_journalctl_options }} --since "$1 hours ago" SYSLOG_FACILITY=4 | grep -Evi 'disconnected from|connection closed by|disconnecting invalid' | grep -Ei 'invalid user'
 UserParameter=kernel_log[*], journalctl {{ zabbix_agent_journalctl_options }} -k -p 2 --since "{{ zabbix_agent_journalctl_since }}" | grep -Ev '^--'
-UserParameter=journalctl_service[*], journalctl {{ zabbix_agent_journalctl_options }} -u $1 --since "{{ zabbix_agent_journalctl_since }}" | grep -Evi "{{ zabbix_agent_journalctl_ignore_all }}{{ '|' + zabbix_agent_journalctl_ignore if zabbix_agent_journalctl_ignore != '' else '' }}" | grep -Ei "{{ zabbix_agent_journalctl_keywords }}"
-UserParameter=journalctl[*], journalctl {{ zabbix_agent_journalctl_options }} --since "{{ zabbix_agent_journalctl_since }}" | grep -Evi "{{ zabbix_agent_journalctl_ignore_all }}{{ '|' + zabbix_agent_journalctl_ignore if zabbix_agent_journalctl_ignore != '' else '' }}" | grep -Ei "{{ zabbix_agent_journalctl_keywords }}"
+UserParameter=journalctl_service[*], journalctl {{ zabbix_agent_journalctl_options }} -u $1 --since "{{ zabbix_agent_journalctl_since }}" | grep -Evi "{{ (zabbix_agent_journalctl_ignore_all + zabbix_agent_journalctl_ignore) | join('|') }}" | grep -Ei "{{ zabbix_agent_journalctl_keywords | join('|') }}"
+UserParameter=journalctl[*], journalctl {{ zabbix_agent_journalctl_options }} --since "{{ zabbix_agent_journalctl_since }}" | grep -Evi "{{ (zabbix_agent_journalctl_ignore_all + zabbix_agent_journalctl_ignore) | join('|') }}" | grep -Ei "{{ zabbix_agent_journalctl_keywords | join('|') }}"
 UserParameter=linux[*], bash {{ zabbix_addons_dir }}/scripts/linux_check.sh "$1" "$2" "$3" "$4"
 {% if php_installed %}
 UserParameter=php_log[*], journalctl {{ zabbix_agent_journalctl_options }} -t php -p 4 --since "{{ zabbix_agent_journalctl_since }}" | grep -Ei "error|RuntimeException"
@@ -359,8 +359,8 @@ UserParameter=php[*], bash {{ zabbix_addons_dir }}/scripts/php_check.sh "$1" "$2
 UserParameter=drush[*], bash {{ zabbix_addons_dir }}/scripts/drush_check.sh "$1" "$2" "$3" "$4"
 {% endif %}
 {% if redmine_installed %}
-UserParameter=redmine_log[*], journalctl {{ zabbix_agent_journalctl_options }} -u $1 --since "{{ zabbix_agent_journalctl_since }}" | grep -Evi "{{ zabbix_agent_redmine_log_ignore_all }}{{ '|' + zabbix_agent_redmine_log_ignore if zabbix_agent_redmine_log_ignore != '' else '' }}" | grep -Ei "{{ zabbix_agent_redmine_log }}"
-UserParameter=redmine_journal[*], journalctl {{ zabbix_agent_journalctl_redmine_options }} -u $1 --since "{{ zabbix_agent_journalctl_since }}" | grep -Evi "{{ zabbix_agent_redmine_log_ignore_all }}{{ '|' + zabbix_agent_redmine_log_ignore if zabbix_agent_redmine_log_ignore != '' else '' }}" | grep -Ei "{{ zabbix_agent_redmine_log }}"
+UserParameter=redmine_log[*], journalctl {{ zabbix_agent_journalctl_options }} -u $1 --since "{{ zabbix_agent_journalctl_since }}" | grep -Evi "{{ (zabbix_agent_journalctl_ignore_all + zabbix_agent_redmine_log_ignore_all + zabbix_agent_redmine_log_ignore) | join('|') }}" | grep -Ei "{{ zabbix_agent_redmine_log | join('|') }}"
+UserParameter=redmine_journal[*], journalctl {{ zabbix_agent_journalctl_redmine_options }} -u $1 --since "{{ zabbix_agent_journalctl_since }}" | grep -Evi "{{ (zabbix_agent_journalctl_ignore_all + zabbix_agent_redmine_log_ignore_all + zabbix_agent_redmine_log_ignore) | join('|') }}" | grep -Ei "{{ zabbix_agent_redmine_log | join('|') }}"
 UserParameter=puma_stats[*], sudo -u $i -i -- pumactl stats -S /run/$i/redmine.state | tail -n +2
 {% endif %}
 

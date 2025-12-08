@@ -51,3 +51,34 @@
       ansible.builtin.wait_for:
         port: 10050
         timeout: 5
+
+    - name: Read zabbix_agent2.conf content
+      ansible.builtin.slurp:
+        src: /etc/zabbix/zabbix_agent2.conf
+      register: zabbix_conf_content
+
+    - name: Decode zabbix_agent2.conf content
+      ansible.builtin.set_fact:
+        zabbix_conf_decoded: "{{ zabbix_conf_content.content | b64decode }}"
+
+    - name: Verify journalctl UserParameter has joined keywords
+      ansible.builtin.assert:
+        that:
+          - "'undefined|failed|warning|missing' in zabbix_conf_decoded"
+        fail_msg: "journalctl keywords not properly joined with pipe"
+        success_msg: "journalctl keywords correctly joined"
+
+    - name: Verify journalctl_service UserParameter exists with correct pattern
+      ansible.builtin.assert:
+        that:
+          - "'UserParameter=journalctl_service' in zabbix_conf_decoded"
+          - "'grep -Ei' in zabbix_conf_decoded"
+        fail_msg: "journalctl_service UserParameter not found or malformed"
+        success_msg: "journalctl_service UserParameter correctly configured"
+
+    - name: Verify ignore patterns are joined correctly
+      ansible.builtin.assert:
+        that:
+          - "'RoutingError|WARNING' in zabbix_conf_decoded"
+        fail_msg: "ignore_all patterns not properly joined"
+        success_msg: "ignore_all patterns correctly joined"
