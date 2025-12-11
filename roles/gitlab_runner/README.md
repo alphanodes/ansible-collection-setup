@@ -15,7 +15,7 @@ Installs GitLab Runner from the official GitLab repository with optional Hetzner
 ## Variables
 
 | Variable | Default | Description |
-|----------|---------|-------------|
+| -------- | ------- | ----------- |
 | `gitlab_runner_coordinator_url` | `''` | GitLab server URL |
 | `gitlab_runner_with_hetzner_fleed` | `true` | Install Hetzner Fleeting Plugin |
 | `gitlab_runner_concurrent` | `{{ ansible_processor_nproc }}` | Max concurrent jobs |

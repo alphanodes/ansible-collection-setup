@@ -9,7 +9,7 @@ Ansible role to install and configure Roundcube webmail.
 ## Role Variables
 
 | Variable | Default | Description |
-|----------|---------|-------------|
+| -------- | ------- | ----------- |
 | `roundcube_vhost_server` | `roundcube.example.com` | Server name for nginx vhost |
 | `roundcube_vhost_letsencrypt` | `false` | Enable Let's Encrypt SSL |
 | `roundcube_vhost_ssl_cert` | `''` | SSL certificate name (from ssl role) |

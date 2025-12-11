@@ -198,7 +198,7 @@ on Debian-based systems using systemd.
 The following variables from `geerlingguy.certbot` are **no longer supported**:
 
 | Removed Variable | Reason |
-|------------------|--------|
+| ---------------- | ------ |
 | `certbot_auto_renew_user` | Systemd timer runs as root |
 | `certbot_auto_renew_hour` | Systemd timer uses built-in schedule |
 | `certbot_auto_renew_minute` | Systemd timer uses built-in schedule |
@@ -210,7 +210,7 @@ The following variables from `geerlingguy.certbot` are **no longer supported**:
 ### New Variables
 
 | New Variable | Description |
-|--------------|-------------|
+| ------------ | ----------- |
 | `certbot_deploy_hook` | Global deploy hook command (runs after renewal) |
 | `certbot_nginx_integration` | Create nginx acme-challenge config |
 | `certbot_remove_cron_job` | Remove legacy cron jobs |

@@ -14,7 +14,7 @@ Installs Docker CE from the official Docker repository.
 ## Variables
 
 | Variable | Default | Description |
-|----------|---------|-------------|
+| -------- | ------- | ----------- |
 | `docker_with_compose` | `false` | Install docker-compose standalone binary |
 | `docker_compose_version` | `2.39.2` | Version of docker-compose to install |
 | `docker_remove` | `false` | Remove Docker instead of installing |

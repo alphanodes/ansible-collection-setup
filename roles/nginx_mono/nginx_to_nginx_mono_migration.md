@@ -114,7 +114,7 @@ cause idempotence issues:
 #### Design Principle
 
 | Config Type | Location | Managed By | Behavior |
-|-------------|----------|------------|----------|
+| ----------- | -------- | ---------- | -------- |
 | **Global maps** | `/etc/nginx/conf.d/protection.conf` | Always installed | Passive - no effect unless vhost uses them |
 | **Global SSL** | `/etc/nginx/conf.d/ssl.conf` | First caller only | Uses `_nginx_mono_setup_done` fact |
 | **Per-vhost protection** | In vhost template | Each service | Controlled by `nginx_with_protection` variable |
@@ -383,7 +383,7 @@ Don't add new variables for:
 ### Completed Migrations
 
 | Role | Date | Notes |
-|------|------|-------|
+| ---- | ---- | ----- |
 | ethercalc | 2024-10 | First migration, WebSocket support tested |
 | roundcube | 2024-11 | PHP-FPM pattern |
 | dendrite | 2024-11 | Matrix server |
@@ -400,7 +400,7 @@ Don't add new variables for:
 ### Pending Migrations
 
 | Role | Complexity | Key Challenges |
-|------|------------|----------------|
+| ---- | ---------- | -------------- |
 | **redmine** | HIGH | Multiple instances (`redmine_instances`), complex vhost with many locations, custom proxy settings, socket paths |
 | drupal | MEDIUM | Multiple instances pattern, FPM configuration |
 | gitlab | MEDIUM | Complex reverse proxy, WebSocket for action cable |
@@ -552,7 +552,7 @@ Used for standalone vhosts like `_parking` or direct nginx configuration:
 ### Key Differences
 
 | Feature | Service Mode | Instance Mode |
-|---------|--------------|---------------|
+| ------- | ------------ | ------------- |
 | Variable for instance | `nginx_mono_instance` | `instance` (from loop) |
 | htpasswd path | `.htpasswd_{{ nginx_mono_service_name }}` | `.htpasswd_{{ instance.name }}` |
 | Template comment | `# nginx {{ nginx_mono_service_name }}` | `# nginx {{ instance.name }}` |
