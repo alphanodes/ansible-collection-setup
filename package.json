@@ -2,6 +2,6 @@
   "dependencies": {},
   "license": "GPL-2.0",
   "devDependencies": {
-    "markdownlint-cli": "^0.45.0"
+    "markdownlint-cli": "^0.47.0"
   }
 }
