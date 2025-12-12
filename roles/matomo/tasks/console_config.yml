@@ -1,0 +1,16 @@
+---
+# Matomo console-based config settings
+# Uses matomo console config:get/set for idempotent configuration
+
+- name: Apply console-based config settings
+  when:
+    - matomo_console_config is defined
+    - matomo_console_config | length > 0
+    - matomo_config_file_exists.stat.exists
+  block:
+    - name: Process config sections
+      ansible.builtin.include_tasks: console_config_section.yml
+      loop: "{{ matomo_console_config | dict2items }}"
+      loop_control:
+        loop_var: config_section
+        label: "{{ config_section.key }}"

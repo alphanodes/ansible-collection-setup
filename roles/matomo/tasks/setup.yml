@@ -79,6 +79,12 @@
     - matomo_exists.stat.exists
     - not matomo_archive_file_exists.stat.exists
 
+- name: Include geolocation tasks
+  ansible.builtin.include_tasks: geolocation.yml
+  when: matomo_geolocation_enabled
+  tags:
+    - geolocation
+
 # required for matomo_console jobs
 - name: Make sure ansible working directory for matomo_user is existing
   when: matomo_user != 'root'
@@ -132,21 +138,6 @@
   ansible.builtin.include_tasks: setup_nginx.yml
   tags:
     - nginx
-
-- name: Set force_ssl = 1
-  ansible.builtin.lineinfile:
-    path: '{{ matomo_config_file }}'
-    insertbefore: '^salt ='
-    regexp: 'force_ssl ='
-    line: 'force_ssl = 1'
-  when: matomo_config_file_exists.stat.exists
-
-- name: Show update notification to superusers only
-  ansible.builtin.lineinfile:
-    path: '{{ matomo_config_file }}'
-    insertafter: "^[database]"
-    regexp: 'show_update_notification_to_superusers_only ='
-    line: 'show_update_notification_to_superusers_only = 1'
 
 - name: Set multi_server_environment
   ansible.builtin.lineinfile:
@@ -202,3 +193,11 @@
   loop_control:
     loop_var: active_plugin
   loop: '{{ matomo_plugins }}'
+
+- name: Include console-based config tasks
+  ansible.builtin.include_tasks: console_config.yml
+  when:
+    - matomo_console_config is defined
+    - matomo_console_config | length > 0
+  tags:
+    - config

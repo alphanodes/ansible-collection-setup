@@ -41,6 +41,20 @@
     matomo_vhost_for_zabbix: false
     matomo_db_password: 'test_matomo_password'
 
+    # === NEW FEATURES TO TEST ===
+    # Enable geolocation with DBIP database download
+    matomo_geolocation_enabled: true
+
+    # Console config settings (idempotent via matomo console)
+    # These will be applied via console config:set after installation
+    matomo_console_config:
+      General:
+        force_ssl: 1
+        show_update_notification_to_superusers_only: 1
+
+    # Upgrade cleanup feature (tested only during actual upgrades)
+    matomo_upgrade_cleanup_unexpected_files: true
+
   pre_tasks:
     - name: Update apt cache
       ansible.builtin.apt:
@@ -80,6 +94,14 @@
         owner: www-data
         group: www-data
         mode: '0755'
+
+    - name: Create matomo private directory for testing (DBIP archives)
+      ansible.builtin.file:
+        path: /srv/matomo/private
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0750'
 
     # Use force: false to not overwrite files on subsequent runs (idempotent)
     - name: Create dummy index.php for testing

@@ -1,0 +1,11 @@
+---
+# Process a single config section for matomo console config:set
+
+- name: Process config keys in section {{ config_section.key }}
+  ansible.builtin.include_tasks: console_config_key.yml
+  loop: "{{ config_section.value | dict2items }}"
+  loop_control:
+    loop_var: config_item
+    label: "{{ config_section.key }}.{{ config_item.key }}"
+  vars:
+    config_section_name: "{{ config_section.key }}"

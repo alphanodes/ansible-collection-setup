@@ -38,10 +38,15 @@ matomo_db_user: matomo
 matomo_db_password: '{{ [ansible_machine_id, ansible_hostname, "matomo"] | join | hash("md5") }}'
 matomo_db_tables_prefix: piwik_
 
-matomo_geoip_url: 'http://geolite.maxmind.com/download/geoip/database'
-matomo_geoip_file: GeoLiteCity.dat.gz
-matomo_geoip_dest: GeoIPCity.dat
-matomo_geoip_custom_directory: '{{ matomo_dir }}/misc'
+# Geolocation Settings (DBIP City Lite - free, no registration required)
+# Compatible with alphanodes.tasks.matomo_task for cluster setups
+# For clusters: set matomo_geolocation_enabled: false and use ansible_node matomo_geoip_update playbook
+matomo_geolocation_enabled: true
+matomo_task_geo_target_file: DBIP-City.mmdb
+matomo_task_geo_source_file: "dbip-city-lite-{{ lookup('pipe', 'date +%Y-%m') }}.mmdb"
+matomo_task_geo_url: 'https://download.db-ip.com/free/{{ matomo_task_geo_source_file }}.gz'
+matomo_task_geo_dest: '{{ matomo_dir }}/misc/{{ matomo_task_geo_target_file }}'
+matomo_task_geo_archive_dir: '{{ matomo_private_dir }}'
 
 # for cluster you can customize installation
 matomo_with_mysql: true
@@ -63,3 +68,17 @@ matomo_plugins: []
 matomo_cleanup_files: []
 
 matomo_with_robots_txt: false
+
+# Private directory for backups, DBIP archive, etc.
+matomo_private_dir: '{{ matomo_dir }}/private'
+
+# Console-based config settings (idempotent via matomo console config:set)
+# Set to empty dict {} to skip console config
+matomo_console_config:
+  General:
+    force_ssl: 1
+    show_update_notification_to_superusers_only: 1
+
+# Upgrade settings
+# Run diagnostics:unexpected-files --delete after upgrade to clean up old files
+matomo_upgrade_cleanup_unexpected_files: true

@@ -1,0 +1,73 @@
+---
+# Matomo geolocation tasks - Download and configure DBIP City Lite database
+# Uses matomo_task_geo_* variables for compatibility with alphanodes.tasks.matomo_task
+
+- name: Ensure geo archive directory exists
+  ansible.builtin.file:
+    path: '{{ matomo_task_geo_archive_dir }}'
+    state: directory
+    owner: '{{ matomo_user }}'
+    group: '{{ matomo_group }}'
+    mode: '0750'
+
+- name: Check if current DBIP City Lite database exists
+  ansible.builtin.stat:
+    path: '{{ matomo_task_geo_archive_dir }}/{{ matomo_task_geo_source_file }}'
+  register: matomo_geo_mmdb
+
+- name: Download and extract DBIP City Lite database
+  when: not matomo_geo_mmdb.stat.exists
+  block:
+    - name: Download current DBIP City Lite database archive
+      ansible.builtin.get_url:
+        url: '{{ matomo_task_geo_url }}'
+        dest: '{{ matomo_task_geo_archive_dir }}/{{ matomo_task_geo_source_file }}.gz'
+        timeout: 120
+        owner: '{{ matomo_user }}'
+        group: '{{ matomo_group }}'
+        mode: '0640'
+
+    - name: Check if downloaded archive exists
+      ansible.builtin.stat:
+        path: '{{ matomo_task_geo_archive_dir }}/{{ matomo_task_geo_source_file }}.gz'
+      register: matomo_geo_archive
+
+    - name: Extract DBIP City Lite database
+      when:
+        - matomo_geo_archive.stat is defined
+        - matomo_geo_archive.stat.exists
+      block:
+        - name: Unarchive DBIP City Lite database
+          ansible.builtin.command:
+            cmd: gunzip {{ matomo_task_geo_source_file }}.gz
+            chdir: '{{ matomo_task_geo_archive_dir }}'
+            creates: '{{ matomo_task_geo_archive_dir }}/{{ matomo_task_geo_source_file }}'
+          become: true
+          become_user: '{{ matomo_user }}'
+      rescue:
+        - name: Delete corrupted DBIP archive on extraction failure
+          ansible.builtin.file:
+            path: '{{ matomo_task_geo_archive_dir }}/{{ matomo_task_geo_source_file }}.gz'
+            state: absent
+
+        - name: Delete corrupted DBIP database on extraction failure
+          ansible.builtin.file:
+            path: '{{ matomo_task_geo_archive_dir }}/{{ matomo_task_geo_source_file }}'
+            state: absent
+
+- name: Check if DBIP database is ready for deployment
+  ansible.builtin.stat:
+    path: '{{ matomo_task_geo_archive_dir }}/{{ matomo_task_geo_source_file }}'
+  register: matomo_geo_ready
+
+- name: Deploy DBIP City Lite database to Matomo
+  when:
+    - matomo_geo_ready.stat is defined
+    - matomo_geo_ready.stat.exists
+  ansible.builtin.copy:
+    src: '{{ matomo_task_geo_archive_dir }}/{{ matomo_task_geo_source_file }}'
+    dest: '{{ matomo_task_geo_dest }}'
+    remote_src: true
+    owner: '{{ matomo_user }}'
+    group: '{{ matomo_group }}'
+    mode: '0644'

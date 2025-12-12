@@ -41,3 +41,38 @@
   when:
     - mysql_replication_role is undefined or mysql_replication_role == 'master'
     - sync_master is undefined
+
+- name: Create security files after upgrade
+  ansible.builtin.command:
+    cmd: php console --no-ansi -n core:create-security-files
+    chdir: "{{ matomo_dir }}"
+  become: true
+  become_user: '{{ matomo_user }}'
+  changed_when: true
+  when:
+    - mysql_replication_role is undefined or mysql_replication_role == 'master'
+    - sync_master is undefined
+
+- name: Clean up unexpected files after upgrade
+  when: matomo_upgrade_cleanup_unexpected_files
+  block:
+    - name: Check for unexpected files
+      ansible.builtin.command:
+        cmd: php console --no-ansi -n diagnostics:unexpected-files
+        chdir: "{{ matomo_dir }}"
+      become: true
+      become_user: '{{ matomo_user }}'
+      changed_when: false
+      check_mode: false
+      register: matomo_unexpected_files
+
+    - name: Delete unexpected files
+      ansible.builtin.command:
+        cmd: php console --no-ansi -n diagnostics:unexpected-files --delete
+        chdir: "{{ matomo_dir }}"
+      become: true
+      become_user: '{{ matomo_user }}'
+      changed_when: true
+      when:
+        - matomo_unexpected_files.rc == 0
+        - matomo_unexpected_files.stdout | length > 0
