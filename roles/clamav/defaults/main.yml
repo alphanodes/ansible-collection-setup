@@ -17,6 +17,10 @@ clamav_socket_path: /var/run/clamav/clamd.ctl
 clamav_socket_group: clamav
 clamav_socket_mode: '0660'
 
+# Users that need access to ClamAV socket (added to clamav_socket_group)
+# Example: ['www-data', 'redmine-sakd']
+clamav_socket_users: []
+
 # Resource limits for clamd to prevent excessive memory usage
 # ClamAV can use 500MB-1GB+ RAM, so we set reasonable limits
 clamav_max_threads: 12

@@ -13,6 +13,14 @@
     enabled: false
   failed_when: false
 
+- name: Add users to ClamAV socket group
+  ansible.builtin.user:
+    name: '{{ item }}'
+    groups: '{{ clamav_socket_group }}'
+    append: true
+  loop: '{{ clamav_socket_users }}'
+  when: clamav_socket_users | length > 0
+
 - name: Setup clamd configuration
   ansible.builtin.template:
     src: clamd.conf.j2
