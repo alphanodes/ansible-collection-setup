@@ -6,7 +6,7 @@
 
 - name: Set if managing_user or not
   ansible.builtin.set_fact:
-    managing_user: "{{ true if user.name == 'root' or ansible_user | default(ansible_env.USER) == user.name else false }}"
+    managing_user: "{{ true if user.name == 'root' or ansible_user | default(ansible_facts['env']['USER']) == user.name else false }}"
 
 - name: Set/Reset user_home
   ansible.builtin.set_fact:

@@ -2,7 +2,7 @@
 
 - name: Set facts
   ansible.builtin.set_fact:
-    managing_user: "{{ ansible_user | default(ansible_env.USER) | default('root') }}"
+    managing_user: "{{ ansible_user | default(ansible_facts['env']['USER']) | default('root') }}"
 
 # Update should never be updated here because user already exists,
 # but we have to specify it because otherwise ansible user reset password to empty string

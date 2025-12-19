@@ -13,4 +13,4 @@ python_pip_virtualenv_site_packages: false
 
 # python_pip_default_venv: yourenv
 
-python_venv_parent: "{{ ansible_env.HOME }}/.venvs"
+python_venv_parent: "{{ ansible_facts['env']['HOME'] }}/.venvs"

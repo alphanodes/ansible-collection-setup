@@ -4,7 +4,7 @@
 # with ansible < 2.19
 managed_by_ansible: "{{ ansible_managed | default('This file is managed by Ansible') }}"
 ansible_pip_venv: ansible
-python_venv_parent: "{{ ansible_env.HOME }}/.venvs"
+python_venv_parent: "{{ ansible_facts['env']['HOME'] }}/.venvs"
 
 # see https://docs.ansible.com/ansible/latest/collections/ansible/posix/sysctl_module.html#parameter-sysctl_file
 common_sysctl_file: /etc/sysctl.d/90-ansible.conf
