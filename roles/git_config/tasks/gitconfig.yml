@@ -24,7 +24,7 @@
           when: git_config_settings | selectattr('name', 'eq', item.name) | list | count == 0
           loop:
             - name: user.name
-              default: '{{ ansible_hostname }} job'
+              default: '{{ ansible_facts["hostname"] }} job'
             - name: user.email
               default: "{{ alphanodes_support_mail | default('root@localhost') }}"
             - name: push.default

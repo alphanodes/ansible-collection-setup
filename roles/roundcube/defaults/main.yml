@@ -4,7 +4,7 @@
 roundcube_db_host: localhost
 roundcube_db_name: roundcube
 roundcube_db_user: roundcube
-roundcube_db_password: '{{ [ansible_machine_id, ansible_hostname, "roundcube"] | join | hash("md5") }}'
+roundcube_db_password: '{{ [ansible_facts["machine_id"], ansible_facts["hostname"], "roundcube"] | join | hash("md5") }}'
 
 roundcube_htdocs: /srv/roundcube
 roundcube_config_dir: '{{ roundcube_htdocs }}/config'

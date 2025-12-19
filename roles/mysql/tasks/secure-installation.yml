@@ -6,7 +6,7 @@
     host: 'localhost'
     plugin: caching_sha2_password
     plugin_auth_string: "{{ mysql_user_password }}"
-    salt: "{{ [ansible_machine_id, ansible_hostname, 'mysqlsecure'] | join | hash('sha1') | truncate(20, true, '') }}"
+    salt: "{{ [ansible_facts['machine_id'], ansible_facts['hostname'], 'mysqlsecure'] | join | hash('sha1') | truncate(20, true, '') }}"
     priv: '*.*:ALL,GRANT'
     column_case_sensitive: true
     state: present
@@ -49,7 +49,7 @@
 
     - name: Update MySQL root password
       vars:
-        db_salt: "{{ [ansible_machine_id, ansible_hostname, 'mysqlroot'] | join | hash('sha1') | truncate(20, true, '') }}"
+        db_salt: "{{ [ansible_facts['machine_id'], ansible_facts['hostname'], 'mysqlroot'] | join | hash('sha1') | truncate(20, true, '') }}"
         with_password: "{{ item.Host | string != 'localhost' or mysql_root_plugin != 'auth_socket' }}"
       community.mysql.mysql_user:
         login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' or mysql_socket_force else omit }}"

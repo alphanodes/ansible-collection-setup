@@ -82,7 +82,7 @@
     state: absent
   when:
     - postgresql_log_destination == 'syslog'
-    - ansible_hostname != 'instance'
+    - ansible_facts['hostname'] != 'instance'
 
 - name: Include postgresqltuner tasks
   ansible.builtin.include_tasks: postgresqltuner.yml

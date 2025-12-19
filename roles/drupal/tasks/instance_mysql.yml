@@ -20,7 +20,7 @@
     name: '{{ instance.db_user | default(instance.name) | replace("-", "_") }}'
     plugin: caching_sha2_password
     plugin_auth_string: "{{ instance.db_password | default(drupal_db_password) }}"
-    salt: "{{ [ansible_machine_id, ansible_hostname, 'drupal'] | join | hash('sha1') | truncate(20, true, '') }}"
+    salt: "{{ [ansible_facts['machine_id'], ansible_facts['hostname'], 'drupal'] | join | hash('sha1') | truncate(20, true, '') }}"
     host: '{{ instance.db_host | default(drupal_db_host) }}'
     priv: '{{ instance.db_name | default(instance.name) | replace("-", "_") }}.*:ALL'
     column_case_sensitive: true

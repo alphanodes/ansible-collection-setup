@@ -4,7 +4,7 @@
 # use fixed version e.g. '1.20.11' or latest
 # see https://go.dev/dl/
 golang_version: latest
-golang_arch: "{{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}"
+golang_arch: "{{ 'arm64' if ansible_facts['architecture'] == 'aarch64' else 'amd64' }}"
 # use it with fixed version
 # golang_sha256_checksum: ef79a11aa095a08772d2a69e4f152f897c4e96ee297b0dc20264b7dec2961abe
 

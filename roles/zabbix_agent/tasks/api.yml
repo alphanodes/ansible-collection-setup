@@ -55,20 +55,20 @@
     - name: Create inventory information
       ansible.builtin.set_fact:
         zabbix_inventory_zabbix:
-          name: "{{ zabbix_visible_hostname | default(ansible_fqdn) }}"
+          name: "{{ zabbix_visible_hostname | default(ansible_facts['fqdn']) }}"
           vendor: "{{ hoster | default('unknown') }}"
-          os: "{{ ansible_facts.distribution }}"
-          os_full: "{{ ansible_lsb.description }} {{ ansible_kernel }}"
-          os_short: "{{ ansible_facts.distribution_release }}"
-          type: "{{ ansible_virtualization_type }}"
-          hw_arch: "{{ ansible_architecture }}"
-          hardware: "{{ ansible_system_vendor }}"
-          hardware_full: "{{ ansible_processor_threads_per_core }} x {{ ansible_processor.2 | default('unknown') }}\nRAM: {{ ansible_memory_mb.real.total / 1024 | round | int }} GB"
-          software_app_a: "Python {{ ansible_python_version }}"
-          serialno_b: "BIOS {{ ansible_bios_version }}"
-          chassis: "Product {{ ansible_product_name }}"
+          os: "{{ ansible_facts['distribution'] }}"
+          os_full: "{{ ansible_facts['lsb']['description'] }} {{ ansible_facts['kernel'] }}"
+          os_short: "{{ ansible_facts['distribution_release'] }}"
+          type: "{{ ansible_facts['virtualization_type'] }}"
+          hw_arch: "{{ ansible_facts['architecture'] }}"
+          hardware: "{{ ansible_facts['system_vendor'] }}"
+          hardware_full: "{{ ansible_facts['processor_threads_per_core'] }} x {{ ansible_facts['processor'][2] | default('unknown') }}\nRAM: {{ ansible_facts['memory_mb']['real']['total'] / 1024 | round | int }} GB"
+          software_app_a: "Python {{ ansible_facts['python_version'] }}"
+          serialno_b: "BIOS {{ ansible_facts['bios_version'] }}"
+          chassis: "Product {{ ansible_facts['product_name'] }}"
           date_hw_install: "{{ linux_install_date | default('unknown') }}"
-          software_full: "BIOS {{ ansible_bios_version }}\nBIOS date: {{ ansible_bios_date }}"
+          software_full: "BIOS {{ ansible_facts['bios_version'] }}\nBIOS date: {{ ansible_facts['bios_date'] }}"
 
 # see https://docs.ansible.com/ansible/latest/collections/community/zabbix/zabbix_host_module.html
 - name: Create a new host or update an existing host's info - {{ zabbix_url }}
@@ -86,7 +86,7 @@
         main: 1
         useip: "{{ zabbix_use_ip }}"
         ip: "{{ zabbix_agent_ip | default(ext_ip_address_v4) | default(ip_address_v4) }}"
-        dns: "{{ zabbix_agent_dns | default(ansible_fqdn) }}"
+        dns: "{{ zabbix_agent_dns | default(ansible_facts['fqdn']) }}"
         port: "{{ zabbix_port_ext | default(zabbix_agent_listen_port) }}"
     visible_name: "{{ zabbix_visible_hostname | default(inventory_hostname) }}"
     description: "{{ zabbix_agent_description | default(host_description) | default(omit) }}"

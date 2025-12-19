@@ -57,7 +57,7 @@
       changed_when: bundler_gpgme_result.rc != 0
 
     - name: Update gem packages for redmine - {{ instance_name }}
-      ansible.builtin.command: bash -lc "bundle update --jobs={{ ansible_processor_nproc }}"
+      ansible.builtin.command: bash -lc "bundle update --jobs={{ ansible_facts['processor_nproc'] }}"
       args:
         chdir: '{{ redmine_app_dir }}'
       register: redmine_gem_result

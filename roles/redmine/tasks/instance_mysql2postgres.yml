@@ -2,7 +2,7 @@
 # NOTE: only host based configuration files are supported at the moment
 # (not redmine instance based!)
 
-- name: Check if mysql2postgres is provided for {{ ansible_hostname }}
+- name: Check if mysql2postgres is provided for {{ ansible_facts['hostname'] }}
   ansible.builtin.stat:
     path: "{{ playbook_dir }}/files/redmine/mysql2postgres/{{ inventory_hostname }}.yml"
   ignore_errors: true

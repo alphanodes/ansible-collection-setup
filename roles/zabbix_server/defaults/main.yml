@@ -18,7 +18,7 @@ zabbix_server_mail_from: monitor@example.com
 zabbix_server_db_host: ''
 zabbix_server_db_name: zabbix
 zabbix_server_db_user: zabbix
-zabbix_server_db_password: '{{ [ansible_machine_id, ansible_hostname, "zabbix"] | join | hash("md5") }}'
+zabbix_server_db_password: '{{ [ansible_facts["machine_id"], ansible_facts["hostname"], "zabbix"] | join | hash("md5") }}'
 zabbix_server_db_socket: ''
 zabbix_server_allow_unsupported_db_versions: 1
 

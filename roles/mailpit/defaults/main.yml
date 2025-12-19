@@ -6,7 +6,7 @@
 # Version to install - can be specific version (e.g. '1.20.0') or 'latest'
 # When set to 'latest', the role will fetch the latest release from GitHub API
 mailpit_version: latest
-mailpit_arch: "{{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}"
+mailpit_arch: "{{ 'arm64' if ansible_facts['architecture'] == 'aarch64' else 'amd64' }}"
 mailpit_binary_path: /usr/local/bin/mailpit
 
 mailpit_service_user: mailpit

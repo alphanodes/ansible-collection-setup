@@ -46,6 +46,6 @@ zsh_global_env:
 
 zsh_histsize: 1000
 
-zsh_virtualization_type: "{{ virtualization_type if virtualization_type is defined else ansible_virtualization_type }}"
+zsh_virtualization_type: "{{ virtualization_type if virtualization_type is defined else ansible_facts['virtualization_type'] }}"
 
 zsh_auto_ls_plugin_file: /usr/share/alphanodes/zsh/auto-ls.zsh

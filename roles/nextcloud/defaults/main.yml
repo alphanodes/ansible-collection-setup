@@ -15,17 +15,17 @@ nextcloud_old_htdocs: '{{ nextcloud_dir }}/nextcloud.old'
 # set to proxy server, if any is used
 nextcloud_proxy_server: ''
 
-nextcloud_vhost_server: "{{ ansible_fqdn }}"
+nextcloud_vhost_server: "{{ ansible_facts['fqdn'] }}"
 nextcloud_vhost_for_zabbix: false
 nextcloud_db_host: /run/postgresql
 nextcloud_db_type: pgsql
 nextcloud_db_name: nextcloud
 nextcloud_db_user: nextcloud
-nextcloud_db_password: '{{ [ansible_machine_id, ansible_hostname, "nextcloud"] | join | hash("md5") }}'
+nextcloud_db_password: '{{ [ansible_facts["machine_id"], ansible_facts["hostname"], "nextcloud"] | join | hash("md5") }}'
 # only used with PostgreSQL
 nextcloud_db_role_flags: 'NOSUPERUSER,CREATEDB'
 
-nextcloud_mail_domain: '{{ ansible_domain }}'
+nextcloud_mail_domain: '{{ ansible_facts["domain"] }}'
 nextcloud_mail_from_address: webmaster
 nextcloud_logtimezone: "{{ ntp_timezone | default('Europe/Berlin') }}"
 nextcloud_default_language: de

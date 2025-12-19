@@ -23,7 +23,7 @@ dendrite_app_dir: '{{ dendrite_home_dir }}/dendrite'
 
 dendrite_db_name: dendrite
 dendrite_db_user: dendrite
-dendrite_db_password: '{{ [ansible_machine_id, ansible_hostname, "dendrite"] | join | hash("md5") }}'
+dendrite_db_password: '{{ [ansible_facts["machine_id"], ansible_facts["hostname"], "dendrite"] | join | hash("md5") }}'
 dendrite_db_role_flags: CREATEDB
 # TODO: socket does not work at the moment
 # dendrite_db_host: /run/postgresql

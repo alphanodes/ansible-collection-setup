@@ -13,7 +13,7 @@ drupal_vhost_default: false
 
 # drupal_db_name: item.name
 # drupal_db_user: item.name
-drupal_db_password: '{{ [ansible_machine_id, ansible_hostname, "drupal"] | join | hash("md5") }}'
+drupal_db_password: '{{ [ansible_facts["machine_id"], ansible_facts["hostname"], "drupal"] | join | hash("md5") }}'
 drupal_db_host: localhost
 drupal_db_port: 3306
 drupal_db_driver: mysql

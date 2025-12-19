@@ -137,7 +137,7 @@ mysql_server_password_salt: "{{ common_password_salt | default('') }}"
 
 mysql_zabbix_host: localhost
 mysql_zabbix_user: zbx_monitor
-mysql_zabbix_password: '{{ [ansible_machine_id, ansible_hostname, mysql_server_password_salt, "zabbix-agent"] | join | hash("md5") }}'
+mysql_zabbix_password: '{{ [ansible_facts["machine_id"], ansible_facts["hostname"], mysql_server_password_salt, "zabbix-agent"] | join | hash("md5") }}'
 
 mysql_replication_with_write: false
 mysql_secure_file_priv: ''
@@ -155,7 +155,7 @@ mysql_server_tmpdir: /run/mysqld
 # not supported by geerlymysql
 mysql_table_definition_cache: 2048
 
-mysql_server_debian_sys_maint_password: '{{ [ansible_machine_id, ansible_hostname, mysql_server_password_salt, "debian-sys-maint"] | join | hash("md5") }}'
+mysql_server_debian_sys_maint_password: '{{ [ansible_facts["machine_id"], ansible_facts["hostname"], mysql_server_password_salt, "debian-sys-maint"] | join | hash("md5") }}'
 
 mysql_mysqltuner_url: https://raw.githubusercontent.com/major/MySQLTuner-perl/master/mysqltuner.pl
 

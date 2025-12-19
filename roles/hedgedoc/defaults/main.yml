@@ -37,11 +37,11 @@ hedgedoc_allow_email_register: '{{ hedgedoc_email }}'
 hedgedoc_allow_gravatar: true
 hedgedoc_allow_pdf_export: false
 hedgedoc_session_name: 'hedgedoc_session'
-hedgedoc_session_secret: '{{ [ansible_machine_id, ansible_hostname, "hedgedoc-session"] | join | hash("md5") }}'
+hedgedoc_session_secret: '{{ [ansible_facts["machine_id"], ansible_facts["hostname"], "hedgedoc-session"] | join | hash("md5") }}'
 hedgedoc_image_upload_type: 'filesystem'
 
 hedgedoc_db_user: hedgedoc
-hedgedoc_db_password: '{{ [ansible_machine_id, ansible_hostname, "hedgedoc"] | join | hash("md5") }}'
+hedgedoc_db_password: '{{ [ansible_facts["machine_id"], ansible_facts["hostname"], "hedgedoc"] | join | hash("md5") }}'
 hedgedoc_db_name: hedgedoc
 hedgedoc_db_host: /run/postgresql
 hedgedoc_db_port: 5432

@@ -1,13 +1,13 @@
 ---
 
-- name: Check if privacy.md is provided for {{ ansible_hostname }}
+- name: Check if privacy.md is provided for {{ ansible_facts['hostname'] }}
   ansible.builtin.stat:
     path: "{{ playbook_dir }}/files/hedgedoc/{{ inventory_hostname }}/privacy.md"
   ignore_errors: true
   register: privacy_file
   delegate_to: localhost
 
-- name: Check if privacy.md is provided by group for {{ ansible_hostname }}
+- name: Check if privacy.md is provided by group for {{ ansible_facts['hostname'] }}
   ansible.builtin.stat:
     path: "{{ playbook_dir }}/files/hedgedoc/{{ group_names[0] }}/privacy.md"
   ignore_errors: true

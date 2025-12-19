@@ -19,7 +19,7 @@
             name: '{{ mysql_zabbix_user }}'
             plugin: caching_sha2_password
             plugin_auth_string: "{{ mysql_zabbix_password }}"
-            salt: "{{ [ansible_machine_id, ansible_hostname, 'zabbix'] | join | hash('sha1') | truncate(20, true, '') }}"
+            salt: "{{ [ansible_facts['machine_id'], ansible_facts['hostname'], 'zabbix'] | join | hash('sha1') | truncate(20, true, '') }}"
             host: '{{ mysql_zabbix_host }}'
             # USAGE,REPLICATION CLIENT,PROCESS,SHOW DATABASES,SHOW VIEW
             priv: '*.*:SUPER,PROCESS,RELOAD,SELECT'

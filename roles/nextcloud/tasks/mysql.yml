@@ -16,7 +16,7 @@
     name: '{{ nextcloud_db_user }}'
     plugin: caching_sha2_password
     plugin_auth_string: "{{ nextcloud_db_password }}"
-    salt: "{{ [ansible_machine_id, ansible_hostname, 'nextcloud'] | join | hash('sha1') | truncate(20, true, '') }}"
+    salt: "{{ [ansible_facts['machine_id'], ansible_facts['hostname'], 'nextcloud'] | join | hash('sha1') | truncate(20, true, '') }}"
     host: '{{ nextcloud_db_host }}'
     priv: '{{ nextcloud_db_name }}.*:ALL'
     column_case_sensitive: true

@@ -202,7 +202,7 @@
     name: debian-sys-maint
     plugin: caching_sha2_password
     plugin_auth_string: "{{ mysql_server_debian_sys_maint_password }}"
-    salt: "{{ [ansible_machine_id, ansible_hostname, 'debian-sys-maint'] | join | hash('sha1') | truncate(20, true, '') }}"
+    salt: "{{ [ansible_facts['machine_id'], ansible_facts['hostname'], 'debian-sys-maint'] | join | hash('sha1') | truncate(20, true, '') }}"
     host: localhost
     priv: '*.*:ALL,GRANT'
     column_case_sensitive: true
@@ -216,7 +216,7 @@
     host: "{{ item.host | default('localhost') }}"
     plugin: "{{ item.plugin | default('caching_sha2_password') }}"
     plugin_auth_string: "{{ item.plugin_auth_string | default(item.password) }}"
-    salt: "{{ [ansible_machine_id, ansible_hostname, 'mysqlusers'] | join | hash('sha1') | truncate(20, true, '') }}"
+    salt: "{{ [ansible_facts['machine_id'], ansible_facts['hostname'], 'mysqlusers'] | join | hash('sha1') | truncate(20, true, '') }}"
     priv: "{{ item.priv | default('*.*:USAGE') }}"
     state: "{{ item.state | default('present') }}"
     append_privs: "{{ item.append_privs | default('no') }}"

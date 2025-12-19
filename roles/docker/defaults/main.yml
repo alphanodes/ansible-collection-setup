@@ -22,5 +22,5 @@ docker_remove: false
 
 docker_with_compose: false
 docker_compose_version: '2.40.3'
-docker_compose_url: https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-linux-{{ ansible_architecture }}
+docker_compose_url: https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-linux-{{ ansible_facts['architecture'] }}
 docker_compose_path: /usr/local/bin/docker-compose

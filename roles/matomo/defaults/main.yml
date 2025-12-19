@@ -35,7 +35,7 @@ matomo_location_redirect: /piwik
 matomo_db_host: localhost
 matomo_db_name: matomo
 matomo_db_user: matomo
-matomo_db_password: '{{ [ansible_machine_id, ansible_hostname, "matomo"] | join | hash("md5") }}'
+matomo_db_password: '{{ [ansible_facts["machine_id"], ansible_facts["hostname"], "matomo"] | join | hash("md5") }}'
 matomo_db_tables_prefix: piwik_
 
 # Geolocation Settings (DBIP City Lite - free, no registration required)

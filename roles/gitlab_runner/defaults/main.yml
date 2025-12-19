@@ -27,7 +27,7 @@ gitlab_runner_timezone: "{{ ntp_timezone | default('Europe/Berlin') }}"
 gitlab_runner_registry_mirror: ''
 
 # Maximum number of global jobs to run concurrently
-gitlab_runner_concurrent: '{{ ansible_processor_nproc }}'
+gitlab_runner_concurrent: '{{ ansible_facts["processor_nproc"] }}'
 
 # see https://packages.gitlab.com/runner/gitlab-runner
 gitlab_runner_apt: true
