@@ -13,7 +13,7 @@ clamav_packages:
   - clamdscan
 
 # clamd configuration
-clamav_socket_path: /var/run/clamav/clamd.ctl
+clamav_socket_path: /run/clamav/clamd.ctl
 clamav_socket_group: clamav
 clamav_socket_mode: '0660'
 
