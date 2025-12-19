@@ -2,7 +2,7 @@
 # Process a single config section for matomo console config:set
 
 - name: Process config keys in section {{ config_section.key }}
-  ansible.builtin.include_tasks: console_config_key.yml
+  ansible.builtin.include_tasks: console_config_item.yml
   loop: "{{ config_section.value | dict2items }}"
   loop_control:
     loop_var: config_item

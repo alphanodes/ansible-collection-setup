@@ -1,0 +1,32 @@
+---
+# Process a single config key with matomo console
+
+- name: Get current matomo console config value
+  ansible.builtin.command:
+    cmd: >-
+      php console --no-ansi -n config:get
+      --section='{{ config_section_name }}'
+      --key='{{ config_item.key }}'
+      --format='text'
+    chdir: '{{ matomo_dir }}'
+  become: true
+  become_user: '{{ matomo_user }}'
+  changed_when: false
+  check_mode: false
+  register: matomo_config_current
+  failed_when: matomo_config_current.rc not in [0, 1]
+
+- name: Set matomo console config value
+  ansible.builtin.command:
+    cmd: >-
+      php console --no-ansi -n config:set
+      --section='{{ config_section_name }}'
+      --key='{{ config_item.key }}'
+      --value='{{ config_item.value }}'
+    chdir: '{{ matomo_dir }}'
+  become: true
+  become_user: '{{ matomo_user }}'
+  changed_when: true
+  when: >-
+    matomo_config_current.rc == 1
+    or matomo_config_current.stdout != config_section_name + '.' + config_item.key + ' = ' + config_item.value | string
