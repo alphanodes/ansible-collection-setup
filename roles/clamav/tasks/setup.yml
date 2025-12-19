@@ -21,6 +21,21 @@
   loop: '{{ clamav_socket_users }}'
   when: clamav_socket_users | length > 0
 
+# tmpfiles.d ensures runtime directory exists before socket activation at boot
+- name: Setup tmpfiles.d for ClamAV runtime directory
+  ansible.builtin.template:
+    src: tmpfiles-clamav.conf.j2
+    dest: /etc/tmpfiles.d/clamav.conf
+    owner: root
+    group: root
+    mode: '0644'
+  register: clamav_tmpfiles
+
+- name: Create runtime directory via tmpfiles  # noqa: no-handler
+  ansible.builtin.command: systemd-tmpfiles --create /etc/tmpfiles.d/clamav.conf
+  when: clamav_tmpfiles.changed
+  changed_when: true
+
 - name: Setup clamd configuration
   ansible.builtin.template:
     src: clamd.conf.j2

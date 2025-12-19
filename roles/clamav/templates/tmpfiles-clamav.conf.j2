@@ -1,0 +1,3 @@
+# ClamAV runtime directory for socket activation
+# This ensures the directory exists before systemd socket unit starts
+d {{ clamav_run_dir }} 0755 {{ clamav_user }} {{ clamav_socket_group }} -
