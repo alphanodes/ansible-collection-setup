@@ -65,6 +65,11 @@ ExitOnOOM yes
 # Foreground mode (required for systemd)
 Foreground yes
 
+# On-demand mode: stop daemon after idle timeout (socket activation)
+{% if clamav_on_demand and clamav_idle_timeout | int > 0 %}
+IdleTimeout {{ clamav_idle_timeout }}
+{% endif %}
+
 # Cross-filesystem support
 CrossFilesystems yes
 

@@ -3,6 +3,19 @@
   hosts: all
   gather_facts: false
   tasks:
+    - name: Check ClamAV daemon socket status
+      ansible.builtin.systemd_service:
+        name: clamav-daemon.socket
+      register: clamav_socket_unit
+
+    # SubState is 'listening' when waiting for connections, 'running' when service is active
+    - name: Assert ClamAV daemon socket is active
+      ansible.builtin.assert:
+        that:
+          - clamav_socket_unit.status.ActiveState == 'active'
+          - clamav_socket_unit.status.SubState in ['listening', 'running']
+        fail_msg: "ClamAV daemon socket is not active (state: {{ clamav_socket_unit.status.SubState }})"
+
     - name: Check ClamAV daemon service status
       ansible.builtin.systemd_service:
         name: clamav-daemon

@@ -5,10 +5,18 @@
   ansible.builtin.systemd_service:
     daemon_reload: true
 
+# Restart clamav-daemon: must restart socket first, then service
+# Socket activation requires both units to be restarted together
 - name: Restart clamav-daemon
   ansible.builtin.systemd_service:
-    name: '{{ clamav_service_name }}'
+    name: clamav-daemon.socket
     state: restarted
+  notify: Restart clamav-daemon service
+
+- name: Restart clamav-daemon service
+  ansible.builtin.systemd_service:
+    name: '{{ clamav_service_name }}'
+    state: "{{ 'stopped' if clamav_on_demand else 'restarted' }}"
 
 - name: Restart freshclam timer
   ansible.builtin.systemd_service:

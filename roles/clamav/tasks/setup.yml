@@ -85,13 +85,24 @@
     enabled: true
     daemon_reload: true
 
-- name: Ensure clamav-daemon is enabled and started
+# Socket activation: systemd creates the socket, clamd receives it as file descriptor
+# The socket unit MUST be started before/with the service
+- name: Ensure clamav-daemon socket is enabled and started
+  ansible.builtin.systemd_service:
+    name: clamav-daemon.socket
+    state: started
+    enabled: true
+    daemon_reload: true
+
+- name: Ensure clamav-daemon service is configured
   block:
-    - name: Start and enable clamav-daemon service
+    # On-demand mode: only socket is enabled, service starts on first connection
+    # Always-on mode: both socket and service are enabled and started
+    - name: Configure clamav-daemon service
       ansible.builtin.systemd_service:
         name: '{{ clamav_service_name }}'
-        state: '{{ clamav_service_state }}'
-        enabled: '{{ clamav_service_enabled }}'
+        state: "{{ 'stopped' if clamav_on_demand else clamav_service_state }}"
+        enabled: "{{ false if clamav_on_demand else clamav_service_enabled }}"
         daemon_reload: true
   rescue:
     - name: Show clamav-daemon service status for diagnostics
@@ -115,16 +126,13 @@
           journalctl:
           {{ clamav_journal_logs.stdout | default('') }}
 
-- name: Wait for ClamAV socket to be available
-  ansible.builtin.wait_for:
-    path: '{{ clamav_socket_path }}'
-    state: present
-    timeout: 30
-
-- name: Test ClamAV daemon is working via socket
+# Test ClamAV is working - this also triggers on-demand start if needed
+# Using clamdscan --ping is more reliable than wait_for on socket file
+# because socket activation may not create the file until first connection
+- name: Test ClamAV daemon is working
   ansible.builtin.command: clamdscan --ping 3
   register: clamav_ping_test
   changed_when: false
-  retries: 5
-  delay: 3
+  retries: 10
+  delay: 5
   until: clamav_ping_test.rc == 0

@@ -37,6 +37,14 @@ clamav_tcp_socket: false
 clamav_tcp_addr: 127.0.0.1
 clamav_tcp_port: 3310
 
+# On-demand mode (socket activation only)
+# When true, clamd starts only when needed and stops after idle timeout
+# Saves ~500MB-1GB RAM on servers that scan infrequently
+clamav_on_demand: false
+# Seconds to wait before stopping idle daemon (only used when clamav_on_demand is true)
+# Set to 0 to disable auto-stop (daemon stays running until manually stopped)
+clamav_idle_timeout: 300
+
 # Scan options
 clamav_scan_pe: true
 clamav_scan_elf: true
