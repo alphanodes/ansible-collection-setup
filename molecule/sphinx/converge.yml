@@ -3,6 +3,10 @@
   hosts: all
   become: true
 
+  vars:
+    # Use 'present' for idempotency tests, production uses 'latest'
+    python_pip_default_state: present
+
   pre_tasks:
     - name: Update apt cache.
       ansible.builtin.apt:
