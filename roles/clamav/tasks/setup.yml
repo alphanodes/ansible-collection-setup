@@ -130,9 +130,30 @@
 # Using clamdscan --ping is more reliable than wait_for on socket file
 # because socket activation may not create the file until first connection
 - name: Test ClamAV daemon is working
-  ansible.builtin.command: clamdscan --ping 3
-  register: clamav_ping_test
-  changed_when: false
-  retries: 10
-  delay: 5
-  until: clamav_ping_test.rc == 0
+  block:
+    - name: Ping ClamAV daemon
+      ansible.builtin.command: clamdscan --ping 3
+      register: clamav_ping_test
+      changed_when: false
+      retries: 3
+      delay: 5
+      until: clamav_ping_test.rc == 0
+  rescue:
+    # If ping fails, restart socket and service to recover from inconsistent state
+    - name: Restart clamav-daemon socket to recover
+      ansible.builtin.systemd_service:
+        name: clamav-daemon.socket
+        state: restarted
+
+    - name: Restart clamav-daemon service to recover
+      ansible.builtin.systemd_service:
+        name: '{{ clamav_service_name }}'
+        state: "{{ 'stopped' if clamav_on_demand else 'restarted' }}"
+
+    - name: Ping ClamAV daemon after recovery
+      ansible.builtin.command: clamdscan --ping 3
+      register: clamav_ping_recovery
+      changed_when: false
+      retries: 10
+      delay: 5
+      until: clamav_ping_recovery.rc == 0
