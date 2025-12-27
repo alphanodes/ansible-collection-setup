@@ -2,7 +2,7 @@
 
 - name: Calc file name for download cache
   ansible.builtin.set_fact:
-    tmp_file: "/tmp/mysqltuner-{{ ansible_date_time.date }}.pl"
+    tmp_file: "/tmp/mysqltuner-{{ ansible_facts.date_time.date }}.pl"
 
 - name: Download mysqltuner.pl on local to cache
   ansible.builtin.get_url:

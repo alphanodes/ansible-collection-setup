@@ -2,8 +2,8 @@
 
 - name: Build nanosecond timestamp for Loki push
   ansible.builtin.set_fact:
-    loki_ts_ns: "{{ (ansible_date_time.epoch | int) ~ '000000000' }}"
-    loki_msg: "hello from ansible at {{ ansible_date_time.iso8601 }}"
+    loki_ts_ns: "{{ (ansible_facts.date_time.epoch | int) ~ '000000000' }}"
+    loki_msg: "hello from ansible at {{ ansible_facts.date_time.iso8601 }}"
 
 - name: GET /ready should return 200
   ansible.builtin.uri:
@@ -49,8 +49,8 @@
 
 - name: Build range window and query
   ansible.builtin.set_fact:
-    loki_start_ns: "{{ ((ansible_date_time.epoch | int) - 300) ~ '000000000' }}"
-    loki_end_ns: "{{ (ansible_date_time.epoch | int) ~ '000000000' }}"
+    loki_start_ns: "{{ ((ansible_facts.date_time.epoch | int) - 300) ~ '000000000' }}"
+    loki_end_ns: "{{ (ansible_facts.date_time.epoch | int) ~ '000000000' }}"
     loki_q_expr: "{job=\"{{ loki_test_job }}\"}"
 
 - name: GET /loki/api/v1/query_range for the test stream

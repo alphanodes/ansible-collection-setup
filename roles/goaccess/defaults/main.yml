@@ -43,7 +43,7 @@ goaccess_with_data_run: true
 goaccess_geoip_download: true
 goaccess_geoip_dir: /usr/local/share/geoip
 goaccess_geoip_target_file: dbip-city-lite.mmdb
-goaccess_geoip_source_file: dbip-city-lite-{{ ansible_date_time.year }}-{{ ansible_date_time.month }}.mmdb.gz
+goaccess_geoip_source_file: dbip-city-lite-{{ ansible_facts.date_time.year }}-{{ ansible_facts.date_time.month }}.mmdb.gz
 goaccess_geoip_url: https://download.db-ip.com/free/{{ goaccess_geoip_source_file }}
 goaccess_geoip_latest_database: "{{ software_path }}/{{ goaccess_geoip_source_file }}"
 goaccess_geoip_database: "{{ goaccess_geoip_dir }}/{{ goaccess_geoip_target_file }}"
