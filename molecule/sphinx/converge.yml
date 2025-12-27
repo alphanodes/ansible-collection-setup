@@ -12,8 +12,6 @@
     sphinx_instances:
       - name: test_docs
         repo: /tmp/test_sphinx_repo
-        dirs:
-          - name: guide
         vhost_users:
           - user: testuser
             password: testpassword
