@@ -127,6 +127,14 @@ http {
     }
 {% endif %}
 
+    # Map for proxy Host header - preserves port for non-standard ports
+    # Uses $host instead of $http_host for HTTP/3 compatibility (no Host header in HTTP/3)
+    map $server_port $host_with_port {
+        80      $host;
+        443     $host;
+        default $host:$server_port;
+    }
+
 {% for nginx_limit_req_zone in nginx_limit_req_zones %}
     limit_req_zone {{ nginx_limit_req_zone }};
 {% endfor %}
