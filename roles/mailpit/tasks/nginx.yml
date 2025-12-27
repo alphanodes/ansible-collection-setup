@@ -26,6 +26,5 @@
       letsencrypt: "{{ mailpit_vhost_letsencrypt | default(false) }}"
       letsencrypt_cert: "{{ mailpit_vhost_letsencrypt_cert | default('') }}"
       letsencrypt_key: "{{ mailpit_vhost_letsencrypt_key | default('') }}"
-      letsencrypt_trusted_cert: "{{ mailpit_vhost_letsencrypt_trusted_cert | default('') }}"
       ssl_cert: "{{ mailpit_vhost_ssl_cert | default('') }}"
       vhost_includes: "{{ mailpit_vhost_includes | default([]) }}"

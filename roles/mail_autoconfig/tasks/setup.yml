@@ -1,0 +1,13 @@
+---
+
+- name: Create autoconfig directory
+  ansible.builtin.file:
+    path: "{{ mail_autoconfig_path }}"
+    state: directory
+    mode: '0755'
+
+- name: Install config-v1.1.xml
+  ansible.builtin.template:
+    src: config-v1.1.xml.j2
+    dest: "{{ mail_autoconfig_path }}/config-v1.1.xml"
+    mode: '0644'

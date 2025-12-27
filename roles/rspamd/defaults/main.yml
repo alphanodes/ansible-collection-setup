@@ -50,7 +50,6 @@ rspamd_vhost_letsencrypt: false
 rspamd_vhost_ssl_cert: "{{ ssl_certs[0].name | default('') }}"
 rspamd_vhost_letsencrypt_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/fullchain.pem
 rspamd_vhost_letsencrypt_key: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/privkey.pem
-rspamd_vhost_letsencrypt_trusted_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/chain.pem
 rspamd_vhost_for_zabbix: false
 
 # nginx base auth user

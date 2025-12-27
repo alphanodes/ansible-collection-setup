@@ -1,0 +1,23 @@
+---
+
+- name: Setup nginx_mono and configure autoconfig vhost
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nginx_mono
+  vars:
+    nginx_mono_service_name: autoconfig
+    nginx_mono_service_enabled: true
+    nginx_mono_service_config:
+      server_name: "{{ mail_autoconfig_vhost_server }}"
+      root: "{{ mail_autoconfig_root }}"
+      index: index.xml
+      letsencrypt: "{{ mail_autoconfig_vhost_letsencrypt }}"
+      letsencrypt_cert: "{{ mail_autoconfig_vhost_letsencrypt_cert }}"
+      letsencrypt_key: "{{ mail_autoconfig_vhost_letsencrypt_key }}"
+      ssl_cert: "{{ mail_autoconfig_vhost_ssl_cert }}"
+      additional_headers:
+        - "Content-Type text/xml"
+        - "Referrer-Policy 'no-referrer'"
+      locations:
+        - name: "/"
+          raw_actions:
+            - "charset utf-8;"

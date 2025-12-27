@@ -38,7 +38,6 @@ ethercalc_vhost_letsencrypt: false
 ethercalc_vhost_ssl_cert: '{{ ssl_certs[0].name | default(omit) }}'
 ethercalc_vhost_letsencrypt_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/fullchain.pem
 ethercalc_vhost_letsencrypt_key: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/privkey.pem
-ethercalc_vhost_letsencrypt_trusted_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/chain.pem
 
 # Ethercalc might suffer from OOM crashs on big tables, try to increase:
 # ethercalc_node_max_old_space_size: 2048

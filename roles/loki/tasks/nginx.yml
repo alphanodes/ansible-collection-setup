@@ -17,7 +17,6 @@
       letsencrypt: "{{ loki_vhost_letsencrypt | default(false) }}"
       letsencrypt_cert: "{{ loki_vhost_letsencrypt_cert | default('') }}"
       letsencrypt_key: "{{ loki_vhost_letsencrypt_key | default('') }}"
-      letsencrypt_trusted_cert: "{{ loki_vhost_letsencrypt_trusted_cert | default('') }}"
       ssl_cert: "{{ loki_vhost_ssl_cert | default('') }}"
       vhost_includes: "{{ loki_vhost_includes | default([]) }}"
 

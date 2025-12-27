@@ -19,7 +19,6 @@
       letsencrypt: "{{ grafana_vhost_letsencrypt | default(false) }}"
       letsencrypt_cert: "{{ grafana_vhost_letsencrypt_cert | default('') }}"
       letsencrypt_key: "{{ grafana_vhost_letsencrypt_key | default('') }}"
-      letsencrypt_trusted_cert: "{{ grafana_vhost_letsencrypt_trusted_cert | default('') }}"
       ssl_cert: "{{ grafana_vhost_ssl_cert | default('') }}"
       vhost_includes: "{{ grafana_vhost_includes | default([]) }}"
 

@@ -28,11 +28,6 @@
       ansible.builtin.set_fact:
         rspamd_nginx_config: "{{ rspamd_nginx_config | combine({'letsencrypt_key': rspamd_vhost_letsencrypt_key}) }}"
 
-    - name: Add Let's Encrypt trusted certificate path if defined
-      when: (rspamd_vhost_letsencrypt_trusted_cert | default('', true)) | length > 0
-      ansible.builtin.set_fact:
-        rspamd_nginx_config: "{{ rspamd_nginx_config | combine({'letsencrypt_trusted_cert': rspamd_vhost_letsencrypt_trusted_cert}) }}"
-
     - name: Add SSL certificate path if defined
       when: rspamd_vhost_ssl_cert | length > 0
       ansible.builtin.set_fact:

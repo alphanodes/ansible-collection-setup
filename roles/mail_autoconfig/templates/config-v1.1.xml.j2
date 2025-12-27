@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<clientConfig version="1.1">
+  <emailProvider id="{{ mail_autoconfig_provider_id }}">
+{% if mail_autoconfig_domains | length > 0 %}
+{% for domain in mail_autoconfig_domains %}
+    <domain>{{ domain }}</domain>
+{% endfor %}
+{% else %}
+    <domain>{{ mail_autoconfig_domain }}</domain>
+{% endif %}
+    <displayName>{{ mail_autoconfig_display_name }}</displayName>
+    <displayShortName>{{ mail_autoconfig_short_name }}</displayShortName>
+    <incomingServer type="imap">
+      <hostname>{{ mail_autoconfig_imap.hostname }}</hostname>
+      <port>{{ mail_autoconfig_imap.port }}</port>
+      <socketType>{{ mail_autoconfig_imap.socket_type }}</socketType>
+      <authentication>{{ mail_autoconfig_imap.authentication }}</authentication>
+      <username>{{ mail_autoconfig_imap.username }}</username>
+    </incomingServer>
+{% if mail_autoconfig_pop3.enabled | default(false) %}
+    <incomingServer type="pop3">
+      <hostname>{{ mail_autoconfig_pop3.hostname }}</hostname>
+      <port>{{ mail_autoconfig_pop3.port }}</port>
+      <socketType>{{ mail_autoconfig_pop3.socket_type }}</socketType>
+      <authentication>{{ mail_autoconfig_pop3.authentication }}</authentication>
+      <username>{{ mail_autoconfig_pop3.username }}</username>
+    </incomingServer>
+{% endif %}
+    <outgoingServer type="smtp">
+      <hostname>{{ mail_autoconfig_smtp.hostname }}</hostname>
+      <port>{{ mail_autoconfig_smtp.port }}</port>
+      <socketType>{{ mail_autoconfig_smtp.socket_type }}</socketType>
+      <authentication>{{ mail_autoconfig_smtp.authentication }}</authentication>
+      <username>{{ mail_autoconfig_smtp.username }}</username>
+    </outgoingServer>
+{% if mail_autoconfig_carddav.enabled | default(false) %}
+    <addressBook type="carddav">
+      <hostname>{{ mail_autoconfig_carddav.hostname }}</hostname>
+      <port>{{ mail_autoconfig_carddav.port }}</port>
+      <socketType>{{ mail_autoconfig_carddav.socket_type }}</socketType>
+      <authentication>{{ mail_autoconfig_carddav.authentication }}</authentication>
+      <username>{{ mail_autoconfig_carddav.username }}</username>
+{% if mail_autoconfig_carddav.path | default('') | length > 0 %}
+      <path>{{ mail_autoconfig_carddav.path }}</path>
+{% endif %}
+    </addressBook>
+{% endif %}
+{% if mail_autoconfig_caldav.enabled | default(false) %}
+    <calendar type="caldav">
+      <hostname>{{ mail_autoconfig_caldav.hostname }}</hostname>
+      <port>{{ mail_autoconfig_caldav.port }}</port>
+      <socketType>{{ mail_autoconfig_caldav.socket_type }}</socketType>
+      <authentication>{{ mail_autoconfig_caldav.authentication }}</authentication>
+      <username>{{ mail_autoconfig_caldav.username }}</username>
+{% if mail_autoconfig_caldav.path | default('') | length > 0 %}
+      <path>{{ mail_autoconfig_caldav.path }}</path>
+{% endif %}
+    </calendar>
+{% endif %}
+{% if mail_autoconfig_webmail.enabled | default(false) %}
+    <webMail>
+      <loginPage url="{{ mail_autoconfig_webmail.url }}" />
+    </webMail>
+{% endif %}
+  </emailProvider>
+</clientConfig>

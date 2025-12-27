@@ -83,7 +83,6 @@
       letsencrypt: "{{ jekyll_instance.letsencrypt | default(false) }}"
       letsencrypt_cert: "{{ jekyll_instance.letsencrypt_cert | default(omit) }}"
       letsencrypt_key: "{{ jekyll_instance.letsencrypt_key | default(omit) }}"
-      letsencrypt_trusted_cert: "{{ jekyll_instance.letsencrypt_trusted_cert | default(omit) }}"
       ssl_cert: "{{ jekyll_instance.ssl_cert | default(omit) }}"
       redirects: "{{ jekyll_instance.redirects | default([]) }}"
       external_redirects: "{{ jekyll_instance.external_redirects | default([]) }}"

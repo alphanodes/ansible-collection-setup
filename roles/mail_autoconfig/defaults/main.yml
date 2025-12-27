@@ -1,0 +1,92 @@
+---
+# defaults file for mail_autoconfig
+#
+# Mozilla Autoconfig Specification:
+# https://wiki.mozilla.org/Thunderbird:Autoconfiguration:ConfigFileFormat
+
+# Provider ID for the autoconfig XML
+mail_autoconfig_provider_id: example.com
+
+# Thunderbird looks for https://autoconfig.<maildomain>/mail/config-v1.1.xml
+mail_autoconfig_vhost_server: "autoconfig.{{ mail_autoconfig_domain }}"
+mail_autoconfig_root: /usr/share/autoconfig
+mail_autoconfig_path: "{{ mail_autoconfig_root }}/mail"
+
+# Mail domain configuration
+# For multiple domains, use mail_autoconfig_domains list instead
+mail_autoconfig_domain: example.com
+mail_autoconfig_domains: []  # Optional: ["example.com", "example.org"]
+mail_autoconfig_display_name: "{{ mail_autoconfig_domain }} Mail"
+mail_autoconfig_short_name: "{{ mail_autoconfig_domain }}"
+
+# IMAP configuration (incoming mail)
+# socket_type: SSL (port 993), STARTTLS (port 143), plain (not recommended)
+# authentication: password-cleartext, password-encrypted, OAuth2, NTLM, GSSAPI
+# username placeholders: %EMAILADDRESS%, %EMAILLOCALPART%, %EMAILDOMAIN%
+mail_autoconfig_imap:
+  hostname: "mail.{{ mail_autoconfig_domain }}"
+  port: 993
+  socket_type: SSL
+  authentication: password-cleartext
+  username: '%EMAILADDRESS%'
+
+# POP3 configuration (optional, disabled by default)
+# Set mail_autoconfig_pop3.enabled: true to include POP3 in config
+mail_autoconfig_pop3:
+  enabled: false
+  hostname: "mail.{{ mail_autoconfig_domain }}"
+  port: 995
+  socket_type: SSL
+  authentication: password-cleartext
+  username: '%EMAILADDRESS%'
+
+# SMTP configuration (outgoing mail)
+# socket_type: SSL (port 465), STARTTLS (port 587), plain (not recommended)
+mail_autoconfig_smtp:
+  hostname: "mail.{{ mail_autoconfig_domain }}"
+  port: 465
+  socket_type: SSL
+  authentication: password-cleartext
+  username: '%EMAILADDRESS%'
+
+# CalDAV configuration (optional, for calendar sync)
+# Useful when running Radicale or similar CalDAV server
+mail_autoconfig_caldav:
+  enabled: false
+  hostname: "calendar.{{ mail_autoconfig_domain }}"
+  port: 443
+  socket_type: SSL
+  authentication: password-cleartext
+  username: '%EMAILADDRESS%'
+  # Path with placeholder, e.g., /radicale/%EMAILADDRESS%/calendar/
+  path: ''
+
+# CardDAV configuration (optional, for contact sync)
+# Useful when running Radicale or similar CardDAV server
+mail_autoconfig_carddav:
+  enabled: false
+  hostname: "contacts.{{ mail_autoconfig_domain }}"
+  port: 443
+  socket_type: SSL
+  authentication: password-cleartext
+  username: '%EMAILADDRESS%'
+  # Path with placeholder, e.g., /radicale/%EMAILADDRESS%/contacts/
+  path: ''
+
+# WebMail URL (optional, link to web interface like Roundcube)
+mail_autoconfig_webmail:
+  enabled: false
+  url: "https://webmail.{{ mail_autoconfig_domain }}/"
+
+# SSL/TLS configuration
+mail_autoconfig_vhost_letsencrypt: false
+mail_autoconfig_vhost_ssl_cert: "{{ mail_autoconfig_vhost_server }}"
+
+# Let's Encrypt certificate name (for shared certificates, e.g., mail.example.com)
+# Override this when using a multi-domain certificate
+mail_autoconfig_letsencrypt_cert_name: "{{ mail_autoconfig_vhost_server }}"
+mail_autoconfig_vhost_letsencrypt_cert: "/etc/letsencrypt/live/{{ mail_autoconfig_letsencrypt_cert_name }}/fullchain.pem"
+mail_autoconfig_vhost_letsencrypt_key: "/etc/letsencrypt/live/{{ mail_autoconfig_letsencrypt_cert_name }}/privkey.pem"
+
+# Remove the autoconfig setup
+mail_autoconfig_remove: false

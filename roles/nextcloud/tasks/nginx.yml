@@ -42,6 +42,5 @@
       letsencrypt: "{{ nextcloud_vhost_letsencrypt | default(false) }}"
       letsencrypt_cert: "{{ nextcloud_vhost_letsencrypt_cert | default('') }}"
       letsencrypt_key: "{{ nextcloud_vhost_letsencrypt_key | default('') }}"
-      letsencrypt_trusted_cert: "{{ nextcloud_vhost_letsencrypt_trusted_cert | default('') }}"
       ssl_cert: "{{ nextcloud_vhost_ssl_cert | default('') }}"
       vhost_includes: "{{ nextcloud_vhost_includes | default([]) }}"

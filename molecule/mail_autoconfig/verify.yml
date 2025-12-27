@@ -1,0 +1,47 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Verify autoconfig directory exists
+      ansible.builtin.stat:
+        path: /usr/share/autoconfig/mail
+      register: autoconfig_dir
+      failed_when: not autoconfig_dir.stat.exists
+
+    - name: Verify config-v1.1.xml exists
+      ansible.builtin.stat:
+        path: /usr/share/autoconfig/mail/config-v1.1.xml
+      register: config_xml
+      failed_when: not config_xml.stat.exists
+
+    - name: Read config-v1.1.xml content
+      ansible.builtin.slurp:
+        src: /usr/share/autoconfig/mail/config-v1.1.xml
+      register: config_content
+
+    - name: Verify XML contains correct domain
+      ansible.builtin.assert:
+        that:
+          - "'example.com' in (config_content.content | b64decode)"
+          - "'<domain>example.com</domain>' in (config_content.content | b64decode)"
+        fail_msg: "config-v1.1.xml does not contain expected domain"
+
+    - name: Verify nginx vhost is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/autoconfig.conf
+      register: vhost_enabled
+      failed_when: not vhost_enabled.stat.exists
+
+    - name: Verify nginx configuration is valid
+      ansible.builtin.command: nginx -t
+      changed_when: false
+
+    - name: Verify nginx is running
+      ansible.builtin.systemd_service:
+        name: nginx
+        state: started
+      check_mode: true
+      register: nginx_status
+      failed_when: nginx_status.changed

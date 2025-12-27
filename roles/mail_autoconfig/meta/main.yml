@@ -1,0 +1,28 @@
+---
+dependencies:
+  - role: alphanodes.setup.common
+    public: true
+  - role: alphanodes.setup.ssl
+  - role: alphanodes.setup.nginx_mono
+
+galaxy_info:
+  description: Mail client autoconfiguration for Thunderbird and Outlook
+  author: alexandermeindl
+  company: AlphaNodes GmbH
+  license: MIT
+  min_ansible_version: '2.18'
+  platforms:
+    - name: Ubuntu
+      versions:
+        - jammy
+        - noble
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+  galaxy_tags:
+    - mail
+    - thunderbird
+    - outlook
+    - autoconfig
+    - autodiscover

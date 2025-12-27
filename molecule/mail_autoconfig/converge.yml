@@ -1,0 +1,19 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  vars:
+    mail_autoconfig_domain: example.com
+    mail_autoconfig_provider_id: example.com
+    mail_autoconfig_vhost_server: autoconfig.example.com
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  roles:
+    - role: alphanodes.setup.mail_autoconfig

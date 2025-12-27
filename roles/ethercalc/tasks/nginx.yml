@@ -8,7 +8,6 @@
     - name: Set TLS files for letsencrypt
       ansible.builtin.set_fact:
         vhost_letsencrypt_cert: "{{ ethercalc_vhost_letsencrypt_cert }}"
-        vhost_letsencrypt_trusted_cert: "{{ ethercalc_vhost_letsencrypt_trusted_cert }}"
         vhost_letsencrypt_key: "{{ ethercalc_vhost_letsencrypt_key }}"
         force_letsencrypt: true
       when:

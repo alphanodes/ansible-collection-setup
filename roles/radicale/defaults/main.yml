@@ -47,7 +47,6 @@ radicale_vhost_ssl_cert: ''
 radicale_letsencrypt_cert_name: "{{ radicale_vhost_server }}"
 radicale_vhost_letsencrypt_cert: "/etc/letsencrypt/live/{{ radicale_letsencrypt_cert_name }}/fullchain.pem"
 radicale_vhost_letsencrypt_key: "/etc/letsencrypt/live/{{ radicale_letsencrypt_cert_name }}/privkey.pem"
-radicale_vhost_letsencrypt_trusted_cert: "/etc/letsencrypt/live/{{ radicale_letsencrypt_cert_name }}/chain.pem"
 
 # Use can change it, if you use a proxy behind a proxy
 # e.g. $http_x_forwarded_for

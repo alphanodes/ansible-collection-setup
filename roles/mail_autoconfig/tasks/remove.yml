@@ -1,0 +1,17 @@
+---
+
+- name: Remove autoconfig vhost
+  ansible.builtin.file:
+    path: "/etc/nginx/sites-enabled/autoconfig.conf"
+    state: absent
+  notify: Restart nginx
+
+- name: Remove autoconfig vhost configuration
+  ansible.builtin.file:
+    path: "/etc/nginx/sites-available/autoconfig.conf"
+    state: absent
+
+- name: Remove autoconfig directory
+  ansible.builtin.file:
+    path: "{{ mail_autoconfig_root }}"
+    state: absent

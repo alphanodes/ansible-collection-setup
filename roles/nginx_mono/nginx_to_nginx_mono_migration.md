@@ -393,6 +393,7 @@ Don't add new variables for:
 | loki | 2024-11 | Log aggregation |
 | jekyll | 2025-12 | Static site generator, multi-instance pattern, raw_actions for try_files |
 | mailpit | 2024-11 | Mail testing |
+| sphinx | 2025-12 | Dependency-only pattern, no own vhosts (configured externally via nginx_vhosts) |
 | matomo | 2025-11 | Analytics, FPM whitelist pattern, comprehensive security tests |
 | nextcloud | 2024-11 | Cloud storage |
 | radicale | 2024-11 | CalDAV/CardDAV |
