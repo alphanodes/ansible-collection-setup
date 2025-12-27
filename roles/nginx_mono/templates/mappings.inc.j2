@@ -23,6 +23,12 @@ server {
   listen [::]:443 {{ nginx_ssl_listen_option }};
 {% endif %}
 {% endif %}
+{% if m.port != 80 and nginx_with_http3 | default(false) %}
+  listen 443 quic;
+{% if nginx_with_ipv6 %}
+  listen [::]:443 quic;
+{% endif %}
+{% endif %}
 {% if m.port != 80 -%}
   {% include 'includes/modern_protocols.inc.j2' %}
 {% endif %}
@@ -38,6 +44,11 @@ server {
   ssl_certificate_key /etc/ssl/private/{{ m.ssl_cert | default(vhost_ssl_cert) }}.key;
   ssl_trusted_certificate /etc/ssl/certs/{{ m.ssl_cert | default(vhost_ssl_cert) }}_trusted.crt;
   {% endif -%}
+{% if nginx_with_http3 | default(false) %}
+
+  # HTTP/3 Alt-Svc header for client discovery
+  add_header Alt-Svc 'h3=":443"; ma=86400';
+{% endif %}
   {% endif -%}
 
   {% if m.redirect_other_to is defined and m.location is defined -%}
