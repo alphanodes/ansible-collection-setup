@@ -1,0 +1,142 @@
+{{ managed_by_ansible | comment }}
+# nginx redmine configuration
+
+server {
+{% if nginx_with_ssl %}
+  listen {{ instance.server_port | default('443') }} {{ nginx_ssl_listen_option }};
+{% if nginx_with_ipv6 %}
+  listen [::]:{{ instance.server_port | default('443') }} {{ nginx_ssl_listen_option }};
+{% endif %}
+{% else %}
+  listen 80;
+{% if nginx_with_ipv6 %}
+  listen [::]:80;
+{% endif %}
+{% endif %}
+{% include 'templates/nginx/modern_protocols.inc.j2' with context %}
+  server_name {{ instance.server_name | default(redmine_server_name) }}{{ ' ' + instance.server_alias if instance.server_alias is defined else '' }};
+{% if instance.prefix is defined %}
+  root /var/www;
+{% if instance.prefix_redirect is defined and instance.prefix_redirect %}
+
+  location = / {
+    return 301 $scheme://$host{{ instance.prefix }};
+  }
+
+{% endif %}
+{% else %}
+  root {{ redmine_app_dir }}/public;
+{% endif %}
+  index index.html;
+
+{% if nginx_with_ssl %}
+  {% include 'templates/nginx/ssl.inc.j2' with context %}
+{% endif %}
+
+  location {{ instance.prefix if instance.prefix is defined else '/' }} {
+{% if instance.nginx_api_limit_req is defined and instance.nginx_api_limit_req != '' %}
+    limit_req {{ instance.nginx_api_limit_req }};
+{% endif %}
+{% if instance.nginx_form_limit_req is defined and instance.nginx_form_limit_req != '' %}
+    limit_req {{ instance.nginx_form_limit_req }};
+{% endif %}
+{% if (instance.nginx_api_limit_req is defined and instance.nginx_api_limit_req != '') or (instance.nginx_form_limit_req is defined and instance.nginx_form_limit_req != '') %}
+    limit_req_status 422;
+{% endif %}
+
+{% if nginx_with_protection %}
+    {% include 'templates/nginx/protection.inc.j2' with context %}
+
+
+    ## Block unwanted url requests for Redmine
+    if ($bad_redmine_locations) {
+      return 404;
+    }
+{% endif %}
+
+{% if instance.no_access_for_register is defined and instance.no_access_for_register %}
+    location ~* "^/account/register" {
+      deny all;
+    }
+{% endif %}
+
+{% if instance.prefix is defined %}
+    alias {{ redmine_app_dir }}/public;
+{% endif %}
+    proxy_read_timeout {{ redmine_proxy_read_timeout }};
+    proxy_connect_timeout {{ redmine_proxy_connect_timeout }};
+
+    proxy_buffers {{ redmine_proxy_buffers }};
+    proxy_buffer_size {{ redmine_proxy_buffer_size }};
+    proxy_busy_buffers_size {{ redmine_proxy_busy_buffers_size }};
+
+    try_files $uri @puma;
+  }
+
+  {% with with_connection_upgrade=(instance.with_websocket | default(false)), puma_location="@puma", proxy_pass=("http://" + (instance_name | replace('-', '_'))) -%}
+  {% include "puma.inc.j2" %}
+  {% endwith %}
+
+  {% if active_agile -%}
+  {% with with_connection_upgrade=true, puma_location="/rup_cable_agile", proxy_pass=("http://" + (instance_name | replace('-', '_')) + "/rup_cable_agile") %}
+  {% include "puma.inc.j2" %}
+  {% endwith %}
+  {% endif %}
+
+  {% if instance.vhost_includes is defined -%}
+  {% for include in instance.vhost_includes -%}
+  include {{ include }}.conf;
+  {% endfor %}
+  {% endif %}
+
+  {% include 'templates/nginx/location.inc.j2' with context %}
+  {% include 'templates/nginx/rewrite_lines.inc.j2' with context %}
+  {% include 'templates/nginx/error_handler.inc.j2' with context %}
+
+{% if not access_protection and active_pghero %}
+  location /pghero {
+    # access protection
+    auth_basic "Restricted access only";
+    auth_basic_user_file {{ htpasswd_file }};
+
+    try_files $uri @puma;
+  }
+{% endif %}
+
+{% if not access_protection and active_pg_extras %}
+  location /pg_extras {
+    # access protection
+    auth_basic "Restricted access only";
+    auth_basic_user_file {{ htpasswd_file }};
+
+    try_files $uri @puma;
+  }
+{% endif %}
+
+{% if access_protection %}
+  # access protection
+  auth_basic "Restricted access only";
+  auth_basic_user_file {{ htpasswd_file }};
+{% endif %}
+}
+
+### upstream for puma
+upstream {{ instance_name | replace('-', '_') }} {
+  server unix:{{ redmine_run_base_path + "/" + instance_name }}/redmine.sock;
+}
+
+{% if instance.vhost_default is defined and instance.vhost_default %}
+{% include 'templates/nginx/default_host_redirect.inc.j2' with context %}
+{% endif %}
+{% if nginx_with_ssl and instance.server_port is defined %}
+{% include 'templates/nginx/port_redirect.inc.j2' with context %}
+{% endif %}
+{% if instance.redirects is defined -%}
+{% include 'templates/nginx/redirects.inc.j2' with context %}
+{% endif %}
+{% if instance.external_redirects is defined -%}
+{% include 'templates/nginx/external_redirects.inc.j2' with context %}
+{% endif %}
+{% if instance.vhost_for_zabbix is defined and instance.vhost_for_zabbix %}
+{% include 'templates/nginx/monitoring.inc.j2' with context %}
+{% endif %}

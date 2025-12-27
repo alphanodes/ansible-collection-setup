@@ -1,0 +1,34 @@
+---
+
+- name: Ensure mysql packages are installed
+  ansible.builtin.apt:
+    name: '{{ redmine_mysql_packages }}'
+    state: present
+
+- name: Be sure redmine mysql databases exists - {{ instance_name }}
+  community.mysql.mysql_db:
+    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
+    name: '{{ redmine_db_name }}'
+    collation: utf8_general_ci
+    encoding: utf8
+    state: present
+
+- name: Create redmine mysql database users - {{ instance_name }}
+  community.mysql.mysql_user:
+    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
+    name: '{{ redmine_db_user }}'
+    plugin: caching_sha2_password
+    plugin_auth_string: "{{ instance.db_password | default(redmine_db_password) }}"
+    salt: "{{ [ansible_facts['machine_id'], ansible_facts['hostname'], 'redmine'] | join | hash('sha1') | truncate(20, true, '') }}"
+    host: '{{ active_db_host }}'
+    priv: '{{ redmine_db_name }}.*:ALL'
+    column_case_sensitive: true
+    state: present
+  when: instance.db_skip_user_setup is undefined or not instance.db_skip_user_setup
+
+- name: Run mysql pre commands - {{ instance_name }}
+  community.mysql.mysql_query:
+    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
+    login_db: '{{ redmine_db_name }}'
+    query: '{{ item }}'
+  loop: '{{ instance.pre_db_commands | default([]) }}'

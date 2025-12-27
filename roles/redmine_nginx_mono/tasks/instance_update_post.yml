@@ -1,0 +1,53 @@
+---
+
+- name: Run redmine post settings - {{ instance_name }}
+  ansible.builtin.shell: >
+    bash -lc "{{ instance.update_prefix | default('') }}bundle exec rake redmine_plugin_kit:setting_set name=\"{{ item.name | default('redmine') }}\" setting=\"{{ item.setting }}\" values=\"{{ item.list if item.list is defined else '' }}\" value=\"{{ item.value if item.value is defined else '' }}\""
+  args:
+    chdir: '{{ redmine_app_dir }}'
+  loop: '{{ instance.post_redmine_settings | default([]) }}'
+  register: post_redmine_settings_result
+  changed_when: "post_redmine_settings_result.rc is defined and post_redmine_settings_result.rc != 0"
+
+- name: Run redmine post exec commands - {{ instance_name }}
+  ansible.builtin.command: bash -lc "{{ instance.update_prefix | default('') }}bundle exec {{ item }}"
+  args:
+    chdir: '{{ redmine_app_dir }}'
+  loop: '{{ instance.post_exec_commands | default([]) }}'
+  register: post_exec_commands_result
+  changed_when: "post_exec_commands_result.rc is defined and post_exec_commands_result.rc != 0"
+
+- name: Run redmine post commands - {{ instance_name }}
+  ansible.builtin.command: bash -lc "{{ item }}"
+  args:
+    chdir: '{{ redmine_app_dir }}'
+  loop: '{{ instance.post_commands | default([]) }}'
+  register: redmine_post_commands_result
+  changed_when: "redmine_post_commands_result.rc is defined and redmine_post_commands_result.rc != 0"
+
+- name: Run redmine post user passwords - {{ instance_name }}
+  ansible.builtin.command: >
+    bash -lc "{{ instance.update_prefix | default('') }}bundle exec rails runner \"User.find_by(login: '{{ item.login }}').update_attribute(:password, '{{ item.password }}')\""
+  args:
+    chdir: '{{ redmine_app_dir }}'
+  loop: '{{ instance.post_user_passwords | default([]) }}'
+  register: post_user_passwords_result
+  changed_when: "post_user_passwords_result.rc is defined and post_user_passwords_result.rc != 0"
+
+- name: Run redmine post id passwords - {{ instance_name }}
+  ansible.builtin.shell: >
+    bash -lc "{{ instance.update_prefix | default('') }}bundle exec rails runner \"User.find_by(id: {{ item.id }}).update_attribute(:password, '{{ item.password }}')\""
+  args:
+    chdir: '{{ redmine_app_dir }}'
+  loop: '{{ instance.post_id_passwords | default([]) }}'
+  register: post_id_passwords_result
+  changed_when: "post_id_passwords_result.rc is defined and post_id_passwords_result.rc != 0"
+
+- name: Run redmine post reset users - {{ instance_name }}
+  ansible.builtin.shell: >
+    bash -lc "{{ instance.update_prefix | default('') }}bundle exec rails runner \"User.find_by(id: {{ item.id }}).update_attributes(login: '{{ item.login }}', status: {{ item.status }}, firstname: '{{ item.firstname }}', lastname: '{{ item.lastname }}')\""
+  args:
+    chdir: '{{ redmine_app_dir }}'
+  loop: '{{ instance.post_reset_users | default([]) }}'
+  register: post_reset_users_result
+  changed_when: "post_reset_users_result.rc is defined and post_reset_users_result.rc != 0"

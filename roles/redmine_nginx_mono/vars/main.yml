@@ -1,0 +1,24 @@
+---
+
+redmine_user_config_templates:
+  - src: profile.j2
+    target: .profile
+  - src: bashrc.j2
+    target: .bashrc
+  - src: zlogin.j2
+    target: .zlogin
+
+redmine_config_templates:
+  - name: configuration.yml
+    mode: '0640'
+    link: true
+  - name: additional_environment.rb
+    mode: '0640'
+    link: true
+  - name: puma.rb
+    link: false
+
+# used for creating redmine_app_dir = {{ redmine_home }}/{{ redmine_app_dir_name }}
+redmine_app_dir_name: redmine
+# base directory to store all configuration files
+redmine_global_config_dir: /etc/{{ redmine_app_dir_name }}

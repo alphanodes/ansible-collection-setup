@@ -1,0 +1,29 @@
+---
+dependencies:
+  - role: alphanodes.setup.common
+    public: true
+  - role: alphanodes.setup.ssl
+  - role: alphanodes.setup.memcached
+  - role: alphanodes.setup.nginx
+    when: redmine_with_nginx
+  - role: alphanodes.setup.hedgedoc
+    when: redmine_with_hedgedoc
+
+galaxy_info:
+  description: Setup Redmine
+  author: alexandermeindl
+  company: AlphaNodes GmbH
+  license: Apache License 2.0
+  min_ansible_version: '2.18'
+  platforms:
+    - name: Ubuntu
+      versions:
+        - jammy
+        - noble
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+        - trixie
+  galaxy_tags:
+    - redmine

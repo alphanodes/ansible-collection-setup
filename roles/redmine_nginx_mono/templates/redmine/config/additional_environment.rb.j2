@@ -1,0 +1,68 @@
+{{ managed_by_ansible | comment }}
+
+# Use a different logger to use syslog
+config.log_level = :{{ instance.log_level | default('warn') }}
+{% if instance.use_logger is defined and instance.use_logger == 'journald-logger' %}
+config.logger = Journald::TraceLogger.new('{{ instance_name }}')
+config.logger.level = Logger::{{ instance.log_level | default('warn') | upper }}
+{% endif %}
+{% if instance.use_logger is undefined or instance.use_logger == 'syslog' %}
+begin
+  require 'syslog/logger'
+  config.logger = Syslog::Logger.new('{{ instance_name }}') if defined?(Syslog::Logger)
+rescue LoadError
+  # Syslog not available, Rails uses default logger
+end
+config.logger.level = Logger::{{ instance.log_level | default('warn') | upper }}
+{% endif %}
+{% if active_to_time_preserves_timezone %}
+config.active_support.to_time_preserves_timezone = true
+{% endif %}
+{% if instance.prefix is defined %}
+
+config.relative_url_root = '{{ instance.prefix }}'
+RedmineApp::Application.routes.default_scope = config.relative_url_root
+{% endif %}
+{% if instance.with_memcache is defined and instance.with_memcache %}
+config.cache_store = :mem_cache_store, '{{ instance.memcached_host | default(redmine_memcached_host) }}', { namespace: '{{ instance_name }}',
+                                                            expires_in: {{ instance.memcache_expires_hours | default(redmine_memcache_expires_hours) }}.hours,
+{% if instance.db_pool is defined or real_db_pool != 0 %}
+                                                            compress: true,
+                                                            pool: { size: {{ instance.db_pool | default(real_db_pool) }}, timeout: 5 } }
+{% else %}
+                                                            compress: true }
+{% endif %}
+{% endif %}
+{% if instance.with_dmsf is defined and instance.with_dmsf %}
+# Redmine DMSF's WebDAV
+require Rails.root.join('plugins', 'redmine_dmsf', 'lib', 'redmine_dmsf', 'webdav', 'custom_middleware').to_s
+config.middleware.insert_before ActionDispatch::Cookies, RedmineDmsf::Webdav::CustomMiddleware
+{% endif %}
+{% if redmine_with_nginx and nginx_with_ssl and redmine_rails_env != 'test' %}
+
+config.session_store :cookie_store,
+  key: '_{{ instance_name | replace("-", "_") }}_session',
+  same_site: :none,
+  secure: true,
+  path: config.relative_url_root || '/'
+{% endif %}
+{% if redmine_rails_env == 'development' %}
+
+config.hosts << '{{ instance.server_name }}'
+{% endif %}
+{% if queue_adapter is defined and queue_adapter != '' %}
+{% if queue_adapter == 'async' %}
+# see https://api.rubyonrails.org/classes/ActiveJob/QueueAdapters/AsyncAdapter.html
+config.active_job.queue_adapter = ActiveJob::QueueAdapters::AsyncAdapter.new min_threads: {{ instance.async_queue_min_threads | default( redmine_async_queue_min_threads) }},
+                                                                             max_threads: {{ instance.async_queue_max_threads | default(redmine_async_queue_max_threads) }},
+                                                                             idletime: {{ instance.async_queue_idletime | default(redmine_async_queue_idletime) }}
+{% else %}
+# SEE https://github.com/mperham/sidekiq/wiki/Active-Job
+config.active_job.queue_adapter = :{{ queue_adapter }}
+{% endif %}
+{% endif %}
+{% if instance.with_bullet is defined %}
+if defined? Bullet
+  Bullet.enable = {{ instance.with_bullet | bool | lower }}
+end
+{% endif %}

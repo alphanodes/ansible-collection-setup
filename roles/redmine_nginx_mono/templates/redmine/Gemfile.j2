@@ -1,0 +1,26 @@
+# {{ managed_by_ansible }}
+{% if instance.use_logger is defined and instance.use_logger != 'syslog' %}
+gem '{{instance.use_logger}}'
+{% endif %}
+{% if instance.use_logger is undefined or instance.use_logger == 'syslog' %}
+# NOTE: Syslog::Logger without gem is used
+{% endif %}
+{% if instance.rails_env is undefined or (instance.rails_env != 'test') %}
+gem 'puma'
+{% endif %}
+{% if instance.with_memcache is defined and instance.with_memcache %}
+{% if instance.without_dalli is undefined or not instance.without_dalli %}
+gem 'dalli'
+{% endif %}
+{% endif %}
+{% if instance.with_mysql2postgres is defined and instance.with_mysql2postgres %}
+gem 'mysql2postgres'
+{% endif %}
+{% if instance.gemfile_extras is defined %}
+{% for extra_line in instance.gemfile_extras %}
+{{ extra_line }}
+{% endfor %}
+{% endif %}
+# Fix bug with rails and connection_pool > 3
+# see https://github.com/rails/rails/pull/56294
+gem 'connection_pool', '< 3.0'

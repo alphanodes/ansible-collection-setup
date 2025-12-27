@@ -1,0 +1,170 @@
+---
+
+- name: Include instance vars
+  ansible.builtin.include_tasks: set_instance_vars.yml
+
+- name: Ensure redmine groups exist - {{ instance_name }}
+  ansible.builtin.group:
+    state: present
+    system: true
+    name: '{{ redmine_group }}'
+
+- name: Ensure redmine users exist - {{ instance_name }}
+  ansible.builtin.user:
+    state: present
+    createhome: false
+    system: true
+    name: '{{ redmine_user }}'
+    home: '{{ redmine_home }}'
+    group: '{{ redmine_group }}'
+    groups: '{{ instance.user_groups | default(omit) }}'
+    comment: Redmine {{ redmine_user }}
+    shell: '{{ "/usr/bin/zsh" if redmine_with_zsh else "/usr/bin/bash" }}'
+
+- name: Make sure redmine home directory exists
+  ansible.builtin.file:
+    path: '{{ redmine_home }}'
+    state: directory
+    mode: '0755'
+    owner: '{{ redmine_user }}'
+    group: '{{ redmine_group }}'
+
+- name: Install Redmine shell configuation - {{ instance_name }}
+  ansible.builtin.copy:
+    src: '{{ item }}'
+    dest: '{{ redmine_home }}/'
+    owner: '{{ redmine_user }}'
+    group: '{{ redmine_group }}'
+    mode: '0644'
+  loop: '{{ redmine_user_config_files }}'
+
+- name: Include zsh role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.zsh
+  vars:
+    zsh_user: '{{ redmine_user }}'
+    zsh_with_setup: false
+    zsh_with_rvm: '{{ redmine_use_rvm }}'
+    zsh_with_ruby: true
+    zsh_user_home: '{{ redmine_home }}'
+    zsh_local_exports:
+      - name: RAILS_ENV
+        value: '{{ redmine_rails_env }}'
+  when: redmine_with_zsh
+
+- name: Update user configuration - {{ instance_name }}
+  ansible.builtin.template:
+    src: redmine/{{ item.src }}
+    dest: '{{ redmine_home }}/{{ item.target }}'
+    owner: '{{ instance_name }}'
+    group: '{{ instance_name }}'
+    mode: '0644'
+  loop: '{{ redmine_user_config_templates }}'
+
+- name: Remove obsolete user configuration
+  ansible.builtin.file:
+    path: '{{ redmine_home }}/{{ item }}'
+    state: absent
+  loop:
+    - .bash_aliases
+    - .bash_profile
+    - .mkshrc
+
+- name: Include git_config
+  ansible.builtin.include_role:
+    name: alphanodes.setup.git_config
+  vars:
+    git_config_user: "{{ redmine_user }}"
+    git_config_settings:
+      - name: user.name
+        value: '{{ redmine_user }} job'
+      - name: safe.directory
+        value: '*'
+        scope: global
+
+- name: Install redmine - {{ instance_name }}
+  tags:
+    - update
+  ansible.builtin.git:
+    repo: '{{ instance.repo | default(redmine_repo) }}'
+    dest: '{{ redmine_app_dir }}'
+    version: '{{ active_redmine_repo_version }}'
+    update: '{{ instance.repo_update | default(redmine_repo_update) }}'
+    force: "{{ true if active_redmine_patches | length > 0 or account_migrate_to_new_home else instance.repo_update_force | default(false) }}"
+    accept_hostkey: true
+  register: redmine_git_rc
+  # become: true
+  # become_user: '{{ redmine_user }}'
+
+- name: Set writable permission directories
+  ansible.builtin.file:
+    path: '{{ redmine_app_dir }}{{ item.path }}'
+    owner: root
+    group: '{{ redmine_group }}'
+    mode: '0775'
+    recurse: '{{ item.recurse | default(False) }}'
+  loop: '{{ redmine_write_permission_dirs }}'
+
+- name: Set writable permission for assets
+  ansible.builtin.file:
+    path: '{{ redmine_app_dir }}/public/assets'
+    owner: root
+    group: '{{ redmine_group }}'
+    mode: '0775'
+    state: directory
+
+- name: Include redmine patch tasks
+  ansible.builtin.include_tasks: account_redmine_patch.yml
+  loop: "{{ active_redmine_patches }}"
+  loop_control:
+    loop_var: patch
+
+# should be removed, when all instances are migrated (realy all!)
+- name: Check if home migration is required - {{ instance_name }}
+  ansible.builtin.stat:
+    path: '{{ redmine_home }}/config'
+  register: old_config_dir
+
+- name: Migrate to new home structure - {{ instance_name }}
+  ansible.builtin.include_tasks: account_migrate_to_new_home.yml
+  when:
+    - account_migrate_to_new_home
+    - old_config_dir.stat.exists
+# end migration
+
+- name: RVM Mode
+  when: redmine_use_rvm
+  block:
+    - name: RVM missing gpg key - {{ instance_name }}
+      ansible.builtin.command: 'gpg2 --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB'
+      become: true
+      become_user: '{{ redmine_user }}'
+      when: >
+        rvm_gpg_fix is defined and rvm_gpg_fix
+        or instance.rvm_gpg_fix is defined and instance.rvm_gpg_fix
+
+    - name: RVM setup - {{ redmine_user }}
+      ansible.builtin.include_role:
+        name: alphanodes.setup.rvm
+        allow_duplicates: true
+      vars:
+        rvm1_rubies: '{{ instance.rvm_rubies | default(rvm_rubies) }}'
+        rvm1_user: '{{ instance_name }}'
+        rvm1_install_path: '{{ redmine_home }}/.rvm'
+        # see https://github.com/ansible/ansible/issues/29159#issuecomment-380862971
+        ansible_become: true
+      tags:
+        - rvm
+        - ruby
+        - update
+
+    - name: Remove system user gems, which are not used with rvm - {{ instance_name }}
+      ansible.builtin.file:
+        path: '{{ redmine_home }}/.gem/ruby'
+        state: absent
+
+- name: Remove rvm if not used - {{ instance_name }}
+  ansible.builtin.file:
+    path: '{{ redmine_home }}/.rvm'
+    state: absent
+  when: not redmine_use_rvm

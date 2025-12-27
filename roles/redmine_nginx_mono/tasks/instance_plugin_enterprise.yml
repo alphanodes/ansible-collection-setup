@@ -1,0 +1,20 @@
+---
+
+- name: Check for enterprise support plugin in plugin list
+  ansible.builtin.fail:
+    msg: If with_alphanodes_enterprise_support is true, {{ redmine_enterprise_support_plugin_name }} cannot be in plugin list (because it is automatically added)
+  when:
+    - with_alphanodes_enterprise_support
+    - 'redmine_enterprise_support_plugin_name in instance.plugins'
+
+- name: Include plugin task for enterprise support plugin
+  ansible.builtin.include_tasks: instance_plugin.yml
+  vars:
+    plugin_name: '{{ redmine_enterprise_support_plugin_name }}'
+  when: with_alphanodes_enterprise_support
+
+- name: Remove enterprise support plugin if not needed
+  ansible.builtin.file:
+    path: '{{ redmine_plugin_dir }}/{{ redmine_enterprise_support_plugin_name }}'
+    state: absent
+  when: not with_alphanodes_enterprise_support

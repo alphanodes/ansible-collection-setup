@@ -1,0 +1,13 @@
+--- a/config/environments/development.rb
++++ b/config/environments/development.rb
+@@ -61,8 +61,8 @@ Rails.application.configure do
+   # config.action_cable.disable_request_forgery_protection = true
+
+   config.after_initialize do
+-    Bullet.enable = true
+-    Bullet.rails_logger = true
++    Bullet.enable = false
++    Bullet.rails_logger = false
+     Bullet.skip_user_in_notification = true
+   end
+ end

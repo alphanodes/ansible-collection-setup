@@ -1,0 +1,45 @@
+---
+
+- name: Remove obsolete themes directory
+  ansible.builtin.file:
+    path: "{{ redmine_app_dir }}/public/themes"
+    state: absent
+
+- name: Set preferred_git_url
+  ansible.builtin.set_fact:
+    preferred_git_url: "{{ 'write_url' if redmine_plugin_access == 'write' else 'url' }}"
+
+- name: Correct preferred_git_url if required
+  ansible.builtin.set_fact:
+    preferred_git_url: 'https_url'
+  when:
+    - preferred_git_url == 'url'
+    - redmine_plugin_access == 'https'
+
+- name: Check if custom available_themes_list is available
+  ansible.builtin.stat:
+    path: "{{ playbook_dir }}/files/redmine/available_themes.yml"
+  ignore_errors: true
+  register: custom_available_themes
+  delegate_to: localhost
+
+- name: Include custom themes variables.
+  ansible.builtin.include_vars: '{{ custom_available_themes.stat.path }}'
+  when: custom_available_themes.stat.exists
+
+- name: Include themes variables.
+  ansible.builtin.include_vars: available_themes.yml
+  when: not custom_available_themes.stat.exists
+
+- name: Set theme_list
+  ansible.builtin.set_fact:
+    theme_list: "{{ redmine_themes_available | list if instance.with_all_themes is defined and instance.with_all_themes else instance.themes | default([]) }}"
+
+- name: Include theme tasks
+  ansible.builtin.include_tasks: instance_theme.yml
+  tags:
+    - redmine
+    - theme
+  loop: "{{ theme_list }}"
+  loop_control:
+    loop_var: theme_name

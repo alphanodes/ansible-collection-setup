@@ -116,7 +116,7 @@ mail_autoconfig_webmail:
 ### Authentication Types
 
 | Type | Description |
-|------|-------------|
+| ---- | ----------- |
 | `password-cleartext` | Password sent in cleartext (use only with SSL/TLS!) |
 | `password-encrypted` | Password encrypted with CRAM-MD5 or similar |
 | `OAuth2` | OAuth 2.0 authentication |
@@ -126,7 +126,7 @@ mail_autoconfig_webmail:
 ### Socket Types
 
 | Type | IMAP Port | SMTP Port | POP3 Port | Description |
-|------|-----------|-----------|-----------|-------------|
+| ---- | --------- | --------- | --------- | ----------- |
 | `SSL` | 993 | 465 | 995 | Implicit TLS (recommended) |
 | `STARTTLS` | 143 | 587 | 110 | Upgrade to TLS after connect |
 | `plain` | 143 | 25 | 110 | No encryption (not recommended!) |
@@ -134,7 +134,7 @@ mail_autoconfig_webmail:
 ### Username Placeholders
 
 | Placeholder | Description | Example |
-|-------------|-------------|---------|
+| ----------- | ----------- | ------- |
 | `%EMAILADDRESS%` | Full email address | `user@example.com` |
 | `%EMAILLOCALPART%` | Local part before @ | user |
 | `%EMAILDOMAIN%` | Domain part after @ | example.com |

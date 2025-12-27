@@ -1,0 +1,56 @@
+---
+
+- name: Include account setup tasks
+  ansible.builtin.include_tasks: account_setup.yml
+  tags:
+    - redmine
+
+- name: Import account instance tasks
+  ansible.builtin.include_tasks: account_instance.yml
+  tags:
+    - redmine
+  loop: "{{ redmine_instances | dict2items }}"
+  loop_control:
+    loop_var: r_instance
+  when:
+    - redmine_setup_instance is defined and redmine_setup_instance == r_instance.key or redmine_setup_instance is undefined
+    - r_instance.value.state is undefined or r_instance.value.state == 'active' or r_instance.value.state == 'prepare_only'
+
+- name: Include Redmine setup tasks
+  ansible.builtin.include_tasks: redmine_setup.yml
+  tags:
+    - redmine
+
+- name: Include Redmine instance tasks
+  ansible.builtin.include_tasks: redmine_instance.yml
+  tags:
+    - redmine
+  loop: "{{ redmine_instances | dict2items }}"
+  loop_control:
+    loop_var: r_instance
+  when:
+    - redmine_instance is defined and redmine_instance == r_instance.key or redmine_instance is undefined
+    - r_instance.value.state is undefined or r_instance.value.state == 'active' or r_instance.value.state == 'prepare_only'
+
+- name: Include setup activate tasks
+  ansible.builtin.include_tasks: activate_instance.yml
+  tags:
+    - redmine
+    - activate
+  loop: "{{ redmine_instances | dict2items }}"
+  loop_control:
+    loop_var: r_instance
+  when:
+    - redmine_instance is defined and redmine_instance == r_instance.key or redmine_instance is undefined
+
+- name: Include remove tasks
+  ansible.builtin.include_tasks: remove_instance.yml
+  tags:
+    - redmine
+    - remove
+  loop: "{{ redmine_instances | dict2items }}"
+  loop_control:
+    loop_var: r_instance
+  when:
+    - redmine_instance is defined and redmine_instance == r_instance.key or redmine_instance is undefined
+    - r_instance.value.state is defined and r_instance.value.state == 'absent'

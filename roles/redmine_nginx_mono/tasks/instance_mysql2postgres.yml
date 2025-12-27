@@ -1,0 +1,19 @@
+---
+# NOTE: only host based configuration files are supported at the moment
+# (not redmine instance based!)
+
+- name: Check if mysql2postgres is provided for {{ ansible_facts['hostname'] }}
+  ansible.builtin.stat:
+    path: "{{ playbook_dir }}/files/redmine/mysql2postgres/{{ inventory_hostname }}.yml"
+  ignore_errors: true
+  register: mysql2postgres_file
+  delegate_to: localhost
+
+- name: Install mysql2postgres.yml - {{ instance_name }}
+  ansible.builtin.copy:
+    src: '{{ mysql2postgres_file.stat.path }}'
+    dest: '{{ redmine_config_dir }}/mysql2postgres.yml'
+    owner: '{{ redmine_user }}'
+    group: '{{ redmine_group }}'
+    mode: '0640'
+  when: mysql2postgres_file.stat.exists
