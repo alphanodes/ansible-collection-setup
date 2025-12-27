@@ -6,6 +6,17 @@
   vars:
     # Use 'present' for idempotency tests, production uses 'latest'
     python_pip_default_state: present
+    # Skip actual sphinx build (no real sphinx project)
+    sphinx_always_build: false
+    # Test instance configuration
+    sphinx_instances:
+      - name: test_docs
+        repo: /tmp/test_sphinx_repo
+        dirs:
+          - name: guide
+        vhost_users:
+          - user: testuser
+            password: testpassword
 
   pre_tasks:
     - name: Update apt cache.
@@ -14,16 +25,41 @@
         cache_valid_time: 600
       changed_when: false
 
+    - name: Install git for test repository
+      ansible.builtin.apt:
+        name: git
+        state: present
+
+    - name: Create test git repository directory
+      ansible.builtin.file:
+        path: /tmp/test_sphinx_repo
+        state: directory
+        mode: '0755'
+
+    - name: Initialize test git repository
+      ansible.builtin.command:
+        cmd: git init
+        chdir: /tmp/test_sphinx_repo
+        creates: /tmp/test_sphinx_repo/.git
+
+    - name: Configure git user for test repo
+      ansible.builtin.command:
+        cmd: "{{ item }}"
+        chdir: /tmp/test_sphinx_repo
+      loop:
+        - git config user.email "test@example.com"
+        - git config user.name "Test User"
+      changed_when: false
+
+    - name: Create test file and commit
+      ansible.builtin.shell: |
+        echo "Test" > README.md
+        git add README.md
+        git commit -m "Initial commit" || true
+      args:
+        chdir: /tmp/test_sphinx_repo
+      changed_when: false
+
   roles:
     - role: alphanodes.setup.common
     - role: alphanodes.setup.sphinx
-
-  post_tasks:
-    - name: Verify sphinx packages installed
-      ansible.builtin.package:
-        name: python3-sphinx
-        state: present
-      check_mode: true
-      register: sphinx_packages
-      failed_when: sphinx_packages.changed
-      ignore_errors: true

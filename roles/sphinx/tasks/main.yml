@@ -9,5 +9,5 @@
   tags: sphinx
   loop: "{{ sphinx_instances }}"
   loop_control:
-    loop_var: instance
-  when: instance.state is undefined or instance.state == 'active'
+    loop_var: sphinx_instance
+  when: sphinx_instance.state is undefined or sphinx_instance.state == 'active'

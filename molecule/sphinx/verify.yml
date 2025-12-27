@@ -1,0 +1,38 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Verify sphinx directory was created
+      ansible.builtin.stat:
+        path: /srv/sphinx/test_docs
+      register: sphinx_dir
+      failed_when: not sphinx_dir.stat.exists
+
+    - name: Verify git clone was successful
+      ansible.builtin.stat:
+        path: /srv/sphinx/test_docs/.git
+      register: git_dir
+      failed_when: not git_dir.stat.exists
+
+    - name: Verify htpasswd file was created
+      ansible.builtin.stat:
+        path: /etc/nginx/.htpasswd_sphinx_test_docs
+      register: htpasswd_file
+      failed_when: not htpasswd_file.stat.exists
+
+    - name: Verify htpasswd file contains test user
+      ansible.builtin.command:
+        cmd: grep -q testuser /etc/nginx/.htpasswd_sphinx_test_docs
+      changed_when: false
+
+    - name: Verify nginx is installed (from nginx_mono dependency)
+      ansible.builtin.command:
+        cmd: nginx -v
+      register: nginx_version
+      changed_when: false
+
+    - name: Display nginx version
+      ansible.builtin.debug:
+        var: nginx_version.stderr
