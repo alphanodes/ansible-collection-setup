@@ -1,10 +1,11 @@
 
 # HTTP to HTTPS redirect for {{ instance.server_name if instance.server_name is defined else 'default host' }}
 {% set ssl_port = nginx_listen_config.server_port | default(443) %}
+{% set default_server_flag = ' default_server' if nginx_listen_config.default_server else '' %}
 server {
-  listen 80;
+  listen 80{{ default_server_flag }};
 {% if nginx_listen_config.use_ipv6 %}
-  listen [::]:80;
+  listen [::]:80{{ default_server_flag }};
 {% endif %}
 {% if instance.server_name is defined %}
   server_name {{ instance.server_name }};
