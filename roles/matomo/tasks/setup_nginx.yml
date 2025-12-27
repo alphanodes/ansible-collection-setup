@@ -31,6 +31,9 @@
     php_fpm_custom_listen: "{{ php_fpm_base + '-' + matomo_php_fpm_pool + '.sock' if matomo_php_fpm_pool is defined else php_fpm_listen }}"
     nginx_mono_service_name: matomo
     nginx_mono_service_enabled: true
+    # Matomo defines own security headers with 'always' flag via additional_headers
+    # Disable nginx_mono default security headers to avoid duplicates
+    nginx_with_security_headers: false
     nginx_mono_service_config:
       server_name: "{{ matomo_vhost_server }}"
       root: "{{ matomo_dir }}"
