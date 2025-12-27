@@ -45,6 +45,14 @@ nginx_ssl_listen_option: "ssl{{ ' http2' if ansible_facts.distribution != 'Debia
 nginx_with_reuseport: false
 nginx_with_http3: false
 
+# TLS 1.3 Early Data (0-RTT) - saves one round-trip for returning visitors
+# WARNING: Only enable when ALL conditions are met:
+#   1. nginx >= 1.29.1 (with OpenSSL), OR nginx built with BoringSSL/QuicTLS
+#   2. No replay-sensitive operations (POST with side effects)
+# Current Debian 13 has nginx 1.26.x - do NOT enable until nginx >= 1.29.1
+# See: https://nginx.org/en/docs/quic.html
+nginx_with_ssl_early_data: false
+
 # see https://gist.github.com/plentz/6737338 (1 year caching)
 # check: https://hstspreload.appspot.com/
 nginx_force_ssl: true

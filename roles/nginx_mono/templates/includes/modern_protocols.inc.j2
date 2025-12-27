@@ -3,6 +3,8 @@
 {% if nginx_with_http3 %}
   http3 on;
   quic_gso on;
+{% if nginx_with_ssl_early_data | default(false) %}
   ssl_early_data on;
+{% endif %}
 {% endif %}
 {% endif %}
