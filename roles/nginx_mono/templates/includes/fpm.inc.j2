@@ -23,7 +23,7 @@
 #}
 {% set _fpm_pool = fpm_pool | default(instance.with_fpm | default(none)) %}
     fastcgi_split_path_info ^(.+\.php)(/.+)$;
-    include fastcgi_params;
+    include /etc/nginx/fastcgi_params;
     fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
     fastcgi_param SERVER_NAME $host;
     fastcgi_intercept_errors on;
