@@ -1,0 +1,68 @@
+---
+- name: Converge - HTTP/3 with mappings
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+    - name: Create test SSL certificates directory
+      ansible.builtin.file:
+        path: /etc/ssl/private
+        state: directory
+        mode: '0700'
+
+    - name: Generate self-signed SSL certificate for testing
+      ansible.builtin.command:
+        cmd: >
+          openssl req -x509 -nodes -days 1
+          -newkey rsa:2048
+          -keyout /etc/ssl/private/test.key
+          -out /etc/ssl/certs/test.crt
+          -subj "/CN=test.local"
+        creates: /etc/ssl/certs/test.crt
+
+    - name: Create trusted cert symlink for testing
+      ansible.builtin.file:
+        src: /etc/ssl/certs/test.crt
+        dest: /etc/ssl/certs/test_trusted.crt
+        state: link
+
+  vars:
+    # Enable HTTP/3 - only works on Debian 13
+    nginx_with_http3: true
+    nginx_with_ssl: true
+    nginx_with_ipv6: true
+    nginx_force_ssl: false
+    nginx_resolver: ['8.8.8.8', '8.8.4.4']
+    hoster: 'local'
+
+    # TLS 1.3 only - required for HTTP/3 and avoids DH parameter generation
+    nginx_ssl_protocols: 'TLSv1.3'
+
+    # SSL certificate configuration
+    vhost_ssl_cert: test
+
+  roles:
+    # Test: nginx_vhosts with mappings and HTTP/3
+    - role: alphanodes.setup.nginx_mono
+      vars:
+        nginx_vhosts:
+          - name: default
+            vhost_default: true
+            vhost_for_zabbix: false
+            vhost_redirect_to: 'https://app.local'
+            mappings:
+              - server: app.local
+                server_alias: app2.local
+                port: 443
+                proxy_pass: 'http://127.0.0.1:3000'
+                locations:
+                  - location: = /api/health
+                    proxy_pass: 'http://127.0.0.1:3001'
+                  - location: /
+                    proxy_pass: 'http://127.0.0.1:3000'

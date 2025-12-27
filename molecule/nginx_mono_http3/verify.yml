@@ -1,0 +1,91 @@
+---
+- name: Verify - HTTP/3 with mappings
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Check if running on Debian 13 (HTTP/3 requirement)
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.distribution == 'Debian'
+          - ansible_facts.distribution_major_version == '13'
+        fail_msg: "HTTP/3 tests require Debian 13 (trixie)"
+        success_msg: "Running on Debian 13 - HTTP/3 should be available"
+
+    - name: Read generated nginx config
+      ansible.builtin.slurp:
+        src: /etc/nginx/sites-available/default.conf
+      register: nginx_config_raw
+
+    - name: Decode nginx config
+      ansible.builtin.set_fact:
+        nginx_config: "{{ nginx_config_raw.content | b64decode }}"
+
+    - name: Debug - Show generated config
+      ansible.builtin.debug:
+        var: nginx_config
+
+    # Verify default vhost has HTTP/3
+    - name: Verify default vhost has QUIC listen directive
+      ansible.builtin.assert:
+        that:
+          - "'listen 443 quic default_server' in nginx_config"
+        fail_msg: "Default vhost missing 'listen 443 quic default_server'"
+        success_msg: "Default vhost has QUIC listen directive"
+
+    - name: Verify default vhost has IPv6 QUIC listen directive
+      ansible.builtin.assert:
+        that:
+          - "'listen [::]:443 quic default_server' in nginx_config"
+        fail_msg: "Default vhost missing IPv6 QUIC listen directive"
+        success_msg: "Default vhost has IPv6 QUIC listen directive"
+
+    - name: Verify default vhost has Alt-Svc header
+      ansible.builtin.assert:
+        that:
+          - "\"add_header Alt-Svc 'h3=\\\":443\\\"; ma=86400'\" in nginx_config"
+        fail_msg: "Default vhost missing Alt-Svc header"
+        success_msg: "Default vhost has Alt-Svc header"
+
+    # Verify mapping vhost has HTTP/3
+    - name: Verify mapping vhost has QUIC listen directive
+      ansible.builtin.assert:
+        that:
+          # The mapping server block should have listen 443 quic (without default_server)
+          - nginx_config | regex_search('# Mapping for app.local[\\s\\S]*?listen 443 quic;') is not none
+        fail_msg: "Mapping vhost (app.local) missing 'listen 443 quic'"
+        success_msg: "Mapping vhost has QUIC listen directive"
+
+    - name: Verify mapping vhost has IPv6 QUIC listen directive
+      ansible.builtin.assert:
+        that:
+          - nginx_config | regex_search('# Mapping for app.local[\\s\\S]*?listen \\[::\\]:443 quic;') is not none
+        fail_msg: "Mapping vhost (app.local) missing IPv6 QUIC listen directive"
+        success_msg: "Mapping vhost has IPv6 QUIC listen directive"
+
+    - name: Verify mapping vhost has Alt-Svc header
+      ansible.builtin.assert:
+        that:
+          - nginx_config | regex_search("# Mapping for app.local[\\s\\S]*?add_header Alt-Svc 'h3=\":443\"; ma=86400'") is not none
+        fail_msg: "Mapping vhost (app.local) missing Alt-Svc header"
+        success_msg: "Mapping vhost has Alt-Svc header"
+
+    # Verify http3 on directive
+    - name: Verify http3 on is present
+      ansible.builtin.assert:
+        that:
+          - "'http3 on;' in nginx_config"
+        fail_msg: "Missing 'http3 on' directive"
+        success_msg: "http3 on directive present"
+
+    # Verify nginx configuration is valid
+    - name: Test nginx configuration syntax
+      ansible.builtin.command:
+        cmd: nginx -t
+      register: nginx_test
+      changed_when: false
+
+    - name: Show nginx test result
+      ansible.builtin.debug:
+        var: nginx_test.stderr
