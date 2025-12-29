@@ -1,0 +1,82 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  vars:
+    # MySQL settings for testing
+    mysql_root_password: 'test_root_password'
+    mysql_socket_force: true
+    mysql_server_tmpdir: /tmp
+
+    # Database credentials for dovecot
+    dovecot_db_password: 'test_dovecot_password'
+    dovecot_db_host: '127.0.0.1'
+    dovecot_db_name: 'vimbadmin'
+    dovecot_db_user: 'vimbadmin'
+
+    # Use snakeoil certs for testing
+    dovecot_ssl_cert_file: /etc/ssl/certs/ssl-cert-snakeoil.pem
+    dovecot_ssl_key_file: /etc/ssl/private/ssl-cert-snakeoil.key
+
+    # Test postmaster address
+    dovecot_postmaster_address: 'postmaster@example.com'
+
+    # Disable service during role execution (DB doesn't exist yet)
+    dovecot_enable_service: false
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  roles:
+    - role: alphanodes.setup.dovecot
+
+  post_tasks:
+    - name: Create vimbadmin database
+      community.mysql.mysql_db:
+        name: '{{ dovecot_db_name }}'
+        state: present
+        login_unix_socket: /run/mysqld/mysqld.sock
+
+    - name: Create vimbadmin database user
+      community.mysql.mysql_user:
+        name: '{{ dovecot_db_user }}'
+        password: '{{ dovecot_db_password }}'
+        host: '%'
+        priv: '{{ dovecot_db_name }}.*:ALL'
+        state: present
+        login_unix_socket: /run/mysqld/mysqld.sock
+
+    - name: Create minimal mailbox table for testing
+      community.mysql.mysql_query:
+        login_unix_socket: /run/mysqld/mysqld.sock
+        login_db: '{{ dovecot_db_name }}'
+        query: |
+          CREATE TABLE IF NOT EXISTS mailbox (
+            username VARCHAR(255) NOT NULL PRIMARY KEY,
+            password VARCHAR(255) NOT NULL,
+            homedir VARCHAR(255) NOT NULL,
+            maildir VARCHAR(255) NOT NULL,
+            uid INT NOT NULL DEFAULT 5000,
+            gid INT NOT NULL DEFAULT 5000,
+            quota BIGINT NOT NULL DEFAULT 0,
+            access_restriction VARCHAR(50) NOT NULL DEFAULT 'ALL',
+            active TINYINT NOT NULL DEFAULT 1
+          )
+
+    - name: Insert test mailbox entry
+      community.mysql.mysql_query:
+        login_unix_socket: /run/mysqld/mysqld.sock
+        login_db: '{{ dovecot_db_name }}'
+        query: |
+          INSERT IGNORE INTO mailbox (username, password, homedir, maildir, uid, gid, quota, access_restriction, active)
+          VALUES ('test@example.com', '{SHA512-CRYPT}$6$test', '/var/vmail/example.com/test', '/var/vmail/example.com/test/Maildir', 5000, 5000, 1073741824, 'ALL', 1)
+
+    - name: Restart dovecot after database setup
+      ansible.builtin.systemd_service:
+        name: dovecot
+        state: restarted

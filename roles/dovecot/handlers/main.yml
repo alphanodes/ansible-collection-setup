@@ -1,0 +1,22 @@
+---
+# handlers file for dovecot
+
+- name: Restart dovecot
+  ansible.builtin.systemd_service:
+    name: dovecot
+    state: restarted
+  when: dovecot_enable_service | default(true)
+
+- name: Run sievec
+  ansible.builtin.command: sievec {{ dovecot_before_sieve_script }}
+  when: dovecot_enable_service | default(true)
+  notify:
+    - Set permission to before.svbin
+
+- name: Set permission to before.svbin
+  ansible.builtin.file:
+    path: '{{ dovecot_before_sieve_svbin }}'
+    owner: '{{ dovecot_vmail_user }}'
+    group: dovecot
+    mode: '0644'
+  when: dovecot_enable_service | default(true)

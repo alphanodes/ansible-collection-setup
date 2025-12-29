@@ -1,0 +1,11 @@
+---
+
+- name: Include remove x tasks
+  ansible.builtin.include_tasks: setup.yml
+  tags: dovecot
+
+- name: Include sieve tasks
+  ansible.builtin.include_tasks: sieve.yml
+  tags:
+    - dovecot
+    - sieve

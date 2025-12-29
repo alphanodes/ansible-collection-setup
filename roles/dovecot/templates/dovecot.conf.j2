@@ -1,0 +1,217 @@
+{{ managed_by_ansible | comment }}
+
+dovecot_config_version = 2.4.0
+dovecot_storage_version = 2.4.0
+
+auth_mechanisms = plain login
+auth_allow_cleartext = no
+login_log_format_elements = "user=<%u> method=%m rip=%r lip=%l mpid=%e %c %k"
+mail_home = {{ dovecot_mail_home }}
+mail_driver = maildir
+mail_path = ~/Maildir
+mailbox_list_layout = fs
+mail_uid = {{ dovecot_vmail_user }}
+mail_gid = {{ dovecot_vmail_group }}
+# notify wird von mail_log benötigt. mail_log informiert in diesem Fall über DELETE und EXPUNGE (weiter unten)
+mail_plugins = quota acl mail_log notify
+auth_username_chars = abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890.-_@
+
+# load ssl if permissions are available
+# see https://github.com/postfixadmin/postfixadmin/issues/398#issuecomment-843124406
+# NOTE: vimbadmin does not required ssl, this is skiped for it
+# NOTE2: do not use conf.d directory, which always active this configuration
+!include_try dovecot-ssl.conf
+
+log_timestamp = "%Y-%m-%d %H:%M:%S "
+
+# MySQL connection configuration
+mysql {{ dovecot_db_host }} {
+  user = {{ dovecot_db_user }}
+  password = {{ dovecot_db_password }}
+  dbname = {{ dovecot_db_name }}
+}
+sql_driver = mysql
+passdb_default_password_scheme = {{ dovecot_default_pass_scheme }}
+
+passdb sql {
+  query = SELECT username as user, password as password, \
+        homedir AS home, \
+        maildir AS mail, uid, gid, \
+        concat('*:bytes=', quota) as quota_rule \
+        FROM mailbox WHERE username = '%{user | lower}' AND active = '1' \
+        AND ( access_restriction = 'ALL' OR LOCATE( '%{protocol}', access_restriction ) > 0 )
+}
+# Der "namespace separator" sollte "/" lauten, da es zusammen mit der ACL zu Konflikten käme, wenn der Benutzername das Zeichen "." enthält.
+namespace inbox {
+  inbox = yes
+  separator = /
+  mailbox Trash {
+    auto = subscribe
+    special_use = \Trash
+    quota_storage_percentage = 110
+  }
+    mailbox "Deleted Messages" {
+      special_use = \Trash
+    }
+    mailbox "Gelöschte Objekte" {
+      special_use = \Trash
+    }
+    mailbox "Papierkorb" {
+      special_use = \Trash
+    }
+  mailbox Archive {
+    auto = subscribe
+    special_use = \Archive
+  }
+    mailbox Archiv {
+      special_use = \Archive
+    }
+  mailbox Sent {
+    auto = subscribe
+    special_use = \Sent
+    quota_storage_percentage = 110
+  }
+    mailbox "Sent Messages" {
+      special_use = \Sent
+    }
+    mailbox "Gesendet" {
+      special_use = \Sent
+    }
+  mailbox Drafts {
+    auto = subscribe
+    special_use = \Drafts
+  }
+    mailbox Entwürfe {
+      special_use = \Drafts
+    }
+  mailbox Junk {
+    auto = subscribe
+    special_use = \Junk
+  }
+  prefix =
+}
+# Dieser Namespace wird für die ACL Erweiterung benötigt.
+# Freigegebene Ordner erscheinen automatisch in der Ordnerliste.
+namespace shared {
+    type = shared
+    separator = /
+    prefix = Shared/$user/
+    mail_driver = maildir
+    mail_path = $home/Maildir
+    mailbox_list_layout = fs
+    mail_index_private_path = ~/Maildir/Shared/$user
+    subscriptions = yes
+    list = yes
+}
+protocols = imap lmtp sieve
+service dict {
+  unix_listener dict {
+    mode = 0660
+    user = {{ dovecot_vmail_user }}
+    group = {{ dovecot_vmail_group }}
+  }
+}
+service auth {
+  unix_listener /var/spool/postfix/private/auth {
+    mode = 0660
+    group = postfix
+    user = postfix
+  }
+  unix_listener auth-master {
+    mode = 0600
+    user = {{ dovecot_vmail_user }}
+  }
+  unix_listener auth-userdb {
+    mode = 0660
+    user = {{ dovecot_vmail_user }}
+    group = {{ dovecot_vmail_user }}
+  }
+}
+service managesieve-login {
+  inet_listener sieve {
+    port = 4190
+  }
+  service_restart_request_count = 1
+  process_min_avail = 2
+  vsz_limit = 128M
+}
+service managesieve {
+  process_limit = 256
+}
+service lmtp {
+  unix_listener /var/spool/postfix/private/dovecot-lmtp {
+    mode = 0660
+    group = postfix
+    user = postfix
+  }
+  user = {{ dovecot_vmail_user }}
+}
+listen = *
+userdb sql {
+  query = SELECT homedir AS home, \
+        maildir AS mail, uid, gid, \
+        concat('*:bytes=', quota) as quota_rule \
+        FROM mailbox WHERE username = '%{user}'
+  iterate_query = SELECT username FROM mailbox
+}
+protocol imap {
+  mail_plugins = quota acl mail_log notify imap_quota imap_sieve
+  mail_max_userip_connections = 20
+  imap_idle_notify_interval = 29 mins
+}
+protocol lmtp {
+  postmaster_address = {{ dovecot_postmaster_address }}
+  mail_plugins = quota acl mail_log notify sieve push_notification
+  auth_socket_path = /run/dovecot/auth-master
+}
+protocol sieve {
+  managesieve_logout_format = bytes=%i/%o
+}
+protocol lda {
+  mail_plugins = sieve quota acl notify
+  postmaster_address = {{ dovecot_postmaster_address }}
+}
+# Plugin settings (now global in 2.4)
+mail_log_events = delete undelete expunge
+# Um quasi-öffentliche Ordner für authentifizierte Benutzer via ACL zu erstellen
+imap_acl_allow_anyone = yes
+# Wird automatisch verwaltet und beinhaltet eine Übersicht der Freigaben
+acl_sharing_map {
+  dict file {
+    path = {{ dovecot_vmail_home }}/shared-mailboxes.db
+  }
+}
+# In jeder Mailbox wird von Dovecot eine Datei gepflegt, die die Freigaben regelt
+acl_driver = vfile
+quota "User quota" {
+}
+# Eigene Sieve Filter liegen im Heimverzeichnis
+sieve_script personal {
+  type = personal
+  driver = file
+  path = ~/sieve
+  active_path = ~/sieve/dovecot.sieve
+}
+# Der globale Filter außerhalb
+sieve_script before {
+  type = before
+  driver = file
+  path = {{ dovecot_before_sieve_script }}
+}
+sieve_max_script_size = 1M
+sieve_quota_script_count = 0
+sieve_quota_storage_size = 0
+# Auch dann weitermachen, wenn die Quota nicht ermittelt werden kann
+# Gilt für den von Dovecot bereitgestellten Postfix policy service
+quota_status_success = DUNNO
+quota_status_nouser = DUNNO
+quota_status_overquota = "552 5.2.2 Mailbox is over quota"
+service quota-status {
+  executable = quota-status -p postfix
+  unix_listener /var/spool/postfix/private/quota-status {
+   group = postfix
+   mode = 0660
+   user = postfix
+  }
+  client_limit = 1
+}

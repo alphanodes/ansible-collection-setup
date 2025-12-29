@@ -1,0 +1,12 @@
+---
+
+- name: Update before.sieve script
+  ansible.builtin.template:
+    src: before.sieve.j2
+    dest: '{{ dovecot_before_sieve_script }}'
+    owner: '{{ dovecot_vmail_user }}'
+    group: dovecot
+    mode: '0644'
+  notify:
+    - Restart dovecot
+    - Run sievec

@@ -1,0 +1,48 @@
+---
+
+- name: Check Debian version for Dovecot 2.4 compatibility
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.distribution == 'Debian'
+      - ansible_facts.distribution_major_version | int >= 13
+    fail_msg: >
+      Dovecot 2.4 configuration requires Debian 13 (Trixie) or newer.
+      Current system: {{ ansible_facts.distribution }} {{ ansible_facts.distribution_version }}.
+      Dovecot 2.3 to 2.4 has breaking changes that are not compatible with older versions.
+    success_msg: "Debian {{ ansible_facts.distribution_version }} detected - Dovecot 2.4 compatible"
+
+- name: Be sure dovecot is installed
+  ansible.builtin.apt:
+    name: '{{ dovecot_packages }}'
+    state: present
+
+- name: Add dovecot user to ssl-cert group
+  ansible.builtin.user:
+    name: dovecot
+    groups: ssl-cert
+    append: true
+
+- name: Ensure vmail user exist
+  ansible.builtin.user:
+    name: '{{ dovecot_vmail_user }}'
+    home: '{{ dovecot_vmail_home }}'
+    shell: /usr/sbin/nologin
+    uid: 5000
+
+- name: Update dovecot configuration
+  ansible.builtin.template:
+    src: dovecot.conf.j2
+    dest: /etc/dovecot/dovecot.conf
+    owner: root
+    group: dovecot
+    mode: '0644'
+  notify: Restart dovecot
+
+- name: Update dovecot ssl configuration
+  ansible.builtin.template:
+    src: dovecot-ssl.conf.j2
+    dest: /etc/dovecot/dovecot-ssl.conf
+    owner: root
+    group: dovecot
+    mode: '0640'
+  notify: Restart dovecot

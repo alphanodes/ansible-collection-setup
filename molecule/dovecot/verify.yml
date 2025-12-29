@@ -1,0 +1,129 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Verify dovecot-core package is installed
+      ansible.builtin.command: dpkg -l dovecot-core
+      register: dovecot_pkg
+      changed_when: false
+      failed_when: dovecot_pkg.rc != 0
+
+    - name: Verify dovecot-imapd package is installed
+      ansible.builtin.command: dpkg -l dovecot-imapd
+      register: dovecot_imap_pkg
+      changed_when: false
+      failed_when: dovecot_imap_pkg.rc != 0
+
+    - name: Verify dovecot-lmtpd package is installed
+      ansible.builtin.command: dpkg -l dovecot-lmtpd
+      register: dovecot_lmtp_pkg
+      changed_when: false
+      failed_when: dovecot_lmtp_pkg.rc != 0
+
+    - name: Verify dovecot-sieve package is installed
+      ansible.builtin.command: dpkg -l dovecot-sieve
+      register: dovecot_sieve_pkg
+      changed_when: false
+      failed_when: dovecot_sieve_pkg.rc != 0
+
+    - name: Verify dovecot-managesieved package is installed
+      ansible.builtin.command: dpkg -l dovecot-managesieved
+      register: dovecot_managesieved_pkg
+      changed_when: false
+      failed_when: dovecot_managesieved_pkg.rc != 0
+
+    - name: Verify dovecot-mysql package is installed
+      ansible.builtin.command: dpkg -l dovecot-mysql
+      register: dovecot_mysql_pkg
+      changed_when: false
+      failed_when: dovecot_mysql_pkg.rc != 0
+
+    - name: Verify dovecot.conf exists
+      ansible.builtin.stat:
+        path: /etc/dovecot/dovecot.conf
+      register: dovecot_conf
+      failed_when: not dovecot_conf.stat.exists
+
+    - name: Verify dovecot-ssl.conf exists
+      ansible.builtin.stat:
+        path: /etc/dovecot/dovecot-ssl.conf
+      register: dovecot_ssl_conf
+      failed_when: not dovecot_ssl_conf.stat.exists
+
+    - name: Verify before.sieve script exists
+      ansible.builtin.stat:
+        path: /var/vmail/before.sieve
+      register: before_sieve
+      failed_when: not before_sieve.stat.exists
+
+    - name: Verify vmail user exists
+      ansible.builtin.command: id vmail
+      register: vmail_user
+      changed_when: false
+      failed_when: vmail_user.rc != 0
+
+    - name: Verify vmail home directory exists
+      ansible.builtin.stat:
+        path: /var/vmail
+      register: vmail_home
+      failed_when: not vmail_home.stat.exists
+
+    - name: Verify dovecot.conf contains version settings (Dovecot 2.4)
+      ansible.builtin.command: grep -q 'dovecot_config_version = 2.4.0' /etc/dovecot/dovecot.conf
+      changed_when: false
+
+    - name: Verify dovecot.conf contains correct postmaster address
+      ansible.builtin.command: grep -q 'postmaster@example.com' /etc/dovecot/dovecot.conf
+      changed_when: false
+
+    - name: Verify dovecot.conf contains MySQL configuration
+      ansible.builtin.command: grep -q 'mysql 127.0.0.1' /etc/dovecot/dovecot.conf
+      changed_when: false
+
+    - name: Verify dovecot.conf contains passdb sql block
+      ansible.builtin.command: grep -q 'passdb sql' /etc/dovecot/dovecot.conf
+      changed_when: false
+
+    - name: Verify dovecot.conf contains userdb sql block
+      ansible.builtin.command: grep -q 'userdb sql' /etc/dovecot/dovecot.conf
+      changed_when: false
+
+    - name: Verify dovecot-ssl.conf contains SSL settings
+      ansible.builtin.command: grep -q 'ssl = required' /etc/dovecot/dovecot-ssl.conf
+      changed_when: false
+
+    - name: Verify dovecot-ssl.conf uses correct cert path
+      ansible.builtin.command: grep -q 'ssl_server_cert_file = /etc/ssl/certs/ssl-cert-snakeoil.pem' /etc/dovecot/dovecot-ssl.conf
+      changed_when: false
+
+    - name: Verify dovecot user is in ssl-cert group
+      ansible.builtin.command: groups dovecot
+      register: dovecot_groups
+      changed_when: false
+      failed_when: "'ssl-cert' not in dovecot_groups.stdout"
+
+    - name: Verify dovecot configuration syntax
+      ansible.builtin.command: dovecot -n
+      register: dovecot_config_check
+      changed_when: false
+
+    - name: Verify dovecot service is running
+      ansible.builtin.systemd:
+        name: dovecot
+      register: dovecot_service
+      failed_when: dovecot_service.status.ActiveState != 'active'
+
+    - name: Test IMAP port is listening
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: 143
+        timeout: 5
+
+    - name: Test ManageSieve port is listening
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: 4190
+        timeout: 5
