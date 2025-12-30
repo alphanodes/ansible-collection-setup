@@ -26,6 +26,9 @@
     include /etc/nginx/fastcgi_params;
     fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
     fastcgi_param SERVER_NAME $host;
+    # HTTP_HOST required for HTTP/3 compatibility - HTTP/3 has no Host header,
+    # only :authority pseudo-header. $host works across all HTTP versions.
+    fastcgi_param HTTP_HOST $host;
     fastcgi_intercept_errors on;
     fastcgi_read_timeout {{ nginx_fastcgi_read_timeout | default(60) }};
     fastcgi_send_timeout {{ nginx_fastcgi_send_timeout | default(60) }};
