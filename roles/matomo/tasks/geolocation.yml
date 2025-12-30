@@ -71,3 +71,18 @@
     owner: '{{ matomo_user }}'
     group: '{{ matomo_group }}'
     mode: '0644'
+
+- name: Find old DBIP database files
+  ansible.builtin.find:
+    paths: '{{ matomo_task_geo_archive_dir }}'
+    patterns: 'dbip-city-lite-*.mmdb*'
+    age: 60d
+  register: matomo_geo_old_files
+
+- name: Remove old DBIP database files (older than 60 days)
+  ansible.builtin.file:
+    path: '{{ item.path }}'
+    state: absent
+  loop: '{{ matomo_geo_old_files.files }}'
+  loop_control:
+    label: '{{ item.path | basename }}'

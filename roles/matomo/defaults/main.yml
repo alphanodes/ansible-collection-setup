@@ -69,7 +69,8 @@ matomo_cleanup_files: []
 matomo_with_robots_txt: false
 
 # Private directory for backups, DBIP archive, etc.
-matomo_private_dir: '{{ matomo_dir }}/private'
+# IMPORTANT: Must be OUTSIDE matomo_dir to avoid "unexpected files" warnings
+matomo_private_dir: /var/lib/matomo
 
 # Console-based config settings (idempotent via matomo console config:set)
 # Set to empty dict {} to skip console config
