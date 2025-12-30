@@ -333,6 +333,59 @@ When migrating multi-instance roles:
 2. **Update all references** in the instance tasks file
 3. **Test with multiple instances** to verify no shadowing
 
+### HTTP_HOST for HTTP/3 Compatibility in PHP-FPM (2025-12-30)
+
+**Critical Learning**: PHP applications using `$_SERVER['HTTP_HOST']` fail with HTTP/3!
+
+#### HTTP_HOST Problem
+
+HTTP/3 (QUIC) does not have a traditional `Host` header. Instead, it uses the
+`:authority` pseudo-header. PHP's `$_SERVER['HTTP_HOST']` is populated from the
+`Host` header, which is empty/undefined in HTTP/3 requests.
+
+**Symptoms:**
+
+- PHP warning: `Undefined array key "HTTP_HOST"`
+- Error only on second page load (first request is HTTP/2, second is HTTP/3)
+- Hard refresh temporarily fixes it (forces HTTP/2)
+
+**Example from nginx access log:**
+
+```text
+GET /log HTTP/2.0 → 200 OK (works!)
+GET /%3Cbr%20/%3E%3Cb%3EWarning%3C/b%3E... HTTP/3.0 → 404 (broken!)
+```
+
+#### HTTP_HOST Solution
+
+Add explicit `fastcgi_param HTTP_HOST $host;` to PHP-FPM configuration:
+
+```nginx
+# In fpm.inc.j2:
+fastcgi_param SERVER_NAME $host;
+# HTTP_HOST required for HTTP/3 compatibility - HTTP/3 has no Host header,
+# only :authority pseudo-header. $host works across all HTTP versions.
+fastcgi_param HTTP_HOST $host;
+```
+
+**Why `$host` works:**
+
+- HTTP/1.1 + HTTP/2: Uses `Host` header value
+- HTTP/3: Uses `:authority` pseudo-header value
+- Fallback: Uses `server_name` directive value
+
+#### Affected Roles
+
+All PHP-FPM roles using nginx_mono are automatically fixed:
+
+- roundcube
+- vimbadmin
+- nextcloud
+- matomo
+- drupal (when migrated)
+
+**File changed:** `roles/nginx_mono/templates/includes/fpm.inc.j2`
+
 ### Use raw_actions Instead of New Variables (2025-12)
 
 **Design Principle**: Before adding new variables to nginx_mono, check if the
@@ -397,6 +450,7 @@ Don't add new variables for:
 | matomo | 2025-11 | Analytics, FPM whitelist pattern, comprehensive security tests |
 | nextcloud | 2024-11 | Cloud storage |
 | radicale | 2024-11 | CalDAV/CardDAV |
+| vimbadmin | 2025-12 | Email admin, PHP-FPM pattern, HTTP_HOST fix tested |
 
 ### Pending Migrations
 
