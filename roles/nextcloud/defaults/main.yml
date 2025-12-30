@@ -5,7 +5,7 @@ nextcloud_dir: '{{ srv_path }}/nextcloud'
 nextcloud_data: '{{ nextcloud_dir }}/data'
 nextcloud_htdocs: '{{ nextcloud_dir }}/htdocs'
 
-nextcloud_version: 28.0.1
+nextcloud_version: 32.0.2
 nextcloud_source_url: https://download.nextcloud.com/server/releases
 nextcloud_source_file: nextcloud-{{ nextcloud_version }}.tar.bz2
 

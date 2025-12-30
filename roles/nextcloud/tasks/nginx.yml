@@ -28,7 +28,7 @@
         - 'X-Frame-Options "SAMEORIGIN" always'
         - 'X-Permitted-Cross-Domain-Policies "none" always'
         - 'X-Robots-Tag "noindex, nofollow" always'
-        - 'X-XSS-Protection "1; mode=block" always'
+        # X-XSS-Protection removed in Nextcloud 32 (deprecated, can cause security issues)
       locations:
         - name: "= /"
           raw_actions:
