@@ -1,0 +1,7 @@
+---
+# MariaDB-specific variables (Debian/Ubuntu native packages)
+# These are internal defaults, prefixed with _ to allow override
+
+_mysql_client_packages:
+  - mariadb-client
+  - python3-pymysql

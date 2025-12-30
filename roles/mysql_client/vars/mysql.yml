@@ -1,0 +1,7 @@
+---
+# MySQL-specific variables (Oracle MySQL from repo.mysql.com)
+# These are internal defaults, prefixed with _ to allow override
+
+_mysql_client_packages:
+  - mysql-client
+  - python3-pymysql

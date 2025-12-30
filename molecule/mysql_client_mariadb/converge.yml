@@ -1,0 +1,29 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  vars:
+    # Use Debian native packages (MariaDB) instead of Oracle MySQL
+    # This enables ARM64 compatibility for local testing on Apple Silicon
+    mysql_backend: mariadb
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  roles:
+    - role: alphanodes.setup.mysql_client
+
+  post_tasks:
+    - name: Run mysql client
+      ansible.builtin.command: mysql --version
+      changed_when: false
+      register: mysql_info
+
+    - name: Show mysql client version info
+      ansible.builtin.debug:
+        var: mysql_info.stdout

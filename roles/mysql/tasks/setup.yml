@@ -37,7 +37,10 @@
   loop:
     - ib_logfile0
     - ib_logfile1
-  when: not mysql_installed.stat.exists
+  when:
+    - not mysql_installed.stat.exists
+    # Skip for MariaDB - it needs these files for InnoDB initialization
+    - mysql_daemon != 'mariadb'
 
 - name: Install debian.cnf for debian maintenance
   ansible.builtin.template:
@@ -57,7 +60,7 @@
   when: >
     mysql_log_output == 'FILE'
     and ansible_facts.distribution == 'Debian'
-    and mysql_with_mysql_com
+    and mysql_backend == 'mysql'
 
 - name: Disable logrotate support for mysql-server
   ansible.builtin.file:
@@ -65,7 +68,7 @@
     state: absent
   when: >
     mysql_log_output != 'FILE'
-    or (ansible_facts.distribution == 'Debian' and not mysql_with_mysql_com)
+    or (ansible_facts.distribution == 'Debian' and mysql_backend == 'mariadb')
 
 - name: Add mysql user to ssl-cert group
   ansible.builtin.user:

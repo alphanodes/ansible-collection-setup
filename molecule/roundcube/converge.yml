@@ -20,10 +20,10 @@
     php_fpm_listen: /run/php/php-fpm.sock
 
     # MySQL settings for testing
+    # Use Debian native packages (MariaDB) for ARM64 compatibility
+    mysql_backend: mariadb
     mysql_root_password: 'test_root_password'
-    # Use socket authentication for reliable connection in containers
     mysql_socket_force: true
-    # Use /tmp for tmpdir in Docker containers to avoid /run/mysqld permission issues
     mysql_server_tmpdir: /tmp
 
     # nodejs settings - use NodeSource for Node.js 20.x

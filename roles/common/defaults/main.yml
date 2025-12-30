@@ -33,12 +33,6 @@ common_packages:
   - curl
   - python3-debian
 
-# required globally for mysql auth_socket support
-# caching_sha2_password or auth_socket
-mysql_root_plugin: caching_sha2_password
-mysql_socket: /run/mysqld/mysqld.sock
-mysql_socket_force: false
-
 # @see https://ssl-config.mozilla.org
 # dhparams is only needed for TLSv1.2, not for TLSv1.3 only
 nginx_ssl_protocols: 'TLSv1.2 TLSv1.3'

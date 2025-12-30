@@ -4,10 +4,10 @@
   ansible.builtin.deb822_repository:
     name: mysql
     state: absent
-  when: not mysql_with_mysql_com
+  when: mysql_backend == 'mariadb'
 
 - name: MySQL.com block
-  when: mysql_with_mysql_com
+  when: mysql_backend == 'mysql'
   block:
     - name: Use local gpg key for apt repository
       ansible.builtin.copy:

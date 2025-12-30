@@ -1,6 +1,11 @@
 ---
 # defaults file for alphanodes.setup.mysql
 
+# Backend selection: mysql (Oracle MySQL) or mariadb (Debian/Ubuntu native)
+# - mysql: Uses Oracle MySQL from repo.mysql.com (recommended for production)
+# - mariadb: Uses native Debian/Ubuntu MariaDB packages (useful for ARM64 testing)
+mysql_backend: mysql
+
 # Set this to the user ansible is logging in as - should have root
 # or sudo access
 mysql_user_home: /root
@@ -10,8 +15,8 @@ mysql_user_password: root
 # The default root user installed by mysql - almost always root
 mysql_root_home: /root
 mysql_root_username: root
-# caching_sha2_password or auth_socket
-mysql_root_plugin: caching_sha2_password
+# caching_sha2_password or auth_socket (set by backend, can be overridden)
+mysql_root_plugin: "{{ _mysql_root_plugin | default('caching_sha2_password') }}"
 # overwrite it, if you want to set it
 # mysql_root_password: ''
 
@@ -24,9 +29,8 @@ mysql_enabled_on_startup: true
 # Whether my.cnf should be updated on every run.
 overwrite_global_mycnf: true
 
-mysql_packages:
-  - mysql-common
-  - mysql-server
+# Packages (set by backend, can be overridden)
+mysql_packages: "{{ _mysql_packages | default(['mysql-common', 'mysql-server']) }}"
 
 # MySQL connection settings.
 mysql_port: "3306"
@@ -42,17 +46,27 @@ mysql_socket_force: false
 mysql_character_set_server: utf8mb4
 mysql_collation_server: utf8mb4_unicode_ci
 
-mysql_config_include_dir: /etc/mysql/conf.d
-mysql_config_mysql_include_dir: /etc/mysql/mysql.conf.d
+# Config directories (set by backend, can be overridden)
+mysql_config_include_dir: "{{ _mysql_config_include_dir | default('/etc/mysql/conf.d') }}"
+mysql_config_mysql_include_dir: "{{ _mysql_config_mysql_include_dir | default('/etc/mysql/mysql.conf.d') }}"
 
 mysql_config_file: "{{ mysql_config_mysql_include_dir }}/ansible.cnf"
+
+# Path to main my.cnf (used for /etc/alternatives)
+mysql_real_config_file: /etc/mysql/my.cnf
+# Package config file with includedirs (set by backend, can be overridden)
+mysql_config_include_file: "{{ _mysql_config_include_file | default('/etc/mysql/mysql.cnf') }}"
 
 # do not include includedir conf.d and mysql.conf.d
 mysql_with_includedirs: false
 # if mysql_with_includedirs is false, remove include directories
 mysql_remove_unused_includedirs: false
 
-mysql_daemon: mysql
+# Service name (set by backend, can be overridden)
+mysql_daemon: "{{ _mysql_daemon | default('mysql') }}"
+
+# Default authentication plugin (set by backend, can be overridden)
+mysql_default_auth_plugin: "{{ _mysql_default_auth_plugin | default('caching_sha2_password') }}"
 
 # Memory settings (default values optimized ~512MB RAM).
 mysql_key_buffer_size: "256M"
@@ -81,8 +95,9 @@ mysql_innodb_buffer_pool_size: "256M"
 mysql_innodb_log_buffer_size: "8M"
 mysql_innodb_flush_log_at_trx_commit: "1"
 mysql_innodb_lock_wait_timeout: "50"
-# default is 100M
-mysql_innodb_redo_log_capacity: 256M
+# InnoDB redo log capacity (MySQL 8.0+ only, not supported by MariaDB)
+# Set by backend, can be overridden. Use ~ (null) to disable for MariaDB.
+mysql_innodb_redo_log_capacity: "{{ _mysql_innodb_redo_log_capacity | default('256M') }}"
 
 # mysqldump settings.
 mysql_mysqldump_max_allowed_packet: "64M"

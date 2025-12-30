@@ -5,24 +5,24 @@
     name: '{{ drupal_mysql_packages }}'
     state: present
 
-- name: Be sure drupal databases exists - {{ instance.name }}
-  community.mysql.mysql_db:
-    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
-    name: '{{ instance.db_name | default(instance.name) | replace("-", "_") }}'
-    collation: utf8_general_ci
-    encoding: utf8
-    state: present
+- name: Create drupal database - {{ instance.name }}
+  ansible.builtin.include_role:
+    name: alphanodes.setup.mysql
+    tasks_from: create_database.yml
+  vars:
+    mysql_setup_db_name: '{{ instance.db_name | default(instance.name) | replace("-", "_") }}'
+    mysql_setup_db_collation: utf8_general_ci
+    mysql_setup_db_encoding: utf8
   when: instance.db_skip_db_setup is undefined or not instance.db_skip_db_setup
 
-- name: Create drupal database users - {{ instance.name }}
-  community.mysql.mysql_user:
-    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
-    name: '{{ instance.db_user | default(instance.name) | replace("-", "_") }}'
-    plugin: caching_sha2_password
-    plugin_auth_string: "{{ instance.db_password | default(drupal_db_password) }}"
-    salt: "{{ [ansible_facts['machine_id'], ansible_facts['hostname'], 'drupal'] | join | hash('sha1') | truncate(20, true, '') }}"
-    host: '{{ instance.db_host | default(drupal_db_host) }}'
-    priv: '{{ instance.db_name | default(instance.name) | replace("-", "_") }}.*:ALL'
-    column_case_sensitive: true
-    state: present
+- name: Create drupal database user - {{ instance.name }}
+  ansible.builtin.include_role:
+    name: alphanodes.setup.mysql
+    tasks_from: create_user.yml
+  vars:
+    mysql_setup_db_name: '{{ instance.db_name | default(instance.name) | replace("-", "_") }}'
+    mysql_setup_user_name: '{{ instance.db_user | default(instance.name) | replace("-", "_") }}'
+    mysql_setup_user_password: '{{ instance.db_password | default(drupal_db_password) }}'
+    mysql_setup_user_host: '{{ instance.db_host | default(drupal_db_host) }}'
+    mysql_setup_salt_id: drupal
   when: instance.db_skip_user_setup is undefined or not instance.db_skip_user_setup

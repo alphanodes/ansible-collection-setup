@@ -1,0 +1,86 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Verify mysql server is installed
+      ansible.builtin.command: which mysqld
+      register: mysqld_which
+      changed_when: false
+      failed_when: mysqld_which.rc != 0
+
+    - name: Verify mysql client is installed
+      ansible.builtin.command: which mysql
+      register: mysql_which
+      changed_when: false
+      failed_when: mysql_which.rc != 0
+
+    - name: Verify mysql client version
+      ansible.builtin.command: mysql --version
+      register: mysql_version
+      changed_when: false
+      failed_when: mysql_version.rc != 0
+
+    - name: Verify MariaDB is used (not Oracle MySQL)
+      ansible.builtin.assert:
+        that:
+          - "'MariaDB' in mysql_version.stdout or 'mariadb' in mysql_version.stdout"
+        fail_msg: "Expected MariaDB but got: {{ mysql_version.stdout }}"
+        success_msg: "MariaDB installed: {{ mysql_version.stdout }}"
+
+    - name: Verify mariadb service is running
+      ansible.builtin.systemd:
+        name: mariadb
+      register: mariadb_service
+
+    - name: Assert mariadb service is active
+      ansible.builtin.assert:
+        that:
+          - mariadb_service.status.ActiveState == "active"
+        fail_msg: "MariaDB service is not active: {{ mariadb_service.status.ActiveState }}"
+        success_msg: "MariaDB service is running"
+
+    - name: Verify mysql can connect locally
+      ansible.builtin.command: mysql -u root -e "SELECT VERSION();"
+      register: mysql_connect
+      changed_when: false
+      failed_when: mysql_connect.rc != 0
+
+    - name: Show MySQL version from server
+      ansible.builtin.debug:
+        msg: "MySQL server version: {{ mysql_connect.stdout }}"
+
+    - name: Verify python3-pymysql is installed
+      ansible.builtin.command: python3 -c "import pymysql; print(pymysql.__version__)"
+      register: pymysql_version
+      changed_when: false
+      failed_when: pymysql_version.rc != 0
+
+    - name: Show pymysql version
+      ansible.builtin.debug:
+        msg: "PyMySQL version: {{ pymysql_version.stdout }}"
+
+    # Verify reusable create_database.yml and create_user.yml tasks worked
+    - name: Verify test_app_db database was created
+      ansible.builtin.command: mysql -u root -e "SHOW DATABASES LIKE 'test_app_db';"
+      register: db_check
+      changed_when: false
+      failed_when: "'test_app_db' not in db_check.stdout"
+
+    - name: Verify test_app_user was created
+      ansible.builtin.command: mysql -u root -e "SELECT User, Host FROM mysql.user WHERE User='test_app_user';"
+      register: user_check
+      changed_when: false
+      failed_when: "'test_app_user' not in user_check.stdout"
+
+    - name: Verify test_app_user can connect and access database
+      ansible.builtin.command: mysql -u test_app_user -p'test_password_123' -e "USE test_app_db; SELECT 1;"
+      register: user_connect
+      changed_when: false
+      failed_when: user_connect.rc != 0
+
+    - name: Show reusable tasks verification results
+      ansible.builtin.debug:
+        msg: "Reusable MySQL tasks verified: database 'test_app_db' and user 'test_app_user' created successfully"

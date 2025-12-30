@@ -1,5 +1,6 @@
 ---
-- name: Converge
+# Test matomo with MariaDB backend on Debian
+- name: Converge - Matomo with MariaDB
   hosts: all
   become: true
   vars:
@@ -19,7 +20,8 @@
     # PHP-FPM settings
     php_fpm_listen: /run/php/php-fpm.sock
 
-    # MySQL settings for testing
+    # MariaDB backend (Debian native packages)
+    mysql_backend: mariadb
     mysql_root_password: 'test_root_password'
     mysql_socket_force: true
     mysql_server_tmpdir: /tmp

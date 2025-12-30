@@ -5,6 +5,8 @@
 
   vars:
     # MySQL settings for testing
+    # Use Debian native MariaDB packages for ARM64 compatibility (local testing)
+    mysql_backend: mariadb
     mysql_root_password: 'test_root_password'
     mysql_socket_force: true
     mysql_server_tmpdir: /tmp
@@ -31,6 +33,30 @@
         update_cache: true
         cache_valid_time: 600
       changed_when: false
+
+    # Create postfix user/group for dovecot SASL socket
+    # (normally postfix role creates these, but we don't need full postfix for testing)
+    - name: Create postfix group
+      ansible.builtin.group:
+        name: postfix
+        system: true
+
+    - name: Create postfix user
+      ansible.builtin.user:
+        name: postfix
+        group: postfix
+        system: true
+        shell: /usr/sbin/nologin
+        home: /var/spool/postfix
+        create_home: false
+
+    - name: Create postfix spool directory for SASL socket
+      ansible.builtin.file:
+        path: /var/spool/postfix/private
+        state: directory
+        owner: postfix
+        group: postfix
+        mode: '0755'
 
   roles:
     - role: alphanodes.setup.dovecot
@@ -67,6 +93,8 @@
             access_restriction VARCHAR(50) NOT NULL DEFAULT 'ALL',
             active TINYINT NOT NULL DEFAULT 1
           )
+      # CREATE TABLE IF NOT EXISTS is idempotent
+      changed_when: false
 
     - name: Insert test mailbox entry
       community.mysql.mysql_query:
@@ -75,8 +103,10 @@
         query: |
           INSERT IGNORE INTO mailbox (username, password, homedir, maildir, uid, gid, quota, access_restriction, active)
           VALUES ('test@example.com', '{SHA512-CRYPT}$6$test', '/var/vmail/example.com/test', '/var/vmail/example.com/test/Maildir', 5000, 5000, 1073741824, 'ALL', 1)
+      # INSERT IGNORE is idempotent
+      changed_when: false
 
-    - name: Restart dovecot after database setup
+    - name: Start dovecot after database setup
       ansible.builtin.systemd_service:
         name: dovecot
-        state: restarted
+        state: started

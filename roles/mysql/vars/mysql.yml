@@ -1,0 +1,22 @@
+---
+# MySQL-specific variables (Oracle MySQL from repo.mysql.com)
+# These are internal defaults, prefixed with _ to allow override
+
+_mysql_packages:
+  - mysql-common
+  - mysql-server
+
+_mysql_client_packages:
+  - mysql-client
+  - python3-pymysql
+
+_mysql_daemon: mysql
+
+_mysql_config_include_file: /etc/mysql/mysql.cnf
+_mysql_config_include_dir: /etc/mysql/conf.d
+_mysql_config_mysql_include_dir: /etc/mysql/mysql.conf.d
+
+_mysql_default_auth_plugin: caching_sha2_password
+_mysql_root_plugin: caching_sha2_password
+
+_mysql_innodb_redo_log_capacity: 256M

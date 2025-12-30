@@ -7,10 +7,6 @@
   vars:
     hoster: 'local'
 
-    # MySQL client version for Debian (Ubuntu uses native repos)
-    # MySQL 8.0 for Debian 12 (bookworm), 8.4-lts for Debian 13+ (trixie)
-    mysql_apt_components: "{{ 'mysql-8.0' if ansible_facts.distribution_release == 'bookworm' else 'mysql-8.4-lts' }}"
-
     # Matomo configuration - Cluster Archiver mode (NO nginx, NO MySQL)
     matomo_with_nginx: false
     matomo_with_mysql: false

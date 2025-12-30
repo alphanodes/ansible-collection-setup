@@ -1,7 +1,4 @@
 ---
-# this is used for /etc/alternatives
-mysql_real_config_file: /etc/mysql/my.cnf
-# this is the unchanged configuration file from package,
-# which only set includedir conf.d and mysql.conf.d
-# note: this is used for /etc/alternatives
-mysql_config_include_file: /etc/mysql/mysql.cnf
+# Variables that cannot be overridden are defined here
+# Note: mysql_real_config_file and mysql_config_include_file moved to defaults/main.yml
+# to allow MariaDB compatibility for local ARM64 testing

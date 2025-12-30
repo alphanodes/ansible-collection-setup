@@ -1,13 +1,13 @@
 ---
 # defaults file for mysql_client
 
-# use mysql.com packages
-# (only used for Debian - not for Ubuntu, because Ubuntu has mysql packages)
-mysql_with_mysql_com: true
+# Backend selection: mysql (Oracle MySQL) or mariadb (Debian/Ubuntu native)
+# - mysql: Uses Oracle MySQL from repo.mysql.com (recommended for production)
+# - mariadb: Uses native Debian/Ubuntu MariaDB packages (useful for ARM64 testing)
+mysql_backend: mysql
 
-mysql_client_packages:
-  - mysql-client
-  - python3-pymysql
+# Client packages (set by backend, can be overridden)
+mysql_client_packages: "{{ _mysql_client_packages | default(['mysql-client', 'python3-pymysql']) }}"
 
 mysql_apt_url: https://repo.mysql.com/apt/debian/
 # if not specified, local key is used

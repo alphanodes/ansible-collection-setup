@@ -1,0 +1,62 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  vars:
+    # Use MariaDB backend instead of Oracle MySQL
+    # This enables ARM64 compatibility for local testing on Apple Silicon
+    mysql_backend: mariadb
+
+    # Test settings
+    mysql_root_password: 'test_root_password'
+    mysql_socket_force: true
+    mysql_server_tmpdir: /tmp
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  roles:
+    - role: alphanodes.setup.mysql
+
+  post_tasks:
+    # Test the new reusable create_database.yml and create_user.yml tasks
+    - name: Create test database using reusable task
+      ansible.builtin.include_role:
+        name: alphanodes.setup.mysql
+        tasks_from: create_database.yml
+      vars:
+        mysql_setup_db_name: test_app_db
+
+    - name: Create test user using reusable task
+      ansible.builtin.include_role:
+        name: alphanodes.setup.mysql
+        tasks_from: create_user.yml
+      vars:
+        mysql_setup_db_name: test_app_db
+        mysql_setup_user_name: test_app_user
+        mysql_setup_user_password: 'test_password_123'
+        mysql_setup_user_host: localhost
+        mysql_setup_salt_id: test_app
+
+    - name: Run mysql server version check
+      ansible.builtin.command: mysql --version
+      changed_when: false
+      register: mysql_info
+
+    - name: Show mysql server version info
+      ansible.builtin.debug:
+        var: mysql_info.stdout
+
+    - name: Check mysql service status
+      ansible.builtin.systemd:
+        name: mariadb
+      register: mariadb_service
+
+    - name: Show service status
+      ansible.builtin.debug:
+        msg: "MariaDB service state: {{ mariadb_service.status.ActiveState }}"

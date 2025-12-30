@@ -1,22 +1,23 @@
 ---
 
-- name: Be sure matomo database exists
-  community.mysql.mysql_db:
-    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' or mysql_socket_force else omit }}"
-    name: '{{ matomo_db_name }}'
-    state: present
+- name: Create matomo database
+  ansible.builtin.include_role:
+    name: alphanodes.setup.mysql
+    tasks_from: create_database.yml
+  vars:
+    mysql_setup_db_name: '{{ matomo_db_name }}'
 
-- name: Create matomo mysql user
-  community.mysql.mysql_user:
-    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' or mysql_socket_force else omit }}"
-    name: '{{ matomo_db_user }}'
-    plugin: caching_sha2_password
-    plugin_auth_string: "{{ matomo_db_password }}"
-    salt: "{{ [ansible_facts['machine_id'], ansible_facts['hostname'], 'matomo'] | join | hash('sha1') | truncate(20, true, '') }}"
-    host: '{{ matomo_db_host }}'
-    priv: '{{ matomo_db_name }}.*:ALL/*.*:FILE'
-    column_case_sensitive: true
-    state: present
+- name: Create matomo database user
+  ansible.builtin.include_role:
+    name: alphanodes.setup.mysql
+    tasks_from: create_user.yml
+  vars:
+    mysql_setup_db_name: '{{ matomo_db_name }}'
+    mysql_setup_user_name: '{{ matomo_db_user }}'
+    mysql_setup_user_password: '{{ matomo_db_password }}'
+    mysql_setup_user_host: '{{ matomo_db_host }}'
+    mysql_setup_user_priv: '{{ matomo_db_name }}.*:ALL/*.*:FILE'
+    mysql_setup_salt_id: matomo
 
 - name: Allow mysql to write to {{ matomo_dir }}
   ansible.builtin.lineinfile:

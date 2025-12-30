@@ -147,7 +147,7 @@ mysql-native-password = ON
 # InnoDB settings.
 innodb_file_per_table = {{ mysql_innodb_file_per_table }}
 innodb_buffer_pool_size = {{ mysql_innodb_buffer_pool_size }}
-{% if mysql_innodb_redo_log_capacity is defined %}
+{% if mysql_innodb_redo_log_capacity is defined and mysql_innodb_redo_log_capacity %}
 innodb_redo_log_capacity = {{ mysql_innodb_redo_log_capacity }}
 {% endif %}
 innodb_log_buffer_size = {{ mysql_innodb_log_buffer_size }}

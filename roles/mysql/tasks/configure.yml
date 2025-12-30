@@ -200,9 +200,12 @@
   community.mysql.mysql_user:
     login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' or mysql_socket_force else omit }}"
     name: debian-sys-maint
-    plugin: caching_sha2_password
-    plugin_auth_string: "{{ mysql_server_debian_sys_maint_password }}"
-    salt: "{{ [ansible_facts['machine_id'], ansible_facts['hostname'], 'debian-sys-maint'] | join | hash('sha1') | truncate(20, true, '') }}"
+    # For MySQL 8+ use plugin with plugin_auth_string, for MariaDB use password
+    plugin: "{{ mysql_default_auth_plugin if mysql_default_auth_plugin != 'mysql_native_password' else omit }}"
+    plugin_auth_string: "{{ mysql_server_debian_sys_maint_password if mysql_default_auth_plugin != 'mysql_native_password' else omit }}"
+    password: "{{ mysql_server_debian_sys_maint_password if mysql_default_auth_plugin == 'mysql_native_password' else omit }}"
+    # salt only works with caching_sha2_password or sha256_password (not mysql_native_password for MariaDB)
+    salt: "{{ ([ansible_facts['machine_id'], ansible_facts['hostname'], 'debian-sys-maint'] | join | hash('sha1') | truncate(20, true, '')) if mysql_default_auth_plugin in ['caching_sha2_password', 'sha256_password'] else omit }}"
     host: localhost
     priv: '*.*:ALL,GRANT'
     column_case_sensitive: true
@@ -214,9 +217,12 @@
     login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' or mysql_socket_force else omit }}"
     name: "{{ item.name }}"
     host: "{{ item.host | default('localhost') }}"
-    plugin: "{{ item.plugin | default('caching_sha2_password') }}"
-    plugin_auth_string: "{{ item.plugin_auth_string | default(item.password) }}"
-    salt: "{{ [ansible_facts['machine_id'], ansible_facts['hostname'], 'mysqlusers'] | join | hash('sha1') | truncate(20, true, '') }}"
+    # For MySQL 8+ use plugin with plugin_auth_string, for MariaDB use password
+    plugin: "{{ item.plugin | default(mysql_default_auth_plugin) if (item.plugin | default(mysql_default_auth_plugin)) != 'mysql_native_password' else omit }}"
+    plugin_auth_string: "{{ item.plugin_auth_string | default(item.password) if (item.plugin | default(mysql_default_auth_plugin)) != 'mysql_native_password' else omit }}"
+    password: "{{ item.password if (item.plugin | default(mysql_default_auth_plugin)) == 'mysql_native_password' else omit }}"
+    # salt only works with caching_sha2_password or sha256_password (not mysql_native_password for MariaDB)
+    salt: "{{ ([ansible_facts['machine_id'], ansible_facts['hostname'], 'mysqlusers'] | join | hash('sha1') | truncate(20, true, '')) if (item.plugin | default(mysql_default_auth_plugin)) in ['caching_sha2_password', 'sha256_password'] else omit }}"
     priv: "{{ item.priv | default('*.*:USAGE') }}"
     state: "{{ item.state | default('present') }}"
     append_privs: "{{ item.append_privs | default('no') }}"

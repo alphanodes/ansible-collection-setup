@@ -1,0 +1,35 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Verify mysql client is installed
+      ansible.builtin.command: which mysql
+      register: mysql_which
+      changed_when: false
+      failed_when: mysql_which.rc != 0
+
+    - name: Verify mysql client version
+      ansible.builtin.command: mysql --version
+      register: mysql_version
+      changed_when: false
+      failed_when: mysql_version.rc != 0
+
+    - name: Verify MariaDB client is used (not Oracle MySQL)
+      ansible.builtin.assert:
+        that:
+          - "'MariaDB' in mysql_version.stdout or 'mariadb' in mysql_version.stdout"
+        fail_msg: "Expected MariaDB client but got: {{ mysql_version.stdout }}"
+        success_msg: "MariaDB client installed: {{ mysql_version.stdout }}"
+
+    - name: Verify python3-pymysql is installed
+      ansible.builtin.command: python3 -c "import pymysql; print(pymysql.__version__)"
+      register: pymysql_version
+      changed_when: false
+      failed_when: pymysql_version.rc != 0
+
+    - name: Show pymysql version
+      ansible.builtin.debug:
+        msg: "PyMySQL version: {{ pymysql_version.stdout }}"

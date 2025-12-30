@@ -1,0 +1,58 @@
+---
+# Reusable task for creating a MySQL/MariaDB user
+#
+# Usage:
+#   - name: Create application database user
+#     ansible.builtin.include_role:
+#       name: alphanodes.setup.mysql
+#       tasks_from: create_user.yml
+#     vars:
+#       mysql_setup_user_name: myapp
+#       mysql_setup_user_password: "{{ myapp_db_password }}"
+#       mysql_setup_user_host: localhost
+#       mysql_setup_user_priv: "myapp.*:ALL"
+#       mysql_setup_salt_id: myapp
+#
+# Required variables:
+#   - mysql_setup_user_name: Username to create
+#   - mysql_setup_user_password: User password
+#   - mysql_setup_salt_id: Unique identifier for salt calculation
+#
+# Optional variables:
+#   - mysql_setup_user_host: Host for user (default: localhost)
+#   - mysql_setup_user_priv: Privileges (default: db_name.*:ALL based on mysql_setup_db_name)
+#   - mysql_setup_user_update_password: When to update password (default: always)
+#
+# Note: This task automatically handles the authentication plugin difference
+# between Oracle MySQL (caching_sha2_password) and MariaDB (mysql_native_password)
+# based on the mysql_default_auth_plugin variable.
+
+- name: Validate required variables
+  ansible.builtin.assert:
+    that:
+      - mysql_setup_user_name is defined
+      - mysql_setup_user_name | length > 0
+      - mysql_setup_user_password is defined
+      - mysql_setup_salt_id is defined
+      - mysql_setup_salt_id | length > 0
+    fail_msg: "mysql_setup_user_name, mysql_setup_user_password and mysql_setup_salt_id are required"
+    quiet: true
+
+- name: Create user {{ mysql_setup_user_name }}
+  community.mysql.mysql_user:
+    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' or mysql_socket_force else omit }}"
+    name: '{{ mysql_setup_user_name }}'
+    host: '{{ mysql_setup_user_host | default("localhost") }}'
+    priv: '{{ mysql_setup_user_priv | default(mysql_setup_db_name ~ ".*:ALL") }}'
+    # For MySQL 8+ use plugin with plugin_auth_string, for MariaDB use password
+    plugin: "{{ mysql_default_auth_plugin if mysql_default_auth_plugin != 'mysql_native_password' else omit }}"
+    plugin_auth_string: "{{ mysql_setup_user_password if mysql_default_auth_plugin != 'mysql_native_password' else omit }}"
+    password: "{{ mysql_setup_user_password if mysql_default_auth_plugin == 'mysql_native_password' else omit }}"
+    # salt only works with caching_sha2_password or sha256_password
+    salt: "{{ _mysql_setup_salt if mysql_default_auth_plugin in ['caching_sha2_password', 'sha256_password'] else omit }}"
+    update_password: '{{ mysql_setup_user_update_password | default("always") }}'
+    column_case_sensitive: true
+    state: present
+  vars:
+    _mysql_setup_salt: "{{ [ansible_facts['machine_id'], ansible_facts['hostname'], mysql_setup_salt_id] | join | hash('sha1') | truncate(20, true, '') }}"
+  no_log: '{{ hide_sensitive_data | default(true) }}'

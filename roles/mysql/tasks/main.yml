@@ -1,5 +1,8 @@
 ---
 
+- name: Load backend-specific variables
+  ansible.builtin.include_vars: "{{ mysql_backend }}.yml"
+
 - name: Include setup tasks
   ansible.builtin.include_tasks: setup.yml
   tags:

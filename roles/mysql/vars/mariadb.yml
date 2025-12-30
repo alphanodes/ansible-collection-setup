@@ -1,0 +1,22 @@
+---
+# MariaDB-specific variables (Debian/Ubuntu native packages)
+# These are internal defaults, prefixed with _ to allow override
+
+_mysql_packages:
+  - mariadb-server
+
+_mysql_client_packages:
+  - mariadb-client
+  - python3-pymysql
+
+_mysql_daemon: mariadb
+
+_mysql_config_include_file: /etc/mysql/mariadb.cnf
+_mysql_config_include_dir: /etc/mysql/conf.d
+_mysql_config_mysql_include_dir: /etc/mysql/mariadb.conf.d
+
+_mysql_default_auth_plugin: mysql_native_password
+_mysql_root_plugin: mysql_native_password
+
+# MariaDB does not support innodb_redo_log_capacity (MySQL 8.0+ only)
+_mysql_innodb_redo_log_capacity: ~
