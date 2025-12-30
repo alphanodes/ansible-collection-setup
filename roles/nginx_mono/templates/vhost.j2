@@ -127,6 +127,12 @@ server {
 {% include 'includes/location.inc.j2' %}
 {% include 'includes/proxy.inc.j2' %}
 {% include 'includes/rewrite_lines.inc.j2' %}
+{% if instance.raw_actions is defined %}
+{% for raw_action in instance.raw_actions %}
+{{ raw_action | indent(2, first=True) }}
+{% endfor %}
+
+{% endif %}
 {% include 'includes/error_handler.inc.j2' %}
 {% if instance.static_cache is defined and instance.static_cache %}
 {% include 'includes/static_cache.inc.j2' %}

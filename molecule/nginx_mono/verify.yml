@@ -285,6 +285,30 @@
       changed_when: false
       failed_when: safe_get_response.stdout != '200'
 
+    # raw_actions tests (server-level raw nginx directives)
+    - name: Check if raw_actions_test vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/raw_actions_test.conf
+      register: raw_actions_vhost
+
+    - name: Verify raw_actions_test vhost contains rewrite rule
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'if (!-f $request_filename)' /etc/nginx/sites-available/raw_actions_test.conf
+        grep -F 'rewrite ^(.*)$ /index.php?q=$1 last;' /etc/nginx/sites-available/raw_actions_test.conf
+      register: raw_actions_check
+      changed_when: false
+      failed_when: raw_actions_check.rc != 0
+
+    - name: Verify raw_actions indentation is correct (2 spaces)
+      ansible.builtin.shell: |
+        set -e
+        grep -E '^\s{2}if \(!\-f' /etc/nginx/sites-available/raw_actions_test.conf
+        grep -E '^\s{4}rewrite' /etc/nginx/sites-available/raw_actions_test.conf
+      register: raw_actions_indent
+      changed_when: false
+      failed_when: raw_actions_indent.rc != 0
+
     - name: Display test results
       ansible.builtin.debug:
         msg:
@@ -331,3 +355,7 @@
           - "Safe PUT returns 405: {{ 'OK' if safe_put_response.stdout == '405' else 'FAILED' }}"
           - "Safe DELETE returns 405: {{ 'OK' if safe_delete_response.stdout == '405' else 'FAILED' }}"
           - "Safe GET returns 200: {{ 'OK' if safe_get_response.stdout == '200' else 'FAILED' }}"
+          - "=== raw_actions Tests ==="
+          - "raw_actions vhost exists: {{ 'OK' if raw_actions_vhost.stat.exists else 'FAILED' }}"
+          - "raw_actions rewrite rule: {{ 'OK' if raw_actions_check.rc == 0 else 'FAILED' }}"
+          - "raw_actions indentation: {{ 'OK' if raw_actions_indent.rc == 0 else 'FAILED' }}"

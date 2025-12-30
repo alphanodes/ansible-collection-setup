@@ -25,6 +25,7 @@
       loop:
         - /srv/static_safe
         - /srv/static_open
+        - /srv/raw_test
 
     - name: Create test index files
       ansible.builtin.copy:
@@ -144,7 +145,25 @@
           vhost_for_zabbix: false
           letsencrypt: false
 
-    # Test 5: Instance mode with nginx_vhosts (like _parking vhost)
+    # Test 5: raw_actions at server level (like vimbadmin rewrite rule)
+    - role: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: raw_actions_test
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: raw.local
+          root: /srv/raw_test
+          index: index.php index.html
+          raw_actions:
+            - |
+              if (!-f $request_filename) {
+                rewrite ^(.*)$ /index.php?q=$1 last;
+                break;
+              }
+          vhost_for_zabbix: false
+          letsencrypt: false
+
+    # Test 6: Instance mode with nginx_vhosts (like _parking vhost)
     - role: alphanodes.setup.nginx_mono
       vars:
         nginx_vhosts:
