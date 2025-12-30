@@ -1,0 +1,5 @@
+---
+# mysql-client is installed via mysql role dependency
+vimbadmin_packages:
+  - git
+  - php-memcache

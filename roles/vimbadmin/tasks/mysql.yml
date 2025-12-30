@@ -1,0 +1,35 @@
+---
+
+- name: Be sure dovecot database exists
+  community.mysql.mysql_db:
+    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
+    name: '{{ dovecot_db_name }}'
+    state: present
+  notify: Create vimbadmin database
+
+- name: Create dovecot user
+  when: not dovecot_db_with_caching_sha2_password
+  community.mysql.mysql_user:
+    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
+    name: '{{ dovecot_db_user }}'
+    password: '{{ dovecot_db_password }}'
+    host: '{{ dovecot_db_host }}'
+    priv: '{{ dovecot_db_name }}.*:ALL'
+    column_case_sensitive: true
+    state: present
+
+# postfix-mysql do not support "caching_sha2_password" on debian 12
+# not sure, if this would be fixed on debian 13
+# warning: connect to mysql server 127.0.0.1: Plugin caching_sha2_password could not be loaded: /usr/lib/x86_64-linux-gnu/libmariadb3/plugin/caching_sha2_password.so: cannot open shared object file: No such file or directory
+- name: Create dovecot user with caching_sha2_password
+  when: dovecot_db_with_caching_sha2_password
+  community.mysql.mysql_user:
+    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
+    name: '{{ dovecot_db_user }}'
+    plugin: caching_sha2_password
+    plugin_auth_string: "{{ dovecot_db_password }}"
+    salt: "{{ [ansible_facts['machine_id'], ansible_facts['hostname'], 'dovecot'] | join | hash('sha1') | truncate(20, true, '') }}"
+    host: '{{ dovecot_db_host }}'
+    priv: '{{ dovecot_db_name }}.*:ALL'
+    column_case_sensitive: true
+    state: present

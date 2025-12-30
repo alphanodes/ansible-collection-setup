@@ -1,0 +1,26 @@
+---
+
+- name: Setup nginx_mono and configure vimbadmin vhost
+  tags: nginx
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nginx_mono
+  vars:
+    nginx_mono_service_name: vimbadmin
+    nginx_mono_service_enabled: true
+    nginx_mono_service_config:
+      server_name: "{{ vimbadmin_vhost_server }}"
+      root: "{{ vimbadmin_dir }}/public"
+      index: "index.php index.html index.htm"
+      with_fpm: true
+      raw_actions:
+        - |
+          if (!-f $request_filename) {
+            rewrite ^(.*)$ /index.php?q=$1 last;
+            break;
+          }
+      vhost_includes: "{{ vimbadmin_vhost_includes | default([]) }}"
+      vhost_for_zabbix: "{{ vimbadmin_vhost_for_zabbix | default(false) }}"
+      letsencrypt: "{{ vimbadmin_vhost_letsencrypt | default(false) }}"
+      letsencrypt_cert: "{{ vimbadmin_vhost_letsencrypt_cert | default('') }}"
+      letsencrypt_key: "{{ vimbadmin_vhost_letsencrypt_key | default('') }}"
+      ssl_cert: "{{ vimbadmin_vhost_ssl_cert | default('') }}"

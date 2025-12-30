@@ -1,0 +1,24 @@
+---
+dependencies:
+  - role: alphanodes.setup.common
+    public: true
+  - role: alphanodes.setup.ssl
+  - role: alphanodes.setup.php_fpm
+  - role: alphanodes.setup.mysql
+  - role: alphanodes.setup.composer
+  - role: alphanodes.setup.memcached
+  - role: alphanodes.setup.postfix
+  - role: alphanodes.setup.dovecot
+
+galaxy_info:
+  description: Setup vimbadmin
+  author: alexandermeindl
+  company: AlphaNodes GmbH
+  license: Apache License 2.0
+  min_ansible_version: '2.18'
+  platforms:
+    - name: Debian
+      versions:
+        - trixie
+  galaxy_tags:
+    - vimbadmin

@@ -1,0 +1,13 @@
+---
+
+- name: Run composer install
+  ansible.builtin.command: composer install --prefer-dist --no-dev --no-interaction
+  args:
+    chdir: '{{ vimbadmin_dir }}'
+  environment:
+    COMPOSER_ALLOW_SUPERUSER: '1'
+
+- name: Create vimbadmin database
+  ansible.builtin.command: bin/doctrine2-cli.php orm:schema-tool:create
+  args:
+    chdir: '{{ vimbadmin_dir }}'

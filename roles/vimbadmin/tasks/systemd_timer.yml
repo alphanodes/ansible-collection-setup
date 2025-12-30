@@ -1,0 +1,53 @@
+---
+
+- name: Enable systemd timers
+  ansible.builtin.include_role:
+    name: alphanodes.setup.systemd_timer
+  vars:
+    timers:
+      vimbadmin_archive_pendings:
+        exec_start: '{{ vimbadmin_dir }}/bin/vimbtool.php -a archive.cli-archive-pendings'
+        on_calendar: "00/2:00"
+        accuracy_sec: 5min
+        wants_service: mysql.service dovecot.service postfix.service
+        after_service: mysql.service dovecot.service postfix.service
+      vimbadmin_restore_pendings:
+        exec_start: '{{ vimbadmin_dir }}/bin/vimbtool.php -a archive.cli-restore-pendings'
+        on_calendar: "00/2:30"
+        accuracy_sec: 5min
+        wants_service: mysql.service dovecot.service postfix.service
+        after_service: mysql.service dovecot.service postfix.service
+      vimbadmin_delete_pendings:
+        exec_start: '{{ vimbadmin_dir }}/bin/vimbtool.php -a archive.cli-delete-pendings'
+        on_calendar: "00/2:50"
+        accuracy_sec: 5min
+        wants_service: mysql.service dovecot.service postfix.service
+        after_service: mysql.service dovecot.service postfix.service
+      vimbadmin_delete_pending:
+        exec_start: '{{ vimbadmin_dir }}/bin/vimbtool.php -a mailbox.cli-delete-pending'
+        on_calendar: "03:15"
+        accuracy_sec: 45min
+        wants_service: mysql.service dovecot.service postfix.service
+        after_service: mysql.service dovecot.service postfix.service
+
+  when: vimbadmin_enable_cronjobs
+
+- name: Disable systemd timers for vimbadmin
+  ansible.builtin.include_role:
+    name: alphanodes.setup.systemd_timer
+  vars:
+    timers:
+      vimbadmin_archive_pendings:
+        state: absent
+      vimbadmin_restore_pendings:
+        state: absent
+      vimbadmin_delete_pendings:
+        state: absent
+      vimbadmin_delete_pending:
+        state: absent
+  when: not vimbadmin_enable_cronjobs
+
+- name: Remove obsolete cronjobs
+  ansible.builtin.file:
+    path: /etc/cron.d/vimbadmin
+    state: absent

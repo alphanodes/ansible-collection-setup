@@ -1,0 +1,23 @@
+--- a/vendor/shardj/zf1-future/library/Zend/Session.php
++++ b/vendor/shardj/zf1-future/library/Zend/Session.php
+@@ -431,13 +431,13 @@ class Zend_Session extends Zend_Session_Abstract
+     public static function start($options = false)
+     {
+         // Check to see if we've been passed an invalid session ID
+-        if ( self::getId() && !self::_checkId(self::getId()) ) {
+-            // Generate a valid, temporary replacement
+-            self::setId(md5(self::getId()));
+-            // Force a regenerate after session is started
+-            self::$_regenerateIdState = -1;
+-        }
+-
++// PHP 8.4: Disabled session ID validation -         if ( self::getId() && !self::_checkId(self::getId()) ) {
++// PHP 8.4: Disabled session ID validation -             // Generate a valid, temporary replacement
++// PHP 8.4: Disabled session ID validation -             self::setId(md5(self::getId()));
++// PHP 8.4: Disabled session ID validation -             // Force a regenerate after session is started
++// PHP 8.4: Disabled session ID validation -             self::$_regenerateIdState = -1;
++// PHP 8.4: Disabled session ID validation -         }
++// PHP 8.4: Disabled session ID validation -
+         if (self::$_sessionStarted && self::$_destroyed) {
+             require_once 'Zend/Session/Exception.php';
+             throw new Zend_Session_Exception('The session was explicitly destroyed during this request, attempting to re-start is not allowed.');

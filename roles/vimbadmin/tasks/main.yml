@@ -1,0 +1,23 @@
+---
+- name: Include vars
+  ansible.builtin.import_tasks: include-vars.yml
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  tags: vimbadmin
+
+- name: Include nginx tasks
+  ansible.builtin.include_tasks: nginx.yml
+  tags:
+    - nginx
+    - vimbadmin
+
+- name: Include MySQL tasks
+  ansible.builtin.include_tasks: mysql.yml
+  tags:
+    - dovecot
+    - mysql
+
+- name: Include systemd timer tasks
+  ansible.builtin.include_tasks: systemd_timer.yml
+  tags: vimbadmin

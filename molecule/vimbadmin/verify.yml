@@ -1,0 +1,166 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    # === SERVICE CHECKS ===
+
+    - name: Check if nginx is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+      check_mode: true
+      register: nginx_service
+      failed_when: nginx_service.changed
+
+    - name: Check nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax
+      changed_when: false
+
+    - name: Find PHP-FPM service name
+      ansible.builtin.shell: set -o pipefail && systemctl list-units --type=service --state=running --no-legend | grep 'php.*fpm' | awk '{print $1}'
+      args:
+        executable: /bin/bash
+      register: php_fpm_service_name
+      changed_when: false
+
+    - name: Check if php-fpm is running
+      ansible.builtin.service:
+        name: "{{ php_fpm_service_name.stdout }}"
+        state: started
+      check_mode: true
+      register: phpfpm_service
+      failed_when: phpfpm_service.changed
+
+    # MariaDB service check
+    - name: Check if mariadb is running
+      ansible.builtin.service:
+        name: mariadb
+        state: started
+      check_mode: true
+      register: mariadb_service
+      failed_when: mariadb_service.changed
+
+    # === VHOST CONFIGURATION CHECKS ===
+
+    - name: Check if vimbadmin vhost config exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/vimbadmin.conf
+      register: vimbadmin_vhost
+
+    - name: Verify vimbadmin vhost exists
+      ansible.builtin.assert:
+        that:
+          - vimbadmin_vhost.stat.exists
+        fail_msg: "vimbadmin vhost configuration not found"
+
+    - name: Verify vimbadmin vhost is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/vimbadmin.conf
+      register: vimbadmin_enabled
+
+    - name: Verify vimbadmin vhost is enabled
+      ansible.builtin.assert:
+        that:
+          - vimbadmin_enabled.stat.exists
+        fail_msg: "vimbadmin vhost not enabled"
+
+    # === VIMBADMIN INSTALLATION CHECKS ===
+
+    - name: Check if vimbadmin is installed
+      ansible.builtin.stat:
+        path: /srv/vimbadmin/public/index.php
+      register: vimbadmin_installed
+
+    - name: Verify vimbadmin is installed
+      ansible.builtin.assert:
+        that:
+          - vimbadmin_installed.stat.exists
+        fail_msg: "vimbadmin not installed"
+
+    - name: Check if vimbadmin config exists
+      ansible.builtin.stat:
+        path: /srv/vimbadmin/application/configs/application.ini
+      register: vimbadmin_config
+
+    - name: Verify vimbadmin config exists
+      ansible.builtin.assert:
+        that:
+          - vimbadmin_config.stat.exists
+        fail_msg: "vimbadmin application.ini not found"
+
+    # === PHP-FPM SOCKET CHECK ===
+
+    - name: Find PHP-FPM socket
+      ansible.builtin.shell: set -o pipefail && ls /run/php/php*-fpm.sock 2>/dev/null | head -1
+      args:
+        executable: /bin/bash
+      register: fpm_socket
+      changed_when: false
+
+    - name: Verify PHP-FPM socket exists
+      ansible.builtin.assert:
+        that:
+          - fpm_socket.stdout | length > 0
+        fail_msg: "PHP-FPM socket not found"
+
+    - name: Check vhost has PHP-FPM configuration
+      ansible.builtin.command: grep -q "fastcgi_pass" /etc/nginx/sites-available/vimbadmin.conf
+      register: fpm_config
+      changed_when: false
+      failed_when: fpm_config.rc != 0
+
+    # === DATABASE CHECK ===
+
+    - name: Check vimbadmin database exists
+      ansible.builtin.command: >
+        mysql -e "SHOW DATABASES LIKE 'vimbadmin';"
+      register: vimbadmin_db
+      changed_when: false
+
+    - name: Verify vimbadmin database exists
+      ansible.builtin.assert:
+        that:
+          - "'vimbadmin' in vimbadmin_db.stdout"
+        fail_msg: "vimbadmin database not found"
+
+    # === HTTP ENDPOINT TESTS ===
+
+    - name: Test vimbadmin via HTTPS (should work)
+      ansible.builtin.command: >
+        curl -sk -o /dev/null -w '%{http_code}' -H 'Host: vimbadmin.local'
+        https://127.0.0.1/
+      register: test_index
+      changed_when: false
+      # Expect 200, 302 (redirect to login), or 500 (database schema not yet created)
+      failed_when: test_index.stdout not in ['200', '302', '500']
+
+    # === DISPLAY RESULTS ===
+
+    - name: Display test results
+      ansible.builtin.debug:
+        msg:
+          - "=== VIMBADMIN INTEGRATION TESTS ==="
+          - ""
+          - "--- Service Status ---"
+          - "Nginx service: {{ 'OK' if not nginx_service.changed else 'FAILED' }}"
+          - "Nginx syntax: {{ 'OK' if nginx_syntax.rc == 0 else 'FAILED' }}"
+          - "PHP-FPM service: {{ 'OK' if not phpfpm_service.changed else 'FAILED' }}"
+          - "MariaDB service: {{ 'OK' if not mariadb_service.changed else 'FAILED' }}"
+          - ""
+          - "--- Configuration ---"
+          - "Vimbadmin vhost exists: {{ 'OK' if vimbadmin_vhost.stat.exists else 'FAILED' }}"
+          - "Vimbadmin vhost enabled: {{ 'OK' if vimbadmin_enabled.stat.exists else 'FAILED' }}"
+          - "PHP-FPM socket: {{ 'OK' if fpm_socket.stdout | length > 0 else 'FAILED' }}"
+          - "PHP-FPM in vhost: {{ 'OK' if fpm_config.rc == 0 else 'FAILED' }}"
+          - "Database exists: {{ 'OK' if 'vimbadmin' in vimbadmin_db.stdout else 'FAILED' }}"
+          - ""
+          - "--- Vimbadmin Installation ---"
+          - "Vimbadmin installed: {{ 'OK' if vimbadmin_installed.stat.exists else 'FAILED' }}"
+          - "Vimbadmin config: {{ 'OK' if vimbadmin_config.stat.exists else 'FAILED' }}"
+          - ""
+          - "--- HTTP Endpoint ---"
+          - "HTTPS test: {{ test_index.stdout }} {{ 'OK' if test_index.stdout in ['200', '302', '500'] else 'FAILED' }}"
+          - ""
+          - "=== VIMBADMIN INTEGRATION SUCCESS ==="

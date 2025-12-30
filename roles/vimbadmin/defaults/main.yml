@@ -1,0 +1,64 @@
+---
+
+vimbadmin_dir: /srv/vimbadmin
+
+vimbadmin_vhost_server: vimbadmin.local
+vimbadmin_vhost_for_zabbix: false
+
+# NOTE: newer version do not work with PHP 7.4
+# SEE: https://github.com/opensolutions/ViMbAdmin/issues/296
+# vimbadmin_version: 3.4.1
+vimbadmin_version: master
+
+# set 1 for debugging
+vimbadmin_show_errors: '0'
+
+# IMPORTANT: These salts MUST be set in host_vars - no defaults for security!
+# vimbadmin_securitysalt: 'generate-your-own-random-string'
+# vimbadmin_rememberme_salt: 'generate-your-own-random-string'
+# vimbadmin_password_salt: 'generate-your-own-random-string'
+
+# here archived mailboxes are stored
+vimbadmin_archive_path: /srv/archives
+
+vimbadmin_enable_cronjobs: true
+
+# Das Maildir wird im Dovecot-Format festgehalten
+vimbadmin_defaults_mailbox_maildir: 'maildir:/var/vmail/%d/%u/Maildir:LAYOUT=fs'
+vimbadmin_defaults_mailbox_homedir: '/var/vmail/%d/%u'
+
+# Einige Details, der Transport sollte per Standard lmtps sein, mit Zeiger auf den passenden Socket
+vimbadmin_defaults_domain_transport: 'lmtp:unix:private/dovecot-lmtp'
+
+# Erlaubt das endgültige Löschen von Mailboxen vom Dateisystem
+# see https://Github.com/opensolutions/ViMbAdmin/wiki/Deleting-Mailboxes
+vimbadmin_mailbox_deletion_fs_enabled: 'true'
+
+# Identity settings (customize for your organization)
+vimbadmin_identity_orgname: "Example Organization"
+vimbadmin_identity_name: "Mail Support Team"
+vimbadmin_identity_email: "support@example.com"
+vimbadmin_identity_autobot_email: "autobot@example.com"
+vimbadmin_identity_mailer_email: "do-not-reply@example.com"
+vimbadmin_server_email_name: "Mail Administrator"
+vimbadmin_server_email_address: "{{ vimbadmin_identity_email }}"
+
+# Den stärksten Hash-Algorithmus bietet Dovecot durch "doveadm"
+# default crypt:sha256
+vimbadmin_defaults_mailbox_password_scheme: 'dovecot:SHA512-CRYPT'
+vimbadmin_defaults_mailbox_dovecot_pw_binary: '/usr/bin/doveadm pw'
+
+# used for welcome mails
+vimbadmin_server_smtp_host: 'mail.%d'
+vimbadmin_server_smtp_port: '587'
+vimbadmin_server_smtp_crypt: 'TLS'
+vimbadmin_server_imap_host: 'mail.%d'
+vimbadmin_server_imap_port: '143'
+vimbadmin_server_imap_crypt: 'TLS'
+vimbadmin_server_webmail_host: 'https://mail.%d'
+
+vimbadmin_vhost_letsencrypt: false
+vimbadmin_letsencrypt_cert_name: "{{ vimbadmin_vhost_server }}"
+vimbadmin_vhost_letsencrypt_cert: /etc/letsencrypt/live/{{ vimbadmin_letsencrypt_cert_name }}/fullchain.pem
+vimbadmin_vhost_letsencrypt_key: /etc/letsencrypt/live/{{ vimbadmin_letsencrypt_cert_name }}/privkey.pem
+vimbadmin_vhost_ssl_cert: '{{ ssl_certs[0].name | default(omit) }}'

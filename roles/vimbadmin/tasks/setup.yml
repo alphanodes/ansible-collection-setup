@@ -1,0 +1,56 @@
+---
+
+- name: Be sure vimbadmin packages are installed
+  ansible.builtin.apt:
+    name: '{{ vimbadmin_packages }}'
+    state: present
+
+- name: Install vimbadmin
+  ansible.builtin.git:
+    repo: 'https://github.com/opensolutions/ViMbAdmin.git'
+    dest: '{{ vimbadmin_dir }}'
+    version: '{{ vimbadmin_version | default(omit) }}'
+    accept_hostkey: true
+  notify: Run composer install
+
+- name: Flush handlers to run composer install
+  ansible.builtin.meta: flush_handlers
+
+- name: Check if Zend Session is already patched for PHP 8.4
+  ansible.builtin.command:
+    cmd: 'grep -q "PHP 8.4: Disabled session ID validation" "{{ vimbadmin_dir }}/vendor/shardj/zf1-future/library/Zend/Session.php"'
+  register: zend_session_patched
+  failed_when: false
+  changed_when: false
+  when: ansible_facts.distribution_release in ['trixie', 'sid']
+
+- name: Apply PHP 8.4 compatibility patch to Zend Framework 1
+  ansible.posix.patch:
+    src: zend-session-php84.patch
+    dest: "{{ vimbadmin_dir }}/vendor/shardj/zf1-future/library/Zend/Session.php"
+    backup: true
+  when:
+    - ansible_facts.distribution_release in ['trixie', 'sid']
+    - zend_session_patched.rc != 0
+
+- name: Ensure archive directory exist
+  ansible.builtin.file:
+    path: '{{ vimbadmin_archive_path }}'
+    mode: '0755'
+    state: directory
+
+- name: Ensure required var directory exist
+  ansible.builtin.file:
+    path: '{{ vimbadmin_dir }}/var'
+    owner: '{{ nginx_user }}'
+    group: '{{ nginx_group }}'
+    mode: '0755'
+    state: directory
+
+- name: Update vimbadmin configuration
+  ansible.builtin.template:
+    src: application.ini.j2
+    dest: '{{ vimbadmin_dir }}/application/configs/application.ini'
+    owner: '{{ nginx_user }}'
+    group: '{{ nginx_group }}'
+    mode: '0644'

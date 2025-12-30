@@ -1,0 +1,77 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  vars:
+    # nginx_mono configuration
+    nginx_with_ipv6: false
+    nginx_with_http3: false
+    nginx_with_protection: false
+    nginx_ssl_protocols: 'TLSv1.3'
+    hoster: 'local'
+
+    # SSL configuration - self-signed certificate for testing
+    ssl_certs:
+      - name: vimbadmin
+        provider: selfsigned
+        subject_common_name: vimbadmin.local
+
+    # PHP-FPM settings
+    php_fpm_listen: /run/php/php-fpm.sock
+
+    # MySQL/MariaDB settings for testing
+    mysql_backend: mariadb
+    mysql_root_password: 'test_root_password'
+    mysql_socket_force: true
+    mysql_server_tmpdir: /tmp
+
+    # Dovecot database settings (shared with vimbadmin)
+    dovecot_db_password: 'test_dovecot_password'
+    dovecot_db_host: '127.0.0.1'
+    dovecot_db_name: 'vimbadmin'
+    dovecot_db_user: 'vimbadmin'
+
+    # Dovecot SSL settings (use snakeoil certs for testing)
+    dovecot_ssl_cert_file: /etc/ssl/certs/ssl-cert-snakeoil.pem
+    dovecot_ssl_key_file: /etc/ssl/private/ssl-cert-snakeoil.key
+    dovecot_postmaster_address: 'postmaster@example.com'
+
+    # vimbadmin settings
+    vimbadmin_vhost_server: vimbadmin.local
+    vimbadmin_vhost_letsencrypt: false
+    vimbadmin_vhost_ssl_cert: vimbadmin
+    vimbadmin_vhost_for_zabbix: false
+    # Security salts (test values only!)
+    vimbadmin_securitysalt: 'test-security-salt-for-molecule-testing-only'
+    vimbadmin_rememberme_salt: 'test-rememberme-salt-for-molecule-testing-only'
+    vimbadmin_password_salt: 'test-password-salt-for-molecule-testing-only'
+    # Identity settings
+    vimbadmin_identity_orgname: "Test Organization"
+    vimbadmin_identity_name: "Test Support Team"
+    vimbadmin_identity_email: "support@example.com"
+    vimbadmin_identity_autobot_email: "autobot@example.com"
+    vimbadmin_identity_mailer_email: "do-not-reply@example.com"
+    vimbadmin_server_email_name: "Test Mail Administrator"
+    vimbadmin_server_email_address: "support@example.com"
+
+    # Disable cronjobs during testing
+    vimbadmin_enable_cronjobs: false
+
+    # Disable memcached during testing (not needed for basic vimbadmin functionality)
+    memcached_with_php: false
+
+    # Postfix settings
+    postfix_mydomain: example.com
+    postfix_myhostname: mail.example.com
+    postfix_mynetworks_extra: []
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  roles:
+    - role: alphanodes.setup.vimbadmin
