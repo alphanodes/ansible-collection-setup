@@ -31,7 +31,7 @@ useful for:
 ### Important Differences
 
 | Feature | Oracle MySQL | MariaDB |
-|---------|--------------|---------|
+| ------- | ------------ | ------- |
 | Auth Plugin | `caching_sha2_password` | `mysql_native_password` |
 | Config File | `/etc/mysql/mysql.cnf` | `/etc/mysql/mariadb.cnf` |
 | Service Name | `mysql` | `mariadb` |
