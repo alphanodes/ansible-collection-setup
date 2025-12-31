@@ -1,0 +1,16 @@
+# Rate limiting zones configuration
+# Documentation: https://www.nginx.com/blog/rate-limiting-nginx/
+#
+# Example zone:
+#   '$redmine_api_limit zone=redmine_api:10m rate=50r/m'
+#   - $redmine_api_limit: nginx variable (from map) to use as key
+#   - zone=redmine_api:10m: zone name and 10mb shared memory
+#   - rate=50r/m: 50 requests per minute
+#
+# Usage in vhost:
+#   limit_req:
+#     - "zone=redmine_api burst=20 nodelay"
+
+{% for zone in nginx_limit_req_zones %}
+limit_req_zone {{ zone }};
+{% endfor %}

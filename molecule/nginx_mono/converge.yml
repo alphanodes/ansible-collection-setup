@@ -26,6 +26,10 @@
         - /srv/static_safe
         - /srv/static_open
         - /srv/raw_test
+        - /srv/named_test
+        - /srv/buffer_test
+        - /srv/ratelimit_test
+        - /srv/protection_test
 
     - name: Create test index files
       ansible.builtin.copy:
@@ -49,6 +53,10 @@
     nginx_with_websocket: true  # Enable WebSocket globally for testing
     nginx_resolver: ['8.8.8.8', '8.8.4.4']  # Fix undefined hoster variable
     hoster: 'local'  # Define hoster for testing
+    # Rate limit zones for Test 9 (must be defined globally, written on first nginx_mono call)
+    nginx_limit_req_zones:
+      - "$binary_remote_addr zone=test_api:10m rate=10r/s"
+      - "$binary_remote_addr zone=test_form:10m rate=5r/m"
 
     # PHP-FPM configuration (for nginx_vhosts FPM tests)
     php_fpm_listen: /run/php/php-fpm.sock
@@ -191,3 +199,79 @@
             proxy_pass: "http://127.0.0.1:3000"
             proxy_location: "/"
             vhost_for_zabbix: false
+
+    # Test 7: Named location with proxy_pass (like Redmine @puma pattern)
+    - role: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: named_location_test
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: named.local
+          root: /srv/named_test
+          index: index.html
+          upstream_name: backend_app
+          upstream_servers:
+            - "127.0.0.1:3000"
+          locations:
+            # Root location with try_files to named location
+            - name: "/"
+              raw_actions:
+                - "try_files $uri @backend;"
+            # Named location with proxy_pass
+            - name: "@backend"
+              proxy_pass: "http://backend_app"
+              proxy_timeout: 300
+            # WebSocket named location (like ActionCable)
+            - name: "/cable"
+              proxy_pass: "http://backend_app/cable"
+              proxy_websocket: true
+          vhost_for_zabbix: false
+          letsencrypt: false
+
+    # Test 8: Proxy buffer settings
+    - role: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: buffer_test
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: buffer.local
+          root: /srv/buffer_test
+          proxy_pass: "http://127.0.0.1:3000"
+          proxy_location: "/"
+          proxy_buffers: "16 128k"
+          proxy_buffer_size: "128k"
+          proxy_busy_buffers_size: "256k"
+          vhost_for_zabbix: false
+          letsencrypt: false
+
+    # Test 9: Rate limiting (zones are defined globally in vars section)
+    - role: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: ratelimit_test
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: ratelimit.local
+          root: /srv/ratelimit_test
+          index: index.html
+          # Use rate limiting in server block
+          limit_req:
+            - "zone=test_api burst=20 nodelay"
+            - "zone=test_form burst=5"
+          limit_req_status: 429
+          vhost_for_zabbix: false
+          letsencrypt: false
+
+    # Test 10: Custom protection rules
+    - role: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: protection_test
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: protection.local
+          root: /srv/protection_test
+          index: index.html
+          custom_protection_rules:
+            - "if ($bad_bot) { return 403; }"
+            - "if ($request_uri ~* \"^/admin\") { return 404; }"
+          vhost_for_zabbix: false
+          letsencrypt: false

@@ -135,9 +135,8 @@ http {
         default $host:$server_port;
     }
 
-{% for nginx_limit_req_zone in nginx_limit_req_zones %}
-    limit_req_zone {{ nginx_limit_req_zone }};
-{% endfor %}
+    # Rate limiting zones are now managed via conf.d/limit_req_zones.conf
+    # (created by setup.yml when nginx_limit_req_zones is defined)
 
     include /etc/nginx/conf.d/*.conf;
     include /etc/nginx/sites-enabled/*;

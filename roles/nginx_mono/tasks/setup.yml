@@ -114,6 +114,25 @@
     - not nginx_with_ssl
     - _nginx_mono_setup_done is not defined
 
+- name: Setup rate limiting zones
+  ansible.builtin.template:
+    src: limit_req_zones.j2
+    dest: /etc/nginx/conf.d/limit_req_zones.conf
+    mode: '0644'
+  notify: Reload nginx
+  when:
+    - nginx_limit_req_zones | length > 0
+    - _nginx_mono_setup_done is not defined
+
+- name: Remove rate limiting zones if not configured
+  ansible.builtin.file:
+    path: /etc/nginx/conf.d/limit_req_zones.conf
+    state: absent
+  notify: Reload nginx
+  when:
+    - nginx_limit_req_zones | length == 0
+    - _nginx_mono_setup_done is not defined
+
 - name: Remove obsolete configuration files
   ansible.builtin.file:
     path: '/etc/nginx/{{ item }}'

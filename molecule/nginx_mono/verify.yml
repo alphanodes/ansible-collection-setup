@@ -309,6 +309,161 @@
       changed_when: false
       failed_when: raw_actions_indent.rc != 0
 
+    # Named location with proxy_pass tests (Test 7)
+    - name: Check if named_location_test vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/named_location_test.conf
+      register: named_location_vhost
+
+    - name: Verify named location @backend exists
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'location @backend {' /etc/nginx/sites-available/named_location_test.conf
+      register: named_backend_check
+      changed_when: false
+      failed_when: named_backend_check.rc != 0
+
+    - name: Verify named location has proxy_pass
+      ansible.builtin.shell: |
+        set -eo pipefail
+        awk '/location @backend/,/}/' /etc/nginx/sites-available/named_location_test.conf | grep -F 'proxy_pass http://backend_app;'
+      args:
+        executable: /bin/bash
+      register: named_proxy_pass
+      changed_when: false
+      failed_when: named_proxy_pass.rc != 0
+
+    - name: Verify named location has proxy_timeout
+      ansible.builtin.shell: |
+        set -eo pipefail
+        awk '/location @backend/,/}/' /etc/nginx/sites-available/named_location_test.conf | grep -F 'proxy_read_timeout 300;'
+      args:
+        executable: /bin/bash
+      register: named_timeout
+      changed_when: false
+      failed_when: named_timeout.rc != 0
+
+    - name: Verify try_files to named location
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'try_files $uri @backend;' /etc/nginx/sites-available/named_location_test.conf
+      register: named_try_files
+      changed_when: false
+      failed_when: named_try_files.rc != 0
+
+    - name: Verify WebSocket location /cable has upgrade headers
+      ansible.builtin.shell: |
+        set -eo pipefail
+        awk '/location \/cable/,/}/' /etc/nginx/sites-available/named_location_test.conf | grep -F 'proxy_set_header Upgrade $http_upgrade;'
+      args:
+        executable: /bin/bash
+      register: cable_websocket
+      changed_when: false
+      failed_when: cable_websocket.rc != 0
+
+    - name: Verify upstream block exists
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'upstream backend_app {' /etc/nginx/sites-available/named_location_test.conf
+      register: upstream_block
+      changed_when: false
+      failed_when: upstream_block.rc != 0
+
+    # Proxy Buffer Settings tests (Test 8)
+    - name: Check if buffer_test vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/buffer_test.conf
+      register: buffer_vhost
+
+    - name: Verify proxy_buffers is configured
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'proxy_buffers 16 128k;' /etc/nginx/sites-available/buffer_test.conf
+      register: buffer_check
+      changed_when: false
+      failed_when: buffer_check.rc != 0
+
+    - name: Verify proxy_buffer_size is configured
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'proxy_buffer_size 128k;' /etc/nginx/sites-available/buffer_test.conf
+      register: buffer_size_check
+      changed_when: false
+      failed_when: buffer_size_check.rc != 0
+
+    - name: Verify proxy_busy_buffers_size is configured
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'proxy_busy_buffers_size 256k;' /etc/nginx/sites-available/buffer_test.conf
+      register: busy_buffers_check
+      changed_when: false
+      failed_when: busy_buffers_check.rc != 0
+
+    # Rate Limiting tests (Test 9)
+    - name: Check if limit_req_zones.conf exists
+      ansible.builtin.stat:
+        path: /etc/nginx/conf.d/limit_req_zones.conf
+      register: limit_zones_file
+
+    - name: Verify rate limit zone test_api is defined
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'limit_req_zone $binary_remote_addr zone=test_api:10m rate=10r/s;' /etc/nginx/conf.d/limit_req_zones.conf
+      register: zone_api_check
+      changed_when: false
+      failed_when: zone_api_check.rc != 0
+
+    - name: Verify rate limit zone test_form is defined
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'limit_req_zone $binary_remote_addr zone=test_form:10m rate=5r/m;' /etc/nginx/conf.d/limit_req_zones.conf
+      register: zone_form_check
+      changed_when: false
+      failed_when: zone_form_check.rc != 0
+
+    - name: Check if ratelimit_test vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/ratelimit_test.conf
+      register: ratelimit_vhost
+
+    - name: Verify limit_req directive is in vhost
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'limit_req zone=test_api burst=20 nodelay;' /etc/nginx/sites-available/ratelimit_test.conf
+      register: limit_req_check
+      changed_when: false
+      failed_when: limit_req_check.rc != 0
+
+    - name: Verify limit_req_status is configured
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'limit_req_status 429;' /etc/nginx/sites-available/ratelimit_test.conf
+      register: limit_status_check
+      changed_when: false
+      failed_when: limit_status_check.rc != 0
+
+    # Custom Protection Rules tests (Test 10)
+    - name: Check if protection_test vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/protection_test.conf
+      register: protection_vhost
+
+    - name: Verify custom protection rule bad_bot is configured
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'if ($bad_bot) { return 403; }' /etc/nginx/sites-available/protection_test.conf
+      register: protection_badbot_check
+      changed_when: false
+      failed_when: protection_badbot_check.rc != 0
+
+    - name: Verify custom protection rule admin is configured
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'if ($request_uri ~* "^/admin") { return 404; }' /etc/nginx/sites-available/protection_test.conf
+      register: protection_admin_check
+      changed_when: false
+      failed_when: protection_admin_check.rc != 0
+
     - name: Display test results
       ansible.builtin.debug:
         msg:
@@ -359,3 +514,27 @@
           - "raw_actions vhost exists: {{ 'OK' if raw_actions_vhost.stat.exists else 'FAILED' }}"
           - "raw_actions rewrite rule: {{ 'OK' if raw_actions_check.rc == 0 else 'FAILED' }}"
           - "raw_actions indentation: {{ 'OK' if raw_actions_indent.rc == 0 else 'FAILED' }}"
+          - "=== Named Location Tests ==="
+          - "Named location vhost exists: {{ 'OK' if named_location_vhost.stat.exists else 'FAILED' }}"
+          - "Named @backend exists: {{ 'OK' if named_backend_check.rc == 0 else 'FAILED' }}"
+          - "Named proxy_pass configured: {{ 'OK' if named_proxy_pass.rc == 0 else 'FAILED' }}"
+          - "Named proxy_timeout configured: {{ 'OK' if named_timeout.rc == 0 else 'FAILED' }}"
+          - "try_files to @backend: {{ 'OK' if named_try_files.rc == 0 else 'FAILED' }}"
+          - "WebSocket /cable headers: {{ 'OK' if cable_websocket.rc == 0 else 'FAILED' }}"
+          - "Upstream block exists: {{ 'OK' if upstream_block.rc == 0 else 'FAILED' }}"
+          - "=== Proxy Buffer Tests ==="
+          - "Buffer vhost exists: {{ 'OK' if buffer_vhost.stat.exists else 'FAILED' }}"
+          - "proxy_buffers configured: {{ 'OK' if buffer_check.rc == 0 else 'FAILED' }}"
+          - "proxy_buffer_size configured: {{ 'OK' if buffer_size_check.rc == 0 else 'FAILED' }}"
+          - "proxy_busy_buffers_size configured: {{ 'OK' if busy_buffers_check.rc == 0 else 'FAILED' }}"
+          - "=== Rate Limiting Tests ==="
+          - "limit_req_zones.conf exists: {{ 'OK' if limit_zones_file.stat.exists else 'FAILED' }}"
+          - "Zone test_api defined: {{ 'OK' if zone_api_check.rc == 0 else 'FAILED' }}"
+          - "Zone test_form defined: {{ 'OK' if zone_form_check.rc == 0 else 'FAILED' }}"
+          - "Ratelimit vhost exists: {{ 'OK' if ratelimit_vhost.stat.exists else 'FAILED' }}"
+          - "limit_req in vhost: {{ 'OK' if limit_req_check.rc == 0 else 'FAILED' }}"
+          - "limit_req_status 429: {{ 'OK' if limit_status_check.rc == 0 else 'FAILED' }}"
+          - "=== Custom Protection Tests ==="
+          - "Protection vhost exists: {{ 'OK' if protection_vhost.stat.exists else 'FAILED' }}"
+          - "bad_bot rule configured: {{ 'OK' if protection_badbot_check.rc == 0 else 'FAILED' }}"
+          - "admin rule configured: {{ 'OK' if protection_admin_check.rc == 0 else 'FAILED' }}"

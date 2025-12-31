@@ -53,6 +53,23 @@ server {
 {% if nginx_with_protection %}
 {% include 'includes/protection.inc.j2' %}
 {% endif %}
+{% if instance.custom_protection_rules is defined %}
+  # custom protection rules
+{% for rule in instance.custom_protection_rules %}
+  {{ rule }}
+{% endfor %}
+
+{% endif %}
+{% if instance.limit_req is defined %}
+  # rate limiting
+{% for limit in instance.limit_req %}
+  limit_req {{ limit }};
+{% endfor %}
+{% if instance.limit_req_status is defined %}
+  limit_req_status {{ instance.limit_req_status }};
+{% endif %}
+
+{% endif %}
 {% if instance.block_hidden_files | default(false) %}
   # Disable .htaccess and other hidden files
   # Using 404 instead of 403 to not reveal file existence (security best practice)

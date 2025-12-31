@@ -48,5 +48,14 @@
     proxy_send_timeout {{ instance.proxy_timeout }};
     proxy_read_timeout {{ instance.proxy_timeout }};
 {% endif %}
+{% if instance.proxy_buffers is defined %}
+    proxy_buffers {{ instance.proxy_buffers }};
+{% endif %}
+{% if instance.proxy_buffer_size is defined %}
+    proxy_buffer_size {{ instance.proxy_buffer_size }};
+{% endif %}
+{% if instance.proxy_busy_buffers_size is defined %}
+    proxy_busy_buffers_size {{ instance.proxy_busy_buffers_size }};
+{% endif %}
   }
 {% endif %}
