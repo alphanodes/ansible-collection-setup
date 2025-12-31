@@ -37,6 +37,7 @@
 {% endif %}
 {% if backup_with_mysql is defined and backup_with_mysql | bool %}
     backup_with_mysql: true
+    mysql_backend: {{ mysql_backend }}
 {% if mysql_root_plugin is defined %}
     mysql_root_plugin: {{ mysql_root_plugin }}
 {% endif %}

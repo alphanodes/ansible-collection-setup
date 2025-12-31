@@ -33,6 +33,10 @@ common_packages:
   - curl
   - python3-debian
 
+# MySQL backend selection: mysql (Oracle MySQL) or mariadb (Debian/Ubuntu native)
+# Used by ansible_node playbook templates and ansible.tasks roles
+mysql_backend: mysql
+
 # @see https://ssl-config.mozilla.org
 # dhparams is only needed for TLSv1.2, not for TLSv1.3 only
 nginx_ssl_protocols: 'TLSv1.2 TLSv1.3'
