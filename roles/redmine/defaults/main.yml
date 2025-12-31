@@ -3,7 +3,7 @@
 redmine_instances: {}
 
 # If not set all instances from redmine_instances are used
-# redmine_instance: redmine
+# redmine_run_instance: redmine
 
 redmine_with_mysql: false
 # NOTE: if set to false, you have to install libpq-dev manually if you use postgresql server on a remote host

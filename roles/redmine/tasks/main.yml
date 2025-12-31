@@ -29,7 +29,7 @@
   loop_control:
     loop_var: r_instance
   when:
-    - redmine_instance is defined and redmine_instance == r_instance.key or redmine_instance is undefined
+    - redmine_run_instance is defined and redmine_run_instance == r_instance.key or redmine_run_instance is undefined
     - r_instance.value.state is undefined or r_instance.value.state == 'active' or r_instance.value.state == 'prepare_only'
 
 - name: Include setup activate tasks
@@ -41,7 +41,7 @@
   loop_control:
     loop_var: r_instance
   when:
-    - redmine_instance is defined and redmine_instance == r_instance.key or redmine_instance is undefined
+    - redmine_run_instance is defined and redmine_run_instance == r_instance.key or redmine_run_instance is undefined
 
 - name: Include remove tasks
   ansible.builtin.include_tasks: remove_instance.yml
@@ -52,5 +52,5 @@
   loop_control:
     loop_var: r_instance
   when:
-    - redmine_instance is defined and redmine_instance == r_instance.key or redmine_instance is undefined
+    - redmine_run_instance is defined and redmine_run_instance == r_instance.key or redmine_run_instance is undefined
     - r_instance.value.state is defined and r_instance.value.state == 'absent'
