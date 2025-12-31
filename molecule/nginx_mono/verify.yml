@@ -464,6 +464,39 @@
       changed_when: false
       failed_when: protection_admin_check.rc != 0
 
+    # Custom htpasswd_name tests (Test 11)
+    - name: Check if myapp vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/myapp.conf
+      register: myapp_vhost
+
+    - name: Check if htpasswd with custom name exists (redmine_myapp pattern)
+      ansible.builtin.stat:
+        path: /etc/nginx/.htpasswd_redmine_myapp
+      register: custom_htpasswd
+
+    - name: Verify htpasswd with default name does NOT exist
+      ansible.builtin.stat:
+        path: /etc/nginx/.htpasswd_myapp
+      register: default_htpasswd
+      failed_when: default_htpasswd.stat.exists
+
+    - name: Verify myapp vhost uses custom htpasswd path
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'auth_basic_user_file /etc/nginx/.htpasswd_redmine_myapp;' /etc/nginx/sites-available/myapp.conf
+      register: custom_htpasswd_path
+      changed_when: false
+      failed_when: custom_htpasswd_path.rc != 0
+
+    - name: Verify myapp vhost has auth_basic configured
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'auth_basic "Restricted access only";' /etc/nginx/sites-available/myapp.conf
+      register: myapp_auth_basic
+      changed_when: false
+      failed_when: myapp_auth_basic.rc != 0
+
     - name: Display test results
       ansible.builtin.debug:
         msg:
@@ -538,3 +571,9 @@
           - "Protection vhost exists: {{ 'OK' if protection_vhost.stat.exists else 'FAILED' }}"
           - "bad_bot rule configured: {{ 'OK' if protection_badbot_check.rc == 0 else 'FAILED' }}"
           - "admin rule configured: {{ 'OK' if protection_admin_check.rc == 0 else 'FAILED' }}"
+          - "=== Custom htpasswd_name Tests ==="
+          - "myapp vhost exists: {{ 'OK' if myapp_vhost.stat.exists else 'FAILED' }}"
+          - "Custom htpasswd file exists: {{ 'OK' if custom_htpasswd.stat.exists else 'FAILED' }}"
+          - "Default htpasswd NOT exists: {{ 'OK' if not default_htpasswd.stat.exists else 'FAILED' }}"
+          - "Custom htpasswd path in vhost: {{ 'OK' if custom_htpasswd_path.rc == 0 else 'FAILED' }}"
+          - "auth_basic configured: {{ 'OK' if myapp_auth_basic.rc == 0 else 'FAILED' }}"

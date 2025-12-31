@@ -187,6 +187,7 @@
             vhost_users:
               - user: admin
                 password: secret123
+            auth_basic_realm: "Restricted Area"
             error_404_enabled: true
           - name: php_app
             server_name: php.local
@@ -273,5 +274,22 @@
           custom_protection_rules:
             - "if ($bad_bot) { return 403; }"
             - "if ($request_uri ~* \"^/admin\") { return 404; }"
+          vhost_for_zabbix: false
+          letsencrypt: false
+
+    # Test 11: Custom htpasswd_name (like Redmine pattern: role_instance)
+    - role: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: myapp
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: myapp.local
+          root: /srv/protection_test
+          index: index.html
+          htpasswd_name: "redmine_myapp"
+          vhost_users:
+            - user: admin
+              password: secret123
+          auth_basic_realm: "Restricted access only"
           vhost_for_zabbix: false
           letsencrypt: false

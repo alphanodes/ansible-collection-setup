@@ -261,6 +261,7 @@ redmine_base_locations:
       - "try_files $uri @puma;"
   - name: "@puma"
     proxy_pass: "http://{{ redmine_instance_name | default('redmine') | replace('-', '_') }}"
+    proxy_http_version: "1.1"
     proxy_timeout: "{{ redmine_proxy_read_timeout }}"
     proxy_buffers: "{{ redmine_proxy_buffers }}"
     proxy_buffer_size: "{{ redmine_proxy_buffer_size }}"

@@ -75,12 +75,19 @@
 {% endif %}
 {% if location.proxy_pass is defined %}
     proxy_pass {{ location.proxy_pass }};
+{% if location.proxy_http_version is defined %}
+    proxy_http_version {{ location.proxy_http_version }};
+{% elif location.proxy_websocket is defined and location.proxy_websocket %}
+    proxy_http_version 1.1;
+{% endif %}
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
+{% if location.proxy_redirect is defined %}
+    proxy_redirect {{ location.proxy_redirect }};
+{% endif %}
 {% if location.proxy_websocket is defined and location.proxy_websocket %}
-    proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection $connection_upgrade;
 {% endif %}

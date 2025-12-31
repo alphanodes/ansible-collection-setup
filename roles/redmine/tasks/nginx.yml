@@ -47,6 +47,11 @@
     - not access_protection
     - active_pg_extras
 
+- name: Add custom instance locations - {{ redmine_instance_name }}
+  ansible.builtin.set_fact:
+    redmine_locations: "{{ redmine_locations + redmine_instance.locations }}"
+  when: redmine_instance.locations is defined
+
 - name: Build rate limiting config - {{ redmine_instance_name }}
   ansible.builtin.set_fact:
     redmine_limit_req_list: >-
@@ -71,6 +76,7 @@
       server_port: "{{ redmine_instance.server_port | default(omit) }}"
       root: "{{ redmine_app_dir }}/public"
       index: "index.html"
+      htpasswd_name: "redmine_{{ redmine_instance_name }}"
       vhost_default: "{{ redmine_instance.vhost_default | default(redmine_vhost_default) }}"
       vhost_for_zabbix: "{{ redmine_instance.vhost_for_zabbix | default(redmine_vhost_for_zabbix) }}"
       vhost_users: "{{ redmine_instance.vhost_users | default(redmine_default_vhost_users) if (access_protection or active_pghero or active_pg_extras) else [] }}"

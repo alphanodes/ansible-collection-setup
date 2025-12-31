@@ -45,7 +45,7 @@
 # Common tasks for both modes (vhost and include)
 - name: Setup Basic Auth for service
   community.general.htpasswd:
-    path: "/etc/nginx/.htpasswd_{{ nginx_mono_service_name }}"
+    path: "/etc/nginx/.htpasswd_{{ nginx_mono_instance.htpasswd_name | default(nginx_mono_service_name) }}"
     name: '{{ item.user }}'
     password: '{{ item.password }}'
     owner: root
@@ -59,7 +59,7 @@
 
 - name: Remove Basic Auth file if not used
   ansible.builtin.file:
-    path: "/etc/nginx/.htpasswd_{{ nginx_mono_service_name }}"
+    path: "/etc/nginx/.htpasswd_{{ nginx_mono_instance.htpasswd_name | default(nginx_mono_service_name) }}"
     state: absent
   when:
     - nginx_mono_instance.vhost_users is undefined or nginx_mono_instance.vhost_users | length < 1
