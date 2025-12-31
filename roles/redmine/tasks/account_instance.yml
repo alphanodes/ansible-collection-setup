@@ -90,7 +90,7 @@
     dest: '{{ redmine_app_dir }}'
     version: '{{ active_redmine_repo_version }}'
     update: '{{ redmine_instance.repo_update | default(redmine_repo_update) }}'
-    force: "{{ true if active_redmine_patches | length > 0 or account_migrate_to_new_home else redmine_instance.repo_update_force | default(false) }}"
+    force: "{{ true if active_redmine_patches | length > 0 else redmine_instance.repo_update_force | default(false) }}"
     accept_hostkey: true
   register: redmine_git_rc
   # become: true
@@ -118,19 +118,6 @@
   loop: "{{ active_redmine_patches }}"
   loop_control:
     loop_var: patch
-
-# should be removed, when all instances are migrated (realy all!)
-- name: Check if home migration is required - {{ redmine_instance_name }}
-  ansible.builtin.stat:
-    path: '{{ redmine_home }}/config'
-  register: old_config_dir
-
-- name: Migrate to new home structure - {{ redmine_instance_name }}
-  ansible.builtin.include_tasks: account_migrate_to_new_home.yml
-  when:
-    - account_migrate_to_new_home
-    - old_config_dir.stat.exists
-# end migration
 
 - name: RVM Mode
   when: redmine_use_rvm

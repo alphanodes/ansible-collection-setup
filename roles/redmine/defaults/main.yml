@@ -77,8 +77,6 @@ redmine_with_agile: false
 # this enables pghero and pg_extras, too
 redmine_with_alphanodes_enterprise_support: true
 
-account_migrate_to_new_home: true
-
 redmine_env: production
 
 redmine_proxy_read_timeout: 120
