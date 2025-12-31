@@ -15,21 +15,6 @@
     name: '{{ ansible_node_packages }}'
     state: present
 
-- name: Remove ansible (required to switch from 2.9)
-  ansible.builtin.pip:
-    name: '{{ item }}'
-    state: absent
-  when: ansible_node_remove_before_install
-  loop:
-    - ansible
-    - ansible-core
-
-- name: Remove old files (used by remove_before_install
-  ansible.builtin.file:
-    path: '{{ item }}'
-    state: absent
-  loop: '{{ ansible_node_old_files }}'
-
 - name: Install ansible
   ansible.builtin.pip:
     name: ansible

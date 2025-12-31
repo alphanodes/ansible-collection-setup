@@ -56,11 +56,6 @@ ansible_node_disallowed_packages:
 
 ansible_node_ansible_version: "{{ '12.3' if ansible_facts.distribution_release == 'bookworm' else '13.2' }}"
 
-# required switching from 2.9 to newer version
-ansible_node_remove_before_install: false
-
-# this is only used, if ansible_node_remove_before_install is true
-# NOTE: all supported distributions uses python 3.9 or newer
 # TODO: this should be moved to pip role
 # NOTE: pip is installed by apt! (not in /usr/local)
 ansible_node_old_files:
