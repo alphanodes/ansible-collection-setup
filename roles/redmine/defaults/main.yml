@@ -266,6 +266,10 @@ redmine_base_locations:
     proxy_buffers: "{{ redmine_proxy_buffers }}"
     proxy_buffer_size: "{{ redmine_proxy_buffer_size }}"
     proxy_busy_buffers_size: "{{ redmine_proxy_busy_buffers_size }}"
+    # Legacy-compatible proxy headers for frontend proxy scenarios
+    proxy_forwarded_proto: "https"
+    proxy_ssl_header: true
+    proxy_redirect: "off"
 
 # ActionCable WebSocket location for Agile plugin
 redmine_agile_locations:
@@ -273,6 +277,9 @@ redmine_agile_locations:
     proxy_pass: "http://{{ redmine_instance_name | default('redmine') | replace('-', '_') }}/rup_cable_agile"
     proxy_websocket: true
     proxy_timeout: "{{ redmine_proxy_read_timeout }}"
+    proxy_forwarded_proto: "https"
+    proxy_ssl_header: true
+    proxy_redirect: "off"
 
 # Block registration location
 redmine_no_register_location:
