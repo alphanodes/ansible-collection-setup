@@ -158,51 +158,11 @@
         state: directory
         mode: '0755'
 
-    - name: Install nginx redmine maps configuration
-      ansible.builtin.copy:
+    - name: Install nginx redmine maps configuration (using real template)
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../../roles/redmine/templates/etc/nginx/redmine_maps.conf"
         dest: /etc/nginx/conf.d/redmine_maps.conf
         mode: '0644'
-        content: |
-          # Redmine nginx maps for protection rules
-          map $uri $with_api_limit_req {
-              default 0;
-              "~*^\/(issues|db|projects|time_entries|hrm\/attendances|enumerations\/time_entry_activities|trackers)\.(xml|json)" 1;
-          }
-
-          map $uri $with_form_limit_req {
-              default 0;
-              "~*^\/projects/.+/helpdesk_forms" 1;
-          }
-
-          map $with_api_limit_req $redmine_api_limit {
-              default '';
-              '1'     $binary_remote_addr;
-          }
-
-          map $with_form_limit_req $redmine_form_limit {
-              default '';
-              '1'     $binary_remote_addr;
-          }
-
-          map $request_uri $bad_redmine_locations {
-              default 0;
-              /.well-known/security.txt 1;
-              /Autodiscover/Autodiscover.xml 1;
-              /HNAP1 1;
-              /TP/ 1;
-              /_ignition/execute-solution 1;
-              /api/jsonws/invoke 1;
-              /solr/admin/info/system 1;
-              /data/admin/allowurl.txt 1;
-              /admin/config.php 1;
-              /home/favicon.ico 1;
-              /manager/html 1;
-              ~^\/(\.env|console|owa|changelog|changelog\.txt|system_api\.php|sitemap\.xml|deployment\-config\.json|sftp\-config\.json|ftpsync\.settings|\.ftpconfig|\.remote-sync\.json|htaccess\.fcgi\.example|dispatch\.fcgi\.example)$ 1;
-              ~^\/(themes|plugin_assets|images)\/.*\/\.+ 1;
-              ~^\/(themes|plugin_assets|images)\/.*\/(yarn\.lock|node_modules|package\.json) 1;
-              ~^\/index\.(php|pl|py|cgi|do|asp|aspx|action) 1;
-              ~^\/(wp\-content|phppath|phpmailer|vendor|public|html)\/ 1;
-          }
 
     - name: Include nginx_mono for redmine
       ansible.builtin.include_role:

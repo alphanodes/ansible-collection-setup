@@ -174,17 +174,11 @@
         state: directory
         mode: '0755'
 
-    - name: Install nginx redmine maps configuration
-      ansible.builtin.copy:
+    - name: Install nginx redmine maps configuration (using real template)
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../../roles/redmine/templates/etc/nginx/redmine_maps.conf"
         dest: /etc/nginx/conf.d/redmine_maps.conf
         mode: '0644'
-        content: |
-          # Redmine nginx maps for protection rules
-          map $request_uri $bad_redmine_locations {
-              default 0;
-              /.well-known/security.txt 1;
-              /Autodiscover/Autodiscover.xml 1;
-          }
 
     # Test 1: Custom Port 8443
     - name: Include nginx_mono for redmine_custom_port (port 8443)

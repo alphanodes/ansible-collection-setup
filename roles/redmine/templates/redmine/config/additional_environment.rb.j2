@@ -38,7 +38,7 @@ config.cache_store = :mem_cache_store, '{{ redmine_instance.memcached_host | def
 require Rails.root.join('plugins', 'redmine_dmsf', 'lib', 'redmine_dmsf', 'webdav', 'custom_middleware').to_s
 config.middleware.insert_before ActionDispatch::Cookies, RedmineDmsf::Webdav::CustomMiddleware
 {% endif %}
-{% if redmine_with_nginx and nginx_with_ssl and redmine_rails_env != 'test' %}
+{% if redmine_with_nginx and nginx_with_ssl | default(true) and redmine_rails_env != 'test' %}
 
 config.session_store :cookie_store,
   key: '_{{ redmine_instance_name | replace("-", "_") }}_session',
