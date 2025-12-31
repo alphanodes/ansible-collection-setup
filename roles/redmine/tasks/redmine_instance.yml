@@ -66,15 +66,12 @@
   tags:
     - redmine
     - update
-  when: redmine_instance.state is undefined or redmine_instance.state != 'prepare_only'
 
 - name: Include nginx_mono configuration tasks
   ansible.builtin.include_tasks: nginx.yml
   tags:
     - nginx
-  when:
-    - redmine_with_nginx
-    - redmine_instance.state is undefined or redmine_instance.state != 'prepare_only'
+  when: redmine_with_nginx
 
 - name: Install redmine robots.txt - {{ redmine_instance_name }}
   ansible.builtin.copy:
@@ -95,10 +92,3 @@
 
 - name: Include systemd tasks
   ansible.builtin.include_tasks: instance_systemd.yml
-  when: redmine_instance.state is undefined or redmine_instance.state != 'prepare_only'
-
-- name: Include prepare_only tasks
-  ansible.builtin.include_tasks: instance_prepare_only.yml
-  when:
-    - redmine_instance.state is defined
-    - redmine_instance.state == 'prepare_only'

@@ -62,7 +62,7 @@
   vars:
     nginx_with_websocket: "{{ active_agile }}"
     nginx_mono_service_name: "{{ redmine_instance_name }}"
-    nginx_mono_service_enabled: true
+    nginx_mono_service_enabled: "{{ redmine_instance.state is undefined or redmine_instance.state == 'active' }}"
     nginx_mono_service_config:
       server_name: "{{ redmine_instance.server_name | default(redmine_server_name) }}"
       server_alias: "{{ redmine_instance.server_alias | default(omit) }}"

@@ -14,7 +14,7 @@
     loop_var: r_instance
   when:
     - redmine_setup_instance is defined and redmine_setup_instance == r_instance.key or redmine_setup_instance is undefined
-    - r_instance.value.state is undefined or r_instance.value.state == 'active' or r_instance.value.state == 'prepare_only'
+    - r_instance.value.state is undefined or r_instance.value.state != 'absent'
 
 - name: Include Redmine setup tasks
   ansible.builtin.include_tasks: redmine_setup.yml
@@ -30,7 +30,7 @@
     loop_var: r_instance
   when:
     - redmine_run_instance is defined and redmine_run_instance == r_instance.key or redmine_run_instance is undefined
-    - r_instance.value.state is undefined or r_instance.value.state == 'active' or r_instance.value.state == 'prepare_only'
+    - r_instance.value.state is undefined or r_instance.value.state != 'absent'
 
 - name: Include setup activate tasks
   ansible.builtin.include_tasks: activate_instance.yml

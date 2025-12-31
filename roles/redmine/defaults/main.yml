@@ -2,6 +2,20 @@
 ---
 redmine_instances: {}
 
+# Instance state values (set per instance as instance.state):
+#
+# - active (default if undefined):
+#   Full deployment - nginx vhost enabled, Puma service running
+#
+# - inactive:
+#   Disable instance - keeps all config files but disables nginx vhost
+#   symlink and stops Puma service.
+#   Use case: Temporarily disable instance without removing configuration
+#
+# - absent:
+#   Remove instance - deletes nginx vhost, stops and disables Puma service
+#   Use case: Completely remove an instance from the server
+
 # If not set all instances from redmine_instances are used
 # redmine_run_instance: redmine
 
