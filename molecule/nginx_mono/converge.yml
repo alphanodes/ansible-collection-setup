@@ -30,6 +30,7 @@
         - /srv/buffer_test
         - /srv/ratelimit_test
         - /srv/protection_test
+        - /srv/default_redirect_test
 
     - name: Create test index files
       ansible.builtin.copy:
@@ -171,12 +172,13 @@
           vhost_for_zabbix: false
           letsencrypt: false
 
-    # Test 6: Instance mode with nginx_vhosts (like _parking vhost)
+    # Test 6: Instance mode with nginx_vhosts
+    # Note: vhost_default is tested in Test 12 (default_redirect_test)
     - role: alphanodes.setup.nginx_mono
       vars:
         nginx_vhosts:
           - name: parking
-            vhost_default: true
+            server_name: parking.local
             root: /srv/parking
             index: index.html
             vhost_for_zabbix: false
@@ -291,5 +293,20 @@
             - user: admin
               password: secret123
           auth_basic_realm: "Restricted access only"
+          vhost_for_zabbix: false
+          letsencrypt: false
+
+    # Test 12: vhost_default with redirect (like Redmine with wildcard DNS)
+    # When vhost_default is true, a separate redirect server block should be created
+    # that catches unknown hosts and redirects to the canonical server_name
+    - role: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: default_redirect_test
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: canonical.local
+          root: /srv/default_redirect_test
+          index: index.html
+          vhost_default: true
           vhost_for_zabbix: false
           letsencrypt: false

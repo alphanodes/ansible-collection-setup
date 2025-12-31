@@ -1,12 +1,21 @@
+{#
+  Default Host Redirect
+  =====================
 
-# Default host redirect
+  Creates catch-all server blocks that redirect requests for unknown hosts
+  to the actual server_name. This is used when vhost_default is true.
+
+  Example: If server_name is "redmine.example.com" and someone visits
+  "typo.example.com", they get redirected to "redmine.example.com".
+#}
+# Default host redirect to {{ instance.server_name | default(nginx_mono_service_name) }}
 server {
   listen 80 default_server;
 {% if nginx_with_ipv6 %}
-  listen [::]:80;
+  listen [::]:80 default_server;
 {% endif %}
   server_name _;
-  return 301 {{ 'https' if nginx_with_ssl else 'http' }}://{{ instance.server_name }}$request_uri;
+  return 301 {{ 'https' if nginx_with_ssl else 'http' }}://{{ instance.server_name | default(nginx_mono_service_name) }}$request_uri;
 }
 
 {% if nginx_with_ssl %}
@@ -17,8 +26,8 @@ server {
 {% endif %}
 {% include 'includes/modern_protocols.inc.j2' %}
   server_name _;
-  return 301 https://{{ instance.server_name }}$request_uri;
+  return 301 https://{{ instance.server_name | default(nginx_mono_service_name) }}$request_uri;
 
-  {% include 'includes/ssl.inc.j2' %}
+{% include 'includes/ssl.inc.j2' %}
 }
 {% endif %}

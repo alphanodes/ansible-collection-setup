@@ -163,15 +163,13 @@
         path: /etc/nginx/sites-enabled/parking.conf
       register: parking_enabled
 
-    - name: Verify parking vhost has default_server flag
+    - name: Verify parking vhost has correct server_name
       ansible.builtin.shell: |
-        set -eo pipefail
-        grep -E 'listen [0-9]+ default_server|listen 80 default_server' /etc/nginx/sites-available/parking.conf
-      args:
-        executable: /bin/bash
-      register: parking_default
+        set -e
+        grep -F 'server_name parking.local;' /etc/nginx/sites-available/parking.conf
+      register: parking_server_name
       changed_when: false
-      failed_when: parking_default.rc != 0
+      failed_when: parking_server_name.rc != 0
 
     - name: Verify parking vhost comment uses instance.name
       ansible.builtin.shell: |
@@ -497,6 +495,61 @@
       changed_when: false
       failed_when: myapp_auth_basic.rc != 0
 
+    # vhost_default with redirect tests (Test 12)
+    - name: Check if default_redirect_test vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/default_redirect_test.conf
+      register: default_redirect_vhost
+
+    - name: Verify default_redirect_test has redirect server block with server_name _
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'server_name _;' /etc/nginx/sites-available/default_redirect_test.conf
+      register: redirect_server_name
+      changed_when: false
+      failed_when: redirect_server_name.rc != 0
+
+    - name: Verify default_redirect_test has redirect to canonical hostname
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'return 301 http://canonical.local$request_uri;' /etc/nginx/sites-available/default_redirect_test.conf
+      register: redirect_to_canonical
+      changed_when: false
+      failed_when: redirect_to_canonical.rc != 0
+
+    - name: Verify redirect server block has default_server flag
+      ansible.builtin.shell: |
+        set -eo pipefail
+        # Check that default_server appears BEFORE server_name _ (in redirect block)
+        awk '/server_name _;/{found_underscore=1} /default_server/{if(!found_underscore) found_default=1} END{exit found_default ? 0 : 1}' /etc/nginx/sites-available/default_redirect_test.conf
+      args:
+        executable: /bin/bash
+      register: redirect_default_server
+      changed_when: false
+      failed_when: redirect_default_server.rc != 0
+
+    - name: Verify main vhost does NOT have default_server (only redirect block has it)
+      ansible.builtin.shell: |
+        set -eo pipefail
+        # The main server block (with server_name canonical.local) should NOT have default_server
+        # Count how many times default_server appears - should be exactly 1 (in redirect block only)
+        count=$(grep -c 'default_server' /etc/nginx/sites-available/default_redirect_test.conf)
+        # With HTTP only (no SSL), we expect exactly 1 default_server (on port 80 redirect)
+        [ "$count" -eq 1 ]
+      args:
+        executable: /bin/bash
+      register: main_no_default_server
+      changed_when: false
+      failed_when: main_no_default_server.rc != 0
+
+    - name: Verify main vhost has correct server_name
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'server_name canonical.local;' /etc/nginx/sites-available/default_redirect_test.conf
+      register: main_server_name
+      changed_when: false
+      failed_when: main_server_name.rc != 0
+
     - name: Display test results
       ansible.builtin.debug:
         msg:
@@ -525,7 +578,7 @@
           - "=== Instance Mode (nginx_vhosts) Tests ==="
           - "Parking vhost exists: {{ 'OK' if parking_vhost.stat.exists else 'FAILED' }}"
           - "Parking vhost enabled: {{ 'OK' if parking_enabled.stat.exists else 'FAILED' }}"
-          - "Parking has default_server: {{ 'OK' if parking_default.rc == 0 else 'FAILED' }}"
+          - "Parking server_name correct: {{ 'OK' if parking_server_name.rc == 0 else 'FAILED' }}"
           - "Parking comment correct: {{ 'OK' if parking_comment.rc == 0 else 'FAILED' }}"
           - "Static vhost exists: {{ 'OK' if static_vhost.stat.exists else 'FAILED' }}"
           - "Static htpasswd exists: {{ 'OK' if static_htpasswd.stat.exists else 'FAILED' }}"
@@ -577,3 +630,10 @@
           - "Default htpasswd NOT exists: {{ 'OK' if not default_htpasswd.stat.exists else 'FAILED' }}"
           - "Custom htpasswd path in vhost: {{ 'OK' if custom_htpasswd_path.rc == 0 else 'FAILED' }}"
           - "auth_basic configured: {{ 'OK' if myapp_auth_basic.rc == 0 else 'FAILED' }}"
+          - "=== vhost_default Redirect Tests ==="
+          - "default_redirect_test vhost exists: {{ 'OK' if default_redirect_vhost.stat.exists else 'FAILED' }}"
+          - "Redirect has server_name _: {{ 'OK' if redirect_server_name.rc == 0 else 'FAILED' }}"
+          - "Redirect to canonical hostname: {{ 'OK' if redirect_to_canonical.rc == 0 else 'FAILED' }}"
+          - "Redirect block has default_server: {{ 'OK' if redirect_default_server.rc == 0 else 'FAILED' }}"
+          - "Main vhost no default_server: {{ 'OK' if main_no_default_server.rc == 0 else 'FAILED' }}"
+          - "Main vhost correct server_name: {{ 'OK' if main_server_name.rc == 0 else 'FAILED' }}"

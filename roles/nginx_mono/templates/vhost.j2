@@ -2,9 +2,20 @@
 # nginx {{ nginx_mono_service_name | default(instance.name) }} vhost configuration
 
 {% include 'includes/upstream.inc.j2' %}
+{# When vhost_default is true AND server_name is defined, we use a separate redirect server block
+   (with default_server) instead of putting default_server on the main vhost. This ensures unknown
+   hosts get redirected to the canonical server_name instead of being served directly.
+
+   If vhost_default is true WITHOUT server_name, it's a catch-all parking vhost and we put
+   default_server directly on the main vhost (no redirect needed). #}
+{% set use_redirect_block = instance.vhost_default | default(false) and instance.server_name is defined %}
+{% if use_redirect_block %}
+{% include 'includes/default_host_redirect.inc.j2' %}
+{% endif %}
 server {
-{# Clean listen configuration using pre-calculated variables #}
-{% set default_server_flag = ' default_server' if nginx_listen_config.default_server else '' -%}
+{# Clean listen configuration using pre-calculated variables
+   Note: When using redirect block, default_server is there, not here #}
+{% set default_server_flag = '' if use_redirect_block else (' default_server' if nginx_listen_config.default_server else '') -%}
 {% set reuseport_flag = ' reuseport' if nginx_listen_config.use_reuseport else '' -%}
 {% set ssl_port = nginx_listen_config.server_port | default(443) -%}
 
