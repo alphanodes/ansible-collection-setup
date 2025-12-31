@@ -4,18 +4,20 @@
 
 - name: Check TLS trusted certificate file - {{ redmine_instance_name }}
   ansible.builtin.stat:
-    path: /etc/ssl/certs/{{ redmine_instance.vhost_ssl_cert | default(vhost_ssl_cert) }}_trusted.crt
+    path: /etc/ssl/certs/{{ redmine_instance.vhost_ssl_cert }}_trusted.crt
   register: trusted_cert
   when:
     - nginx_with_ssl
-    - redmine_instance.letsencrypt_cert is undefined or not redmine_instance.letsencrypt_cert
+    - redmine_instance.letsencrypt is undefined or not redmine_instance.letsencrypt
+    - redmine_instance.vhost_ssl_cert is defined
 
 - name: Set TLS files - {{ redmine_instance_name }}
   ansible.builtin.set_fact:
     vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
   when:
     - nginx_with_ssl
-    - redmine_instance.letsencrypt_cert is undefined or not redmine_instance.letsencrypt_cert
+    - redmine_instance.letsencrypt is undefined or not redmine_instance.letsencrypt
+    - redmine_instance.vhost_ssl_cert is defined
 
 - name: Build locations list - {{ redmine_instance_name }}
   ansible.builtin.set_fact:
@@ -73,9 +75,9 @@
       vhost_for_zabbix: "{{ redmine_instance.vhost_for_zabbix | default(redmine_vhost_for_zabbix) }}"
       vhost_users: "{{ redmine_instance.vhost_users | default(redmine_default_vhost_users) if (access_protection or active_pghero or active_pg_extras) else [] }}"
       vhost_includes: "{{ redmine_instance.vhost_includes | default([]) }}"
-      letsencrypt: "{{ redmine_instance.letsencrypt_cert | default(false) }}"
-      letsencrypt_cert: "{{ redmine_instance.letsencrypt_cert_file | default(omit) }}"
-      letsencrypt_key: "{{ redmine_instance.letsencrypt_key_file | default(omit) }}"
+      letsencrypt: "{{ redmine_instance.letsencrypt | default(false) }}"
+      letsencrypt_cert: "{{ redmine_instance.letsencrypt_cert | default(omit) }}"
+      letsencrypt_key: "{{ redmine_instance.letsencrypt_key | default(omit) }}"
       ssl_cert: "{{ redmine_instance.vhost_ssl_cert | default(omit) }}"
       redirects: "{{ redmine_instance.redirects | default([]) }}"
       external_redirects: "{{ redmine_instance.external_redirects | default([]) }}"
