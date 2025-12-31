@@ -1,6 +1,6 @@
 ---
 
-- name: Calc redmine_ruby_system_gem_home - {{ instance_name }}
+- name: Calc redmine_ruby_system_gem_home - {{ redmine_instance_name }}
   when: not redmine_use_rvm
   become: true
   become_user: '{{ redmine_user }}'
@@ -16,7 +16,7 @@
 
     - name: Set redmine_ruby_opt
       ansible.builtin.set_fact:
-        redmine_ruby_opt: "{{ instance.ruby_opt | default(redmine_systemd_ruby_opt) }}"
+        redmine_ruby_opt: "{{ redmine_instance.ruby_opt | default(redmine_systemd_ruby_opt) }}"
 
     - name: Make sure redmine_ruby_opt value is set always for system ruby
       ansible.builtin.set_fact:
@@ -25,20 +25,20 @@
 
 - name: Set redmine_ruby_opt
   ansible.builtin.set_fact:
-    redmine_ruby_opt: "{{ instance.ruby_opt | default(redmine_systemd_ruby_opt) }}"
+    redmine_ruby_opt: "{{ redmine_instance.ruby_opt | default(redmine_systemd_ruby_opt) }}"
   when: redmine_use_rvm
 
-- name: Ensure run directory exists after reboot - {{ instance_name }}
+- name: Ensure run directory exists after reboot - {{ redmine_instance_name }}
   ansible.builtin.include_role:
     name: alphanodes.setup.systemd_timer
   vars:
     timers:
       "{{ puma_service_name }}-directory":
-        exec_start: /usr/bin/install -g {{ instance_name }} -o {{ instance_name }} -d {{ redmine_run_base_path }}/{{ instance_name }}
+        exec_start: /usr/bin/install -g {{ redmine_instance_name }} -o {{ redmine_instance_name }} -d {{ redmine_run_base_path }}/{{ redmine_instance_name }}
         on_boot_sec: 5s
         before_service: '{{ puma_service_name }}.service'
 
-- name: Install puma systemd service - {{ instance_name }}
+- name: Install puma systemd service - {{ redmine_instance_name }}
   ansible.builtin.template:
     src: etc/systemd/system/puma.service.j2
     dest: "/etc/systemd/system/{{ puma_service_name }}.service"
@@ -51,7 +51,7 @@
 - name: Flush all handlers at this point
   ansible.builtin.meta: flush_handlers
 
-- name: Ensure puma services start after reboot - {{ instance_name }}
+- name: Ensure puma services start after reboot - {{ redmine_instance_name }}
   ansible.builtin.systemd_service:
     name: '{{ puma_service_name }}'
     enabled: true

@@ -33,7 +33,7 @@
 
 - name: Set theme_list
   ansible.builtin.set_fact:
-    theme_list: "{{ redmine_themes_available | list if instance.with_all_themes is defined and instance.with_all_themes else instance.themes | default([]) }}"
+    theme_list: "{{ redmine_themes_available | list if redmine_instance.with_all_themes is defined and redmine_instance.with_all_themes else redmine_instance.themes | default([]) }}"
 
 - name: Include theme tasks
   ansible.builtin.include_tasks: instance_theme.yml

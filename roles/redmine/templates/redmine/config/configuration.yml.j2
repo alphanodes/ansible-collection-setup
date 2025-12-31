@@ -16,28 +16,28 @@ default:
 {% endif %}
 {% if active_delivery_method  == ':smtp' %}
     smtp_settings:
-      address: "{{ instance.smtp_address | default(redmine_smtp_address) }}"
-      port: {{ instance.smtp_port | default(redmine_smtp_port) }}
-      tls: {{ 'true' if instance.smtp_tls | default(redmine_smtp_tls) else 'false' }}
-      enable_starttls_auto: {{ 'true' if instance.smtp_enable_starttls_auto | default(redmine_smtp_enable_starttls_auto) else 'false' }}
+      address: "{{ redmine_instance.smtp_address | default(redmine_smtp_address) }}"
+      port: {{ redmine_instance.smtp_port | default(redmine_smtp_port) }}
+      tls: {{ 'true' if redmine_instance.smtp_tls | default(redmine_smtp_tls) else 'false' }}
+      enable_starttls_auto: {{ 'true' if redmine_instance.smtp_enable_starttls_auto | default(redmine_smtp_enable_starttls_auto) else 'false' }}
 {% endif %}
 
   attachments_storage_path: {{ redmine_files_dir }}
-{% if instance.sudo_mode is defined and instance.sudo_mode %}
+{% if redmine_instance.sudo_mode is defined and redmine_instance.sudo_mode %}
   sudo_mode: true
-  sudo_mode_timeout: {{ instance.sudo_mode_timeout | default(15) }}
+  sudo_mode_timeout: {{ redmine_instance.sudo_mode_timeout | default(15) }}
 {% endif %}
-{% if instance.database_cipher_key is defined and instance.database_cipher_key != '' %}
-  database_cipher_key: "{{ instance.database_cipher_key }}"
+{% if redmine_instance.database_cipher_key is defined and redmine_instance.database_cipher_key != '' %}
+  database_cipher_key: "{{ redmine_instance.database_cipher_key }}"
 {% endif %}
 {% if ansible_facts.distribution_release == 'trixie' %}
   imagemagick_convert_command: magick
 {% endif %}
-{% if instance.use_logger is undefined or instance.use_logger == 'syslog' %}
+{% if redmine_instance.use_logger is undefined or redmine_instance.use_logger == 'syslog' %}
   reporting_use_syslog: true
 {% endif %}
-{% if instance.redmine_config is defined and instance.redmine_config | length > 0 %}
-{% for key, value in instance.redmine_config | dictsort %}
+{% if redmine_instance.redmine_config is defined and redmine_instance.redmine_config | length > 0 %}
+{% for key, value in redmine_instance.redmine_config | dictsort %}
 {% if value is boolean %}
   {{ key }}: {{ (value | bool | string | lower) }}
 {% elif value is sequence and value is not string %}

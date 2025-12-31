@@ -46,8 +46,3 @@
       vimbadmin_delete_pending:
         state: absent
   when: not vimbadmin_enable_cronjobs
-
-- name: Remove obsolete cronjobs
-  ansible.builtin.file:
-    path: /etc/cron.d/vimbadmin
-    state: absent

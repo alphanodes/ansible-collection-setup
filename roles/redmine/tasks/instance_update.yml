@@ -25,7 +25,7 @@
         chdir: '{{ redmine_app_dir }}'
       ignore_errors: true
 
-    - name: Run bundler check - {{ instance_name }}
+    - name: Run bundler check - {{ redmine_instance_name }}
       ansible.builtin.command: bash -lc "bundle check"
       args:
         chdir: '{{ redmine_app_dir }}'
@@ -35,13 +35,13 @@
 
     # this is not used anymore, because bundle config is run with every
     # changed bundler check, to update excluded groups
-    - name: Check if bundler config file exists - {{ instance_name }}
+    - name: Check if bundler config file exists - {{ redmine_instance_name }}
       ansible.builtin.stat:
         path: '{{ redmine_app_dir }}/.bundle/config'
       register: bundle_config_file
 
-    - name: Set bundle exclude groups - {{ instance_name }}
-      ansible.builtin.command: bash -lc "bundle config set --local without {{ instance.bundle_exclude_groups | default(redmine_bundle_exclude_groups) }}"
+    - name: Set bundle exclude groups - {{ redmine_instance_name }}
+      ansible.builtin.command: bash -lc "bundle config set --local without {{ redmine_instance.bundle_exclude_groups | default(redmine_bundle_exclude_groups) }}"
       args:
         chdir: '{{ redmine_app_dir }}'
       register: bundler_install_result
@@ -56,7 +56,7 @@
       register: bundler_gpgme_result
       changed_when: bundler_gpgme_result.rc != 0
 
-    - name: Update gem packages for redmine - {{ instance_name }}
+    - name: Update gem packages for redmine - {{ redmine_instance_name }}
       ansible.builtin.command: bash -lc "bundle update --jobs={{ ansible_facts['processor_nproc'] }}"
       args:
         chdir: '{{ redmine_app_dir }}'
@@ -64,7 +64,7 @@
       changed_when: redmine_gem_result.rc != 0
 
     # Check obsolete secret token - Start
-    - name: Check if secret token file exists - {{ instance_name }}
+    - name: Check if secret token file exists - {{ redmine_instance_name }}
       ansible.builtin.stat:
         path: '{{ redmine_token_file }}'
       register: token_file
@@ -72,7 +72,7 @@
     - name: Obsolete secret token
       when: token_file.stat.exists
       block:
-        - name: Check for obsolete secret token - {{ instance_name }}
+        - name: Check for obsolete secret token - {{ redmine_instance_name }}
           ansible.builtin.shell: >
             set -o pipefail &&
             grep -F "secret_key_base" {{ redmine_token_file }} |
@@ -80,42 +80,42 @@
           changed_when: false
           register: token_file_valid
 
-        - name: Remove obsolete secret token - {{ instance_name }}
+        - name: Remove obsolete secret token - {{ redmine_instance_name }}
           ansible.builtin.file:
             path: '{{ redmine_token_file }}'
             state: absent
           when: token_file_valid.stdout == "0"
 
-    - name: Ensure redmine secret token exists - {{ instance_name }}
+    - name: Ensure redmine secret token exists - {{ redmine_instance_name }}
       ansible.builtin.command: bash -lc "bundle exec rake generate_secret_token"
       args:
         chdir: '{{ redmine_app_dir }}'
         creates: '{{ redmine_token_file }}'
 
-    - name: Secure file permissions for secret_token.rb - {{ instance_name }}
+    - name: Secure file permissions for secret_token.rb - {{ redmine_instance_name }}
       ansible.builtin.file:
         path: '{{ redmine_token_file }}'
         owner: '{{ redmine_user }}'
         group: '{{ redmine_group }}'
         mode: '0640'
 
-    - name: Update redmine core database - {{ instance_name }}
-      ansible.builtin.command: bash -lc "{{ instance.update_prefix | default('') }}bundle exec rake db:migrate"
+    - name: Update redmine core database - {{ redmine_instance_name }}
+      ansible.builtin.command: bash -lc "{{ redmine_instance.update_prefix | default('') }}bundle exec rake db:migrate"
       args:
         chdir: '{{ redmine_app_dir }}'
       register: update_redmine_result
       changed_when: "update_redmine_result.rc != 0"
       when: mysql_replication_role is undefined or mysql_replication_role!='slave'
 
-    - name: Update redmine plugin database - {{ instance_name }}
-      ansible.builtin.command: bash -lc "{{ instance.update_prefix | default('') }}bundle exec rake redmine:plugins:migrate"
+    - name: Update redmine plugin database - {{ redmine_instance_name }}
+      ansible.builtin.command: bash -lc "{{ redmine_instance.update_prefix | default('') }}bundle exec rake redmine:plugins:migrate"
       args:
         chdir: '{{ redmine_app_dir }}'
       register: update_redmine_result
       changed_when: "update_redmine_result.rc != 0"
       when: mysql_replication_role is undefined or mysql_replication_role!='slave'
 
-    - name: Clear cache - {{ instance_name }}
+    - name: Clear cache - {{ redmine_instance_name }}
       ansible.builtin.command: bash -lc "bundle exec rake tmp:cache:clear"
       args:
         chdir: '{{ redmine_app_dir }}'

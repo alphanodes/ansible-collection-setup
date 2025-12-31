@@ -3,17 +3,17 @@
 
 environment '{{ redmine_rails_env }}'
 
-pidfile '{{ redmine_run_base_path + "/" + instance_name }}/redmine.pid'
-state_path '{{ redmine_run_base_path + "/" + instance_name }}/redmine.state'
-bind 'unix://{{ redmine_run_base_path + "/" + instance_name }}/redmine.sock'
+pidfile '{{ redmine_run_base_path + "/" + redmine_instance_name }}/redmine.pid'
+state_path '{{ redmine_run_base_path + "/" + redmine_instance_name }}/redmine.state'
+bind 'unix://{{ redmine_run_base_path + "/" + redmine_instance_name }}/redmine.sock'
 
 workers {{ real_puma_workers | int }}
-threads {{ instance.puma_min_threads | default(redmine_puma_min_threads) }}, {{ instance.puma_max_threads | default(redmine_puma_max_threads) }}
+threads {{ redmine_instance.puma_min_threads | default(redmine_puma_min_threads) }}, {{ redmine_instance.puma_max_threads | default(redmine_puma_max_threads) }}
 
 {% if real_puma_workers | int > 3 %}
 wait_for_less_busy_worker
 {% endif %}
-{% if instance.with_dmsf is defined and instance.with_dmsf %}
+{% if redmine_instance.with_dmsf is defined and redmine_instance.with_dmsf %}
 supported_http_methods(Puma::Const::SUPPORTED_HTTP_METHODS + ['PROPFIND', 'PROPPATCH', 'MKCOL', 'COPY', 'MOVE', 'LOCK', 'UNLOCK'])
 {% endif %}
 
@@ -29,4 +29,4 @@ preload_app!
 {% endif %}
 
 # === Puma control rack application ===
-activate_control_app 'unix://{{ redmine_run_base_path + "/" + instance_name }}/redmine-pumactl.sock', { no_token: true }
+activate_control_app 'unix://{{ redmine_run_base_path + "/" + redmine_instance_name }}/redmine-pumactl.sock', { no_token: true }

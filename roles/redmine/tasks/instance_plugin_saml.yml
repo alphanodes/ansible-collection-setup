@@ -4,14 +4,14 @@
   ansible.builtin.fail:
     msg: If with_saml is true, {{ redmine_saml_plugin_name }} cannot be in plugin list (because it is automatically added)
   when:
-    - instance.with_saml is defined
-    - instance.with_saml
-    - 'redmine_saml_plugin_name in instance.plugins'
+    - redmine_instance.with_saml is defined
+    - redmine_instance.with_saml
+    - 'redmine_saml_plugin_name in redmine_instance.plugins'
 
-- name: Enable SAML support - {{ instance_name }}
+- name: Enable SAML support - {{ redmine_instance_name }}
   when:
-    - instance.with_saml is defined
-    - instance.with_saml
+    - redmine_instance.with_saml is defined
+    - redmine_instance.with_saml
   block:
     - name: Include plugin task for saml plugin
       ansible.builtin.include_tasks: instance_plugin.yml
@@ -27,8 +27,8 @@
         mode: '0644'
         remote_src: true
 
-- name: Disable SAML support - {{ instance_name }}
+- name: Disable SAML support - {{ redmine_instance_name }}
   ansible.builtin.file:
     path: '{{ redmine_app_dir }}/config/initializers/saml.rb'
     state: absent
-  when: instance.with_saml is undefined or not instance.with_saml
+  when: redmine_instance.with_saml is undefined or not redmine_instance.with_saml

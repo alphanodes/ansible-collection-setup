@@ -238,5 +238,46 @@ redmine_async_queue_min_threads: 1
 redmine_async_queue_max_threads: 2
 redmine_async_queue_idletime: 600.seconds
 
-# used for creating redmine_home = redmine_base_dir/{{ instance_name }}
+# used for creating redmine_home = redmine_base_dir/{{ redmine_instance_name }}
 redmine_base_dir: '{{ srv_path }}'
+
+# nginx_mono locations for Redmine vhost
+# Base locations: root with try_files and @puma named location
+redmine_base_locations:
+  - name: "/"
+    raw_actions:
+      - "try_files $uri @puma;"
+  - name: "@puma"
+    proxy_pass: "http://{{ redmine_instance_name | default('redmine') | replace('-', '_') }}"
+    proxy_timeout: "{{ redmine_proxy_read_timeout }}"
+    proxy_buffers: "{{ redmine_proxy_buffers }}"
+    proxy_buffer_size: "{{ redmine_proxy_buffer_size }}"
+    proxy_busy_buffers_size: "{{ redmine_proxy_busy_buffers_size }}"
+
+# ActionCable WebSocket location for Agile plugin
+redmine_agile_locations:
+  - name: "/rup_cable_agile"
+    proxy_pass: "http://{{ redmine_instance_name | default('redmine') | replace('-', '_') }}/rup_cable_agile"
+    proxy_websocket: true
+    proxy_timeout: "{{ redmine_proxy_read_timeout }}"
+
+# Block registration location
+redmine_no_register_location:
+  - name: '~* "^/account/register"'
+    action: "deny all"
+
+# pghero location with basic auth (when access_protection is disabled)
+redmine_pghero_locations:
+  - name: "/pghero"
+    raw_actions:
+      - 'auth_basic "Restricted access only";'
+      - "auth_basic_user_file {{ htpasswd_file | default('/etc/nginx/.htpasswd_redmine') }};"
+      - "try_files $uri @puma;"
+
+# pg_extras location with basic auth (when access_protection is disabled)
+redmine_pg_extras_locations:
+  - name: "/pg_extras"
+    raw_actions:
+      - 'auth_basic "Restricted access only";'
+      - "auth_basic_user_file {{ htpasswd_file | default('/etc/nginx/.htpasswd_redmine') }};"
+      - "try_files $uri @puma;"

@@ -5,8 +5,8 @@
     path: '{{ item }}'
     state: absent
   loop:
-    - /etc/systemd/system/puma-{{ instance_name }}.service
-    - /etc/systemd/system/multi-user.target.wants/puma-{{ instance_name }}.service
+    - /etc/systemd/system/puma-{{ redmine_instance_name }}.service
+    - /etc/systemd/system/multi-user.target.wants/puma-{{ redmine_instance_name }}.service
   notify:
     - Reload systemd daemon
 
@@ -15,8 +15,8 @@
     path: '{{ item }}'
     state: absent
   loop:
-    - /etc/nginx/sites-available/{{ instance_name }}.conf
-    - /etc/nginx/sites-enabled/{{ instance_name }}.conf
+    - /etc/nginx/sites-available/{{ redmine_instance_name }}.conf
+    - /etc/nginx/sites-enabled/{{ redmine_instance_name }}.conf
   when: redmine_with_nginx
   notify:
     - Restart nginx

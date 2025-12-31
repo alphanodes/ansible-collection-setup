@@ -36,21 +36,6 @@
     name: rvm
     state: absent
 
-- name: Remove obsolete local bin scripts
-  ansible.builtin.file:
-    path: /usr/local/bin/{{ item }}
-    state: absent
-  loop:
-    - redmine_reminders
-    - redmine_receive_mails
-    - redmine_setup
-    - redmine_test
-
-- name: Remove obsolete cron file
-  ansible.builtin.file:
-    path: /etc/cron.d/puma_directories
-    state: absent
-
 - name: Include MySQL role
   ansible.builtin.include_role:
     name: alphanodes.setup.mysql

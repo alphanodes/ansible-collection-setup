@@ -1,5 +1,7 @@
 ---
-- name: Converge
+# Edge case tests for Redmine nginx_mono integration
+# Tests: custom port, vhost_users (basic auth), redirects
+- name: Converge Edge Cases
   hosts: all
   become: true
   vars:
@@ -29,34 +31,49 @@
       - name: redmine
         owner: redmine
 
-    # Redmine configuration - Full test with nginx_mono
+    # Redmine configuration
     redmine_with_nginx: true
     redmine_with_postgresql: true
     redmine_with_mysql: false
     redmine_with_memcache: false
     redmine_use_rvm_as_default: false
     redmine_repo_update: false
-
-    # Skip actual Redmine deployment but configure nginx
     redmine_skip_deploy: true
 
     redmine_instances:
-      redmine:
-        server_name: redmine.local
+      # Test: Custom port 8443
+      redmine_custom_port:
+        server_name: custom-port.local
+        server_port: 8443
         adapter: postgresql
         db_password: test_redmine_password
         letsencrypt_cert: false
         vhost_ssl_cert: redmine
-        vhost_default: true
         vhost_for_zabbix: false
-      redmine_agile:
-        server_name: agile.local
+
+      # Test: Basic Auth with vhost_users
+      redmine_protected:
+        server_name: protected.local
         adapter: postgresql
         db_password: test_redmine_password
         letsencrypt_cert: false
         vhost_ssl_cert: redmine
-        with_agile: true
         vhost_for_zabbix: false
+        vhost_users:
+          - user: testuser
+            password: testpassword123
+
+      # Test: With redirects
+      redmine_redirects:
+        server_name: main.local
+        adapter: postgresql
+        db_password: test_redmine_password
+        letsencrypt_cert: false
+        vhost_ssl_cert: redmine
+        vhost_for_zabbix: false
+        redirects:
+          - old.local
+          - legacy.local
 
   pre_tasks:
     - name: Update apt cache
@@ -65,47 +82,44 @@
         cache_valid_time: 600
       changed_when: false
 
-    - name: Create redmine system user
+    - name: Create redmine system users
       ansible.builtin.user:
-        name: redmine
+        name: "{{ item }}"
         system: true
-        home: /srv/redmine
+        home: "/srv/{{ item }}"
         shell: /bin/bash
         create_home: true
-
-    - name: Create redmine_agile system user
-      ansible.builtin.user:
-        name: redmine_agile
-        system: true
-        home: /srv/redmine_agile
-        shell: /bin/bash
-        create_home: true
+      loop:
+        - redmine_custom_port
+        - redmine_protected
+        - redmine_redirects
 
     - name: Create redmine directories
       ansible.builtin.file:
-        path: "{{ item }}"
+        path: "{{ item.path }}"
         state: directory
-        owner: redmine
-        group: redmine
+        owner: "{{ item.owner }}"
+        group: "{{ item.owner }}"
         mode: '0755'
       loop:
-        - /srv/redmine/redmine
-        - /srv/redmine/redmine/public
-        - /srv/redmine/files
-        - /run/redmine
+        - {path: /srv/redmine_custom_port/redmine, owner: redmine_custom_port}
+        - {path: /srv/redmine_custom_port/redmine/public, owner: redmine_custom_port}
+        - {path: /srv/redmine_protected/redmine, owner: redmine_protected}
+        - {path: /srv/redmine_protected/redmine/public, owner: redmine_protected}
+        - {path: /srv/redmine_redirects/redmine, owner: redmine_redirects}
+        - {path: /srv/redmine_redirects/redmine/public, owner: redmine_redirects}
 
-    - name: Create redmine_agile directories
+    - name: Create run directories
       ansible.builtin.file:
-        path: "{{ item }}"
+        path: "/run/{{ item }}"
         state: directory
-        owner: redmine_agile
-        group: redmine_agile
+        owner: "{{ item }}"
+        group: "{{ item }}"
         mode: '0755'
       loop:
-        - /srv/redmine_agile/redmine
-        - /srv/redmine_agile/redmine/public
-        - /srv/redmine_agile/files
-        - /run/redmine_agile
+        - redmine_custom_port
+        - redmine_protected
+        - redmine_redirects
 
     - name: Create dummy index.html for testing
       ansible.builtin.copy:
@@ -115,24 +129,26 @@
           <head><title>Redmine Test</title></head>
           <body><h1>Redmine Test Page</h1></body>
           </html>
-        dest: "{{ item }}"
+        dest: "/srv/{{ item }}/redmine/public/index.html"
         owner: root
         group: root
         mode: '0644'
       loop:
-        - /srv/redmine/redmine/public/index.html
-        - /srv/redmine_agile/redmine/public/index.html
+        - redmine_custom_port
+        - redmine_protected
+        - redmine_redirects
 
     - name: Create dummy puma socket for testing
       ansible.builtin.file:
-        path: "{{ item }}"
+        path: "/run/{{ item }}/redmine.sock"
         state: touch
         owner: root
         group: root
         mode: '0660'
       loop:
-        - /run/redmine/redmine.sock
-        - /run/redmine_agile/redmine.sock
+        - redmine_custom_port
+        - redmine_protected
+        - redmine_redirects
 
   tasks:
     - name: Include common role
@@ -164,64 +180,31 @@
         mode: '0644'
         content: |
           # Redmine nginx maps for protection rules
-          map $uri $with_api_limit_req {
-              default 0;
-              "~*^\/(issues|db|projects|time_entries|hrm\/attendances|enumerations\/time_entry_activities|trackers)\.(xml|json)" 1;
-          }
-
-          map $uri $with_form_limit_req {
-              default 0;
-              "~*^\/projects/.+/helpdesk_forms" 1;
-          }
-
-          map $with_api_limit_req $redmine_api_limit {
-              default '';
-              '1'     $binary_remote_addr;
-          }
-
-          map $with_form_limit_req $redmine_form_limit {
-              default '';
-              '1'     $binary_remote_addr;
-          }
-
           map $request_uri $bad_redmine_locations {
               default 0;
               /.well-known/security.txt 1;
               /Autodiscover/Autodiscover.xml 1;
-              /HNAP1 1;
-              /TP/ 1;
-              /_ignition/execute-solution 1;
-              /api/jsonws/invoke 1;
-              /solr/admin/info/system 1;
-              /data/admin/allowurl.txt 1;
-              /admin/config.php 1;
-              /home/favicon.ico 1;
-              /manager/html 1;
-              ~^\/(\.env|console|owa|changelog|changelog\.txt|system_api\.php|sitemap\.xml|deployment\-config\.json|sftp\-config\.json|ftpsync\.settings|\.ftpconfig|\.remote-sync\.json|htaccess\.fcgi\.example|dispatch\.fcgi\.example)$ 1;
-              ~^\/(themes|plugin_assets|images)\/.*\/\.+ 1;
-              ~^\/(themes|plugin_assets|images)\/.*\/(yarn\.lock|node_modules|package\.json) 1;
-              ~^\/index\.(php|pl|py|cgi|do|asp|aspx|action) 1;
-              ~^\/(wp\-content|phppath|phpmailer|vendor|public|html)\/ 1;
           }
 
-    - name: Include nginx_mono for redmine
+    # Test 1: Custom Port 8443
+    - name: Include nginx_mono for redmine_custom_port (port 8443)
       ansible.builtin.include_role:
         name: alphanodes.setup.nginx_mono
       vars:
         nginx_with_websocket: false
-        nginx_mono_service_name: redmine
+        nginx_mono_service_name: redmine_custom_port
         nginx_mono_service_enabled: true
         nginx_mono_service_config:
-          server_name: redmine.local
-          root: /srv/redmine/redmine/public
+          server_name: custom-port.local
+          server_port: 8443
+          root: /srv/redmine_custom_port/redmine/public
           index: index.html
-          vhost_default: true
           vhost_for_zabbix: false
           letsencrypt: false
           ssl_cert: redmine
-          upstream_name: redmine
+          upstream_name: redmine_custom_port
           upstream_servers:
-            - "unix:/run/redmine/redmine.sock"
+            - "unix:/run/redmine_custom_port/redmine.sock"
           custom_protection_rules:
             - "if ($bad_redmine_locations) { return 404; }"
           locations:
@@ -229,29 +212,30 @@
               raw_actions:
                 - "try_files $uri @puma;"
             - name: "@puma"
-              proxy_pass: "http://redmine"
+              proxy_pass: "http://redmine_custom_port"
               proxy_timeout: "120"
-              proxy_buffers: "16 128k"
-              proxy_buffer_size: "128k"
-              proxy_busy_buffers_size: "256k"
 
-    - name: Include nginx_mono for redmine_agile (with WebSocket)
+    # Test 2: Basic Auth with vhost_users
+    - name: Include nginx_mono for redmine_protected (with basic auth)
       ansible.builtin.include_role:
         name: alphanodes.setup.nginx_mono
       vars:
-        nginx_with_websocket: true
-        nginx_mono_service_name: redmine_agile
+        nginx_with_websocket: false
+        nginx_mono_service_name: redmine_protected
         nginx_mono_service_enabled: true
         nginx_mono_service_config:
-          server_name: agile.local
-          root: /srv/redmine_agile/redmine/public
+          server_name: protected.local
+          root: /srv/redmine_protected/redmine/public
           index: index.html
           vhost_for_zabbix: false
           letsencrypt: false
           ssl_cert: redmine
-          upstream_name: redmine_agile
+          upstream_name: redmine_protected
           upstream_servers:
-            - "unix:/run/redmine_agile/redmine.sock"
+            - "unix:/run/redmine_protected/redmine.sock"
+          vhost_users:
+            - user: testuser
+              password: testpassword123
           custom_protection_rules:
             - "if ($bad_redmine_locations) { return 404; }"
           locations:
@@ -259,12 +243,36 @@
               raw_actions:
                 - "try_files $uri @puma;"
             - name: "@puma"
-              proxy_pass: "http://redmine_agile"
+              proxy_pass: "http://redmine_protected"
               proxy_timeout: "120"
-              proxy_buffers: "16 128k"
-              proxy_buffer_size: "128k"
-              proxy_busy_buffers_size: "256k"
-            - name: "/rup_cable_agile"
-              proxy_pass: "http://redmine_agile/rup_cable_agile"
-              proxy_websocket: true
+
+    # Test 3: With redirects
+    - name: Include nginx_mono for redmine_redirects
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_with_websocket: false
+        nginx_mono_service_name: redmine_redirects
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: main.local
+          root: /srv/redmine_redirects/redmine/public
+          index: index.html
+          vhost_for_zabbix: false
+          letsencrypt: false
+          ssl_cert: redmine
+          upstream_name: redmine_redirects
+          upstream_servers:
+            - "unix:/run/redmine_redirects/redmine.sock"
+          redirects:
+            - old.local
+            - legacy.local
+          custom_protection_rules:
+            - "if ($bad_redmine_locations) { return 404; }"
+          locations:
+            - name: "/"
+              raw_actions:
+                - "try_files $uri @puma;"
+            - name: "@puma"
+              proxy_pass: "http://redmine_redirects"
               proxy_timeout: "120"

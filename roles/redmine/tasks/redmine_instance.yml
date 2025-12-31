@@ -9,7 +9,7 @@
     - mysql
   when: >
     redmine_with_mysql
-    and (instance.adapter is undefined or instance.adapter=='mysql2')
+    and (redmine_instance.adapter is undefined or redmine_instance.adapter=='mysql2')
     and (mysql_replication_role is undefined or mysql_replication_role!='slave')
 
 - name: Include postgresql tasks
@@ -18,10 +18,10 @@
     - postgresql
   when: >
     redmine_with_postgresql
-    and instance.adapter is defined
-    and instance.adapter=='postgresql'
+    and redmine_instance.adapter is defined
+    and redmine_instance.adapter=='postgresql'
 
-- name: Install instance git ignore file - {{ instance_name }}
+- name: Install instance git ignore file - {{ redmine_instance_name }}
   ansible.builtin.copy:
     src: git_ignore.txt
     dest: '{{ redmine_app_dir }}/.git/info/exclude'
@@ -29,7 +29,7 @@
     group: '{{ redmine_group }}'
     mode: '0644'
 
-- name: Ensure files directory exists - {{ instance_name }}
+- name: Ensure files directory exists - {{ redmine_instance_name }}
   ansible.builtin.file:
     path: '{{ redmine_files_dir }}'
     owner: '{{ redmine_user }}'
@@ -46,8 +46,8 @@
 - name: Include config tasks
   ansible.builtin.include_tasks: instance_mysql2postgres.yml
   when:
-    - instance.with_mysql2postgres is defined
-    - instance.with_mysql2postgres
+    - redmine_instance.with_mysql2postgres is defined
+    - redmine_instance.with_mysql2postgres
 
 - name: Include plugin tasks
   ansible.builtin.include_tasks: instance_plugins.yml
@@ -66,93 +66,39 @@
   tags:
     - redmine
     - update
-  when: instance.state is undefined or instance.state!='prepare_only'
+  when: redmine_instance.state is undefined or redmine_instance.state != 'prepare_only'
 
-- name: Run activate
-  when: instance.state is undefined or instance.state!='prepare_only'
-  block:
-    - name: Check trusted TLS cert
-      ansible.builtin.stat:
-        path: /etc/ssl/certs/{{ instance.vhost_ssl_cert | default(vhost_ssl_cert) }}_trusted.crt
-      register: trusted_cert
-      when:
-        - nginx_with_ssl
-        - instance.letsencrypt_cert is undefined or not instance.letsencrypt_cert
-
-    - name: Set TLS files
-      ansible.builtin.set_fact:
-        vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
-      when:
-        - nginx_with_ssl
-        - instance.letsencrypt_cert is undefined or not instance.letsencrypt_cert
-
-    - name: Update redmine vhost configuration - {{ instance_name }}
-      ansible.builtin.template:
-        src: etc/nginx/sites-available/redmine.j2
-        dest: /etc/nginx/sites-available/{{ instance_name }}.conf
-        mode: '0644'
-      notify: Restart nginx
-
-    - name: Redmine vhost user protection - {{ instance_name }}
-      community.general.htpasswd:
-        path: '{{ htpasswd_file }}'
-        name: '{{ item.user }}'
-        password: '{{ item.password }}'
-        owner: root
-        group: '{{ nginx_group }}'
-        mode: '0640'
-      loop: '{{ instance.vhost_users | default([]) }}'
-      when: instance.vhost_users is defined
-      notify: Restart nginx
-
-    - name: Redmine default vhost user protection - {{ instance_name }}
-      community.general.htpasswd:
-        path: '{{ htpasswd_file }}'
-        name: '{{ item.user }}'
-        password: '{{ item.password }}'
-        owner: root
-        group: '{{ nginx_group }}'
-        mode: '0640'
-      loop: '{{ redmine_default_vhost_users }}'
-      when:
-        - instance.vhost_users is undefined
-        - access_protection or active_pghero or active_pg_extras
-      notify: Restart nginx
-
-- name: Remove htpasswd file, if no base auth is in use - {{ instance_name }}
-  ansible.builtin.file:
-    path: '{{ htpasswd_file }}'
-    state: absent
+- name: Include nginx_mono configuration tasks
+  ansible.builtin.include_tasks: nginx.yml
+  tags:
+    - nginx
   when:
-    - instance.vhost_users is undefined
-    - not access_protection
-    - not active_pghero
-    - not active_pg_extras
-  notify: Restart nginx
+    - redmine_with_nginx
+    - redmine_instance.state is undefined or redmine_instance.state != 'prepare_only'
 
-- name: Install redmine robots.txt - {{ instance_name }}
+- name: Install redmine robots.txt - {{ redmine_instance_name }}
   ansible.builtin.copy:
     src: public/robots.txt
     dest: '{{ redmine_app_dir }}/public/robots.txt'
     owner: '{{ redmine_user }}'
     group: '{{ redmine_group }}'
     mode: '0644'
-  when: instance.use_robots_txt_from_redmine is undefined or not instance.use_robots_txt_from_redmine
+  when: redmine_instance.use_robots_txt_from_redmine is undefined or not redmine_instance.use_robots_txt_from_redmine
 
-- name: Cleanup redmine robots.txt - {{ instance_name }}
+- name: Cleanup redmine robots.txt - {{ redmine_instance_name }}
   ansible.builtin.file:
     path: '{{ redmine_app_dir }}/public/robots.txt'
     state: absent
   when:
-    - instance.use_robots_txt_from_redmine is defined
-    - instance.use_robots_txt_from_redmine
+    - redmine_instance.use_robots_txt_from_redmine is defined
+    - redmine_instance.use_robots_txt_from_redmine
 
 - name: Include systemd tasks
   ansible.builtin.include_tasks: instance_systemd.yml
-  when: instance.state is undefined or instance.state != 'prepare_only'
+  when: redmine_instance.state is undefined or redmine_instance.state != 'prepare_only'
 
 - name: Include prepare_only tasks
   ansible.builtin.include_tasks: instance_prepare_only.yml
   when:
-    - instance.state is defined
-    - instance.state == 'prepare_only'
+    - redmine_instance.state is defined
+    - redmine_instance.state == 'prepare_only'

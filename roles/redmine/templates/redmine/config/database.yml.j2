@@ -6,8 +6,8 @@
   database: {{ redmine_db_name }}
 {% if active_db_host != '' %}
   host: {{ active_db_host }}
-{% if instance.db_port is defined %}
-  port: {{ instance.db_port }}
+{% if redmine_instance.db_port is defined %}
+  port: {{ redmine_instance.db_port }}
 {% endif %}
 {% else %}
 {% if active_db_adapter == 'mysql' and active_mysql_socket != '' %}
@@ -15,57 +15,57 @@
 {% endif %}
 {% endif %}
   username: {{ redmine_db_user }}
-  password: "{{ instance.db_password | default(redmine_db_password) }}"
+  password: "{{ redmine_instance.db_password | default(redmine_db_password) }}"
   encoding: {{ active_db_encoding }}
 {% if active_db_adapter == 'postgresql' %}
   schema_search_path: public
   variables:
-    statement_timeout: <%= ENV["DB_STATEMENT_TIMEOUT"] || {{ instance.db_statement_timeout | default(redmine_db_statement_timeout) }} %>
+    statement_timeout: <%= ENV["DB_STATEMENT_TIMEOUT"] || {{ redmine_instance.db_statement_timeout | default(redmine_db_statement_timeout) }} %>
 {% else %}
   variables:
-    max_execution_time: <%= ENV["DB_STATEMENT_TIMEOUT"] || {{ instance.db_statement_timeout | default(redmine_db_statement_timeout) }} %>
+    max_execution_time: <%= ENV["DB_STATEMENT_TIMEOUT"] || {{ redmine_instance.db_statement_timeout | default(redmine_db_statement_timeout) }} %>
     transaction_isolation: "READ-COMMITTED"
 {% endif %}
-{% if instance.db_pool is defined or real_db_pool != 0 %}
-  pool: {{ instance.db_pool | default(real_db_pool) }}
+{% if redmine_instance.db_pool is defined or real_db_pool != 0 %}
+  pool: {{ redmine_instance.db_pool | default(real_db_pool) }}
 {% endif %}
-{% if instance.merge_projects_db_name is defined %}
+{% if redmine_instance.merge_projects_db_name is defined %}
 
 source_redmine:
-  adapter: {{ instance.merge_projects_adapter | default(active_db_adapter) }}
-  database: {{ instance.merge_projects_db_name }}
-{% if instance.merge_projects_db_host is defined %}
-  host: {{ instance.merge_projects_db_host }}
-{% if instance.merge_projects_db_port is defined %}
-  port: {{ instance.merge_projects_db_port }}
+  adapter: {{ redmine_instance.merge_projects_adapter | default(active_db_adapter) }}
+  database: {{ redmine_instance.merge_projects_db_name }}
+{% if redmine_instance.merge_projects_db_host is defined %}
+  host: {{ redmine_instance.merge_projects_db_host }}
+{% if redmine_instance.merge_projects_db_port is defined %}
+  port: {{ redmine_instance.merge_projects_db_port }}
 {% endif %}
 {% else %}
-  socket: {{ instance.merge_projects_socket | default(active_mysql_socket) }}
+  socket: {{ redmine_instance.merge_projects_socket | default(active_mysql_socket) }}
 {% endif %}
-  username: {{ instance.merge_projects_db_user }}
-  password: "{{ instance.merge_projects_db_password }}"
+  username: {{ redmine_instance.merge_projects_db_user }}
+  password: "{{ redmine_instance.merge_projects_db_password }}"
   encoding: utf8
-{% if instance.merge_projects_adapter is defined and instance.merge_projects_adapter=='postgresql' %}
+{% if redmine_instance.merge_projects_adapter is defined and redmine_instance.merge_projects_adapter=='postgresql' %}
   schema_search_path: public
 {% endif %}
 {% endif %}
-{% if redmine_with_hedgedoc and instance.with_hedgedoc is defined and instance.with_hedgedoc %}
+{% if redmine_with_hedgedoc and redmine_instance.with_hedgedoc is defined and redmine_instance.with_hedgedoc %}
 
 hedgedoc:
-  adapter: {{ instance.adapter | default(active_db_adapter) }}
+  adapter: {{ redmine_instance.adapter | default(active_db_adapter) }}
   database: {{ hedgedoc_db_name }}
 {% if active_db_host != '' %}
   host: {{ active_db_host }}
-{% if instance.db_port is defined %}
-  port: {{ instance.db_port }}
+{% if redmine_instance.db_port is defined %}
+  port: {{ redmine_instance.db_port }}
 {% endif %}
 {% else %}
-  socket: {{ instance.socket | default(active_mysql_socket) }}
+  socket: {{ redmine_instance.socket | default(active_mysql_socket) }}
 {% endif %}
   username: {{ hedgedoc_db_user }}
   password: "{{ hedgedoc_db_password }}"
   encoding: {{ active_db_encoding }}
-{% if instance.adapter is defined and instance.adapter=='postgresql' %}
+{% if redmine_instance.adapter is defined and redmine_instance.adapter=='postgresql' %}
   schema_search_path: public
 {% endif %}
 {% endif %}

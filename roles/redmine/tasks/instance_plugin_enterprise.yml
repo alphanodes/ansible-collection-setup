@@ -5,7 +5,7 @@
     msg: If with_alphanodes_enterprise_support is true, {{ redmine_enterprise_support_plugin_name }} cannot be in plugin list (because it is automatically added)
   when:
     - with_alphanodes_enterprise_support
-    - 'redmine_enterprise_support_plugin_name in instance.plugins'
+    - 'redmine_enterprise_support_plugin_name in redmine_instance.plugins'
 
 - name: Include plugin task for enterprise support plugin
   ansible.builtin.include_tasks: instance_plugin.yml

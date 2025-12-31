@@ -1,0 +1,91 @@
+---
+# nginx_mono integration for Redmine
+# This file is called for each Redmine instance to configure nginx
+
+- name: Check TLS trusted certificate file - {{ redmine_instance_name }}
+  ansible.builtin.stat:
+    path: /etc/ssl/certs/{{ redmine_instance.vhost_ssl_cert | default(vhost_ssl_cert) }}_trusted.crt
+  register: trusted_cert
+  when:
+    - nginx_with_ssl
+    - redmine_instance.letsencrypt_cert is undefined or not redmine_instance.letsencrypt_cert
+
+- name: Set TLS files - {{ redmine_instance_name }}
+  ansible.builtin.set_fact:
+    vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
+  when:
+    - nginx_with_ssl
+    - redmine_instance.letsencrypt_cert is undefined or not redmine_instance.letsencrypt_cert
+
+- name: Build locations list - {{ redmine_instance_name }}
+  ansible.builtin.set_fact:
+    redmine_locations: "{{ redmine_base_locations }}"
+
+- name: Add ActionCable location for Agile plugin - {{ redmine_instance_name }}
+  ansible.builtin.set_fact:
+    redmine_locations: "{{ redmine_locations + redmine_agile_locations }}"
+  when: active_agile
+
+- name: Add no-register location - {{ redmine_instance_name }}
+  ansible.builtin.set_fact:
+    redmine_locations: "{{ redmine_locations + redmine_no_register_location }}"
+  when: redmine_instance.no_access_for_register | default(redmine_no_access_for_register) | bool
+
+- name: Add pghero location - {{ redmine_instance_name }}
+  ansible.builtin.set_fact:
+    redmine_locations: "{{ redmine_locations + redmine_pghero_locations }}"
+  when:
+    - not access_protection
+    - active_pghero
+
+- name: Add pg_extras location - {{ redmine_instance_name }}
+  ansible.builtin.set_fact:
+    redmine_locations: "{{ redmine_locations + redmine_pg_extras_locations }}"
+  when:
+    - not access_protection
+    - active_pg_extras
+
+- name: Build rate limiting config - {{ redmine_instance_name }}
+  ansible.builtin.set_fact:
+    redmine_limit_req_list: >-
+      {{
+        (redmine_instance.nginx_api_limit_req is defined and redmine_instance.nginx_api_limit_req != '')
+        | ternary([redmine_instance.nginx_api_limit_req], [])
+        +
+        (redmine_instance.nginx_form_limit_req is defined and redmine_instance.nginx_form_limit_req != '')
+        | ternary([redmine_instance.nginx_form_limit_req], [])
+      }}
+
+- name: Setup nginx_mono for Redmine - {{ redmine_instance_name }}
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nginx_mono
+  vars:
+    nginx_with_websocket: "{{ active_agile }}"
+    nginx_mono_service_name: "{{ redmine_instance_name }}"
+    nginx_mono_service_enabled: true
+    nginx_mono_service_config:
+      server_name: "{{ redmine_instance.server_name | default(redmine_server_name) }}"
+      server_alias: "{{ redmine_instance.server_alias | default(omit) }}"
+      server_port: "{{ redmine_instance.server_port | default(omit) }}"
+      root: "{{ redmine_app_dir }}/public"
+      index: "index.html"
+      vhost_default: "{{ redmine_instance.vhost_default | default(redmine_vhost_default) }}"
+      vhost_for_zabbix: "{{ redmine_instance.vhost_for_zabbix | default(redmine_vhost_for_zabbix) }}"
+      vhost_users: "{{ redmine_instance.vhost_users | default(redmine_default_vhost_users) if (access_protection or active_pghero or active_pg_extras) else [] }}"
+      vhost_includes: "{{ redmine_instance.vhost_includes | default([]) }}"
+      letsencrypt: "{{ redmine_instance.letsencrypt_cert | default(false) }}"
+      letsencrypt_cert: "{{ redmine_instance.letsencrypt_cert_file | default(omit) }}"
+      letsencrypt_key: "{{ redmine_instance.letsencrypt_key_file | default(omit) }}"
+      ssl_cert: "{{ redmine_instance.vhost_ssl_cert | default(omit) }}"
+      redirects: "{{ redmine_instance.redirects | default([]) }}"
+      external_redirects: "{{ redmine_instance.external_redirects | default([]) }}"
+      error_404_enabled: true
+      auth_basic_realm: "{{ 'Restricted access only' if access_protection else omit }}"
+      upstream_name: "{{ redmine_instance_name | replace('-', '_') }}"
+      upstream_servers:
+        - "unix:{{ redmine_run_base_path }}/{{ redmine_instance_name }}/redmine.sock"
+      limit_req: "{{ redmine_limit_req_list if redmine_limit_req_list | length > 0 else omit }}"
+      limit_req_status: "{{ 422 if redmine_limit_req_list | length > 0 else omit }}"
+      custom_protection_rules:
+        - "if ($bad_redmine_locations) { return 404; }"
+      locations: "{{ redmine_locations }}"

@@ -9,7 +9,7 @@
   register: mysql2postgres_file
   delegate_to: localhost
 
-- name: Install mysql2postgres.yml - {{ instance_name }}
+- name: Install mysql2postgres.yml - {{ redmine_instance_name }}
   ansible.builtin.copy:
     src: '{{ mysql2postgres_file.stat.path }}'
     dest: '{{ redmine_config_dir }}/mysql2postgres.yml'

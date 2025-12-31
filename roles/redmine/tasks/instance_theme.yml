@@ -4,9 +4,9 @@
   ansible.builtin.set_fact:
     theme: "{{ redmine_themes_available[theme_name] }}"
 
-- name: Run remote deploy - {{ instance_name }}
+- name: Run remote deploy - {{ redmine_instance_name }}
   ansible.builtin.include_tasks: task_remote_deploy.yml
   vars:
     repo_url: '{{ theme[preferred_git_url] | default(theme["url"]) }}'
     repo_dest: '{{ redmine_theme_dir }}/{{ theme["target_dir"] | default(theme_name) }}'
-    repo_version: '{{ theme["dev_version"] if instance.plugin_version is defined and instance.plugin_version == "dev" and theme["dev_version"] is defined else theme["version"] }}'
+    repo_version: '{{ theme["dev_version"] if redmine_instance.plugin_version is defined and redmine_instance.plugin_version == "dev" and theme["dev_version"] is defined else theme["version"] }}'

@@ -76,20 +76,3 @@
   when: ansible_node_identifier | length > 0
   register: ansible_collections_result
   changed_when: "'-U' in (item.action | default('install'))"
-
-- name: Remove obsolete ansible roles
-  ansible.builtin.file:
-    path: "{{ ansible_node_etc_dir }}/roles"
-    state: absent
-
-- name: Remove obsolete ansible cronjobs
-  ansible.builtin.file:
-    path: /etc/cron.d/{{ item }}
-    state: absent
-  loop:
-    - system-watch
-    - redmine_reminder
-    - redmine_maintenance
-    - postgres_vacuum
-    - backup
-    - ansible_jobs

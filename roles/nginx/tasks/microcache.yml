@@ -9,8 +9,3 @@
         exec_start: /usr/bin/install -g {{ nginx_group }} -o {{ nginx_user }} -d {{ nginx_fastcgi_microcache_base_dir }}/{{ nginx_fastcgi_microcache_zone }}
         on_boot_sec: 5s
         before_service: nginx.service
-
-- name: Remove obsolete cron file for microcache directory
-  ansible.builtin.file:
-    path: /etc/cron.d/microcache_directories
-    state: absent

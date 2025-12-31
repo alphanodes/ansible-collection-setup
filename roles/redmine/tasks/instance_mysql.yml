@@ -5,7 +5,7 @@
     name: '{{ redmine_mysql_packages }}'
     state: present
 
-- name: Create redmine mysql database - {{ instance_name }}
+- name: Create redmine mysql database - {{ redmine_instance_name }}
   ansible.builtin.include_role:
     name: alphanodes.setup.mysql
     tasks_from: create_database.yml
@@ -14,21 +14,21 @@
     mysql_setup_db_collation: utf8_general_ci
     mysql_setup_db_encoding: utf8
 
-- name: Create redmine mysql database user - {{ instance_name }}
+- name: Create redmine mysql database user - {{ redmine_instance_name }}
   ansible.builtin.include_role:
     name: alphanodes.setup.mysql
     tasks_from: create_user.yml
   vars:
     mysql_setup_db_name: '{{ redmine_db_name }}'
     mysql_setup_user_name: '{{ redmine_db_user }}'
-    mysql_setup_user_password: '{{ instance.db_password | default(redmine_db_password) }}'
+    mysql_setup_user_password: '{{ redmine_instance.db_password | default(redmine_db_password) }}'
     mysql_setup_user_host: '{{ active_db_host }}'
     mysql_setup_salt_id: redmine
-  when: instance.db_skip_user_setup is undefined or not instance.db_skip_user_setup
+  when: redmine_instance.db_skip_user_setup is undefined or not redmine_instance.db_skip_user_setup
 
-- name: Run mysql pre commands - {{ instance_name }}
+- name: Run mysql pre commands - {{ redmine_instance_name }}
   community.mysql.mysql_query:
     login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
     login_db: '{{ redmine_db_name }}'
     query: '{{ item }}'
-  loop: '{{ instance.pre_db_commands | default([]) }}'
+  loop: '{{ redmine_instance.pre_db_commands | default([]) }}'

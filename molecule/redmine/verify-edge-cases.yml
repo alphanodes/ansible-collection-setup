@@ -1,0 +1,128 @@
+---
+- name: Verify Edge Cases
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Check nginx is running
+      ansible.builtin.command: systemctl is-active nginx
+      register: nginx_status
+      changed_when: false
+
+    - name: Assert nginx is active
+      ansible.builtin.assert:
+        that:
+          - nginx_status.rc == 0
+          - nginx_status.stdout == 'active'
+        fail_msg: "nginx is not running"
+
+    - name: Check nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax
+      changed_when: false
+
+    - name: Assert nginx configuration is valid
+      ansible.builtin.assert:
+        that:
+          - nginx_syntax.rc == 0
+        fail_msg: "nginx configuration is invalid"
+
+    # Test 1: Custom Port 8443
+    - name: Check custom port vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/redmine_custom_port.conf
+      register: custom_port_vhost
+
+    - name: Assert custom port vhost exists
+      ansible.builtin.assert:
+        that:
+          - custom_port_vhost.stat.exists
+        fail_msg: "custom port vhost configuration does not exist"
+
+    - name: Check custom port vhost contains port 8443
+      ansible.builtin.command: grep -q "listen 8443 ssl" /etc/nginx/sites-available/redmine_custom_port.conf
+      register: port_check
+      changed_when: false
+
+    - name: Assert port 8443 is configured
+      ansible.builtin.assert:
+        that:
+          - port_check.rc == 0
+        fail_msg: "port 8443 not found in vhost configuration"
+
+    # Test 2: Basic Auth
+    - name: Check protected vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/redmine_protected.conf
+      register: protected_vhost
+
+    - name: Assert protected vhost exists
+      ansible.builtin.assert:
+        that:
+          - protected_vhost.stat.exists
+        fail_msg: "protected vhost configuration does not exist"
+
+    - name: Check htpasswd file exists
+      ansible.builtin.stat:
+        path: /etc/nginx/.htpasswd_redmine_protected
+      register: htpasswd_file
+
+    - name: Assert htpasswd file exists
+      ansible.builtin.assert:
+        that:
+          - htpasswd_file.stat.exists
+        fail_msg: "htpasswd file does not exist at /etc/nginx/.htpasswd_redmine_protected"
+
+    - name: Check vhost contains auth_basic directive
+      ansible.builtin.command: grep -q "auth_basic" /etc/nginx/sites-available/redmine_protected.conf
+      register: auth_check
+      changed_when: false
+
+    - name: Assert auth_basic is configured
+      ansible.builtin.assert:
+        that:
+          - auth_check.rc == 0
+        fail_msg: "auth_basic directive not found in vhost"
+
+    # Test 3: Redirects
+    - name: Check redirects vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/redmine_redirects.conf
+      register: redirects_vhost
+
+    - name: Assert redirects vhost exists
+      ansible.builtin.assert:
+        that:
+          - redirects_vhost.stat.exists
+        fail_msg: "redirects vhost configuration does not exist"
+
+    - name: Check vhost contains redirect domains
+      ansible.builtin.command: grep -q "old.local" /etc/nginx/sites-available/redmine_redirects.conf
+      register: redirect_check
+      changed_when: false
+
+    - name: Assert redirect domain is configured
+      ansible.builtin.assert:
+        that:
+          - redirect_check.rc == 0
+        fail_msg: "redirect domain old.local not found in vhost"
+
+    - name: Check redirect returns 301
+      ansible.builtin.command: grep -q "return 301" /etc/nginx/sites-available/redmine_redirects.conf
+      register: redirect_301_check
+      changed_when: false
+
+    - name: Assert 301 redirect is configured
+      ansible.builtin.assert:
+        that:
+          - redirect_301_check.rc == 0
+        fail_msg: "301 redirect not found in vhost"
+
+    - name: Display verification summary
+      ansible.builtin.debug:
+        msg: |
+          Edge Cases Verification complete:
+          - nginx running with valid configuration
+          - Custom port 8443: vhost configured correctly
+          - Basic auth: htpasswd file and auth_basic directive present
+          - Redirects: redirect domains and 301 configured

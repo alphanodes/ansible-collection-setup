@@ -1,23 +1,23 @@
 # {{ managed_by_ansible }}
-{% if instance.use_logger is defined and instance.use_logger != 'syslog' %}
-gem '{{instance.use_logger}}'
+{% if redmine_instance.use_logger is defined and redmine_instance.use_logger != 'syslog' %}
+gem '{{redmine_instance.use_logger}}'
 {% endif %}
-{% if instance.use_logger is undefined or instance.use_logger == 'syslog' %}
+{% if redmine_instance.use_logger is undefined or redmine_instance.use_logger == 'syslog' %}
 # NOTE: Syslog::Logger without gem is used
 {% endif %}
-{% if instance.rails_env is undefined or (instance.rails_env != 'test') %}
+{% if redmine_instance.rails_env is undefined or (redmine_instance.rails_env != 'test') %}
 gem 'puma'
 {% endif %}
-{% if instance.with_memcache is defined and instance.with_memcache %}
-{% if instance.without_dalli is undefined or not instance.without_dalli %}
+{% if redmine_instance.with_memcache is defined and redmine_instance.with_memcache %}
+{% if redmine_instance.without_dalli is undefined or not redmine_instance.without_dalli %}
 gem 'dalli'
 {% endif %}
 {% endif %}
-{% if instance.with_mysql2postgres is defined and instance.with_mysql2postgres %}
+{% if redmine_instance.with_mysql2postgres is defined and redmine_instance.with_mysql2postgres %}
 gem 'mysql2postgres'
 {% endif %}
-{% if instance.gemfile_extras is defined %}
-{% for extra_line in instance.gemfile_extras %}
+{% if redmine_instance.gemfile_extras is defined %}
+{% for extra_line in redmine_instance.gemfile_extras %}
 {{ extra_line }}
 {% endfor %}
 {% endif %}

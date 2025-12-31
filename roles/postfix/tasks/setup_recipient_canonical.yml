@@ -24,11 +24,3 @@
     - /etc/postfix/recipient-canonical.db
   when: postfix_redirect_all_mails_to is undefined
   notify: Restart postfix
-
-- name: Remove obsolete canonical-redirect map files
-  ansible.builtin.file:
-    path: '{{ item }}'
-    state: absent
-  loop:
-    - /etc/postfix/canonical-redirect
-    - /etc/postfix/canonical-redirect.db

@@ -5,18 +5,18 @@
     name: '{{ redmine_postgresql_packages }}'
     state: present
 
-- name: Create redmine postgresql database users - {{ instance_name }}
+- name: Create redmine postgresql database users - {{ redmine_instance_name }}
   become_user: postgres
   become: true
   community.postgresql.postgresql_user:
     name: '{{ redmine_db_user }}'
-    password: '{{ instance.db_password | default(redmine_db_password) }}'
-    role_attr_flags: "{{ instance.rb_role_flags | default('NOSUPERUSER,CREATEDB') }}"
+    password: '{{ redmine_instance.db_password | default(redmine_db_password) }}'
+    role_attr_flags: "{{ redmine_instance.rb_role_flags | default('NOSUPERUSER,CREATEDB') }}"
     state: present
   no_log: '{{ hide_sensitive_data }}'
-  when: instance.db_skip_user_setup is undefined or not instance.db_skip_user_setup
+  when: redmine_instance.db_skip_user_setup is undefined or not redmine_instance.db_skip_user_setup
 
-- name: Be sure redmine postgresql databases exists - {{ instance_name }}
+- name: Be sure redmine postgresql databases exists - {{ redmine_instance_name }}
   become_user: postgres
   become: true
   community.postgresql.postgresql_db:
@@ -40,9 +40,9 @@
     login_db: '{{ redmine_db_name }}'
     state: "{{ 'present' if postgresql_with_pg_buffercache else 'absent' }}"
 
-- name: Run postgresql pre commands - {{ instance_name }}
+- name: Run postgresql pre commands - {{ redmine_instance_name }}
   community.postgresql.postgresql_query:
     query: '{{ item }}'
     login_user: postgres
     login_db: '{{ redmine_db_name }}'
-  loop: '{{ instance.pre_db_commands | default([]) }}'
+  loop: '{{ redmine_instance.pre_db_commands | default([]) }}'

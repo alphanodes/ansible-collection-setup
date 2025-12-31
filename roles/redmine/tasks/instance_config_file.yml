@@ -4,16 +4,16 @@
   ansible.builtin.template:
     src: redmine/config/{{ config_file.name }}.j2
     dest: '{{ redmine_config_dir }}/{{ config_file.name }}'
-    owner: '{{ instance_name }}'
-    group: '{{ instance_name }}'
+    owner: '{{ redmine_instance_name }}'
+    group: '{{ redmine_instance_name }}'
     mode: '{{ config_file.mode | default(omit) }}'
 
-- name: Get link info - {{ instance_name }}
+- name: Get link info - {{ redmine_instance_name }}
   ansible.builtin.stat:
     path: '{{ redmine_app_dir }}/config/{{ config_file.name }}'
   register: file_info
 
-- name: Remove redmine configuration file, if not a link - {{ instance_name }}
+- name: Remove redmine configuration file, if not a link - {{ redmine_instance_name }}
   ansible.builtin.file:
     path: '{{ redmine_app_dir }}/config/{{ config_file.name }}'
     state: absent
@@ -21,7 +21,7 @@
     - file_info.stat.islnk is defined
     - not file_info.stat.islnk
 
-- name: Symlinks to redmine/config - {{ instance_name }}
+- name: Symlinks to redmine/config - {{ redmine_instance_name }}
   ansible.builtin.file:
     src: '{{ redmine_config_dir }}/{{ config_file.name }}'
     dest: '{{ redmine_app_dir }}/config/{{ config_file.name }}'

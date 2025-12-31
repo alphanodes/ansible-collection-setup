@@ -1,0 +1,172 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Check nginx is running
+      ansible.builtin.command: systemctl is-active nginx
+      register: nginx_status
+      changed_when: false
+
+    - name: Assert nginx is active
+      ansible.builtin.assert:
+        that:
+          - nginx_status.rc == 0
+          - nginx_status.stdout == 'active'
+        fail_msg: "nginx is not running"
+
+    - name: Check nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax
+      changed_when: false
+
+    - name: Assert nginx configuration is valid
+      ansible.builtin.assert:
+        that:
+          - nginx_syntax.rc == 0
+        fail_msg: "nginx configuration is invalid"
+
+    - name: Check redmine vhost exists in sites-available
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/redmine.conf
+      register: redmine_vhost
+
+    - name: Assert redmine vhost exists
+      ansible.builtin.assert:
+        that:
+          - redmine_vhost.stat.exists
+        fail_msg: "redmine vhost configuration does not exist"
+
+    - name: Check redmine vhost is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/redmine.conf
+      register: redmine_enabled
+
+    - name: Assert redmine vhost is enabled
+      ansible.builtin.assert:
+        that:
+          - redmine_enabled.stat.exists
+          - redmine_enabled.stat.islnk
+        fail_msg: "redmine vhost is not enabled"
+
+    - name: Check redmine_agile vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/redmine_agile.conf
+      register: redmine_agile_vhost
+
+    - name: Assert redmine_agile vhost exists
+      ansible.builtin.assert:
+        that:
+          - redmine_agile_vhost.stat.exists
+        fail_msg: "redmine_agile vhost configuration does not exist"
+
+    - name: Check redmine vhost contains upstream block
+      ansible.builtin.command: grep -q "upstream redmine" /etc/nginx/sites-available/redmine.conf
+      register: upstream_check
+      changed_when: false
+
+    - name: Assert upstream block exists
+      ansible.builtin.assert:
+        that:
+          - upstream_check.rc == 0
+        fail_msg: "upstream block not found in redmine vhost"
+
+    - name: Check redmine vhost contains unix socket
+      ansible.builtin.command: grep -q "unix:/run/redmine/redmine.sock" /etc/nginx/sites-available/redmine.conf
+      register: socket_check
+      changed_when: false
+
+    - name: Assert unix socket configuration exists
+      ansible.builtin.assert:
+        that:
+          - socket_check.rc == 0
+        fail_msg: "unix socket configuration not found"
+
+    - name: Check redmine vhost contains @puma named location
+      ansible.builtin.command: grep -q "location @puma" /etc/nginx/sites-available/redmine.conf
+      register: puma_location_check
+      changed_when: false
+
+    - name: Assert @puma named location exists
+      ansible.builtin.assert:
+        that:
+          - puma_location_check.rc == 0
+        fail_msg: "@puma named location not found"
+
+    - name: Check redmine vhost contains try_files to @puma
+      ansible.builtin.command: grep -q "try_files.*@puma" /etc/nginx/sites-available/redmine.conf
+      register: try_files_check
+      changed_when: false
+
+    - name: Assert try_files directive exists
+      ansible.builtin.assert:
+        that:
+          - try_files_check.rc == 0
+        fail_msg: "try_files directive with @puma not found"
+
+    - name: Check redmine vhost contains proxy_buffers configuration
+      ansible.builtin.command: grep -q "proxy_buffers 16 128k" /etc/nginx/sites-available/redmine.conf
+      register: buffers_check
+      changed_when: false
+
+    - name: Assert proxy_buffers configuration exists
+      ansible.builtin.assert:
+        that:
+          - buffers_check.rc == 0
+        fail_msg: "proxy_buffers configuration not found"
+
+    - name: Check redmine_agile vhost contains WebSocket location
+      ansible.builtin.command: grep -q "/rup_cable_agile" /etc/nginx/sites-available/redmine_agile.conf
+      register: agile_ws_check
+      changed_when: false
+
+    - name: Assert ActionCable WebSocket location exists
+      ansible.builtin.assert:
+        that:
+          - agile_ws_check.rc == 0
+        fail_msg: "ActionCable WebSocket location not found in redmine_agile"
+
+    - name: Check redmine_agile contains WebSocket upgrade headers
+      ansible.builtin.command: grep -q "Upgrade.*http_upgrade" /etc/nginx/sites-available/redmine_agile.conf
+      register: upgrade_check
+      changed_when: false
+
+    - name: Assert WebSocket upgrade headers exist
+      ansible.builtin.assert:
+        that:
+          - upgrade_check.rc == 0
+        fail_msg: "WebSocket upgrade headers not found"
+
+    - name: Check bad_redmine_locations protection rule
+      ansible.builtin.command: grep -q "bad_redmine_locations" /etc/nginx/sites-available/redmine.conf
+      register: protection_check
+      changed_when: false
+
+    - name: Assert protection rule exists
+      ansible.builtin.assert:
+        that:
+          - protection_check.rc == 0
+        fail_msg: "bad_redmine_locations protection rule not found"
+
+    - name: Check PostgreSQL is running
+      ansible.builtin.command: systemctl is-active postgresql
+      register: pg_status
+      changed_when: false
+
+    - name: Assert PostgreSQL is active
+      ansible.builtin.assert:
+        that:
+          - pg_status.rc == 0
+          - pg_status.stdout == 'active'
+        fail_msg: "PostgreSQL is not running"
+
+    - name: Display verification summary
+      ansible.builtin.debug:
+        msg: |
+          ✅ Verification complete:
+          - nginx is running with valid configuration
+          - redmine vhost configured with upstream and named location
+          - redmine_agile vhost configured with ActionCable WebSocket
+          - Custom protection rules applied
+          - PostgreSQL database running

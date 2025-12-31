@@ -1,14 +1,14 @@
 ---
 
-- name: Ensure redmine instance configuration directory exists - {{ instance_name }}
+- name: Ensure redmine instance configuration directory exists - {{ redmine_instance_name }}
   ansible.builtin.file:
     path: '{{ redmine_config_dir }}'
-    owner: '{{ instance_name }}'
-    group: '{{ instance_name }}'
+    owner: '{{ redmine_instance_name }}'
+    group: '{{ redmine_instance_name }}'
     mode: '0755'
     state: directory
 
-- name: Configure Gemfile.local - {{ instance_name }}
+- name: Configure Gemfile.local - {{ redmine_instance_name }}
   ansible.builtin.template:
     src: redmine/Gemfile.j2
     dest: '{{ redmine_app_dir }}/Gemfile.local'
@@ -17,10 +17,10 @@
     mode: '0644'
     validate: ruby -c %s
 
-- name: Setup sudoer for zabbix - {{ instance_name }}
+- name: Setup sudoer for zabbix - {{ redmine_instance_name }}
   ansible.builtin.template:
     src: etc/sudoers.d/redmine.j2
-    dest: /etc/sudoers.d/{{ instance_name }}
+    dest: /etc/sudoers.d/{{ redmine_instance_name }}
     mode: '0440'
 
 - name: Include redmine configuration file tasks
@@ -30,22 +30,22 @@
     loop_var: config_file
 
 - name: Merge projects block
-  when: instance.merge_projects_config is defined
+  when: redmine_instance.merge_projects_config is defined
   block:
-    - name: Merge_projects configuration file - {{ instance_name }}
+    - name: Merge_projects configuration file - {{ redmine_instance_name }}
       ansible.builtin.copy:
-        src: 'merge_projects/{{ instance.merge_projects_config }}'
+        src: 'merge_projects/{{ redmine_instance.merge_projects_config }}'
         dest: '{{ redmine_config_dir }}/merge_projects.rb'
-        owner: '{{ instance_name }}'
-        group: '{{ instance_name }}'
+        owner: '{{ redmine_instance_name }}'
+        group: '{{ redmine_instance_name }}'
         mode: '0640'
 
-    - name: Get link info - {{ instance_name }}
+    - name: Get link info - {{ redmine_instance_name }}
       ansible.builtin.stat:
         path: '{{ redmine_app_dir }}/config/merge_projects.rb'
       register: file_info
 
-    - name: Remove merge_projects file, if not a link - {{ instance_name }}
+    - name: Remove merge_projects file, if not a link - {{ redmine_instance_name }}
       ansible.builtin.file:
         path: '{{ redmine_app_dir }}/config/merge_projects.rb'
         state: absent
@@ -53,7 +53,7 @@
         - file_info.stat.islnk is defined
         - not file_info.stat.islnk
 
-    - name: Symlinks to merge_projects configuration file - {{ instance_name }}
+    - name: Symlinks to merge_projects configuration file - {{ redmine_instance_name }}
       ansible.builtin.file:
         src: '{{ redmine_config_dir }}/merge_projects.rb'
         dest: '{{ redmine_app_dir }}/config/merge_projects.rb'
@@ -62,9 +62,9 @@
       become_user: '{{ redmine_user }}'
 
 - name: Database configuration block
-  when: instance.no_db_config_file is undefined or not instance.no_db_config_file
+  when: redmine_instance.no_db_config_file is undefined or not redmine_instance.no_db_config_file
   block:
-    - name: Update redmine database configuration - {{ instance_name }}
+    - name: Update redmine database configuration - {{ redmine_instance_name }}
       ansible.builtin.template:
         src: redmine/config/database.yml.j2
         dest: '{{ redmine_config_dir }}/database.yml'
@@ -72,12 +72,12 @@
         group: '{{ redmine_group }}'
         mode: '0640'
 
-    - name: Get link info - {{ instance_name }}
+    - name: Get link info - {{ redmine_instance_name }}
       ansible.builtin.stat:
         path: '{{ redmine_app_dir }}/config/database.yml'
       register: file_info
 
-    - name: Remove database configuration file, if not a link - {{ instance_name }}
+    - name: Remove database configuration file, if not a link - {{ redmine_instance_name }}
       ansible.builtin.file:
         path: '{{ redmine_app_dir }}/config/database.yml'
         state: absent
@@ -85,7 +85,7 @@
         - file_info.stat.islnk is defined
         - not file_info.stat.islnk
 
-    - name: Symlinks to database configuration - {{ instance_name }}
+    - name: Symlinks to database configuration - {{ redmine_instance_name }}
       ansible.builtin.file:
         src: '{{ redmine_config_dir }}/database.yml'
         dest: '{{ redmine_app_dir }}/config/database.yml'

@@ -43,11 +43,6 @@
     dest: /etc/drush/aliases.drushrc.php
     mode: '0644'
 
-- name: Remove obsolete sync configuration
-  ansible.builtin.file:
-    path: /etc/drush/aliases.drushrc.sync.php
-    state: absent
-
 - name: Install reset script
   ansible.builtin.template:
     src: reset.sh.j2

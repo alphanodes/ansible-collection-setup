@@ -1,13 +1,13 @@
 ---
 
-- name: Set plugin - {{ instance_name }}
+- name: Set plugin - {{ redmine_instance_name }}
   ansible.builtin.set_fact:
     plugin: "{{ redmine_plugins_available[plugin_name] }}"
 
 - name: Check for plugin conflicts for {{ plugin_name }}
   ansible.builtin.fail:
     msg: '{{ plugin_name }} has a conflict with {{ item }}'
-  when: item in instance.plugins
+  when: item in redmine_instance.plugins
   loop: '{{ plugin["conflict_plugins"] | default([]) }}'
 
 - name: Remove unwanted plugins for {{ plugin_name }}
@@ -35,12 +35,12 @@
     - redmine_plugin_remove_test_files
     - plugin["product"] is defined and plugin["product"]
 
-- name: Run remote deploy for plugin - {{ instance_name }}
+- name: Run remote deploy for plugin - {{ redmine_instance_name }}
   ansible.builtin.include_tasks: task_remote_deploy.yml
   vars:
     repo_url: '{{ plugin[preferred_git_url] | default(plugin["url"]) }}'
     repo_dest: '{{ plugin_target_path }}'
-    repo_version: '{{ plugin["dev_version"] if instance.plugin_version is defined and instance.plugin_version == "dev" and plugin["dev_version"] is defined else plugin["version"] }}'
+    repo_version: '{{ plugin["dev_version"] if redmine_instance.plugin_version is defined and redmine_instance.plugin_version == "dev" and plugin["dev_version"] is defined else plugin["version"] }}'
 
 - name: Remove test files for {{ plugin_name }}
   ansible.builtin.file:

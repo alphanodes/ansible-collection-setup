@@ -1,7 +1,7 @@
 ---
 
 # see https://www.redmine.org/boards/1/topics/33669?page=2
-- name: Disable IMAP ssl verification - {{ instance_name }}
+- name: Disable IMAP ssl verification - {{ redmine_instance_name }}
   ansible.builtin.copy:
     src: config/initializers/bypass_ssl_verification.rb
     dest: '{{ redmine_app_dir }}/config/initializers/bypass_ssl_verification.rb'
@@ -9,16 +9,16 @@
     group: '{{ redmine_group }}'
     mode: '0644'
   when:
-    - instance.disable_imap_ssl_verify is defined
-    - instance.disable_imap_ssl_verify
+    - redmine_instance.disable_imap_ssl_verify is defined
+    - redmine_instance.disable_imap_ssl_verify
 
-- name: Enable IMAP ssl verification - {{ instance_name }}
+- name: Enable IMAP ssl verification - {{ redmine_instance_name }}
   ansible.builtin.file:
     path: '{{ redmine_app_dir }}/config/initializers/bypass_ssl_verification.rb'
     state: absent
-  when: instance.disable_imap_ssl_verify is undefined or not instance.disable_imap_ssl_verify
+  when: redmine_instance.disable_imap_ssl_verify is undefined or not redmine_instance.disable_imap_ssl_verify
 
-- name: Enable lograte - {{ instance_name }}
+- name: Enable lograte - {{ redmine_instance_name }}
   ansible.builtin.template:
     src: redmine/config/initializers/lograge.rb.j2
     dest: '{{ redmine_app_dir }}/config/initializers/lograge.rb'
@@ -27,11 +27,11 @@
     mode: '0640'
     validate: ruby -c %s
   when:
-    - instance.use_logger is defined
-    - instance.use_logger == 'lograge'
+    - redmine_instance.use_logger is defined
+    - redmine_instance.use_logger == 'lograge'
 
-- name: Disable lograte - {{ instance_name }}
+- name: Disable lograte - {{ redmine_instance_name }}
   ansible.builtin.file:
     path: '{{ redmine_app_dir }}/config/initializers/lograte.rb'
     state: absent
-  when: instance.use_logger is undefined or instance.use_logger != 'lograge'
+  when: redmine_instance.use_logger is undefined or redmine_instance.use_logger != 'lograge'

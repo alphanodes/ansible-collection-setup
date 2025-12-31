@@ -48,26 +48,12 @@
     mode: '0644'
   notify: Restart fail2ban
 
-- name: Remove obsolete actions
-  ansible.builtin.file:
-    path: '{{ fail2ban_action_path }}/{{ item }}'
-    state: absent
-  loop:
-    - iptables-http.conf
-    - rocketchat.conf
-    - rocketchat.sh
-
 - name: Install filters
   ansible.builtin.copy:
     src: filter.d/
     dest: '{{ fail2ban_filter_path }}'
     mode: '0644'
   notify: Restart fail2ban
-
-- name: Remove obsolete filters
-  ansible.builtin.file:
-    path: '{{ fail2ban_filter_path }}/owncloud-login.conf'
-    state: absent
 
 - name: Install sudoer access for zabbix
   ansible.builtin.copy:
