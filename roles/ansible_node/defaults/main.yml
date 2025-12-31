@@ -111,3 +111,13 @@ ansible_node_redmine_timer_service: puma-{{ redmine_task_instance | default('red
 
 ansible_node_playbook_host: 127.0.0.1
 ansible_node_playbook_ansible_python_interpreter: python3
+
+# MySQL settings for backup playbook template
+# These are needed because backup role uses mysql_root_plugin and mysql_socket
+# Backend selection must match mysql role setting (mysql or mariadb)
+mysql_backend: mysql
+# Authentication plugin - automatically set based on backend
+# MySQL (Oracle): caching_sha2_password, MariaDB: mysql_native_password
+# Can be overridden to auth_socket/unix_socket for socket authentication
+mysql_root_plugin: "{{ 'mysql_native_password' if mysql_backend == 'mariadb' else 'caching_sha2_password' }}"
+mysql_socket: /run/mysqld/mysqld.sock
