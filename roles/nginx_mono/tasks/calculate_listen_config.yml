@@ -17,7 +17,9 @@
 
 - name: Determine if this service/instance should use reuseport
   ansible.builtin.set_fact:
-    service_uses_reuseport: "{{ nginx_reuseport_primary_service | default('') == _listen_calc_name }}"
+    # If nginx_reuseport_primary_service is not defined, all services get reuseport (nginx handles dedup)
+    # If defined, only the specified service gets reuseport
+    service_uses_reuseport: "{{ nginx_reuseport_primary_service is not defined or nginx_reuseport_primary_service == _listen_calc_name }}"
   when: nginx_with_reuseport | default(false)
 
 - name: Set service_uses_reuseport to false if reuseport disabled

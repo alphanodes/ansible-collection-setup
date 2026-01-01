@@ -73,7 +73,7 @@
   ansible.builtin.include_role:
     name: alphanodes.setup.nginx_mono
   vars:
-    nginx_with_websocket: "{{ active_agile }}"
+    nginx_with_websocket: "{{ nginx_with_websocket | default(false) or active_agile }}"
     nginx_mono_service_name: "{{ redmine_instance_name }}"
     nginx_mono_service_enabled: "{{ redmine_instance.state is undefined or redmine_instance.state == 'active' }}"
     nginx_mono_service_config:

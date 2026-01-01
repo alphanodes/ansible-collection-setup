@@ -119,13 +119,12 @@ http {
     ## see http://serverfault.com/questions/587386/an-upstream-response-is-buffered-to-a-temporary-file
     proxy_max_temp_file_size 0;
 
-{% if nginx_with_websocket %}
+    # WebSocket support map - always included as it has no overhead when unused
     # As suggested in https://nginx.org/en/docs/http/websocket.html
     map $http_upgrade $connection_upgrade {
         default upgrade;
         '' close;
     }
-{% endif %}
 
     # Map for proxy Host header - preserves port for non-standard ports
     # Uses $host instead of $http_host for HTTP/3 compatibility (no Host header in HTTP/3)
