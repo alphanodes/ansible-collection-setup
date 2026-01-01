@@ -386,6 +386,138 @@ All PHP-FPM roles using nginx_mono are automatically fixed:
 
 **File changed:** `roles/nginx_mono/templates/includes/fpm.inc.j2`
 
+### vhost_default with server_name Behavior (2025-12-31)
+
+**Critical Learning**: When `vhost_default: true` AND `server_name` is defined, nginx_mono
+uses a separate catch-all redirect block instead of adding `default_server` to the main vhost.
+
+#### The Pattern
+
+```nginx
+# Catch-all redirect (has default_server)
+server {
+  listen 80 default_server;
+  listen 443 ssl default_server;
+  server_name _;
+  return 301 https://canonical.example.com$request_uri;
+}
+
+# Main vhost (NO default_server - specific server_name)
+server {
+  listen 443 ssl;
+  server_name canonical.example.com;
+  # ... actual configuration
+}
+```
+
+#### Why This Matters
+
+- `default_server` applies to the **listener**, not the server_name
+- A catch-all block handles ALL unknown hosts and redirects to canonical
+- The main vhost only handles requests for its specific `server_name`
+- This is the correct pattern for production servers with a canonical hostname
+
+#### Implementation
+
+nginx_mono's `default_host_redirect.inc.j2` template creates the catch-all block when:
+
+- `vhost_default: true` is set
+- `server_name` is defined (not just `_`)
+
+The `use_redirect_block` variable coordinates between templates to avoid conflicts.
+
+### Duplicate default_server Prevention (2025-12-31)
+
+**Critical Learning**: Only ONE `default_server` directive is allowed per port in nginx!
+
+#### The Problem
+
+When using `vhost_default: true` with a specific `server_name`, nginx_mono creates
+a catch-all redirect block with `default_server`. But `port_redirect.inc.j2` was
+ALSO adding `default_server` to the HTTP→HTTPS redirect block:
+
+```nginx
+# ERROR: Two default_server on port 80!
+server {
+  listen 80 default_server;  # catch-all redirect
+  server_name _;
+}
+server {
+  listen 80 default_server;  # port redirect - DUPLICATE!
+  server_name example.com;
+}
+```
+
+**nginx error**: `a duplicate default server for 0.0.0.0:80`
+
+#### The Solution
+
+`port_redirect.inc.j2` now checks `use_redirect_block` before adding `default_server`:
+
+```jinja2
+{% set default_server_flag = '' if use_redirect_block | default(false)
+   else (' default_server' if nginx_listen_config.default_server else '') %}
+```
+
+**Rule**: When `use_redirect_block` is true, the catch-all block already has
+`default_server`, so port redirect blocks must NOT add it.
+
+### Legacy Proxy Headers for Frontend Proxy (2025-12-31)
+
+**Critical Learning**: Customers with a frontend nginx proxy (nginx → nginx → app)
+require specific proxy header settings to avoid redirect loops and mixed content warnings.
+
+#### The Problem
+
+With standard nginx_mono settings:
+
+```nginx
+proxy_set_header X-Forwarded-Proto $scheme;  # becomes "http" on backend!
+```
+
+When a frontend proxy connects to the backend via HTTP:
+
+1. Frontend receives HTTPS request from client
+2. Frontend proxies to backend via HTTP
+3. Backend nginx sets `X-Forwarded-Proto http` (because `$scheme` = http)
+4. Application thinks request is HTTP → generates HTTP URLs or redirects
+
+**Symptoms:**
+
+- Redirect loops (app redirects to HTTPS, but header says HTTP)
+- Mixed content warnings in browser
+- Broken asset URLs
+
+#### The Solution
+
+nginx_mono now supports explicit proxy header overrides:
+
+```yaml
+locations:
+  - name: "@puma"
+    proxy_pass: "http://unix:/run/app/app.sock"
+    # Legacy-compatible settings for frontend proxy scenarios
+    proxy_forwarded_proto: "https"   # Hardcode instead of $scheme
+    proxy_ssl_header: true           # Add X-Forwarded-Ssl: on
+    proxy_redirect: "off"            # Don't rewrite Location headers
+```
+
+**Generated nginx config:**
+
+```nginx
+proxy_set_header X-Forwarded-Proto https;
+proxy_set_header X-Forwarded-Ssl on;
+proxy_redirect off;
+```
+
+#### When to Use
+
+- Multi-layer nginx setups (frontend → backend → app)
+- Backend receives HTTP but serves HTTPS content
+- Rails/Puma applications behind reverse proxy
+
+**File changed:** `roles/nginx_mono/templates/includes/location.inc.j2`
+
 ### Use raw_actions Instead of New Variables (2025-12)
 
 **Design Principle**: Before adding new variables to nginx_mono, check if the
@@ -451,12 +583,12 @@ Don't add new variables for:
 | nextcloud | 2024-11 | Cloud storage |
 | radicale | 2024-11 | CalDAV/CardDAV |
 | vimbadmin | 2025-12 | Email admin, PHP-FPM pattern, HTTP_HOST fix tested |
+| redmine | 2025-12-31 | Complex multi-instance, Puma proxy, ActionCable WebSocket, legacy proxy headers |
 
 ### Pending Migrations
 
 | Role | Complexity | Key Challenges |
 | ---- | ---------- | -------------- |
-| **redmine** | HIGH | Multiple instances (`redmine_instances`), complex vhost with many locations, custom proxy settings, socket paths |
 | drupal | MEDIUM | Multiple instances pattern, FPM configuration |
 | gitlab | MEDIUM | Complex reverse proxy, WebSocket for action cable |
 | zabbix_web | LOW | PHP-FPM pattern |
@@ -464,26 +596,33 @@ Don't add new variables for:
 
 ## Complex Role Analysis
 
-### redmine (Highest Complexity)
+### redmine (Completed ✅ 2025-12-31)
 
-**Key Challenges:**
+**Migration completed successfully!**
 
-1. **Multiple Instances**: Uses `redmine_instances` list, each with own vhost
-2. **Complex Locations**: Puma socket, assets, plugins, uploads
-3. **Proxy Settings**: Custom proxy headers for ActionCable WebSocket
-4. **SSL Variations**: Some instances may use custom ports (e.g., ATU customer with 8443)
+**Key Challenges Solved:**
 
-**Current vhost template features to support:**
+1. **Multiple Instances**: Uses `redmine_instances` list, variable renamed to `redmine_instance`
+2. **Complex Locations**: Base locations + agile locations merged dynamically
+3. **Proxy Settings**: Legacy proxy headers (`proxy_forwarded_proto`, `proxy_ssl_header`) for frontend proxy scenarios
+4. **SSL Variations**: Custom port 8443 tested in edge cases
 
-- `location ~* ^/(assets|images|javascripts|stylesheets|plugin_assets)/`
-- Puma socket proxy configuration
-- Custom `proxy_pass` for ActionCable WebSocket
+**Implementation Details:**
 
-**Migration Strategy:**
+- Locations defined in `defaults/main.yml` as `redmine_base_locations` and `redmine_agile_locations`
+- `tasks/nginx.yml` uses `include_role: nginx_mono` with merged locations
+- Legacy proxy headers ensure compatibility with frontend proxy customers
+- `redmine_maps.conf` template remains for Redmine-specific nginx maps
 
-1. Ensure nginx_mono supports all location patterns
-2. Handle instance-based configuration properly
-3. Test with custom SSL ports
+**Files Changed:**
+
+- `meta/main.yml` - nginx dependency removed
+- `tasks/nginx.yml` - NEW, nginx_mono integration
+- `tasks/redmine_instance.yml` - template replaced with include_tasks
+- `defaults/main.yml` - location definitions added
+- Deleted: `templates/etc/nginx/sites-available/redmine.j2`, `puma.inc.j2`
+
+**Documentation:** `/Users/alex/dev/ansible_sysconfig/docs/redmine-nginx-mono-migration.md`
 
 ### drupal
 
@@ -523,10 +662,11 @@ Based on migration analysis, nginx_mono must support:
 
 ### Features to Implement/Verify
 
-- [ ] Multiple vhost instances from same role (for Redmine)
+- [x] Multiple vhost instances from same role (tested with Redmine)
+- [x] Puma socket proxy configuration (tested with Redmine)
+- [x] Legacy proxy headers for frontend proxy (tested with Redmine)
 - [ ] Complex rewrite rules
 - [ ] Upstream blocks for multiple backends
-- [ ] Puma socket proxy configuration
 
 ## Testing Requirements
 

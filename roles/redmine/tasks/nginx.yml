@@ -19,13 +19,19 @@
     - redmine_instance.letsencrypt is undefined or not redmine_instance.letsencrypt
     - redmine_instance.vhost_ssl_cert is defined
 
-- name: Build locations list - {{ redmine_instance_name }}
+- name: Define SSL proxy headers - {{ redmine_instance_name }}
   ansible.builtin.set_fact:
-    redmine_locations: "{{ redmine_base_locations }}"
+    _ssl_headers: "{{ {'proxy_forwarded_proto': 'https', 'proxy_ssl_header': true} if (nginx_with_ssl | default(true)) else {} }}"
+
+- name: Build base locations with conditional SSL headers - {{ redmine_instance_name }}
+  ansible.builtin.set_fact:
+    redmine_locations:
+      - "{{ redmine_base_locations[0] }}"
+      - "{{ redmine_base_locations[1] | combine(_ssl_headers) }}"
 
 - name: Add ActionCable location for Agile plugin - {{ redmine_instance_name }}
   ansible.builtin.set_fact:
-    redmine_locations: "{{ redmine_locations + redmine_agile_locations }}"
+    redmine_locations: "{{ redmine_locations + [redmine_agile_locations[0] | combine(_ssl_headers)] }}"
   when: active_agile
 
 - name: Add no-register location - {{ redmine_instance_name }}
