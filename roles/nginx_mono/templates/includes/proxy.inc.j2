@@ -1,6 +1,6 @@
 {% if instance.proxy_pass is defined and instance.proxy_pass | length > 0 %}
   location {{ instance.proxy_location | default('/') }} {
-{% if (nginx_mono_include_mode or instance.proxy_auth_basic | default(false)) and instance.vhost_users is defined and instance.vhost_users | length > 0 %}
+{% if instance.vhost_users is defined and instance.vhost_users | length > 0 %}
     # access protection (location level)
     auth_basic "{{ instance.auth_basic_realm | default('Restricted access only') }}";
     auth_basic_user_file /etc/nginx/.htpasswd_{{ instance.htpasswd_name | default(nginx_mono_service_name | default(instance.name)) }};

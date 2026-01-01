@@ -330,3 +330,22 @@
               password: pghero_pass
           vhost_for_zabbix: false
           letsencrypt: false
+
+    # Test 14: Vhost mode with proxy_pass and vhost_users but NO auth_basic_realm (like Grafana)
+    # When a normal vhost has proxy_pass and vhost_users defined (but no auth_basic_realm),
+    # auth_basic should be set at location level in proxy.inc.j2 with default realm.
+    - role: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: proxy_auth_test
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: proxy-auth.local
+          proxy_pass: "http://127.0.0.1:3000/"
+          proxy_location: "/"
+          # vhost_users defined but NO auth_basic_realm - should still have auth_basic
+          # in proxy location with default realm
+          vhost_users:
+            - user: grafana_user
+              password: grafana_pass
+          vhost_for_zabbix: false
+          letsencrypt: false

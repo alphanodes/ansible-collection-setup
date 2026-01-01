@@ -595,6 +595,35 @@
       changed_when: false
       failed_when: htpasswd_only_no_userfile.rc != 0
 
+    # proxy_auth_test tests (Test 14)
+    # Verifies that vhost mode with proxy_pass and vhost_users (but NO auth_basic_realm)
+    # still has auth_basic in proxy location with default realm (like Grafana pattern)
+    - name: Check if proxy_auth_test vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/proxy_auth_test.conf
+      register: proxy_auth_vhost
+
+    - name: Check if htpasswd file for proxy_auth_test exists
+      ansible.builtin.stat:
+        path: /etc/nginx/.htpasswd_proxy_auth_test
+      register: proxy_auth_htpasswd
+
+    - name: Verify proxy_auth_test has auth_basic in proxy location with default realm
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'auth_basic "Restricted access only";' /etc/nginx/sites-available/proxy_auth_test.conf
+      register: proxy_auth_has_auth
+      changed_when: false
+      failed_when: proxy_auth_has_auth.rc != 0
+
+    - name: Verify proxy_auth_test has auth_basic_user_file in proxy location
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'auth_basic_user_file /etc/nginx/.htpasswd_proxy_auth_test;' /etc/nginx/sites-available/proxy_auth_test.conf
+      register: proxy_auth_has_userfile
+      changed_when: false
+      failed_when: proxy_auth_has_userfile.rc != 0
+
     - name: Display test results
       ansible.builtin.debug:
         msg:
@@ -689,3 +718,8 @@
           - "htpasswd file exists: {{ 'OK' if htpasswd_only_file.stat.exists else 'FAILED' }}"
           - "NO auth_basic at server level: {{ 'OK' if htpasswd_only_no_auth.rc == 0 else 'FAILED' }}"
           - "NO auth_basic_user_file at server level: {{ 'OK' if htpasswd_only_no_userfile.rc == 0 else 'FAILED' }}"
+          - "=== proxy_auth (Grafana pattern) Tests ==="
+          - "proxy_auth vhost exists: {{ 'OK' if proxy_auth_vhost.stat.exists else 'FAILED' }}"
+          - "proxy_auth htpasswd exists: {{ 'OK' if proxy_auth_htpasswd.stat.exists else 'FAILED' }}"
+          - "proxy_auth has auth_basic: {{ 'OK' if proxy_auth_has_auth.rc == 0 else 'FAILED' }}"
+          - "proxy_auth has auth_basic_user_file: {{ 'OK' if proxy_auth_has_userfile.rc == 0 else 'FAILED' }}"
