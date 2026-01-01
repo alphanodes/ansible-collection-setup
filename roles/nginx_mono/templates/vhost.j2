@@ -16,9 +16,10 @@
 {% endif %}
 server {
 {# Clean listen configuration using pre-calculated variables
-   Note: When using redirect block, default_server is there, not here #}
+   Note: When using redirect block, default_server AND reuseport are there, not here.
+   nginx only allows reuseport once per port - on the default_server block. #}
 {% set default_server_flag = '' if use_redirect_block else (' default_server' if nginx_listen_config.default_server else '') -%}
-{% set reuseport_flag = ' reuseport' if nginx_listen_config.use_reuseport else '' -%}
+{% set reuseport_flag = ' reuseport' if (nginx_listen_config.use_reuseport and not use_redirect_block) else '' -%}
 {% set ssl_port = nginx_listen_config.server_port | default(443) -%}
 
 {# SSL Configuration (standard 443 or custom SSL port) #}
@@ -30,7 +31,7 @@ server {
 {% endif %}
 {# HTTP/3 QUIC support - only for standard port 443, not custom ports #}
 {% if nginx_listen_config.use_http3 and ssl_port == 443 %}
-{%- set quic_reuseport = ' reuseport' if nginx_listen_config.use_reuseport else '' %}
+{%- set quic_reuseport = ' reuseport' if (nginx_listen_config.use_reuseport and not use_redirect_block) else '' %}
   listen 443 quic{{ default_server_flag }}{{ quic_reuseport }};
 {% if nginx_listen_config.use_ipv6 %}
   listen [::]:443 quic{{ default_server_flag }}{{ quic_reuseport }};
