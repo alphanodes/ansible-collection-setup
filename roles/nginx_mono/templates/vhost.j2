@@ -167,7 +167,14 @@ server {
 {% if instance.static_cache is defined and instance.static_cache %}
 {% include 'includes/static_cache.inc.j2' %}
 {% endif %}
-{% if not nginx_mono_include_mode and not (instance.proxy_auth_basic | default(false)) and instance.auth_basic_realm is defined and instance.vhost_users is defined and instance.vhost_users | length > 0 %}
+{# Server-level auth_basic is ONLY used when:
+   - NOT include_mode (include mode has auth in proxy location)
+   - NO proxy_pass (if proxy_pass exists, auth is handled in proxy.inc.j2)
+   - auth_basic_realm is explicitly set (opt-in for server-level protection)
+   - vhost_users is defined with at least one user
+   Example: Redmine with access_protection=true needs server-level auth.
+   Note: Static sites (like element_web) need explicit auth_basic_realm if protection is desired. #}
+{% if not nginx_mono_include_mode and not (instance.proxy_pass is defined and instance.proxy_pass | length > 0) and instance.auth_basic_realm is defined and instance.vhost_users is defined and instance.vhost_users | length > 0 %}
   # access protection (server level - protects entire vhost)
   auth_basic "{{ instance.auth_basic_realm }}";
   auth_basic_user_file /etc/nginx/.htpasswd_{{ instance.htpasswd_name | default(nginx_mono_service_name | default(instance.name)) }};

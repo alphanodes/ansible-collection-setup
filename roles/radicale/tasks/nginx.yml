@@ -39,5 +39,5 @@
       proxy_headers:
         - "X-Forwarded-For {{ radicale_x_forwarded_for }}"
         - "X-Remote-User $remote_user"
-      proxy_auth_basic: true
+      # auth_basic is automatically added in proxy location when vhost_users is defined
       auth_basic_realm: "{{ radicale_server_realm }}"

@@ -624,6 +624,47 @@
       changed_when: false
       failed_when: proxy_auth_has_userfile.rc != 0
 
+    # proxy_custom_realm_test tests (Test 15)
+    # Verifies that proxy_pass with vhost_users AND auth_basic_realm uses custom realm
+    # in proxy location but does NOT add auth_basic at server level (Radicale pattern)
+    - name: Check if proxy_custom_realm_test vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/proxy_custom_realm_test.conf
+      register: proxy_realm_vhost
+
+    - name: Check if htpasswd file for proxy_custom_realm_test exists
+      ansible.builtin.stat:
+        path: /etc/nginx/.htpasswd_proxy_custom_realm_test
+      register: proxy_realm_htpasswd
+
+    - name: Verify proxy_custom_realm_test has auth_basic with CUSTOM realm in proxy location
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'auth_basic "Radicale CalDAV/CardDAV";' /etc/nginx/sites-available/proxy_custom_realm_test.conf
+      register: proxy_realm_has_custom_auth
+      changed_when: false
+      failed_when: proxy_realm_has_custom_auth.rc != 0
+
+    - name: Verify proxy_custom_realm_test has auth_basic_user_file in proxy location
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'auth_basic_user_file /etc/nginx/.htpasswd_proxy_custom_realm_test;' /etc/nginx/sites-available/proxy_custom_realm_test.conf
+      register: proxy_realm_has_userfile
+      changed_when: false
+      failed_when: proxy_realm_has_userfile.rc != 0
+
+    - name: Verify proxy_custom_realm_test has only ONE auth_basic directive (in location, not server level)
+      ansible.builtin.shell: |
+        set -eo pipefail
+        # Count auth_basic directives - should be exactly 1 (in proxy location only)
+        count=$(grep -c 'auth_basic "' /etc/nginx/sites-available/proxy_custom_realm_test.conf)
+        [ "$count" -eq 1 ]
+      args:
+        executable: /bin/bash
+      register: proxy_realm_single_auth
+      changed_when: false
+      failed_when: proxy_realm_single_auth.rc != 0
+
     - name: Display test results
       ansible.builtin.debug:
         msg:
@@ -723,3 +764,9 @@
           - "proxy_auth htpasswd exists: {{ 'OK' if proxy_auth_htpasswd.stat.exists else 'FAILED' }}"
           - "proxy_auth has auth_basic: {{ 'OK' if proxy_auth_has_auth.rc == 0 else 'FAILED' }}"
           - "proxy_auth has auth_basic_user_file: {{ 'OK' if proxy_auth_has_userfile.rc == 0 else 'FAILED' }}"
+          - "=== proxy_custom_realm (Radicale pattern) Tests ==="
+          - "proxy_realm vhost exists: {{ 'OK' if proxy_realm_vhost.stat.exists else 'FAILED' }}"
+          - "proxy_realm htpasswd exists: {{ 'OK' if proxy_realm_htpasswd.stat.exists else 'FAILED' }}"
+          - "proxy_realm has custom auth_basic: {{ 'OK' if proxy_realm_has_custom_auth.rc == 0 else 'FAILED' }}"
+          - "proxy_realm has auth_basic_user_file: {{ 'OK' if proxy_realm_has_userfile.rc == 0 else 'FAILED' }}"
+          - "proxy_realm only ONE auth_basic: {{ 'OK' if proxy_realm_single_auth.rc == 0 else 'FAILED' }}"

@@ -13,6 +13,7 @@
       index: "index.html"
       redirects: "{{ element_web_redirects | default([]) }}"
       vhost_users: "{{ element_web_vhost_users | default([]) }}"
+      auth_basic_realm: "{{ element_web_auth_basic_realm | default(omit) }}"
       vhost_for_zabbix: "{{ element_web_vhost_for_zabbix | default(false) }}"
       letsencrypt: "{{ element_web_vhost_letsencrypt | default(false) }}"
       letsencrypt_cert: "{{ element_web_vhost_letsencrypt_cert | default('') }}"

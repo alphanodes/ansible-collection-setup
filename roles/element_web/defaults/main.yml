@@ -14,7 +14,12 @@ element_web_apt_components: main
 element_web_path: /usr/share/element-web
 
 element_web_vhost_server: '{{ ansible_host }}'
+# NOTE: For static sites like element_web, vhost_users alone does NOT enable Basic Auth.
+# You must also set element_web_auth_basic_realm (e.g., "Restricted Area") to enable
+# server-level authentication. This is because static sites have no proxy location
+# where auth could be applied automatically.
 element_web_vhost_users: []
+# element_web_auth_basic_realm: "Restricted Area"  # Uncomment to enable Basic Auth
 element_web_vhost_for_zabbix: false
 
 element_web_vhost_letsencrypt: false

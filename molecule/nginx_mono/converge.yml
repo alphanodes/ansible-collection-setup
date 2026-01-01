@@ -349,3 +349,24 @@
               password: grafana_pass
           vhost_for_zabbix: false
           letsencrypt: false
+
+    # Test 15: Proxy mode with vhost_users AND auth_basic_realm (like Radicale)
+    # When proxy_pass is defined AND auth_basic_realm is set, auth_basic should be
+    # in proxy location with CUSTOM realm, but NOT at server level.
+    - role: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: proxy_custom_realm_test
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: proxy-realm.local
+          proxy_pass: "http://127.0.0.1:5232/"
+          proxy_location: "/"
+          # Both vhost_users AND auth_basic_realm defined - like Radicale
+          # auth_basic should be in proxy location with custom realm
+          # NO auth_basic at server level (proxy_pass takes precedence)
+          vhost_users:
+            - user: radicale_user
+              password: radicale_pass
+          auth_basic_realm: "Radicale CalDAV/CardDAV"
+          vhost_for_zabbix: false
+          letsencrypt: false
