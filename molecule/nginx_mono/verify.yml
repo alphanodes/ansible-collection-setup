@@ -152,6 +152,22 @@
         path: /etc/nginx/.htpasswd_test_include
       register: include_htpasswd
 
+    - name: Verify include mode has auth_basic with default realm (no explicit auth_basic_realm)
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'auth_basic "Restricted access only";' /etc/nginx/test_include.conf
+      register: include_auth_basic_default
+      changed_when: false
+      failed_when: include_auth_basic_default.rc != 0
+
+    - name: Verify include mode has auth_basic_user_file
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'auth_basic_user_file /etc/nginx/.htpasswd_test_include;' /etc/nginx/test_include.conf
+      register: include_auth_basic_userfile
+      changed_when: false
+      failed_when: include_auth_basic_userfile.rc != 0
+
     # Instance mode (nginx_vhosts) tests
     - name: Check if parking vhost exists
       ansible.builtin.stat:
@@ -550,6 +566,35 @@
       changed_when: false
       failed_when: main_server_name.rc != 0
 
+    # htpasswd_only_test tests (Test 13)
+    # Verifies that vhost_users WITHOUT auth_basic_realm creates htpasswd file
+    # but does NOT add auth_basic at server level (like Redmine pghero/pg_extras pattern)
+    - name: Check if htpasswd_only_test vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/htpasswd_only_test.conf
+      register: htpasswd_only_vhost
+
+    - name: Check if htpasswd file for htpasswd_only_test exists
+      ansible.builtin.stat:
+        path: /etc/nginx/.htpasswd_htpasswd_only_test
+      register: htpasswd_only_file
+
+    - name: Verify htpasswd_only_test does NOT have auth_basic at server level
+      ansible.builtin.shell: |
+        set -e
+        ! grep -q 'auth_basic "' /etc/nginx/sites-available/htpasswd_only_test.conf
+      register: htpasswd_only_no_auth
+      changed_when: false
+      failed_when: htpasswd_only_no_auth.rc != 0
+
+    - name: Verify htpasswd_only_test does NOT have auth_basic_user_file at server level
+      ansible.builtin.shell: |
+        set -e
+        ! grep -q 'auth_basic_user_file' /etc/nginx/sites-available/htpasswd_only_test.conf
+      register: htpasswd_only_no_userfile
+      changed_when: false
+      failed_when: htpasswd_only_no_userfile.rc != 0
+
     - name: Display test results
       ansible.builtin.debug:
         msg:
@@ -575,6 +620,8 @@
           - "Include has proxy: {{ 'OK' if include_proxy.rc == 0 else 'FAILED' }}"
           - "Include no server block: {{ 'OK' if include_no_server.rc == 0 else 'FAILED' }}"
           - "Include htpasswd exists: {{ 'OK' if include_htpasswd.stat.exists else 'FAILED' }}"
+          - "Include auth_basic default realm: {{ 'OK' if include_auth_basic_default.rc == 0 else 'FAILED' }}"
+          - "Include auth_basic_user_file: {{ 'OK' if include_auth_basic_userfile.rc == 0 else 'FAILED' }}"
           - "=== Instance Mode (nginx_vhosts) Tests ==="
           - "Parking vhost exists: {{ 'OK' if parking_vhost.stat.exists else 'FAILED' }}"
           - "Parking vhost enabled: {{ 'OK' if parking_enabled.stat.exists else 'FAILED' }}"
@@ -637,3 +684,8 @@
           - "Redirect block has default_server: {{ 'OK' if redirect_default_server.rc == 0 else 'FAILED' }}"
           - "Main vhost no default_server: {{ 'OK' if main_no_default_server.rc == 0 else 'FAILED' }}"
           - "Main vhost correct server_name: {{ 'OK' if main_server_name.rc == 0 else 'FAILED' }}"
+          - "=== htpasswd_only (no auth_basic_realm) Tests ==="
+          - "htpasswd_only vhost exists: {{ 'OK' if htpasswd_only_vhost.stat.exists else 'FAILED' }}"
+          - "htpasswd file exists: {{ 'OK' if htpasswd_only_file.stat.exists else 'FAILED' }}"
+          - "NO auth_basic at server level: {{ 'OK' if htpasswd_only_no_auth.rc == 0 else 'FAILED' }}"
+          - "NO auth_basic_user_file at server level: {{ 'OK' if htpasswd_only_no_userfile.rc == 0 else 'FAILED' }}"

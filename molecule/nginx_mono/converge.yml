@@ -310,3 +310,23 @@
           vhost_default: true
           vhost_for_zabbix: false
           letsencrypt: false
+
+    # Test 13: vhost_users WITHOUT auth_basic_realm (like Redmine with pghero/pg_extras)
+    # When vhost_users is defined but NO auth_basic_realm, the htpasswd file should be
+    # created but NO auth_basic should be set at server level. This is important for
+    # Redmine where only specific locations (/pghero, /pg_extras) use the htpasswd file.
+    - role: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: htpasswd_only_test
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: htpasswd-only.local
+          root: /srv/protection_test
+          index: index.html
+          # vhost_users defined but NO auth_basic_realm - htpasswd file should be created
+          # but NO auth_basic at server level
+          vhost_users:
+            - user: pghero_user
+              password: pghero_pass
+          vhost_for_zabbix: false
+          letsencrypt: false
