@@ -63,6 +63,14 @@
       register: redmine_gem_result
       changed_when: redmine_gem_result.rc != 0
 
+    - name: Install redmineup gem assets - {{ redmine_instance_name }}
+      ansible.builtin.command: bash -lc "bundle exec rails runner 'Redmineup::AssetsManager.install_assets'"
+      args:
+        chdir: '{{ redmine_app_dir }}'
+      register: redmineup_assets_result
+      changed_when: redmineup_assets_result.rc != 0
+      when: active_agile | default(false)
+
     # Check obsolete secret token - Start
     - name: Check if secret token file exists - {{ redmine_instance_name }}
       ansible.builtin.stat:
@@ -114,6 +122,14 @@
       register: update_redmine_result
       changed_when: "update_redmine_result.rc != 0"
       when: mysql_replication_role is undefined or mysql_replication_role!='slave'
+
+    - name: Precompile assets - {{ redmine_instance_name }}
+      ansible.builtin.command: bash -lc "bundle exec rake assets:precompile"
+      args:
+        chdir: '{{ redmine_app_dir }}'
+      register: assets_precompile_result
+      changed_when: assets_precompile_result.rc != 0
+      when: redmine_instance.precompile_assets | default(false)
 
     - name: Clear cache - {{ redmine_instance_name }}
       ansible.builtin.command: bash -lc "bundle exec rake tmp:cache:clear"
