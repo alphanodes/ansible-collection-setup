@@ -1,0 +1,94 @@
+---
+- name: Verify reuseport single vhost configuration
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax
+      changed_when: false
+
+    # =============================================================
+    # Single vhost without nginx_reuseport_primary_service
+    # reuseport should be on the main vhost listen directives
+    # =============================================================
+
+    - name: Check single_app.conf exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/single_app.conf
+      register: single_app_conf
+
+    - name: Verify single_app has reuseport on SSL listen (IPv4)
+      ansible.builtin.shell: |
+        set -eo pipefail
+        grep -E 'listen 443 ssl reuseport;' /etc/nginx/sites-available/single_app.conf
+      args:
+        executable: /bin/bash
+      register: ssl_reuseport
+      changed_when: false
+      failed_when: ssl_reuseport.rc != 0
+
+    - name: Verify single_app has reuseport on SSL listen (IPv6)
+      ansible.builtin.shell: |
+        set -eo pipefail
+        grep -E 'listen \[::\]:443 ssl reuseport;' /etc/nginx/sites-available/single_app.conf
+      args:
+        executable: /bin/bash
+      register: ssl_ipv6_reuseport
+      changed_when: false
+      failed_when: ssl_ipv6_reuseport.rc != 0
+
+    - name: Verify single_app has reuseport on QUIC listen (IPv4)
+      ansible.builtin.shell: |
+        set -eo pipefail
+        grep -E 'listen 443 quic reuseport;' /etc/nginx/sites-available/single_app.conf
+      args:
+        executable: /bin/bash
+      register: quic_reuseport
+      changed_when: false
+      failed_when: quic_reuseport.rc != 0
+
+    - name: Verify single_app has reuseport on QUIC listen (IPv6)
+      ansible.builtin.shell: |
+        set -eo pipefail
+        grep -E 'listen \[::\]:443 quic reuseport;' /etc/nginx/sites-available/single_app.conf
+      args:
+        executable: /bin/bash
+      register: quic_ipv6_reuseport
+      changed_when: false
+      failed_when: quic_ipv6_reuseport.rc != 0
+
+    - name: Verify HTTP redirect block exists without reuseport
+      ansible.builtin.shell: grep -E 'listen 80;' /etc/nginx/sites-available/single_app.conf
+      register: http_redirect
+      changed_when: false
+      failed_when: http_redirect.rc != 0
+
+    - name: Count total reuseport occurrences
+      ansible.builtin.shell: |
+        set -eo pipefail
+        count=$(grep -c 'reuseport;' /etc/nginx/sites-available/single_app.conf || true)
+        echo "Found $count reuseport occurrences (expected 4: SSL/QUIC x IPv4/IPv6)"
+        [ "$count" -eq 4 ]
+      args:
+        executable: /bin/bash
+      register: reuseport_count
+      changed_when: false
+      failed_when: reuseport_count.rc != 0
+
+    # =============================================================
+    # Summary
+    # =============================================================
+
+    - name: Display reuseport single vhost test results
+      ansible.builtin.debug:
+        msg:
+          - "=== Reuseport Single Vhost Tests ==="
+          - "Nginx syntax valid: {{ 'OK' if nginx_syntax.rc == 0 else 'FAILED' }}"
+          - "single_app.conf exists: {{ 'OK' if single_app_conf.stat.exists else 'FAILED' }}"
+          - "SSL reuseport (IPv4): {{ 'OK' if ssl_reuseport.rc == 0 else 'FAILED' }}"
+          - "SSL reuseport (IPv6): {{ 'OK' if ssl_ipv6_reuseport.rc == 0 else 'FAILED' }}"
+          - "QUIC reuseport (IPv4): {{ 'OK' if quic_reuseport.rc == 0 else 'FAILED' }}"
+          - "QUIC reuseport (IPv6): {{ 'OK' if quic_ipv6_reuseport.rc == 0 else 'FAILED' }}"
+          - "HTTP redirect (no reuseport): {{ 'OK' if http_redirect.rc == 0 else 'FAILED' }}"
+          - "Total reuseport count (4): {{ 'OK' if reuseport_count.rc == 0 else 'FAILED' }}"

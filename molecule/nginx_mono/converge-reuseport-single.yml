@@ -1,0 +1,38 @@
+---
+# Test reuseport configuration with single vhost (no nginx_reuseport_primary_service set)
+# This is the most common customer scenario - single service on a server
+
+- name: Converge reuseport single vhost scenario
+  hosts: all
+  become: true
+  vars:
+    # Enable reuseport and HTTP/3 - but NO nginx_reuseport_primary_service!
+    nginx_with_reuseport: true
+    nginx_with_http3: true
+    nginx_with_ssl: true
+    nginx_with_ipv6: true
+    nginx_ssl_protocols: 'TLSv1.3'
+    # NOTE: nginx_reuseport_primary_service is intentionally NOT set
+    # With single vhost, reuseport should be automatically enabled
+
+  tasks:
+    - name: Create dummy SSL certificate for testing
+      ansible.builtin.command:
+        cmd: >
+          openssl req -x509 -nodes -days 1 -newkey rsa:2048
+          -keyout /etc/ssl/private/single_test.key
+          -out /etc/ssl/certs/single_test.crt
+          -subj "/CN=single.local"
+        creates: /etc/ssl/certs/single_test.crt
+
+    # Single vhost - should get reuseport automatically
+    - name: Setup single_app (only vhost on server)
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: single_app
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: single.local
+          root: /var/www/single
+          vhost_ssl_cert: single_test
