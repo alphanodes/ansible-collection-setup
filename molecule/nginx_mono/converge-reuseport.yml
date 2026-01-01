@@ -1,0 +1,67 @@
+---
+# Test reuseport configuration scenarios
+# This tests the complex reuseport logic for HTTP/3 support
+
+- name: Converge reuseport scenarios
+  hosts: all
+  become: true
+  vars:
+    # Enable reuseport and HTTP/3
+    nginx_with_reuseport: true
+    nginx_with_http3: true
+    nginx_with_ssl: true
+    nginx_with_ipv6: true
+    nginx_ssl_protocols: 'TLSv1.3'
+
+    # Primary service is "primary_app" - only it should get reuseport
+    nginx_reuseport_primary_service: primary_app
+
+  tasks:
+    - name: Create dummy SSL certificate for testing
+      ansible.builtin.command:
+        cmd: >
+          openssl req -x509 -nodes -days 1 -newkey rsa:2048
+          -keyout /etc/ssl/private/reuseport_test.key
+          -out /etc/ssl/certs/reuseport_test.crt
+          -subj "/CN=test.local"
+        creates: /etc/ssl/certs/reuseport_test.crt
+
+    # Test 1: Primary service WITH vhost_default (like redmine on pm)
+    # Expected: reuseport on default_server block, NOT on main vhost
+    - name: Setup primary_app with vhost_default (Test 1)
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: primary_app
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: primary.local
+          root: /var/www/primary
+          vhost_default: true
+          vhost_ssl_cert: reuseport_test
+
+    # Test 2: Secondary service WITHOUT vhost_default
+    # Expected: NO reuseport (not the primary service)
+    - name: Setup secondary_app without reuseport (Test 2)
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: secondary_app
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: secondary.local
+          root: /var/www/secondary
+          vhost_ssl_cert: reuseport_test
+
+    # Test 3: Another service also not primary
+    # Expected: NO reuseport
+    - name: Setup tertiary_app without reuseport (Test 3)
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: tertiary_app
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: tertiary.local
+          root: /var/www/tertiary
+          vhost_ssl_cert: reuseport_test

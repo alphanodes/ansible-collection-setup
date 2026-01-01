@@ -1,0 +1,112 @@
+---
+- name: Verify reuseport configuration
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax
+      changed_when: false
+
+    # =============================================================
+    # Test 1: Primary service WITH vhost_default
+    # reuseport should be on default_server block, NOT on main vhost
+    # =============================================================
+
+    - name: "Test 1: Check primary_app.conf exists"
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/primary_app.conf
+      register: primary_app_conf
+
+    - name: "Test 1: Verify default_server block has reuseport (IPv4)"
+      ansible.builtin.shell: |
+        set -eo pipefail
+        # The default_server block (with server_name _;) should have reuseport
+        grep -E 'listen 443 ssl default_server reuseport;' /etc/nginx/sites-available/primary_app.conf
+      args:
+        executable: /bin/bash
+      register: default_server_reuseport
+      changed_when: false
+      failed_when: default_server_reuseport.rc != 0
+
+    - name: "Test 1: Verify default_server QUIC block has reuseport"
+      ansible.builtin.shell: |
+        set -eo pipefail
+        grep -E 'listen 443 quic default_server reuseport;' /etc/nginx/sites-available/primary_app.conf
+      args:
+        executable: /bin/bash
+      register: default_server_quic_reuseport
+      changed_when: false
+      failed_when: default_server_quic_reuseport.rc != 0
+
+    - name: "Test 1: Verify main vhost does NOT have reuseport (count check)"
+      ansible.builtin.shell: |
+        set -eo pipefail
+        # Count how many 'reuseport;' lines exist (note the semicolon to exclude cert names)
+        # Should be exactly 6 (IPv4/IPv6 HTTP + SSL + QUIC on default_server block only)
+        count=$(grep -c 'reuseport;' /etc/nginx/sites-available/primary_app.conf || true)
+        echo "Found $count reuseport occurrences (expected 6)"
+        [ "$count" -eq 6 ]
+      args:
+        executable: /bin/bash
+      register: main_no_reuseport
+      changed_when: false
+      failed_when: main_no_reuseport.rc != 0
+
+    - name: "Test 1: Verify main vhost SSL listen without reuseport"
+      ansible.builtin.shell: |
+        set -eo pipefail
+        # Main vhost should have 'listen 443 ssl;' without reuseport (and without default_server)
+        # This is the server block with server_name primary.local (not the default_server block)
+        # We verify there exists a 'listen 443 ssl;' line that is NOT 'listen 443 ssl default_server'
+        grep -E '^[[:space:]]*listen 443 ssl;$' /etc/nginx/sites-available/primary_app.conf
+      args:
+        executable: /bin/bash
+      register: main_ssl_no_reuseport
+      changed_when: false
+      failed_when: main_ssl_no_reuseport.rc != 0
+
+    # =============================================================
+    # Test 2 & 3: Secondary services should NOT have reuseport
+    # =============================================================
+
+    - name: "Test 2: Verify secondary_app has NO reuseport"
+      ansible.builtin.shell: |
+        set -eo pipefail
+        # Use 'reuseport;' to exclude certificate names like reuseport_test
+        ! grep -q 'reuseport;' /etc/nginx/sites-available/secondary_app.conf
+      args:
+        executable: /bin/bash
+      register: secondary_no_reuseport
+      changed_when: false
+      failed_when: secondary_no_reuseport.rc != 0
+
+    - name: "Test 3: Verify tertiary_app has NO reuseport"
+      ansible.builtin.shell: |
+        set -eo pipefail
+        # Use 'reuseport;' to exclude certificate names like reuseport_test
+        ! grep -q 'reuseport;' /etc/nginx/sites-available/tertiary_app.conf
+      args:
+        executable: /bin/bash
+      register: tertiary_no_reuseport
+      changed_when: false
+      failed_when: tertiary_no_reuseport.rc != 0
+
+    # =============================================================
+    # Summary
+    # =============================================================
+
+    - name: Display reuseport test results
+      ansible.builtin.debug:
+        msg:
+          - "=== Reuseport Tests ==="
+          - "Nginx syntax valid: {{ 'OK' if nginx_syntax.rc == 0 else 'FAILED' }}"
+          - "=== Test 1: Primary with vhost_default ==="
+          - "primary_app.conf exists: {{ 'OK' if primary_app_conf.stat.exists else 'FAILED' }}"
+          - "default_server has reuseport: {{ 'OK' if default_server_reuseport.rc == 0 else 'FAILED' }}"
+          - "default_server QUIC has reuseport: {{ 'OK' if default_server_quic_reuseport.rc == 0 else 'FAILED' }}"
+          - "main vhost reuseport count correct (6): {{ 'OK' if main_no_reuseport.rc == 0 else 'FAILED' }}"
+          - "main vhost SSL no reuseport: {{ 'OK' if main_ssl_no_reuseport.rc == 0 else 'FAILED' }}"
+          - "=== Test 2 & 3: Secondary services ==="
+          - "secondary_app no reuseport: {{ 'OK' if secondary_no_reuseport.rc == 0 else 'FAILED' }}"
+          - "tertiary_app no reuseport: {{ 'OK' if tertiary_no_reuseport.rc == 0 else 'FAILED' }}"
