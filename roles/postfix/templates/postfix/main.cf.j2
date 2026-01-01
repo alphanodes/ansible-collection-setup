@@ -129,11 +129,11 @@ mua_client_restrictions = {{ postfix_mua_client_restrictions | join(',') }}
 
 smtpd_recipient_restrictions = {{  postfix_smtpd_recipient_restrictions | join(',') }}
 
-# Unauth. Benutzer dürfen ihre Befehle nicht "pipen"
-# Clients blockieren, wenn sie versuchen zu früh zu senden
+# Unauthenticated users must not pipeline their commands
+# Block clients that try to send too early
 smtpd_data_restrictions = reject_unauth_pipelining
 
-# Eine Art Tabelle mit vorhanden Identitäten und ihren Zugehörigkeiten
+# A lookup table mapping sender addresses to their authorized identities
 smtpd_sender_login_maps = proxy:mysql:/etc/postfix/mysql/virtual_alias_maps.cf
 
 # Please say hello first...
@@ -173,7 +173,7 @@ transport_maps = mysql:/etc/postfix/mysql/virtual_transport_maps.cf
 {% if postfix_with_rspamd %}
 
 ##
-## Spamfilter und DKIM-Signaturen via Rspamd
+## Spam filter and DKIM signatures via Rspamd
 ##
 
 smtpd_milters = inet:localhost:11332

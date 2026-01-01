@@ -23,14 +23,14 @@ vimbadmin_archive_path: /srv/archives
 
 vimbadmin_enable_cronjobs: true
 
-# Das Maildir wird im Dovecot-Format festgehalten
+# Maildir is stored in Dovecot format
 vimbadmin_defaults_mailbox_maildir: 'maildir:/var/vmail/%d/%u/Maildir:LAYOUT=fs'
 vimbadmin_defaults_mailbox_homedir: '/var/vmail/%d/%u'
 
-# Einige Details, der Transport sollte per Standard lmtps sein, mit Zeiger auf den passenden Socket
+# Default transport should be LMTP, pointing to the appropriate socket
 vimbadmin_defaults_domain_transport: 'lmtp:unix:private/dovecot-lmtp'
 
-# Erlaubt das endgültige Löschen von Mailboxen vom Dateisystem
+# Allows permanent deletion of mailboxes from the filesystem
 # see https://Github.com/opensolutions/ViMbAdmin/wiki/Deleting-Mailboxes
 vimbadmin_mailbox_deletion_fs_enabled: 'true'
 
@@ -43,7 +43,7 @@ vimbadmin_identity_mailer_email: "do-not-reply@example.com"
 vimbadmin_server_email_name: "Mail Administrator"
 vimbadmin_server_email_address: "{{ vimbadmin_identity_email }}"
 
-# Den stärksten Hash-Algorithmus bietet Dovecot durch "doveadm"
+# Dovecot provides the strongest hash algorithm via "doveadm"
 # default crypt:sha256
 vimbadmin_defaults_mailbox_password_scheme: 'dovecot:SHA512-CRYPT'
 vimbadmin_defaults_mailbox_dovecot_pw_binary: '/usr/bin/doveadm pw'

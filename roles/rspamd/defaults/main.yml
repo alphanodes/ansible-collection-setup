@@ -5,10 +5,9 @@
 # DKIM - https://de.wikipedia.org/wiki/DomainKeys
 # or https://www.united-domains.de/help/faq-article/was-ist-ein-dkim-eintrag
 
-# DMARC - https://de.wikipedia.org/wiki/DMARC
-# DMARC-Einträge bestimmen, was ein fremder Mailserver tun soll,
-# wenn eine von ihm empfangene Mail nach SPF- und DKIM-Checks offenbar nicht
-# vom korrekten Mailserver stammt (wenn der Absender also gefälscht wurde).
+# DMARC - https://en.wikipedia.org/wiki/DMARC
+# DMARC records determine what a receiving mail server should do
+# when a mail fails SPF and DKIM checks (i.e., the sender is spoofed).
 
 rspamd_packages:
   - rspamd
@@ -63,10 +62,9 @@ rspamd_redis_servers: "127.0.0.1"
 # (let's say you use the database 1 instead of the default 0
 rspamd_redis_db: 1
 
-# “IP”-Listen können IPv6- und IPv4-Adressen bzw. Adressbereiche enthalten - in jeder Zeile ein Eintrag.
-# “From”-Listen enthalten vollständige Absendermailadressen.
-# Sie eignen sich gut, wenn man später einmal für einzelne Absender
-# oder Server Ausnahmen einstellen möchte.
+# "IP" lists can contain IPv6 and IPv4 addresses or address ranges - one entry per line.
+# "From" lists contain complete sender email addresses.
+# Useful for setting up exceptions for specific senders or servers.
 rspamd_whitelist_ip: []
 rspamd_whitelist_from: []
 rspamd_blacklist_ip: []

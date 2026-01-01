@@ -12,7 +12,7 @@ mail_path = ~/Maildir
 mailbox_list_layout = fs
 mail_uid = {{ dovecot_vmail_user }}
 mail_gid = {{ dovecot_vmail_group }}
-# notify wird von mail_log benötigt. mail_log informiert in diesem Fall über DELETE und EXPUNGE (weiter unten)
+# notify is required by mail_log. mail_log reports DELETE and EXPUNGE events (see below)
 mail_plugins = quota acl mail_log notify
 auth_username_chars = abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890.-_@
 
@@ -41,7 +41,7 @@ passdb sql {
         FROM mailbox WHERE username = '%{user | lower}' AND active = '1' \
         AND ( access_restriction = 'ALL' OR LOCATE( '%{protocol}', access_restriction ) > 0 )
 }
-# Der "namespace separator" sollte "/" lauten, da es zusammen mit der ACL zu Konflikten käme, wenn der Benutzername das Zeichen "." enthält.
+# The namespace separator should be "/" to avoid ACL conflicts when usernames contain the "." character
 namespace inbox {
   inbox = yes
   separator = /
@@ -90,8 +90,8 @@ namespace inbox {
   }
   prefix =
 }
-# Dieser Namespace wird für die ACL Erweiterung benötigt.
-# Freigegebene Ordner erscheinen automatisch in der Ordnerliste.
+# This namespace is required for the ACL extension.
+# Shared folders appear automatically in the folder list.
 namespace shared {
     type = shared
     separator = /
@@ -173,26 +173,26 @@ protocol lda {
 }
 # Plugin settings (now global in 2.4)
 mail_log_events = delete undelete expunge
-# Um quasi-öffentliche Ordner für authentifizierte Benutzer via ACL zu erstellen
+# To create quasi-public folders for authenticated users via ACL
 imap_acl_allow_anyone = yes
-# Wird automatisch verwaltet und beinhaltet eine Übersicht der Freigaben
+# Automatically managed, contains an overview of shared mailboxes
 acl_sharing_map {
   dict file {
     path = {{ dovecot_vmail_home }}/shared-mailboxes.db
   }
 }
-# In jeder Mailbox wird von Dovecot eine Datei gepflegt, die die Freigaben regelt
+# Dovecot maintains a file in each mailbox that manages sharing permissions
 acl_driver = vfile
 quota "User quota" {
 }
-# Eigene Sieve Filter liegen im Heimverzeichnis
+# Personal Sieve filters are stored in the home directory
 sieve_script personal {
   type = personal
   driver = file
   path = ~/sieve
   active_path = ~/sieve/dovecot.sieve
 }
-# Der globale Filter außerhalb
+# Global filter applied before personal filters
 sieve_script before {
   type = before
   driver = file
@@ -201,8 +201,8 @@ sieve_script before {
 sieve_max_script_size = 1M
 sieve_quota_script_count = 0
 sieve_quota_storage_size = 0
-# Auch dann weitermachen, wenn die Quota nicht ermittelt werden kann
-# Gilt für den von Dovecot bereitgestellten Postfix policy service
+# Continue even if quota cannot be determined
+# Applies to the Dovecot-provided Postfix policy service
 quota_status_success = DUNNO
 quota_status_nouser = DUNNO
 quota_status_overquota = "552 5.2.2 Mailbox is over quota"

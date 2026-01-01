@@ -122,16 +122,16 @@ postfix_mua_relay_restrictions:
   - permit_sasl_authenticated
   - reject
 postfix_mua_sender_restrictions:
-  # Auth. Benutzer dürfen auch innerhalb der "mynetworks" nur von den Adressen senden,
-  # die ihnen zugehörig sind.
+  # Authenticated users may only send from addresses assigned to them,
+  # even within "mynetworks"
   - reject_authenticated_sender_login_mismatch
-  # Erst jetzt werden "mynetworks" zugelassen
-  # Unauth. Benutzer wie der Cron-Dienst können so weiterhin Mails versenden, etwa
-  # als cron@fqdn
+  # Now allow "mynetworks"
+  # Unauthenticated users like cron can still send mails,
+  # e.g. as cron@fqdn
   - permit_mynetworks
   - reject_non_fqdn_sender
-  # Anderen unauth. Benutzern das Benutzen jeder Adresse verbieten
-  # -> wird gebraucht, wenn andere Kundenserver unseren Mailserver verwenden
+  # Deny other unauthenticated users from using any address
+  # -> needed when other customer servers use our mail server
   # - reject_sender_login_mismatch
   - permit_sasl_authenticated
   - reject
@@ -142,18 +142,18 @@ postfix_mua_client_restrictions:
 
 # only used with postfix_with_vimbadmin
 postfix_smtpd_recipient_restrictions:
-  # Akzeptiere alle Empfänger, die ein authentifizierter Absender oder ein Absender aus "mynetworks" angibt
+  # Accept all recipients specified by authenticated senders or senders from "mynetworks"
   - permit_sasl_authenticated
   - permit_mynetworks
-  # Schnittstelle zu Dovecot, um die Quota live zu überprüfen (verhindert Bounces)
+  # Interface to Dovecot to check quota in real-time (prevents bounces)
   - check_policy_service unix:private/quota-status
-  # Ablehnen, wenn der HELO FQDN nicht aufzulösen ist
+  # Reject if the HELO FQDN cannot be resolved
   - reject_unknown_helo_hostname
-  # Ablehnen, wenn KEIN PTR zu dieser IP existiert
-  # Verhindert nicht, dass ein FALSCHER PTR abgelehnt wird!
-  # Hierfür würde "reject_unknown_client_hostname" verwendet.
+  # Reject if NO PTR record exists for this IP
+  # Does NOT reject if the PTR is INCORRECT!
+  # Use "reject_unknown_client_hostname" for that.
   - reject_unknown_reverse_client_hostname
-  # Kein offenes Relay
+  # No open relay
   - reject_unauth_destination
 
 postfix_with_postscreen: false
