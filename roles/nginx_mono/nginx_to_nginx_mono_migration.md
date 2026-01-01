@@ -430,7 +430,7 @@ The `use_redirect_block` variable coordinates between templates to avoid conflic
 
 **Critical Learning**: Only ONE `default_server` directive is allowed per port in nginx!
 
-#### The Problem
+#### Duplicate default_server Issue
 
 When using `vhost_default: true` with a specific `server_name`, nginx_mono creates
 a catch-all redirect block with `default_server`. But `port_redirect.inc.j2` was
@@ -450,7 +450,7 @@ server {
 
 **nginx error**: `a duplicate default server for 0.0.0.0:80`
 
-#### The Solution
+#### Fix in port_redirect.inc.j2
 
 `port_redirect.inc.j2` now checks `use_redirect_block` before adding `default_server`:
 
@@ -467,7 +467,7 @@ server {
 **Critical Learning**: Customers with a frontend nginx proxy (nginx → nginx → app)
 require specific proxy header settings to avoid redirect loops and mixed content warnings.
 
-#### The Problem
+#### X-Forwarded-Proto Issue
 
 With standard nginx_mono settings:
 
@@ -488,7 +488,7 @@ When a frontend proxy connects to the backend via HTTP:
 - Mixed content warnings in browser
 - Broken asset URLs
 
-#### The Solution
+#### Proxy Header Overrides
 
 nginx_mono now supports explicit proxy header overrides:
 
