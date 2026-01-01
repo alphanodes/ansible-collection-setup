@@ -135,7 +135,11 @@
 
 - name: Matomo with nginx
   when: matomo_with_nginx
-  ansible.builtin.include_tasks: setup_nginx.yml
+  ansible.builtin.include_tasks:
+    file: setup_nginx.yml
+    apply:
+      tags:
+        - nginx
   tags:
     - nginx
 

@@ -1,6 +1,8 @@
 ---
 - name: Include vars
   ansible.builtin.import_tasks: include-vars.yml
+  tags:
+    - always
 
 - name: Include MySQL role
   ansible.builtin.include_role:
@@ -21,3 +23,4 @@
   ansible.builtin.include_tasks: setup.yml
   tags:
     - matomo
+    - nginx

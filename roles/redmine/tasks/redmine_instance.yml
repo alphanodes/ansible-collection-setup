@@ -1,7 +1,13 @@
 ---
 
 - name: Include instance vars
-  ansible.builtin.include_tasks: set_instance_vars.yml
+  ansible.builtin.include_tasks:
+    file: set_instance_vars.yml
+    apply:
+      tags:
+        - always
+  tags:
+    - always
 
 - name: Include mysql tasks
   ansible.builtin.include_tasks: instance_mysql.yml
@@ -68,7 +74,11 @@
     - update
 
 - name: Include nginx_mono configuration tasks
-  ansible.builtin.include_tasks: nginx.yml
+  ansible.builtin.include_tasks:
+    file: nginx.yml
+    apply:
+      tags:
+        - nginx
   tags:
     - nginx
   when: redmine_with_nginx

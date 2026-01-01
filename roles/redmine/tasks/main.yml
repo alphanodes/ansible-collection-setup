@@ -25,6 +25,7 @@
   ansible.builtin.include_tasks: redmine_instance.yml
   tags:
     - redmine
+    - nginx
   loop: "{{ redmine_instances | dict2items }}"
   loop_control:
     loop_var: r_instance
