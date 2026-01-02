@@ -1,0 +1,55 @@
+---
+# Verify playbook for idempotence test
+# Checks that nginx configuration is valid and vhost files exist
+
+- name: Verify - Idempotence Test
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Verify nginx is installed
+      ansible.builtin.command: nginx -v
+      changed_when: false
+
+    - name: Verify nginx configuration is valid
+      ansible.builtin.command: nginx -t
+      changed_when: false
+
+    - name: Verify minimal vhost file exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/idempotence_minimal.conf
+      register: minimal_vhost
+      failed_when: not minimal_vhost.stat.exists
+
+    - name: Verify minimal vhost is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/idempotence_minimal.conf
+      register: minimal_enabled
+      failed_when: not minimal_enabled.stat.exists
+
+    - name: Read vhost content for analysis
+      ansible.builtin.slurp:
+        src: /etc/nginx/sites-available/idempotence_minimal.conf
+      register: vhost_content
+
+    - name: Show vhost content
+      ansible.builtin.debug:
+        msg: "{{ vhost_content.content | b64decode }}"
+
+    - name: Get vhost file checksum
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/idempotence_minimal.conf
+        checksum_algorithm: sha1
+      register: vhost_checksum
+
+    - name: Show vhost checksum (for idempotence comparison)
+      ansible.builtin.debug:
+        msg: "Checksum: {{ vhost_checksum.stat.checksum }}"
+
+    - name: Verify nginx is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+      check_mode: true
+      register: nginx_status
+      failed_when: nginx_status.changed

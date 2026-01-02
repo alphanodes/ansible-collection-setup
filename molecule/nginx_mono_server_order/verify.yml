@@ -1,0 +1,137 @@
+---
+# Verify: Server block order for SSH tunnel compatibility
+#
+# This test ensures the main vhost block comes BEFORE the catch-all redirect block.
+# This is critical for SSH tunnel scenarios where browser sends Host header with
+# non-standard port (e.g., Host: example.com:8443).
+#
+# nginx selects server blocks by:
+# 1. Exact server_name match (should work regardless of order)
+# 2. Fallback to first matching block or default_server
+#
+# When Host header contains port (:8443), some nginx versions have issues matching
+# server_name without port. Having main vhost first ensures it's selected.
+- name: Verify server block order
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Read generated nginx config
+      ansible.builtin.slurp:
+        src: /etc/nginx/sites-available/order_test.conf
+      register: nginx_config
+
+    - name: Decode config content
+      ansible.builtin.set_fact:
+        config_content: "{{ nginx_config.content | b64decode }}"
+
+    - name: Find position of main vhost (server_name order-test.example.com)
+      ansible.builtin.set_fact:
+        main_vhost_pos: "{{ config_content.find('server_name order-test.example.com') }}"
+
+    - name: Find position of catch-all block (server_name _;)
+      ansible.builtin.set_fact:
+        catchall_pos: "{{ config_content.find('server_name _;') }}"
+
+    - name: Debug positions
+      ansible.builtin.debug:
+        msg: "Main vhost at position {{ main_vhost_pos }}, catch-all at position {{ catchall_pos }}"
+
+    - name: Verify main vhost comes before catch-all redirect
+      ansible.builtin.assert:
+        that:
+          - main_vhost_pos | int > 0
+          - catchall_pos | int > 0
+          - main_vhost_pos | int < catchall_pos | int
+        fail_msg: |
+          Server block order is WRONG!
+          Main vhost (server_name order-test.example.com) must come BEFORE catch-all (server_name _;).
+          This breaks SSH tunnel scenarios where browser sends Host: example.com:8443.
+          Current positions: main_vhost={{ main_vhost_pos }}, catch-all={{ catchall_pos }}
+        success_msg: "Server block order is correct: main vhost before catch-all"
+
+    - name: Verify catch-all block exists with default_server on port 80
+      ansible.builtin.assert:
+        that:
+          - "'listen 80 default_server' in config_content"
+        fail_msg: "Catch-all block missing default_server directive on port 80"
+        success_msg: "Catch-all block has default_server on port 80"
+
+    - name: Count listen directives without default_server before main server_name
+      ansible.builtin.shell:
+        cmd: head -20 /etc/nginx/sites-available/order_test.conf | grep -c 'listen 80;' || echo 0
+      register: main_vhost_listen
+      changed_when: false
+
+    - name: Assert main vhost has listen without default_server
+      ansible.builtin.assert:
+        that:
+          - main_vhost_listen.stdout | int >= 1
+        fail_msg: "Main vhost should have 'listen 80;' without default_server"
+        success_msg: "Main vhost correctly has listen without default_server"
+
+    - name: Verify redirect to canonical hostname
+      ansible.builtin.assert:
+        that:
+          - "'return 301 http://order-test.example.com' in config_content"
+        fail_msg: "Catch-all should redirect to canonical hostname"
+        success_msg: "Catch-all redirects to canonical hostname"
+
+    # =========================================================================
+    # Functional tests: Verify actual nginx behavior with Host header + port
+    # This simulates SSH tunnel scenario where browser sends Host: example.com:8443
+    # =========================================================================
+
+    - name: Create test index file
+      ansible.builtin.copy:
+        content: "OK"
+        dest: /var/www/html/index.html
+        mode: '0644'
+
+    - name: "Test 1: Request with correct Host header (no port) - should return 200"
+      ansible.builtin.uri:
+        url: "http://127.0.0.1/"
+        method: GET
+        headers:
+          Host: "order-test.example.com"
+        follow_redirects: none
+        status_code: [200]
+      register: test_normal_host
+
+    - name: "Test 2: Request with Host header + port (SSH tunnel scenario) - should return 200, NOT redirect"
+      ansible.builtin.uri:
+        url: "http://127.0.0.1/"
+        method: GET
+        headers:
+          Host: "order-test.example.com:8443"
+        follow_redirects: none
+        status_code: [200]
+      register: test_host_with_port
+
+    - name: Assert SSH tunnel scenario works (no redirect)
+      ansible.builtin.assert:
+        that:
+          - test_host_with_port.status == 200
+        fail_msg: |
+          SSH tunnel scenario FAILED!
+          Request with Host: order-test.example.com:8443 returned status {{ test_host_with_port.status }}
+          Expected 200, but got redirect. This means the catch-all block matched instead of main vhost.
+        success_msg: "SSH tunnel scenario works: Host header with port returns 200 (no redirect)"
+
+    - name: "Test 3: Request with unknown Host - should redirect to canonical"
+      ansible.builtin.uri:
+        url: "http://127.0.0.1/"
+        method: GET
+        headers:
+          Host: "unknown.example.com"
+        follow_redirects: none
+        status_code: [301]
+      register: test_unknown_host
+
+    - name: Assert unknown host redirects to canonical
+      ansible.builtin.assert:
+        that:
+          - test_unknown_host.status == 301
+          - "'order-test.example.com' in test_unknown_host.location"
+        fail_msg: "Unknown host should redirect to canonical hostname"
+        success_msg: "Unknown host correctly redirects to canonical hostname"

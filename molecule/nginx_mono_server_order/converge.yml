@@ -1,0 +1,40 @@
+---
+# Test: Server block order in nginx config
+#
+# When vhost_default: true AND server_name is defined, nginx_mono creates:
+# 1. Main vhost block (with the actual server_name)
+# 2. Catch-all redirect block (with server_name _)
+#
+# The order matters for SSH tunnel scenarios where the browser sends
+# Host header with non-standard port (e.g., example.com:8443).
+# Main vhost MUST come first so nginx matches it before falling back to catch-all.
+- name: Converge
+  hosts: all
+  gather_facts: true
+  become: true
+  vars:
+    # SSL disabled - we only test server block order, not SSL functionality
+    nginx_with_ssl: false
+    nginx_with_ipv6: false
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+    - name: Create test directory
+      ansible.builtin.file:
+        path: /var/www/html
+        state: directory
+        mode: '0755'
+
+  roles:
+    - role: alphanodes.setup.nginx_mono
+      nginx_vhosts:
+        - name: order_test
+          server_name: order-test.example.com
+          vhost_default: true
+          root: /var/www/html
+          index: index.html

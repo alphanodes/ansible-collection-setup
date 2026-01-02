@@ -1,0 +1,106 @@
+---
+# Idempotence Test for nginx_mono
+# This test starts with a minimal configuration and can be extended
+# to identify which feature causes non-idempotent behavior.
+#
+# Usage:
+#   MOLECULE_DISTRO=debian13 MOLECULE_PLAYBOOK=converge-idempotence.yml molecule converge
+#   # Run again - should show NO changed tasks:
+#   MOLECULE_DISTRO=debian13 MOLECULE_PLAYBOOK=converge-idempotence.yml molecule converge
+#
+# If second run shows "changed" tasks, the problem is reproduced!
+
+- name: Converge - Idempotence Test
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+    - name: Create test directory
+      ansible.builtin.file:
+        path: /srv/idempotence_test
+        state: directory
+        mode: '0755'
+
+    - name: Create test index file
+      ansible.builtin.copy:
+        content: "<html><body>Idempotence Test</body></html>"
+        dest: /srv/idempotence_test/index.html
+        mode: '0644'
+
+  vars:
+    # Enable ALL production features
+    nginx_with_ssl: true
+    nginx_with_ipv6: true
+    nginx_force_ssl: true
+    nginx_with_protection: true
+    nginx_with_http3: true
+    nginx_with_reuseport: true
+    nginx_reuseport_primary_service: idempotence_minimal
+    nginx_resolver: ['8.8.8.8']
+    hoster: 'local'
+    # TLS 1.3 only (production standard)
+    nginx_ssl_protocols: TLSv1.3
+    # Self-signed cert for testing
+    ssl_certs:
+      - name: test-cert
+        provider: selfsigned
+        subject_common_name: test.local
+
+  tasks:
+    - name: Include ssl role to create self-signed certificate
+      ansible.builtin.include_role:
+        name: alphanodes.setup.ssl
+
+    # ==========================================================================
+    # TEST 1: Minimal static site with SSL
+    # ==========================================================================
+    - name: Setup minimal vhost with SSL
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: idempotence_minimal
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: minimal.local
+          root: /srv/idempotence_test
+          index: index.html
+          vhost_for_zabbix: false  # Requires zabbix role, disabled for idempotence test
+          letsencrypt: false
+          ssl_cert: test-cert
+
+    # ==========================================================================
+    # TEST 2: Redmine-like configuration (production pattern)
+    # This is the configuration that causes problems in production!
+    # ==========================================================================
+    - name: Setup Redmine-like vhost
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: idempotence_redmine
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: redmine.local
+          root: /srv/idempotence_test
+          index: index.html
+          upstream_name: puma_redmine
+          upstream_servers:
+            - "unix:/run/redmine/puma.sock"
+          locations:
+            - name: "/"
+              raw_actions:
+                - "try_files $uri @puma;"
+            - name: "@puma"
+              proxy_pass: "http://puma_redmine"
+              proxy_timeout: 300
+          vhost_users:
+            - user: testuser
+              password: testpass
+          vhost_for_zabbix: false
+          letsencrypt: false
+          ssl_cert: test-cert

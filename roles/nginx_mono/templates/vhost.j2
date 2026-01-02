@@ -8,12 +8,13 @@
 
    Exceptions where we DON'T use the redirect block:
    - If vhost_default is true WITHOUT server_name (catch-all parking vhost)
-   - If vhost_redirect_to or vhost_redirect_to_static is defined (manual redirect takes precedence) #}
+   - If vhost_redirect_to or vhost_redirect_to_static is defined (manual redirect takes precedence)
+
+   IMPORTANT: Main vhost MUST come before catch-all redirect block!
+   nginx uses first matching server block when Host header contains non-standard port (e.g. :8443).
+   With main vhost first, SSH tunnel scenarios work correctly. #}
 {% set has_manual_redirect = instance.vhost_redirect_to is defined or instance.vhost_redirect_to_static is defined %}
 {% set use_redirect_block = instance.vhost_default | default(false) and instance.server_name is defined and not has_manual_redirect %}
-{% if use_redirect_block %}
-{% include 'includes/default_host_redirect.inc.j2' %}
-{% endif %}
 server {
 {# Clean listen configuration using pre-calculated variables
    Note: When using redirect block, default_server AND reuseport are there, not here.
@@ -182,6 +183,10 @@ server {
 {% endif %}
 }
 
+{# Catch-all redirect block AFTER main vhost - see comment at top for explanation #}
+{% if use_redirect_block %}
+{% include 'includes/default_host_redirect.inc.j2' %}
+{% endif %}
 {% if nginx_listen_config.use_ssl %}
 {% include 'includes/port_redirect.inc.j2' %}
 {% endif %}
