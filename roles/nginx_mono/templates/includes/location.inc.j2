@@ -81,7 +81,7 @@
     proxy_http_version 1.1;
 {% endif %}
     proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header Host $host;
+    proxy_set_header Host $proxy_host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 {% if location.proxy_forwarded_proto is defined %}
     proxy_set_header X-Forwarded-Proto {{ location.proxy_forwarded_proto }};

@@ -16,7 +16,7 @@
 {% if instance.proxy_host_header is defined %}
     proxy_set_header Host {{ instance.proxy_host_header }};
 {% else %}
-    proxy_set_header Host $host;
+    proxy_set_header Host $proxy_host;
 {% endif %}
 {% if instance.proxy_headers is not defined or not (instance.proxy_headers | select('match', '^X-Forwarded-For ') | list) %}
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

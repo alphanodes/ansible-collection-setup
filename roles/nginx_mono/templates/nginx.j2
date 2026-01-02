@@ -134,6 +134,15 @@ http {
         default $host:$server_port;
     }
 
+    # Map for proxy Host header with HTTP/3 fallback and port preservation
+    # $http_host preserves port (e.g., example.com:8443) - needed for SSH tunnel scenarios
+    # $http_host is empty in HTTP/3 (no Host header, only :authority pseudo-header)
+    # This map uses $http_host when available (HTTP/1.1, HTTP/2), falls back to $host for HTTP/3
+    map $http_host $proxy_host {
+        ''      $host;
+        default $http_host;
+    }
+
     include /etc/nginx/conf.d/*.conf;
     include /etc/nginx/sites-enabled/*;
 }
