@@ -59,6 +59,11 @@ nginx_force_ssl: true
 
 # protect dot files and block spammers
 nginx_with_protection: true
+# Set to false if an upstream reverse proxy sets X-Client-IP header.
+# When true (default), nginx sets X-Forwarded-For which can conflict
+# with X-Client-IP causing Rails ActionDispatch::RemoteIp::IpSpoofAttackError.
+# Proper fix: configure upstream proxy to set X-Forwarded-For instead of X-Client-IP.
+nginx_with_proxy_forwarded_for: true
 # security headers (X-Frame-Options, X-Content-Type-Options, X-XSS-Protection)
 # disable if application sets these headers itself to avoid duplicates
 nginx_with_security_headers: true

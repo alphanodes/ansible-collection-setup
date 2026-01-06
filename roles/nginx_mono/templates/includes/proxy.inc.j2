@@ -18,9 +18,10 @@
 {% else %}
     proxy_set_header Host $proxy_host;
 {% endif %}
+{% if nginx_with_proxy_forwarded_for | default(true) %}
 {% if instance.proxy_headers is not defined or not (instance.proxy_headers | select('match', '^X-Forwarded-For ') | list) %}
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Client-IP "";
+{% endif %}
 {% endif %}
 {% if instance.proxy_forwarded_proto is defined %}
     proxy_set_header X-Forwarded-Proto {{ instance.proxy_forwarded_proto }};
