@@ -59,7 +59,7 @@
 
     - name: Count listen directives without default_server before main server_name
       ansible.builtin.shell:
-        cmd: head -20 /etc/nginx/sites-available/order_test.conf | grep -c 'listen 80;' || echo 0
+        cmd: set -o pipefail && head -20 /etc/nginx/sites-available/order_test.conf | grep -c 'listen 80;' || echo 0
       register: main_vhost_listen
       changed_when: false
 
