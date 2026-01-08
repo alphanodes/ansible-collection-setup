@@ -52,7 +52,7 @@ nginx_force_ssl: true
 # protect dot files and block spammers
 nginx_with_protection: true
 # some external reverse proxies require this disable
-# because of wrong configuration (e.g. srtechnik)
+# because of wrong configuration
 nginx_with_proxy_forwarded_for: true
 # some external reverse proxy set wrong server name. This can
 # be fixed with manual mapping
