@@ -142,6 +142,8 @@ gitlab_log_level: warn
 gitlab_env:
   GITLAB_LOG_LEVEL: '{{ gitlab_log_level }}'
 
+gitlab_prometheus_enable: false
+
 gitlab_alertmanager_enable: false
 gitlab_alertmanager_flags:
   cluster.advertise-address: "127.0.0.1:9093"

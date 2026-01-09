@@ -192,6 +192,9 @@ letsencrypt['enable'] = {{ gitlab_letsencrypt_enable | lower }}
 letsencrypt['alt_names'] = {{ gitlab_letsencrypt_alt_names }}
 {% endif %}
 
+## Prometheus
+prometheus['enable'] = {{ gitlab_prometheus_enable | lower }}
+
 ## alertmanager
 alertmanager['enable'] = {{ gitlab_alertmanager_enable | lower }}
 {% if gitlab_alertmanager_enable %}
