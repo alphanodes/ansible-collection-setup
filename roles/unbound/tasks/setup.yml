@@ -10,12 +10,12 @@
     path: "{{ unbound_root_key_file }}"
   register: unbound_root_key_stat
 
-- name: Initial root anchor setup (only if file doesn't exist)
+- name: Initial root anchor setup (only if file doesn't exist or is empty)
   ansible.builtin.command: unbound-anchor -a {{ unbound_root_key_file }}
   register: unbound_anchor_rc
   changed_when: unbound_anchor_rc.rc == 1
   failed_when: unbound_anchor_rc.rc > 1
-  when: not unbound_root_key_stat.stat.exists
+  when: not unbound_root_key_stat.stat.exists or unbound_root_key_stat.stat.size == 0
 
 - name: Set permission for root key file
   ansible.builtin.file:
