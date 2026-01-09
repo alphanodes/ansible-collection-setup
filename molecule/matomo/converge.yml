@@ -30,6 +30,9 @@
     # Skip core:update in tests - we don't have actual DB tables for upgrade testing
     sync_master: true
     matomo_vhost_server: matomo.local
+    # Test server_alias combination (matomo_vhost_main + matomo_vhost_alias)
+    matomo_vhost_main: matomo-main.local
+    matomo_vhost_alias: matomo-alias.local
     matomo_vhost_letsencrypt: false
     matomo_vhost_ssl_cert: matomo
     matomo_vhost_ssl_only: true

@@ -79,6 +79,27 @@
           - matomo_enabled.stat.exists
         fail_msg: "matomo vhost not enabled"
 
+    # === SERVER_ALIAS CHECK ===
+    # Test that matomo_vhost_main and matomo_vhost_alias are combined into server_alias
+
+    - name: Read matomo vhost config
+      ansible.builtin.slurp:
+        src: /etc/nginx/sites-available/matomo.conf
+      register: matomo_vhost_content
+
+    - name: Verify server_name is set correctly
+      ansible.builtin.assert:
+        that:
+          - "'server_name matomo.local' in (matomo_vhost_content.content | b64decode)"
+        fail_msg: "server_name not set to matomo.local"
+
+    - name: Verify server_alias contains both domains (matomo_vhost_main + matomo_vhost_alias)
+      ansible.builtin.assert:
+        that:
+          - "'matomo-main.local' in (matomo_vhost_content.content | b64decode)"
+          - "'matomo-alias.local' in (matomo_vhost_content.content | b64decode)"
+        fail_msg: "server_alias does not contain both matomo_vhost_main and matomo_vhost_alias"
+
     # === PHP-FPM SOCKET CHECK ===
 
     - name: Find PHP-FPM socket
