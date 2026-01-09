@@ -33,6 +33,8 @@
     # Matomo defines own security headers with 'always' flag via additional_headers
     # Disable nginx_mono default security headers to avoid duplicates
     nginx_with_security_headers: false
+    # Matomo is a tracking tool accessed by many clients/bots - disable bot/location blocking
+    nginx_with_protection: false
     nginx_mono_service_config:
       server_name: "{{ matomo_vhost_server }}"
       root: "{{ matomo_dir }}"
@@ -46,6 +48,8 @@
       ssl_only: "{{ matomo_vhost_ssl_only | default(true) }}"
       access_log: "{{ matomo_with_access_log | default(true) }}"
       block_hidden_files: true
+      # Matomo uses HTTP 403 for failed login attempts - don't intercept with nginx error page
+      error_403_disabled: true
       additional_headers:
         - "Referrer-Policy origin always"
         - "X-Content-Type-Options 'nosniff' always"
