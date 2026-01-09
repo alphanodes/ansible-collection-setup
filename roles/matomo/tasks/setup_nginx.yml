@@ -37,6 +37,7 @@
     nginx_with_protection: false
     nginx_mono_service_config:
       server_name: "{{ matomo_vhost_server }}"
+      server_alias: "{{ matomo_vhost_alias | default(omit) }}"
       root: "{{ matomo_dir }}"
       index: "index.php"
       vhost_default: "{{ matomo_vhost_default | default(false) }}"
