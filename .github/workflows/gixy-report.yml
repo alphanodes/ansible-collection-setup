@@ -10,6 +10,7 @@ name: "Gixy Security Report"
       - 'roles/nginx/**'
       - 'roles/nginx_mono/**'
       - 'molecule/*/verify.yml'
+      - '.github/workflows/gixy-report.yml'
   workflow_dispatch:
   schedule:
     - cron: '0 3 * * 0'
@@ -28,22 +29,7 @@ jobs:
       - name: Set matrix
         id: set-matrix
         run: |
-          echo 'matrix={"include":[
-            {"scenario":"dendrite","role":"dendrite"},
-            {"scenario":"grafana","role":"grafana"},
-            {"scenario":"hedgedoc","role":"hedgedoc"},
-            {"scenario":"loki","role":"loki"},
-            {"scenario":"ethercalc","role":"ethercalc"},
-            {"scenario":"element_web","role":"element_web"},
-            {"scenario":"mailpit","role":"mailpit"},
-            {"scenario":"nextcloud","role":"nextcloud"},
-            {"scenario":"radicale","role":"radicale"},
-            {"scenario":"roundcube","role":"roundcube"},
-            {"scenario":"matomo","role":"matomo"},
-            {"scenario":"redmine","role":"redmine"},
-            {"scenario":"jekyll","role":"jekyll"},
-            {"scenario":"vimbadmin","role":"vimbadmin"}
-          ]}' >> $GITHUB_OUTPUT
+          echo 'matrix={"include":[{"scenario":"dendrite","role":"dendrite"},{"scenario":"grafana","role":"grafana"},{"scenario":"hedgedoc","role":"hedgedoc"},{"scenario":"loki","role":"loki"},{"scenario":"ethercalc","role":"ethercalc"},{"scenario":"element_web","role":"element_web"},{"scenario":"mailpit","role":"mailpit"},{"scenario":"nextcloud","role":"nextcloud"},{"scenario":"radicale","role":"radicale"},{"scenario":"roundcube","role":"roundcube"},{"scenario":"matomo","role":"matomo"},{"scenario":"redmine","role":"redmine"},{"scenario":"jekyll","role":"jekyll"},{"scenario":"vimbadmin","role":"vimbadmin"}]}' >> $GITHUB_OUTPUT
 
   gixy-scan:
     needs: collect-metadata
