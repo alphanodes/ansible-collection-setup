@@ -1,0 +1,88 @@
+---
+- name: Verify Grafana removal
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check grafana-server service is stopped
+      ansible.builtin.command: systemctl is-active grafana-server
+      register: grafana_service
+      changed_when: false
+      failed_when: grafana_service.rc == 0
+
+    - name: Check grafana package is removed
+      ansible.builtin.command: dpkg -l grafana
+      register: grafana_package
+      changed_when: false
+      failed_when: grafana_package.rc == 0
+
+    - name: Check grafana apt repository is removed
+      ansible.builtin.stat:
+        path: /etc/apt/sources.list.d/grafana.sources
+      register: grafana_repo
+      failed_when: grafana_repo.stat.exists
+
+    - name: Check grafana GPG key is removed
+      ansible.builtin.stat:
+        path: /etc/apt/keyrings/grafana.gpg
+      register: grafana_gpg
+      failed_when: grafana_gpg.stat.exists
+
+    - name: Check grafana config directory is removed
+      ansible.builtin.stat:
+        path: /etc/grafana
+      register: grafana_config
+      failed_when: grafana_config.stat.exists
+
+    - name: Check grafana data directory is removed
+      ansible.builtin.stat:
+        path: /var/lib/grafana
+      register: grafana_data
+      failed_when: grafana_data.stat.exists
+
+    - name: Check grafana log directory is removed
+      ansible.builtin.stat:
+        path: /var/log/grafana
+      register: grafana_log
+      failed_when: grafana_log.stat.exists
+
+    - name: Check grafana nginx vhost is removed
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/grafana.conf
+      register: grafana_vhost
+      failed_when: grafana_vhost.stat.exists
+
+    - name: Check grafana nginx vhost symlink is removed
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/grafana.conf
+      register: grafana_vhost_enabled
+      failed_when: grafana_vhost_enabled.stat.exists
+
+    - name: Check grafana user is removed
+      ansible.builtin.command: id grafana
+      register: grafana_user
+      changed_when: false
+      failed_when: grafana_user.rc == 0
+
+    - name: Check nginx is still running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+      check_mode: true
+      register: nginx_service
+      failed_when: nginx_service.changed
+
+    - name: Display removal verification results
+      ansible.builtin.debug:
+        msg:
+          - "=== GRAFANA REMOVAL VERIFICATION ==="
+          - "Grafana service stopped: OK"
+          - "Grafana package removed: OK"
+          - "Grafana apt repository removed: OK"
+          - "Grafana GPG key removed: OK"
+          - "Grafana config removed: OK"
+          - "Grafana data removed: OK"
+          - "Grafana logs removed: OK"
+          - "Grafana nginx vhost removed: OK"
+          - "Grafana user removed: OK"
+          - "Nginx still running: OK"
+          - "=== GRAFANA REMOVAL SUCCESS ==="

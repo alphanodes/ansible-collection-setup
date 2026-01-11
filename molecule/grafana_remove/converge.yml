@@ -1,0 +1,37 @@
+---
+- name: Converge - Install Grafana
+  hosts: all
+  become: true
+
+  vars:
+    nginx_with_ssl: false
+    nginx_with_ipv6: false
+    nginx_force_ssl: false
+    nginx_with_http3: false
+    nginx_with_reuseport: true
+    nginx_resolver: ['8.8.8.8', '8.8.4.4']
+    hoster: 'local'
+    grafana_vhost_server: grafana.local
+    grafana_vhost_letsencrypt: false
+    ssl_certs: []
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  roles:
+    - role: alphanodes.setup.common
+    - role: alphanodes.setup.grafana
+
+- name: Converge - Remove Grafana
+  hosts: all
+  become: true
+
+  vars:
+    grafana_remove: true
+
+  roles:
+    - role: alphanodes.setup.grafana

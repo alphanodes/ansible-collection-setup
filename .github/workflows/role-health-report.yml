@@ -410,8 +410,14 @@ jobs:
               # Format CI badge status
               [ "$CI_BADGE" = "true" ] && BADGE_DISPLAY="✅" || BADGE_DISPLAY="❌"
 
-              # Format common dependency check
-              [ "$HAS_COMMON_DEP" = "true" ] && COMMON_DISPLAY="✅" || COMMON_DISPLAY="❌"
+              # Format common dependency check (common role itself shows "-")
+              if [ "$ROLE" = "common" ]; then
+                COMMON_DISPLAY="-"
+              elif [ "$HAS_COMMON_DEP" = "true" ]; then
+                COMMON_DISPLAY="✅"
+              else
+                COMMON_DISPLAY="❌"
+              fi
 
               # Format unused vars (0 = good)
               if [ "$UNUSED_VARS" = "0" ]; then

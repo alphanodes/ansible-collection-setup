@@ -1,0 +1,43 @@
+---
+
+- name: Stop and disable grafana-server
+  ansible.builtin.systemd:
+    name: grafana-server
+    state: stopped
+    enabled: false
+  ignore_errors: true
+
+- name: Remove grafana packages
+  ansible.builtin.apt:
+    name: '{{ grafana_packages }}'
+    purge: true
+    state: absent
+
+- name: Remove grafana apt repository
+  ansible.builtin.deb822_repository:
+    name: grafana
+    state: absent
+
+- name: Remove grafana files and directories
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - '{{ grafana_apt_signed_by }}'
+    - /etc/grafana
+    - /var/log/grafana
+    - /var/lib/grafana
+    - /etc/nginx/sites-available/grafana.conf
+    - /etc/nginx/sites-enabled/grafana.conf
+  notify: Restart nginx
+
+- name: Remove grafana user
+  ansible.builtin.user:
+    name: grafana
+    state: absent
+    remove: true
+
+- name: Remove grafana group
+  ansible.builtin.group:
+    name: grafana
+    state: absent
