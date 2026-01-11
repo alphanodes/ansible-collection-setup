@@ -128,17 +128,21 @@ jobs:
           DEFAULTS_FILE="roles/${ROLE}/defaults/main.yml"
           if [ -f "$DEFAULTS_FILE" ]; then
             UNUSED=0
+            UNUSED_LIST=""
             for VAR in $(grep -E "^[a-z_]+:" "$DEFAULTS_FILE" | cut -d: -f1); do
               # Check if variable is used in tasks or templates
               if ! grep -rq "$VAR" "roles/${ROLE}/tasks/" 2>/dev/null && \
                  ! grep -rq "$VAR" "roles/${ROLE}/templates/" 2>/dev/null && \
                  ! grep -rq "$VAR" "roles/${ROLE}/handlers/" 2>/dev/null; then
                 UNUSED=$((UNUSED + 1))
+                UNUSED_LIST="${UNUSED_LIST}${VAR}\n"
               fi
             done
             echo "unused_vars=$UNUSED" >> $GITHUB_OUTPUT
+            echo "unused_list=${UNUSED_LIST}" >> $GITHUB_OUTPUT
           else
             echo "unused_vars=0" >> $GITHUB_OUTPUT
+            echo "unused_list=" >> $GITHUB_OUTPUT
           fi
 
       - name: Run Molecule converge
@@ -273,6 +277,7 @@ jobs:
             echo "ci_badge=${{ steps.metadata.outputs.ci_badge }}"
             echo "bad_deps=${{ steps.metadata.outputs.bad_deps }}"
             echo "unused_vars=${{ steps.metadata.outputs.unused_vars }}"
+            echo "unused_list=${{ steps.metadata.outputs.unused_list }}"
             echo "idempotent=${{ steps.idempotency.outputs.changed }}"
           } > /tmp/results/${{ matrix.role }}.txt
 
@@ -317,7 +322,7 @@ jobs:
           for file in /tmp/results/*.txt; do
             if [ -f "$file" ]; then
               unset ROLE TASKS DISTROS DEPS GIXY_STATUS HAS_ISSUES GIXY_DETAILS DURATION LAST_CHANGE
-              unset CI_WORKFLOW CI_BADGE BAD_DEPS UNUSED_VARS IDEMPOTENT
+              unset CI_WORKFLOW CI_BADGE BAD_DEPS UNUSED_VARS UNUSED_LIST IDEMPOTENT
 
               while IFS='=' read -r key value; do
                 case "$key" in
@@ -334,6 +339,7 @@ jobs:
                   ci_badge) CI_BADGE="$value" ;;
                   bad_deps) BAD_DEPS="$value" ;;
                   unused_vars) UNUSED_VARS="$value" ;;
+                  unused_list) UNUSED_LIST="$value" ;;
                   idempotent) IDEMPOTENT="$value" ;;
                 esac
               done < "$file"
@@ -362,7 +368,16 @@ jobs:
               [ "$BAD_DEPS" = "0" ] && DEPS_DISPLAY="✅" || DEPS_DISPLAY="❌ ${BAD_DEPS}"
 
               # Format unused vars (0 = good)
-              [ "$UNUSED_VARS" = "0" ] && UNUSED_DISPLAY="✅" || UNUSED_DISPLAY="⚠️ ${UNUSED_VARS}"
+              if [ "$UNUSED_VARS" = "0" ]; then
+                UNUSED_DISPLAY="✅"
+              else
+                UNUSED_DISPLAY="[⚠️ ${UNUSED_VARS}](#unused-${ROLE})"
+                # Save unused list for details section
+                if [ -n "$UNUSED_LIST" ]; then
+                  mkdir -p ./unused
+                  echo -e "$UNUSED_LIST" > "./unused/${ROLE}.txt"
+                fi
+              fi
 
               # Format idempotency (0 = good)
               if [ "$IDEMPOTENT" = "0" ]; then
@@ -395,11 +410,11 @@ jobs:
 
           LEGEND
 
-          # Add issues details section if any
+          # Add Gixy issues details section if any
           if [ "$(ls -A ./issues 2>/dev/null)" ]; then
             cat << 'ISSUES_HEADER' >> ./report.md
 
-          ## Issue Details
+          ## Gixy Issues
 
           ISSUES_HEADER
 
@@ -412,6 +427,27 @@ jobs:
                 # Convert URLs to markdown links
                 sed 's|\(https\?://[^ ]*\)|<a href="\1">\1</a>|g' "$issue_file" >> ./report.md
                 echo '</pre>' >> ./report.md
+                echo "" >> ./report.md
+              fi
+            done
+          fi
+
+          # Add unused variables details section if any
+          if [ "$(ls -A ./unused 2>/dev/null)" ]; then
+            cat << 'UNUSED_HEADER' >> ./report.md
+
+          ## Unused Variables
+
+          UNUSED_HEADER
+
+            for unused_file in ./unused/*.txt; do
+              if [ -f "$unused_file" ]; then
+                ROLE_NAME=$(basename "$unused_file" .txt)
+                echo "<h3 id=\"unused-${ROLE_NAME}\">${ROLE_NAME}</h3>" >> ./report.md
+                echo "" >> ./report.md
+                echo '```' >> ./report.md
+                cat "$unused_file" >> ./report.md
+                echo '```' >> ./report.md
                 echo "" >> ./report.md
               fi
             done
@@ -431,5 +467,5 @@ jobs:
         with:
           token: ${{ secrets.GIST_TOKEN }}
           gist_id: 6877af16c7c7f6f31589ef9668134fe9
-          gist_file_name: gixy-security-report.md
+          gist_file_name: role-health-report.md
           file_path: ./report.md
