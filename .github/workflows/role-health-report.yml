@@ -156,11 +156,21 @@ jobs:
             UNUSED=0
             UNUSED_LIST=""
             for VAR in $(grep -E "^[a-z_]+:" "$DEFAULTS_FILE" | cut -d: -f1); do
-              # Check if variable is used in tasks, templates, handlers, or referenced by other variables
-              if ! grep -rq "$VAR" "roles/${ROLE}/tasks/" 2>/dev/null && \
-                 ! grep -rq "$VAR" "roles/${ROLE}/templates/" 2>/dev/null && \
-                 ! grep -rq "$VAR" "roles/${ROLE}/handlers/" 2>/dev/null && \
-                 ! grep -q "{{ *$VAR" "$DEFAULTS_FILE" 2>/dev/null; then
+              # For common role, search entire collection; for others, search only own role
+              if [ "$ROLE" = "common" ]; then
+                FOUND=false
+                grep -rq "$VAR" roles/*/tasks/ 2>/dev/null && FOUND=true
+                grep -rq "$VAR" roles/*/templates/ 2>/dev/null && FOUND=true
+                grep -rq "$VAR" roles/*/handlers/ 2>/dev/null && FOUND=true
+                grep -rq "{{ *$VAR" roles/*/defaults/ 2>/dev/null && FOUND=true
+              else
+                FOUND=false
+                grep -rq "$VAR" "roles/${ROLE}/tasks/" 2>/dev/null && FOUND=true
+                grep -rq "$VAR" "roles/${ROLE}/templates/" 2>/dev/null && FOUND=true
+                grep -rq "$VAR" "roles/${ROLE}/handlers/" 2>/dev/null && FOUND=true
+                grep -q "{{ *$VAR" "$DEFAULTS_FILE" 2>/dev/null && FOUND=true
+              fi
+              if [ "$FOUND" = "false" ]; then
                 UNUSED=$((UNUSED + 1))
                 [ -n "$UNUSED_LIST" ] && UNUSED_LIST="${UNUSED_LIST},"
                 UNUSED_LIST="${UNUSED_LIST}${VAR}"
