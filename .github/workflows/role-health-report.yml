@@ -67,14 +67,18 @@ jobs:
         run: |
           ROLE="${{ matrix.role }}"
 
+          # Count role tasks (in roles/<role>/tasks/)
+          ROLE_TASKS=$(grep -r "^\s*- name:" "roles/${ROLE}/tasks/" 2>/dev/null | wc -l | tr -d ' ')
+          echo "role_tasks=$ROLE_TASKS" >> $GITHUB_OUTPUT
+
           # Count verify tasks
           VERIFY_FILE="molecule/${{ matrix.role }}/verify.yml"
           if [ -f "$VERIFY_FILE" ]; then
-            TASK_COUNT=$(grep -c "^\s*- name:" "$VERIFY_FILE" 2>/dev/null || echo "0")
+            VERIFY_TASKS=$(grep -c "^\s*- name:" "$VERIFY_FILE" 2>/dev/null || echo "0")
           else
-            TASK_COUNT="0"
+            VERIFY_TASKS="0"
           fi
-          echo "tasks=$TASK_COUNT" >> $GITHUB_OUTPUT
+          echo "verify_tasks=$VERIFY_TASKS" >> $GITHUB_OUTPUT
 
           # Get dependencies from meta/main.yml
           META_FILE="roles/${ROLE}/meta/main.yml"
@@ -278,7 +282,8 @@ jobs:
 
           {
             echo "role=${{ matrix.role }}"
-            echo "tasks=${{ steps.metadata.outputs.tasks }}"
+            echo "role_tasks=${{ steps.metadata.outputs.role_tasks }}"
+            echo "verify_tasks=${{ steps.metadata.outputs.verify_tasks }}"
             echo "distros=${{ steps.metadata.outputs.distros }}"
             echo "dependencies=${{ steps.metadata.outputs.dependencies }}"
             echo "gixy_status=${FINAL_STATUS}"
@@ -326,8 +331,8 @@ jobs:
 
           ## Results
 
-          | Role | <abbr title="Number of verify tasks">Tests</abbr> | <abbr title="Tested distributions">Distros</abbr> | <abbr title="Dependencies use alphanodes.setup prefix">Deps</abbr> | <abbr title="CI workflow exists">CI</abbr> | <abbr title="CI badge in README">Badge</abbr> | <abbr title="Idempotency (changed=0 on 2nd run)">Idemp</abbr> | <abbr title="changed_when: false count">CWF</abbr> | <abbr title="Unused variables in defaults">Unused</abbr> | <abbr title="nginx security check">[Gixy](https://github.com/dvershinin/gixy)</abbr> | <abbr title="Molecule converge time">Duration</abbr> | <abbr title="Last change date">Changed</abbr> |
-          |------|-------|---------|------|-------|-------|-------|-----|--------|------|----------|---------|
+          | Role | [Tasks](## "Number of role tasks") | [Tests](## "Number of verify tasks") | [Distros](## "Tested distributions") | [Deps](## "Dependencies use alphanodes.setup prefix") | [CI](## "CI workflow exists") | [Badge](## "CI badge in README") | [Idemp](## "Idempotency: changed=0 on 2nd run") | [CWF](## "changed_when: false count") | [Unused](## "Unused variables in defaults") | [Gixy](https://github.com/dvershinin/gixy "nginx security check") | [Duration](## "Molecule converge time") | [Changed](## "Last change date") |
+          |------|-------|-------|---------|------|-------|-------|-------|-----|--------|------|----------|---------|
           HEADER
 
           # Collect issues for details section
@@ -336,13 +341,14 @@ jobs:
           # Process each result file
           for file in /tmp/results/*.txt; do
             if [ -f "$file" ]; then
-              unset ROLE TASKS DISTROS DEPS GIXY_STATUS HAS_ISSUES GIXY_DETAILS DURATION LAST_CHANGE
+              unset ROLE ROLE_TASKS VERIFY_TASKS DISTROS DEPS GIXY_STATUS HAS_ISSUES GIXY_DETAILS DURATION LAST_CHANGE
               unset CI_WORKFLOW CI_BADGE BAD_DEPS UNUSED_VARS UNUSED_LIST CHANGED_WHEN_FALSE IDEMPOTENT
 
               while IFS='=' read -r key value; do
                 case "$key" in
                   role) ROLE="$value" ;;
-                  tasks) TASKS="$value" ;;
+                  role_tasks) ROLE_TASKS="$value" ;;
+                  verify_tasks) VERIFY_TASKS="$value" ;;
                   distros) DISTROS="$value" ;;
                   dependencies) DEPS="$value" ;;
                   gixy_status) GIXY_STATUS="$value" ;;
@@ -413,7 +419,7 @@ jobs:
                 CWF_DISPLAY="${CHANGED_WHEN_FALSE}"
               fi
 
-              echo "| ${ROLE_LINK} | ${TASKS} | ${DISTROS} | ${DEPS_DISPLAY} | ${CI_DISPLAY} | ${BADGE_DISPLAY} | ${IDEMP_DISPLAY} | ${CWF_DISPLAY} | ${UNUSED_DISPLAY} | ${GIXY_DISPLAY} | ${DURATION} | ${LAST_CHANGE} |" >> ./report.md
+              echo "| ${ROLE_LINK} | ${ROLE_TASKS} | ${VERIFY_TASKS} | ${DISTROS} | ${DEPS_DISPLAY} | ${CI_DISPLAY} | ${BADGE_DISPLAY} | ${IDEMP_DISPLAY} | ${CWF_DISPLAY} | ${UNUSED_DISPLAY} | ${GIXY_DISPLAY} | ${DURATION} | ${LAST_CHANGE} |" >> ./report.md
             fi
           done
 
