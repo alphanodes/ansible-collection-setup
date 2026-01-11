@@ -34,7 +34,7 @@ jobs:
           done | sort | tr '\n' ',' | sed 's/,$//')
           echo "matrix={\"role\":[$ROLES]}" >> $GITHUB_OUTPUT
 
-  gixy-scan:
+  health-check:
     needs: collect-metadata
     runs-on: ubuntu-latest
     env:
@@ -142,7 +142,8 @@ jobs:
                  ! grep -rq "$VAR" "roles/${ROLE}/templates/" 2>/dev/null && \
                  ! grep -rq "$VAR" "roles/${ROLE}/handlers/" 2>/dev/null; then
                 UNUSED=$((UNUSED + 1))
-                UNUSED_LIST="${UNUSED_LIST}${VAR}\n"
+                [ -n "$UNUSED_LIST" ] && UNUSED_LIST="${UNUSED_LIST},"
+                UNUSED_LIST="${UNUSED_LIST}${VAR}"
               fi
             done
             echo "unused_vars=$UNUSED" >> $GITHUB_OUTPUT
@@ -295,7 +296,7 @@ jobs:
           path: /tmp/results/${{ matrix.role }}.txt
 
   update-gist:
-    needs: gixy-scan
+    needs: health-check
     runs-on: ubuntu-latest
     steps:
       - name: Download all results
@@ -356,7 +357,7 @@ jobs:
                 GIXY_DISPLAY="[${GIXY_STATUS}](#${ROLE})"
                 # Decode and save details
                 if [ -n "$GIXY_DETAILS" ]; then
-                  echo "$GIXY_DETAILS" | base64 -d > "./issues/${ROLE}.txt"
+                  echo "$GIXY_DETAILS" | base64 -d > "./issues/${ROLE}.txt" 2>/dev/null || true
                 fi
               else
                 GIXY_DISPLAY="$GIXY_STATUS"
@@ -379,10 +380,10 @@ jobs:
                 UNUSED_DISPLAY="✅"
               else
                 UNUSED_DISPLAY="[⚠️ ${UNUSED_VARS}](#unused-${ROLE})"
-                # Save unused list for details section
+                # Save unused list for details section (convert comma to newline)
                 if [ -n "$UNUSED_LIST" ]; then
                   mkdir -p ./unused
-                  echo -e "$UNUSED_LIST" > "./unused/${ROLE}.txt"
+                  echo "$UNUSED_LIST" | tr ',' '\n' > "./unused/${ROLE}.txt"
                 fi
               fi
 
