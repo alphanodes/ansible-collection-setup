@@ -96,14 +96,14 @@ jobs:
           fi
 
           # Get last change date
-          LAST_CHANGE=$(git log -1 --format="%Y-%m-%d" -- "roles/${ROLE}/" 2>/dev/null || echo "unknown")
+          LAST_CHANGE=$(git log -1 --format='%cs' -- "roles/${ROLE}/" 2>/dev/null || echo "unknown")
           echo "last_change=$LAST_CHANGE" >> $GITHUB_OUTPUT
 
           # Get tested distros from workflow file and check CI workflow exists
           WORKFLOW_FILE=".github/workflows/${{ matrix.role }}.yml"
           if [ -f "$WORKFLOW_FILE" ]; then
             echo "ci_workflow=true" >> $GITHUB_OUTPUT
-            DISTROS=$(grep -A 10 "distro:" "$WORKFLOW_FILE" | grep -E "^\s*- " | sed 's/.*- //' | \
+            DISTROS=$(grep -A 5 "distro:" "$WORKFLOW_FILE" | grep -E "^\s*-\s+[a-z0-9]+$" | sed 's/.*- //' | \
               sed 's/debian12/bookworm/g' | \
               sed 's/debian13/trixie/g' | \
               sed 's/ubuntu2404/noble/g' | \
@@ -130,6 +130,10 @@ jobs:
           else
             echo "bad_deps=0" >> $GITHUB_OUTPUT
           fi
+
+          # Count changed_when: false (potential idempotency workarounds)
+          CHANGED_WHEN_FALSE=$(grep -r "changed_when:.*false" "roles/${ROLE}/tasks/" 2>/dev/null | wc -l | tr -d ' ')
+          echo "changed_when_false=$CHANGED_WHEN_FALSE" >> $GITHUB_OUTPUT
 
           # Count unused variables in defaults/main.yml
           DEFAULTS_FILE="roles/${ROLE}/defaults/main.yml"
@@ -257,8 +261,10 @@ jobs:
           # Determine final status
           if [ "$USES_NGINX" = "false" ]; then
             FINAL_STATUS="-"
+            HAS_ISSUES="false"
           elif [ "$TESTED" = "false" ]; then
             FINAL_STATUS="🔧"
+            HAS_ISSUES="false"
           else
             FINAL_STATUS="$STATUS"
           fi
@@ -286,6 +292,7 @@ jobs:
             echo "bad_deps=${{ steps.metadata.outputs.bad_deps }}"
             echo "unused_vars=${{ steps.metadata.outputs.unused_vars }}"
             echo "unused_list=${{ steps.metadata.outputs.unused_list }}"
+            echo "changed_when_false=${{ steps.metadata.outputs.changed_when_false }}"
             echo "idempotent=${{ steps.idempotency.outputs.changed }}"
           } > /tmp/results/${{ matrix.role }}.txt
 
@@ -319,8 +326,8 @@ jobs:
 
           ## Results
 
-          | Role | <abbr title="Number of verify tasks">Tests</abbr> | <abbr title="Tested distributions">Distros</abbr> | <abbr title="Dependencies use alphanodes.setup prefix">Deps</abbr> | <abbr title="CI workflow exists">CI</abbr> | <abbr title="CI badge in README">Badge</abbr> | <abbr title="Idempotency (changed=0 on 2nd run)">Idemp</abbr> | <abbr title="Unused variables in defaults">Unused</abbr> | <abbr title="nginx security check">[Gixy](https://github.com/dvershinin/gixy)</abbr> | <abbr title="Molecule converge time">Duration</abbr> | <abbr title="Last change date">Changed</abbr> |
-          |------|-------|---------|------|-------|-------|-------|--------|------|----------|---------|
+          | Role | <abbr title="Number of verify tasks">Tests</abbr> | <abbr title="Tested distributions">Distros</abbr> | <abbr title="Dependencies use alphanodes.setup prefix">Deps</abbr> | <abbr title="CI workflow exists">CI</abbr> | <abbr title="CI badge in README">Badge</abbr> | <abbr title="Idempotency (changed=0 on 2nd run)">Idemp</abbr> | <abbr title="changed_when: false count">CWF</abbr> | <abbr title="Unused variables in defaults">Unused</abbr> | <abbr title="nginx security check">[Gixy](https://github.com/dvershinin/gixy)</abbr> | <abbr title="Molecule converge time">Duration</abbr> | <abbr title="Last change date">Changed</abbr> |
+          |------|-------|---------|------|-------|-------|-------|-----|--------|------|----------|---------|
           HEADER
 
           # Collect issues for details section
@@ -330,7 +337,7 @@ jobs:
           for file in /tmp/results/*.txt; do
             if [ -f "$file" ]; then
               unset ROLE TASKS DISTROS DEPS GIXY_STATUS HAS_ISSUES GIXY_DETAILS DURATION LAST_CHANGE
-              unset CI_WORKFLOW CI_BADGE BAD_DEPS UNUSED_VARS UNUSED_LIST IDEMPOTENT
+              unset CI_WORKFLOW CI_BADGE BAD_DEPS UNUSED_VARS UNUSED_LIST CHANGED_WHEN_FALSE IDEMPOTENT
 
               while IFS='=' read -r key value; do
                 case "$key" in
@@ -348,6 +355,7 @@ jobs:
                   bad_deps) BAD_DEPS="$value" ;;
                   unused_vars) UNUSED_VARS="$value" ;;
                   unused_list) UNUSED_LIST="$value" ;;
+                  changed_when_false) CHANGED_WHEN_FALSE="$value" ;;
                   idempotent) IDEMPOTENT="$value" ;;
                 esac
               done < "$file"
@@ -396,7 +404,16 @@ jobs:
                 IDEMP_DISPLAY="⚠️ ${IDEMPOTENT}"
               fi
 
-              echo "| ${ROLE_LINK} | ${TASKS} | ${DISTROS} | ${DEPS_DISPLAY} | ${CI_DISPLAY} | ${BADGE_DISPLAY} | ${IDEMP_DISPLAY} | ${UNUSED_DISPLAY} | ${GIXY_DISPLAY} | ${DURATION} | ${LAST_CHANGE} |" >> ./report.md
+              # Format changed_when: false count (0 = good, high = suspicious)
+              if [ "$CHANGED_WHEN_FALSE" = "0" ] || [ -z "$CHANGED_WHEN_FALSE" ]; then
+                CWF_DISPLAY="✅"
+              elif [ "$CHANGED_WHEN_FALSE" -gt 10 ]; then
+                CWF_DISPLAY="⚠️ ${CHANGED_WHEN_FALSE}"
+              else
+                CWF_DISPLAY="${CHANGED_WHEN_FALSE}"
+              fi
+
+              echo "| ${ROLE_LINK} | ${TASKS} | ${DISTROS} | ${DEPS_DISPLAY} | ${CI_DISPLAY} | ${BADGE_DISPLAY} | ${IDEMP_DISPLAY} | ${CWF_DISPLAY} | ${UNUSED_DISPLAY} | ${GIXY_DISPLAY} | ${DURATION} | ${LAST_CHANGE} |" >> ./report.md
             fi
           done
 
