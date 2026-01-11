@@ -80,15 +80,33 @@ jobs:
           fi
           echo "verify_tasks=$VERIFY_TASKS" >> $GITHUB_OUTPUT
 
-          # Get dependencies from meta/main.yml
+          # Get dependencies from meta/main.yml and include_role in tasks
           META_FILE="roles/${ROLE}/meta/main.yml"
+          DEPS_LIST=""
+
+          # From meta/main.yml
           if [ -f "$META_FILE" ]; then
-            DEPS=$(grep -A 20 "^dependencies:" "$META_FILE" | grep "role:" | sed 's/.*role: alphanodes.setup.//' | sed 's/.*role: //' | tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g')
-            [ -z "$DEPS" ] && DEPS="-"
-          else
-            DEPS="-"
+            META_DEPS=$(grep -A 20 "^dependencies:" "$META_FILE" | grep "role:" | sed 's/.*role: alphanodes.setup.//' | sed 's/.*role: //' | tr '\n' ' ')
+            DEPS_LIST="$META_DEPS"
           fi
+
+          # From include_role in tasks
+          if [ -d "roles/${ROLE}/tasks" ]; then
+            INCLUDE_DEPS=$(grep -r "include_role" "roles/${ROLE}/tasks/" 2>/dev/null | grep "name:" | sed 's/.*name: alphanodes.setup.//' | sed 's/.*name: //' | tr -d "'" | tr -d '"' | tr '\n' ' ')
+            DEPS_LIST="$DEPS_LIST $INCLUDE_DEPS"
+          fi
+
+          # Clean up and format
+          DEPS=$(echo "$DEPS_LIST" | tr ' ' '\n' | sort -u | tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g' | sed 's/^, //')
+          [ -z "$DEPS" ] && DEPS="-"
           echo "dependencies=$DEPS" >> $GITHUB_OUTPUT
+
+          # Check if alphanodes.setup.common is a dependency in meta/main.yml
+          if [ -f "$META_FILE" ] && grep -q "alphanodes.setup.common" "$META_FILE" 2>/dev/null; then
+            echo "has_common_dep=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_common_dep=false" >> $GITHUB_OUTPUT
+          fi
 
           # Check if role uses nginx (check meta/main.yml directly for nginx dependency)
           if grep -q "nginx" "$META_FILE" 2>/dev/null; then
@@ -127,13 +145,6 @@ jobs:
             echo "ci_badge=false" >> $GITHUB_OUTPUT
           fi
 
-          # Check dependencies have correct prefix
-          if [ -f "$META_FILE" ]; then
-            BAD_DEPS=$(grep -A 20 "^dependencies:" "$META_FILE" | grep "role:" | grep -v "alphanodes.setup\." | wc -l)
-            echo "bad_deps=$BAD_DEPS" >> $GITHUB_OUTPUT
-          else
-            echo "bad_deps=0" >> $GITHUB_OUTPUT
-          fi
 
           # Count changed_when: false (potential idempotency workarounds)
           CHANGED_WHEN_FALSE=$(grep -r "changed_when:.*false" "roles/${ROLE}/tasks/" 2>/dev/null | wc -l | tr -d ' ')
@@ -145,10 +156,11 @@ jobs:
             UNUSED=0
             UNUSED_LIST=""
             for VAR in $(grep -E "^[a-z_]+:" "$DEFAULTS_FILE" | cut -d: -f1); do
-              # Check if variable is used in tasks or templates
+              # Check if variable is used in tasks, templates, handlers, or referenced by other variables
               if ! grep -rq "$VAR" "roles/${ROLE}/tasks/" 2>/dev/null && \
                  ! grep -rq "$VAR" "roles/${ROLE}/templates/" 2>/dev/null && \
-                 ! grep -rq "$VAR" "roles/${ROLE}/handlers/" 2>/dev/null; then
+                 ! grep -rq "$VAR" "roles/${ROLE}/handlers/" 2>/dev/null && \
+                 ! grep -q "{{ *$VAR" "$DEFAULTS_FILE" 2>/dev/null; then
                 UNUSED=$((UNUSED + 1))
                 [ -n "$UNUSED_LIST" ] && UNUSED_LIST="${UNUSED_LIST},"
                 UNUSED_LIST="${UNUSED_LIST}${VAR}"
@@ -294,7 +306,7 @@ jobs:
             echo "uses_nginx=${USES_NGINX}"
             echo "ci_workflow=${{ steps.metadata.outputs.ci_workflow }}"
             echo "ci_badge=${{ steps.metadata.outputs.ci_badge }}"
-            echo "bad_deps=${{ steps.metadata.outputs.bad_deps }}"
+            echo "has_common_dep=${{ steps.metadata.outputs.has_common_dep }}"
             echo "unused_vars=${{ steps.metadata.outputs.unused_vars }}"
             echo "unused_list=${{ steps.metadata.outputs.unused_list }}"
             echo "changed_when_false=${{ steps.metadata.outputs.changed_when_false }}"
@@ -331,8 +343,8 @@ jobs:
 
           ## Results
 
-          | Role | [Tasks](## "Number of role tasks") | [Tests](## "Number of verify tasks") | [Distros](## "Tested distributions") | [Deps](## "Dependencies use alphanodes.setup prefix") | [CI](## "CI workflow exists") | [Badge](## "CI badge in README") | [Idemp](## "Idempotency: changed=0 on 2nd run") | [CWF](## "changed_when: false count") | [Unused](## "Unused variables in defaults") | [Gixy](https://github.com/dvershinin/gixy "nginx security check") | [Duration](## "Molecule converge time") | [Changed](## "Last change date") |
-          |------|-------|-------|---------|------|-------|-------|-------|-----|--------|------|----------|---------|
+          | Role | [Tasks](## "Number of role tasks") | [Tests](## "Number of verify tasks") | [Distros](## "Tested distributions") | [Deps](## "Role dependencies from meta and include_role") | [Common](## "Has alphanodes.setup.common dependency") | [CI](## "CI workflow exists") | [Badge](## "CI badge in README") | [Idemp](## "Idempotency: changed=0 on 2nd run") | [CWF](## "changed_when: false count") | [Unused](## "Unused variables in defaults") | [Gixy](https://github.com/dvershinin/gixy "nginx security check") | [Duration](## "Molecule converge time") | [Changed](## "Last change date") |
+          |------|-------|-------|---------|------|--------|-------|-------|-------|-----|--------|------|----------|---------|
           HEADER
 
           # Collect issues for details section
@@ -342,7 +354,7 @@ jobs:
           for file in /tmp/results/*.txt; do
             if [ -f "$file" ]; then
               unset ROLE ROLE_TASKS VERIFY_TASKS DISTROS DEPS GIXY_STATUS HAS_ISSUES GIXY_DETAILS DURATION LAST_CHANGE
-              unset CI_WORKFLOW CI_BADGE BAD_DEPS UNUSED_VARS UNUSED_LIST CHANGED_WHEN_FALSE IDEMPOTENT
+              unset CI_WORKFLOW CI_BADGE HAS_COMMON_DEP UNUSED_VARS UNUSED_LIST CHANGED_WHEN_FALSE IDEMPOTENT
 
               while IFS='=' read -r key value; do
                 case "$key" in
@@ -358,7 +370,7 @@ jobs:
                   last_change) LAST_CHANGE="$value" ;;
                   ci_workflow) CI_WORKFLOW="$value" ;;
                   ci_badge) CI_BADGE="$value" ;;
-                  bad_deps) BAD_DEPS="$value" ;;
+                  has_common_dep) HAS_COMMON_DEP="$value" ;;
                   unused_vars) UNUSED_VARS="$value" ;;
                   unused_list) UNUSED_LIST="$value" ;;
                   changed_when_false) CHANGED_WHEN_FALSE="$value" ;;
@@ -386,8 +398,8 @@ jobs:
               # Format CI badge status
               [ "$CI_BADGE" = "true" ] && BADGE_DISPLAY="✅" || BADGE_DISPLAY="❌"
 
-              # Format dependencies check (0 = good)
-              [ "$BAD_DEPS" = "0" ] && DEPS_DISPLAY="✅" || DEPS_DISPLAY="❌ ${BAD_DEPS}"
+              # Format common dependency check
+              [ "$HAS_COMMON_DEP" = "true" ] && COMMON_DISPLAY="✅" || COMMON_DISPLAY="❌"
 
               # Format unused vars (0 = good)
               if [ "$UNUSED_VARS" = "0" ]; then
@@ -419,7 +431,7 @@ jobs:
                 CWF_DISPLAY="${CHANGED_WHEN_FALSE}"
               fi
 
-              echo "| ${ROLE_LINK} | ${ROLE_TASKS} | ${VERIFY_TASKS} | ${DISTROS} | ${DEPS_DISPLAY} | ${CI_DISPLAY} | ${BADGE_DISPLAY} | ${IDEMP_DISPLAY} | ${CWF_DISPLAY} | ${UNUSED_DISPLAY} | ${GIXY_DISPLAY} | ${DURATION} | ${LAST_CHANGE} |" >> ./report.md
+              echo "| ${ROLE_LINK} | ${ROLE_TASKS} | ${VERIFY_TASKS} | ${DISTROS} | ${DEPS} | ${COMMON_DISPLAY} | ${CI_DISPLAY} | ${BADGE_DISPLAY} | ${IDEMP_DISPLAY} | ${CWF_DISPLAY} | ${UNUSED_DISPLAY} | ${GIXY_DISPLAY} | ${DURATION} | ${LAST_CHANGE} |" >> ./report.md
             fi
           done
 
