@@ -96,7 +96,7 @@ jobs:
           WORKFLOW_FILE=".github/workflows/${{ matrix.role }}.yml"
           if [ -f "$WORKFLOW_FILE" ]; then
             echo "ci_workflow=true" >> $GITHUB_OUTPUT
-            DISTROS=$(grep -A 10 "distro:" "$WORKFLOW_FILE" | grep "- " | sed 's/.*- //' | \
+            DISTROS=$(grep -A 10 "distro:" "$WORKFLOW_FILE" | grep -E "^\s*- " | sed 's/.*- //' | \
               sed 's/debian12/bookworm/g' | \
               sed 's/debian13/trixie/g' | \
               sed 's/ubuntu2404/noble/g' | \
@@ -306,7 +306,7 @@ jobs:
 
           ## Results
 
-          | Role | Tests | Distros | Deps | CI | Badge | Idemp | Unused | [Gixy](https://github.com/dvershinin/gixy) | Duration | Changed |
+          | Role | <abbr title="Number of verify tasks">Tests</abbr> | <abbr title="Tested distributions">Distros</abbr> | <abbr title="Dependencies use alphanodes.setup prefix">Deps</abbr> | <abbr title="CI workflow exists">CI</abbr> | <abbr title="CI badge in README">Badge</abbr> | <abbr title="Idempotency (changed=0 on 2nd run)">Idemp</abbr> | <abbr title="Unused variables in defaults">Unused</abbr> | <abbr title="nginx security check">[Gixy](https://github.com/dvershinin/gixy)</abbr> | <abbr title="Molecule converge time">Duration</abbr> | <abbr title="Last change date">Changed</abbr> |
           |------|-------|---------|------|-------|-------|-------|--------|------|----------|---------|
           HEADER
 
@@ -381,23 +381,6 @@ jobs:
           cat << 'LEGEND' >> ./report.md
 
           ## Legend
-
-          ### Columns
-
-          | Column | Description |
-          |--------|-------------|
-          | Tests | Number of verify tasks in molecule test |
-          | Distros | Tested distributions |
-          | Deps | Dependencies use correct `alphanodes.setup.` prefix |
-          | CI | CI workflow file exists |
-          | Badge | CI badge in README.md |
-          | Idemp | Idempotency check (changed=0 on second run) |
-          | Unused | Unused variables in defaults/main.yml |
-          | Gixy | nginx configuration security check |
-          | Duration | Molecule converge duration |
-          | Changed | Last change date |
-
-          ### Symbols
 
           | Symbol | Meaning |
           |--------|---------|
