@@ -1,0 +1,374 @@
+---
+name: "Gixy Security Report"
+
+'on':
+  push:
+    branches:
+      - main
+    paths:
+      - 'roles/*/templates/**/*.j2'
+      - 'roles/nginx/**'
+      - 'roles/nginx_mono/**'
+      - 'molecule/*/verify.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * 0'
+
+jobs:
+  collect-metadata:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Check out the codebase
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set matrix
+        id: set-matrix
+        run: |
+          echo 'matrix={"include":[
+            {"scenario":"dendrite","role":"dendrite"},
+            {"scenario":"grafana","role":"grafana"},
+            {"scenario":"hedgedoc","role":"hedgedoc"},
+            {"scenario":"loki","role":"loki"},
+            {"scenario":"ethercalc","role":"ethercalc"},
+            {"scenario":"element_web","role":"element_web"},
+            {"scenario":"mailpit","role":"mailpit"},
+            {"scenario":"nextcloud","role":"nextcloud"},
+            {"scenario":"radicale","role":"radicale"},
+            {"scenario":"roundcube","role":"roundcube"},
+            {"scenario":"matomo","role":"matomo"},
+            {"scenario":"redmine","role":"redmine"},
+            {"scenario":"jekyll","role":"jekyll"},
+            {"scenario":"vimbadmin","role":"vimbadmin"}
+          ]}' >> $GITHUB_OUTPUT
+
+  gixy-scan:
+    needs: collect-metadata
+    runs-on: ubuntu-latest
+    env:
+      PY_COLORS: 1
+      ANSIBLE_FORCE_COLOR: 1
+
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.collect-metadata.outputs.matrix) }}
+
+    steps:
+      - name: Check out the codebase
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --no-cache-dir --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install gixy-ng
+
+      - name: Collect role metadata
+        id: metadata
+        run: |
+          ROLE="${{ matrix.role }}"
+
+          # Count verify tasks
+          VERIFY_FILE="molecule/${{ matrix.scenario }}/verify.yml"
+          if [ -f "$VERIFY_FILE" ]; then
+            TASK_COUNT=$(grep -c "^\s*- name:" "$VERIFY_FILE" 2>/dev/null || echo "0")
+          else
+            TASK_COUNT="0"
+          fi
+          echo "tasks=$TASK_COUNT" >> $GITHUB_OUTPUT
+
+          # Get dependencies from meta/main.yml
+          META_FILE="roles/${ROLE}/meta/main.yml"
+          if [ -f "$META_FILE" ]; then
+            DEPS=$(grep -A 20 "^dependencies:" "$META_FILE" | grep "role:" | sed 's/.*role: alphanodes.setup.//' | sed 's/.*role: //' | tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g')
+            [ -z "$DEPS" ] && DEPS="-"
+          else
+            DEPS="-"
+          fi
+          echo "dependencies=$DEPS" >> $GITHUB_OUTPUT
+
+          # Check if role uses nginx
+          if echo "$DEPS" | grep -qE "(nginx|nginx_mono)"; then
+            echo "uses_nginx=true" >> $GITHUB_OUTPUT
+          elif [ -d "roles/${ROLE}/templates" ] && grep -rq "nginx" "roles/${ROLE}/templates/" 2>/dev/null; then
+            echo "uses_nginx=true" >> $GITHUB_OUTPUT
+          else
+            echo "uses_nginx=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Get last change date
+          LAST_CHANGE=$(git log -1 --format="%Y-%m-%d" -- "roles/${ROLE}/" 2>/dev/null || echo "unknown")
+          echo "last_change=$LAST_CHANGE" >> $GITHUB_OUTPUT
+
+          # Get tested distros from workflow file
+          WORKFLOW_FILE=".github/workflows/${{ matrix.role }}.yml"
+          if [ -f "$WORKFLOW_FILE" ]; then
+            DISTROS=$(grep -A 10 "distro:" "$WORKFLOW_FILE" | grep "- " | sed 's/.*- //' | while read d; do
+              case "$d" in
+                debian12) echo "bookworm" ;;
+                debian13) echo "trixie" ;;
+                ubuntu2404) echo "noble" ;;
+                ubuntu2204) echo "jammy" ;;
+                *) echo "$d" ;;
+              esac
+            done | tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g')
+            [ -z "$DISTROS" ] && DISTROS="-"
+          else
+            DISTROS="-"
+          fi
+          echo "distros=$DISTROS" >> $GITHUB_OUTPUT
+
+      - name: Run Molecule converge
+        id: molecule
+        run: |
+          START_TIME=$(date +%s)
+          molecule converge -s ${{ matrix.scenario }} 2>&1 || true
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          MINUTES=$((DURATION / 60))
+          SECONDS=$((DURATION % 60))
+          echo "duration=${MINUTES}m ${SECONDS}s" >> $GITHUB_OUTPUT
+        env:
+          MOLECULE_DISTRO: debian13
+        continue-on-error: true
+
+      - name: Run Gixy security check
+        id: gixy
+        run: |
+          CONTAINER_ID=$(docker ps -q --filter "name=instance" 2>/dev/null | head -1)
+          if [ -n "$CONTAINER_ID" ]; then
+            mkdir -p /tmp/nginx-config
+            docker cp "$CONTAINER_ID:/etc/nginx/nginx.conf" /tmp/nginx-config/ 2>/dev/null || true
+            docker cp "$CONTAINER_ID:/etc/nginx/sites-enabled/" /tmp/nginx-config/ 2>/dev/null || true
+
+            if [ -f "/tmp/nginx-config/nginx.conf" ]; then
+              # Run gixy and capture full output
+              GIXY_OUTPUT=$(gixy /tmp/nginx-config/nginx.conf 2>&1 || true)
+
+              # Save full output for details section
+              echo "$GIXY_OUTPUT" > /tmp/gixy-full-output.txt
+
+              # Parse counts
+              HIGH=$(echo "$GIXY_OUTPUT" | grep "High:" | grep -oE "[0-9]+" || echo "0")
+              MEDIUM=$(echo "$GIXY_OUTPUT" | grep "Medium:" | grep -oE "[0-9]+" || echo "0")
+              LOW=$(echo "$GIXY_OUTPUT" | grep "Low:" | grep -oE "[0-9]+" || echo "0")
+
+              [ -z "$HIGH" ] && HIGH="0"
+              [ -z "$MEDIUM" ] && MEDIUM="0"
+              [ -z "$LOW" ] && LOW="0"
+
+              echo "high=$HIGH" >> $GITHUB_OUTPUT
+              echo "medium=$MEDIUM" >> $GITHUB_OUTPUT
+              echo "low=$LOW" >> $GITHUB_OUTPUT
+              echo "tested=true" >> $GITHUB_OUTPUT
+
+              # Generate status icon
+              if [ "$HIGH" -gt 0 ]; then
+                echo "status=❌ ${HIGH}H" >> $GITHUB_OUTPUT
+                echo "has_issues=true" >> $GITHUB_OUTPUT
+              elif [ "$MEDIUM" -gt 0 ]; then
+                echo "status=⚠️ ${MEDIUM}M" >> $GITHUB_OUTPUT
+                echo "has_issues=true" >> $GITHUB_OUTPUT
+              elif [ "$LOW" -gt 0 ]; then
+                echo "status=💡 ${LOW}L" >> $GITHUB_OUTPUT
+                echo "has_issues=true" >> $GITHUB_OUTPUT
+              else
+                echo "status=✅" >> $GITHUB_OUTPUT
+                echo "has_issues=false" >> $GITHUB_OUTPUT
+              fi
+            else
+              echo "tested=false" >> $GITHUB_OUTPUT
+              echo "status=🔧" >> $GITHUB_OUTPUT
+              echo "has_issues=false" >> $GITHUB_OUTPUT
+              echo "high=0" >> $GITHUB_OUTPUT
+              echo "medium=0" >> $GITHUB_OUTPUT
+              echo "low=0" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "tested=false" >> $GITHUB_OUTPUT
+            echo "status=🔧" >> $GITHUB_OUTPUT
+            echo "has_issues=false" >> $GITHUB_OUTPUT
+            echo "high=0" >> $GITHUB_OUTPUT
+            echo "medium=0" >> $GITHUB_OUTPUT
+            echo "low=0" >> $GITHUB_OUTPUT
+          fi
+        continue-on-error: true
+
+      - name: Cleanup
+        if: always()
+        run: molecule destroy -s ${{ matrix.scenario }} 2>/dev/null || true
+
+      - name: Write result
+        run: |
+          mkdir -p /tmp/results
+          USES_NGINX="${{ steps.metadata.outputs.uses_nginx }}"
+          TESTED="${{ steps.gixy.outputs.tested }}"
+          HAS_ISSUES="${{ steps.gixy.outputs.has_issues }}"
+          STATUS="${{ steps.gixy.outputs.status }}"
+
+          # Determine final status
+          if [ "$USES_NGINX" = "false" ]; then
+            FINAL_STATUS="-"
+          elif [ "$TESTED" = "false" ]; then
+            FINAL_STATUS="🔧"
+          else
+            FINAL_STATUS="$STATUS"
+          fi
+
+          # Read full gixy output if exists
+          if [ -f "/tmp/gixy-full-output.txt" ]; then
+            GIXY_DETAILS=$(cat /tmp/gixy-full-output.txt | base64 -w 0)
+          else
+            GIXY_DETAILS=""
+          fi
+
+          cat << EOF > /tmp/results/${{ matrix.role }}.txt
+          role=${{ matrix.role }}
+          tasks=${{ steps.metadata.outputs.tasks }}
+          distros=${{ steps.metadata.outputs.distros }}
+          dependencies=${{ steps.metadata.outputs.dependencies }}
+          gixy_status=${FINAL_STATUS}
+          has_issues=${HAS_ISSUES}
+          gixy_details=${GIXY_DETAILS}
+          duration=${{ steps.molecule.outputs.duration }}
+          last_change=${{ steps.metadata.outputs.last_change }}
+          uses_nginx=${USES_NGINX}
+          EOF
+
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: result-${{ matrix.role }}
+          path: /tmp/results/${{ matrix.role }}.txt
+
+  update-gist:
+    needs: gixy-scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: result-*
+          path: /tmp/results
+          merge-multiple: true
+
+      - name: Generate report
+        run: |
+          DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
+
+          cat << 'HEADER' > /tmp/report.md
+          # Gixy Security & Test Report
+
+          **Collection:** [alphanodes.setup](https://github.com/alphanodes/ansible-collection-setup)
+
+          > Automatically generated by GitHub Actions
+
+          ## Results
+
+          | Role | Tasks | Distros | Dependencies | [Gixy](https://github.com/dvershinin/gixy) | Duration | Last Changed |
+          |------|-------|---------|--------------|------|----------|--------------|
+          HEADER
+
+          # Collect issues for details section
+          mkdir -p /tmp/issues
+
+          # Process each result file
+          for file in /tmp/results/*.txt; do
+            if [ -f "$file" ]; then
+              unset ROLE TASKS DISTROS DEPS GIXY_STATUS HAS_ISSUES GIXY_DETAILS DURATION LAST_CHANGE
+
+              while IFS='=' read -r key value; do
+                case "$key" in
+                  role) ROLE="$value" ;;
+                  tasks) TASKS="$value" ;;
+                  distros) DISTROS="$value" ;;
+                  dependencies) DEPS="$value" ;;
+                  gixy_status) GIXY_STATUS="$value" ;;
+                  has_issues) HAS_ISSUES="$value" ;;
+                  gixy_details) GIXY_DETAILS="$value" ;;
+                  duration) DURATION="$value" ;;
+                  last_change) LAST_CHANGE="$value" ;;
+                esac
+              done < "$file"
+
+              # Add link to details if has issues
+              if [ "$HAS_ISSUES" = "true" ]; then
+                GIXY_DISPLAY="[${GIXY_STATUS}](#${ROLE})"
+                # Decode and save details
+                if [ -n "$GIXY_DETAILS" ]; then
+                  echo "$GIXY_DETAILS" | base64 -d > "/tmp/issues/${ROLE}.txt"
+                fi
+              else
+                GIXY_DISPLAY="$GIXY_STATUS"
+              fi
+
+              # Role name as link to collection
+              ROLE_LINK="[${ROLE}](https://github.com/alphanodes/ansible-collection-setup/tree/main/roles/${ROLE})"
+
+              echo "| ${ROLE_LINK} | ${TASKS} | ${DISTROS} | ${DEPS} | ${GIXY_DISPLAY} | ${DURATION} | ${LAST_CHANGE} |" >> /tmp/report.md
+            fi
+          done
+
+          # Add legend
+          cat << 'LEGEND' >> /tmp/report.md
+
+          ## Legend
+
+          | Symbol | Meaning |
+          |--------|---------|
+          | ✅ | No issues found |
+          | 💡 nL | n Low severity issues |
+          | ⚠️ nM | n Medium severity issues |
+          | ❌ nH | n High severity issues |
+          | 🔧 | Test missing (nginx role, but no Gixy test) |
+          | - | Not applicable (role does not use nginx) |
+
+          LEGEND
+
+          # Add issues details section if any
+          if [ "$(ls -A /tmp/issues 2>/dev/null)" ]; then
+            cat << 'ISSUES_HEADER' >> /tmp/report.md
+
+          ## Issue Details
+
+          ISSUES_HEADER
+
+            for issue_file in /tmp/issues/*.txt; do
+              if [ -f "$issue_file" ]; then
+                ROLE_NAME=$(basename "$issue_file" .txt)
+                echo "### ${ROLE_NAME}" >> /tmp/report.md
+                echo "" >> /tmp/report.md
+                echo '```' >> /tmp/report.md
+                cat "$issue_file" >> /tmp/report.md
+                echo '```' >> /tmp/report.md
+                echo "" >> /tmp/report.md
+              fi
+            done
+          fi
+
+          # Add footer
+          cat << FOOTER >> /tmp/report.md
+          ---
+
+          *Last updated: ${DATE}*
+
+          *Note: This report tests role defaults in a Molecule test environment. Production configurations with custom variables may differ.*
+          FOOTER
+
+      - name: Update Gist
+        uses: exuanbo/actions-deploy-gist@v1
+        with:
+          token: ${{ secrets.GIST_TOKEN }}
+          gist_id: 6877af16c7c7f6f31589ef9668134fe9
+          file_name: gixy-security-report.md
+          file_path: /tmp/report.md

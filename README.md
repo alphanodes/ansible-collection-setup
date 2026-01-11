@@ -1,6 +1,7 @@
 # Ansible Collection - alphanodes.setup
 
 [![Linter](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/linter.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/linter.yml)
+[![Gixy Security](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/gixy-report.yml/badge.svg)](https://gist.github.com/alexandermeindl/6877af16c7c7f6f31589ef9668134fe9)
 
 ## Description
 
