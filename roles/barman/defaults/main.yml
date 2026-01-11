@@ -1,11 +1,6 @@
 ---
 # defaults file for barman
 
-# specifiy task
-# setup: setup barman
-# backup: run backup with barman (and skips setup). setup should be run before
-barman_task: backup
-
 barman_packages:
   - barman
 

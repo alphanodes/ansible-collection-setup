@@ -96,8 +96,8 @@ jobs:
             DEPS_LIST="$DEPS_LIST $INCLUDE_DEPS"
           fi
 
-          # Clean up and format
-          DEPS=$(echo "$DEPS_LIST" | tr ' ' '\n' | sort -u | tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g' | sed 's/^, //')
+          # Clean up and format (exclude common, it has its own column)
+          DEPS=$(echo "$DEPS_LIST" | tr ' ' '\n' | grep -v "^common$" | sort -u | tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g' | sed 's/^, //')
           [ -z "$DEPS" ] && DEPS="-"
           echo "dependencies=$DEPS" >> $GITHUB_OUTPUT
 

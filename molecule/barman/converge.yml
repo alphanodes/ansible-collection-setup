@@ -12,7 +12,6 @@
 
   vars:
     # Test configuration for Barman
-    barman_task: setup
     barman_log_level: DEBUG
 
     # Use dynamically generated SSH key (now in files/ directory)
