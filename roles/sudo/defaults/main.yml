@@ -16,7 +16,6 @@ sudo_manange_sudoers_config: true
 sudo_defaults:
   - ' env_keep += "ftp_proxy http_proxy https_proxy no_proxy SSH_AUTH_SOCK"'
 
-sudo_group_sudo_active: true
 sudo_group_sudo_without_password: false
 sudo_group_wheel_active: false
 sudo_group_wheel_without_password: false

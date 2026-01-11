@@ -23,14 +23,6 @@ ssl_cas: []
 # ssl certs, which are used from system (in most cases with own ca)
 ssl_system_certs: []
 
-# Self Signed OpenSSL certificate to create
-# https://docs.ansible.com/ansible/2.9/modules/openssl_certificate_module.html
-ssl_self_signed_certificates: []
-
-# name of ca directory in files/cas/key
-# see https://www.thomas-krenn.com/de/wiki/MySQL_Verbindungen_mit_SSL_verschl%C3%BCsseln
-# for create a key
-
 # openssl genrsa 2048 > ca.key
 # openssl req -new -x509 -nodes -days 3650 -key ca.key > ca.crt
 # ssl_ca: key
