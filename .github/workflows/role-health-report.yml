@@ -162,12 +162,14 @@ jobs:
                 grep -rq "$VAR" roles/*/tasks/ 2>/dev/null && FOUND=true
                 grep -rq "$VAR" roles/*/templates/ 2>/dev/null && FOUND=true
                 grep -rq "$VAR" roles/*/handlers/ 2>/dev/null && FOUND=true
+                grep -rq "$VAR" roles/*/vars/ 2>/dev/null && FOUND=true
                 grep -rq "{{ *$VAR" roles/*/defaults/ 2>/dev/null && FOUND=true
               else
                 FOUND=false
                 grep -rq "$VAR" "roles/${ROLE}/tasks/" 2>/dev/null && FOUND=true
                 grep -rq "$VAR" "roles/${ROLE}/templates/" 2>/dev/null && FOUND=true
                 grep -rq "$VAR" "roles/${ROLE}/handlers/" 2>/dev/null && FOUND=true
+                grep -rq "$VAR" "roles/${ROLE}/vars/" 2>/dev/null && FOUND=true
                 grep -q "{{ *$VAR" "$DEFAULTS_FILE" 2>/dev/null && FOUND=true
               fi
               if [ "$FOUND" = "false" ]; then
