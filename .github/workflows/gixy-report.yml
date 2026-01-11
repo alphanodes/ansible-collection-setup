@@ -29,7 +29,7 @@ jobs:
       - name: Set matrix
         id: set-matrix
         run: |
-          echo 'matrix={"include":[{"scenario":"dendrite","role":"dendrite"},{"scenario":"grafana","role":"grafana"},{"scenario":"hedgedoc","role":"hedgedoc"},{"scenario":"loki","role":"loki"},{"scenario":"ethercalc","role":"ethercalc"},{"scenario":"element_web","role":"element_web"},{"scenario":"mailpit","role":"mailpit"},{"scenario":"nextcloud","role":"nextcloud"},{"scenario":"radicale","role":"radicale"},{"scenario":"roundcube","role":"roundcube"},{"scenario":"matomo","role":"matomo"},{"scenario":"redmine","role":"redmine"},{"scenario":"jekyll","role":"jekyll"},{"scenario":"vimbadmin","role":"vimbadmin"}]}' >> $GITHUB_OUTPUT
+          echo 'matrix={"role":["dendrite","grafana","hedgedoc","loki","ethercalc","element_web","mailpit","nextcloud","radicale","roundcube","matomo","redmine","jekyll","vimbadmin"]}' >> $GITHUB_OUTPUT
 
   gixy-scan:
     needs: collect-metadata
@@ -65,7 +65,7 @@ jobs:
           ROLE="${{ matrix.role }}"
 
           # Count verify tasks
-          VERIFY_FILE="molecule/${{ matrix.scenario }}/verify.yml"
+          VERIFY_FILE="molecule/${{ matrix.role }}/verify.yml"
           if [ -f "$VERIFY_FILE" ]; then
             TASK_COUNT=$(grep -c "^\s*- name:" "$VERIFY_FILE" 2>/dev/null || echo "0")
           else
@@ -118,7 +118,7 @@ jobs:
         id: molecule
         run: |
           START_TIME=$(date +%s)
-          molecule converge -s ${{ matrix.scenario }} 2>&1 || true
+          molecule converge -s ${{ matrix.role }} 2>&1 || true
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
           MINUTES=$((DURATION / 60))
@@ -192,7 +192,7 @@ jobs:
 
       - name: Cleanup
         if: always()
-        run: molecule destroy -s ${{ matrix.scenario }} 2>/dev/null || true
+        run: molecule destroy -s ${{ matrix.role }} 2>/dev/null || true
 
       - name: Write result
         run: |
@@ -252,7 +252,7 @@ jobs:
         run: |
           DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
 
-          cat << 'HEADER' > /tmp/report.md
+          cat << 'HEADER' > ./report.md
           # Gixy Security & Test Report
 
           **Collection:** [alphanodes.setup](https://github.com/alphanodes/ansible-collection-setup)
@@ -266,7 +266,7 @@ jobs:
           HEADER
 
           # Collect issues for details section
-          mkdir -p /tmp/issues
+          mkdir -p ./issues
 
           # Process each result file
           for file in /tmp/results/*.txt; do
@@ -292,7 +292,7 @@ jobs:
                 GIXY_DISPLAY="[${GIXY_STATUS}](#${ROLE})"
                 # Decode and save details
                 if [ -n "$GIXY_DETAILS" ]; then
-                  echo "$GIXY_DETAILS" | base64 -d > "/tmp/issues/${ROLE}.txt"
+                  echo "$GIXY_DETAILS" | base64 -d > "./issues/${ROLE}.txt"
                 fi
               else
                 GIXY_DISPLAY="$GIXY_STATUS"
@@ -301,12 +301,12 @@ jobs:
               # Role name as link to collection
               ROLE_LINK="[${ROLE}](https://github.com/alphanodes/ansible-collection-setup/tree/main/roles/${ROLE})"
 
-              echo "| ${ROLE_LINK} | ${TASKS} | ${DISTROS} | ${DEPS} | ${GIXY_DISPLAY} | ${DURATION} | ${LAST_CHANGE} |" >> /tmp/report.md
+              echo "| ${ROLE_LINK} | ${TASKS} | ${DISTROS} | ${DEPS} | ${GIXY_DISPLAY} | ${DURATION} | ${LAST_CHANGE} |" >> ./report.md
             fi
           done
 
           # Add legend
-          cat << 'LEGEND' >> /tmp/report.md
+          cat << 'LEGEND' >> ./report.md
 
           ## Legend
 
@@ -322,28 +322,28 @@ jobs:
           LEGEND
 
           # Add issues details section if any
-          if [ "$(ls -A /tmp/issues 2>/dev/null)" ]; then
-            cat << 'ISSUES_HEADER' >> /tmp/report.md
+          if [ "$(ls -A ./issues 2>/dev/null)" ]; then
+            cat << 'ISSUES_HEADER' >> ./report.md
 
           ## Issue Details
 
           ISSUES_HEADER
 
-            for issue_file in /tmp/issues/*.txt; do
+            for issue_file in ./issues/*.txt; do
               if [ -f "$issue_file" ]; then
                 ROLE_NAME=$(basename "$issue_file" .txt)
-                echo "### ${ROLE_NAME}" >> /tmp/report.md
-                echo "" >> /tmp/report.md
-                echo '```' >> /tmp/report.md
-                cat "$issue_file" >> /tmp/report.md
-                echo '```' >> /tmp/report.md
-                echo "" >> /tmp/report.md
+                echo "### ${ROLE_NAME}" >> ./report.md
+                echo "" >> ./report.md
+                echo '```' >> ./report.md
+                cat "$issue_file" >> ./report.md
+                echo '```' >> ./report.md
+                echo "" >> ./report.md
               fi
             done
           fi
 
           # Add footer
-          cat << FOOTER >> /tmp/report.md
+          cat << FOOTER >> ./report.md
           ---
 
           *Last updated: ${DATE}*
@@ -356,5 +356,5 @@ jobs:
         with:
           token: ${{ secrets.GIST_TOKEN }}
           gist_id: 6877af16c7c7f6f31589ef9668134fe9
-          file_name: gixy-security-report.md
-          file_path: /tmp/report.md
+          gist_file_name: gixy-security-report.md
+          file_path: ./report.md
