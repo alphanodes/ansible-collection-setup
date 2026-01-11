@@ -83,8 +83,8 @@ jobs:
           fi
           echo "dependencies=$DEPS" >> $GITHUB_OUTPUT
 
-          # Check if role uses nginx
-          if echo "$DEPS" | grep -qE "(nginx|nginx_mono)"; then
+          # Check if role uses nginx (check meta/main.yml directly for nginx dependency)
+          if grep -q "nginx" "$META_FILE" 2>/dev/null; then
             echo "uses_nginx=true" >> $GITHUB_OUTPUT
           elif [ -d "roles/${ROLE}/templates" ] && grep -rq "nginx" "roles/${ROLE}/templates/" 2>/dev/null; then
             echo "uses_nginx=true" >> $GITHUB_OUTPUT
@@ -96,23 +96,54 @@ jobs:
           LAST_CHANGE=$(git log -1 --format="%Y-%m-%d" -- "roles/${ROLE}/" 2>/dev/null || echo "unknown")
           echo "last_change=$LAST_CHANGE" >> $GITHUB_OUTPUT
 
-          # Get tested distros from workflow file
+          # Get tested distros from workflow file and check CI workflow exists
           WORKFLOW_FILE=".github/workflows/${{ matrix.role }}.yml"
           if [ -f "$WORKFLOW_FILE" ]; then
-            DISTROS=$(grep -A 10 "distro:" "$WORKFLOW_FILE" | grep "- " | sed 's/.*- //' | while read d; do
-              case "$d" in
-                debian12) echo "bookworm" ;;
-                debian13) echo "trixie" ;;
-                ubuntu2404) echo "noble" ;;
-                ubuntu2204) echo "jammy" ;;
-                *) echo "$d" ;;
-              esac
-            done | tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g')
+            echo "ci_workflow=true" >> $GITHUB_OUTPUT
+            DISTROS=$(grep -A 10 "distro:" "$WORKFLOW_FILE" | grep "- " | sed 's/.*- //' | \
+              sed 's/debian12/bookworm/g' | \
+              sed 's/debian13/trixie/g' | \
+              sed 's/ubuntu2404/noble/g' | \
+              sed 's/ubuntu2204/jammy/g' | \
+              tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g')
             [ -z "$DISTROS" ] && DISTROS="-"
           else
+            echo "ci_workflow=false" >> $GITHUB_OUTPUT
             DISTROS="-"
           fi
           echo "distros=$DISTROS" >> $GITHUB_OUTPUT
+
+          # Check if CI badge exists in README.md
+          if grep -q "workflows/${{ matrix.role }}.yml/badge.svg" README.md 2>/dev/null; then
+            echo "ci_badge=true" >> $GITHUB_OUTPUT
+          else
+            echo "ci_badge=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Check dependencies have correct prefix
+          if [ -f "$META_FILE" ]; then
+            BAD_DEPS=$(grep -A 20 "^dependencies:" "$META_FILE" | grep "role:" | grep -v "alphanodes.setup\." | wc -l)
+            echo "bad_deps=$BAD_DEPS" >> $GITHUB_OUTPUT
+          else
+            echo "bad_deps=0" >> $GITHUB_OUTPUT
+          fi
+
+          # Count unused variables in defaults/main.yml
+          DEFAULTS_FILE="roles/${ROLE}/defaults/main.yml"
+          if [ -f "$DEFAULTS_FILE" ]; then
+            UNUSED=0
+            for VAR in $(grep -E "^[a-z_]+:" "$DEFAULTS_FILE" | cut -d: -f1); do
+              # Check if variable is used in tasks or templates
+              if ! grep -rq "$VAR" "roles/${ROLE}/tasks/" 2>/dev/null && \
+                 ! grep -rq "$VAR" "roles/${ROLE}/templates/" 2>/dev/null && \
+                 ! grep -rq "$VAR" "roles/${ROLE}/handlers/" 2>/dev/null; then
+                UNUSED=$((UNUSED + 1))
+              fi
+            done
+            echo "unused_vars=$UNUSED" >> $GITHUB_OUTPUT
+          else
+            echo "unused_vars=0" >> $GITHUB_OUTPUT
+          fi
 
       - name: Run Molecule converge
         id: molecule
@@ -124,6 +155,19 @@ jobs:
           MINUTES=$((DURATION / 60))
           SECONDS=$((DURATION % 60))
           echo "duration=${MINUTES}m ${SECONDS}s" >> $GITHUB_OUTPUT
+        env:
+          MOLECULE_DISTRO: debian13
+        continue-on-error: true
+
+      - name: Run idempotency check
+        id: idempotency
+        run: |
+          # Run converge again to check idempotency
+          IDEMP_OUTPUT=$(molecule converge -s ${{ matrix.role }} 2>&1 || true)
+          # Extract changed count from the last play recap
+          CHANGED=$(echo "$IDEMP_OUTPUT" | grep -E "changed=[0-9]+" | tail -1 | grep -oE "changed=[0-9]+" | cut -d= -f2)
+          [ -z "$CHANGED" ] && CHANGED="?"
+          echo "changed=$CHANGED" >> $GITHUB_OUTPUT
         env:
           MOLECULE_DISTRO: debian13
         continue-on-error: true
@@ -218,18 +262,23 @@ jobs:
             GIXY_DETAILS=""
           fi
 
-          cat << EOF > /tmp/results/${{ matrix.role }}.txt
-          role=${{ matrix.role }}
-          tasks=${{ steps.metadata.outputs.tasks }}
-          distros=${{ steps.metadata.outputs.distros }}
-          dependencies=${{ steps.metadata.outputs.dependencies }}
-          gixy_status=${FINAL_STATUS}
-          has_issues=${HAS_ISSUES}
-          gixy_details=${GIXY_DETAILS}
-          duration=${{ steps.molecule.outputs.duration }}
-          last_change=${{ steps.metadata.outputs.last_change }}
-          uses_nginx=${USES_NGINX}
-          EOF
+          {
+            echo "role=${{ matrix.role }}"
+            echo "tasks=${{ steps.metadata.outputs.tasks }}"
+            echo "distros=${{ steps.metadata.outputs.distros }}"
+            echo "dependencies=${{ steps.metadata.outputs.dependencies }}"
+            echo "gixy_status=${FINAL_STATUS}"
+            echo "has_issues=${HAS_ISSUES}"
+            echo "gixy_details=${GIXY_DETAILS}"
+            echo "duration=${{ steps.molecule.outputs.duration }}"
+            echo "last_change=${{ steps.metadata.outputs.last_change }}"
+            echo "uses_nginx=${USES_NGINX}"
+            echo "ci_workflow=${{ steps.metadata.outputs.ci_workflow }}"
+            echo "ci_badge=${{ steps.metadata.outputs.ci_badge }}"
+            echo "bad_deps=${{ steps.metadata.outputs.bad_deps }}"
+            echo "unused_vars=${{ steps.metadata.outputs.unused_vars }}"
+            echo "idempotent=${{ steps.idempotency.outputs.changed }}"
+          } > /tmp/results/${{ matrix.role }}.txt
 
       - name: Upload result
         uses: actions/upload-artifact@v4
@@ -253,7 +302,7 @@ jobs:
           DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
 
           cat << 'HEADER' > ./report.md
-          # Gixy Security & Test Report
+          # Role Health & Security Report
 
           **Collection:** [alphanodes.setup](https://github.com/alphanodes/ansible-collection-setup)
 
@@ -261,8 +310,8 @@ jobs:
 
           ## Results
 
-          | Role | Tasks | Distros | Dependencies | [Gixy](https://github.com/dvershinin/gixy) | Duration | Last Changed |
-          |------|-------|---------|--------------|------|----------|--------------|
+          | Role | Tests | Distros | Deps | CI | Badge | Idemp | Unused | [Gixy](https://github.com/dvershinin/gixy) | Duration | Changed |
+          |------|-------|---------|------|-------|-------|-------|--------|------|----------|---------|
           HEADER
 
           # Collect issues for details section
@@ -272,6 +321,7 @@ jobs:
           for file in /tmp/results/*.txt; do
             if [ -f "$file" ]; then
               unset ROLE TASKS DISTROS DEPS GIXY_STATUS HAS_ISSUES GIXY_DETAILS DURATION LAST_CHANGE
+              unset CI_WORKFLOW CI_BADGE BAD_DEPS UNUSED_VARS IDEMPOTENT
 
               while IFS='=' read -r key value; do
                 case "$key" in
@@ -284,6 +334,11 @@ jobs:
                   gixy_details) GIXY_DETAILS="$value" ;;
                   duration) DURATION="$value" ;;
                   last_change) LAST_CHANGE="$value" ;;
+                  ci_workflow) CI_WORKFLOW="$value" ;;
+                  ci_badge) CI_BADGE="$value" ;;
+                  bad_deps) BAD_DEPS="$value" ;;
+                  unused_vars) UNUSED_VARS="$value" ;;
+                  idempotent) IDEMPOTENT="$value" ;;
                 esac
               done < "$file"
 
@@ -301,7 +356,28 @@ jobs:
               # Role name as link to collection
               ROLE_LINK="[${ROLE}](https://github.com/alphanodes/ansible-collection-setup/tree/main/roles/${ROLE})"
 
-              echo "| ${ROLE_LINK} | ${TASKS} | ${DISTROS} | ${DEPS} | ${GIXY_DISPLAY} | ${DURATION} | ${LAST_CHANGE} |" >> ./report.md
+              # Format CI workflow status
+              [ "$CI_WORKFLOW" = "true" ] && CI_DISPLAY="✅" || CI_DISPLAY="❌"
+
+              # Format CI badge status
+              [ "$CI_BADGE" = "true" ] && BADGE_DISPLAY="✅" || BADGE_DISPLAY="❌"
+
+              # Format dependencies check (0 = good)
+              [ "$BAD_DEPS" = "0" ] && DEPS_DISPLAY="✅" || DEPS_DISPLAY="❌ ${BAD_DEPS}"
+
+              # Format unused vars (0 = good)
+              [ "$UNUSED_VARS" = "0" ] && UNUSED_DISPLAY="✅" || UNUSED_DISPLAY="⚠️ ${UNUSED_VARS}"
+
+              # Format idempotency (0 = good)
+              if [ "$IDEMPOTENT" = "0" ]; then
+                IDEMP_DISPLAY="✅"
+              elif [ "$IDEMPOTENT" = "?" ]; then
+                IDEMP_DISPLAY="?"
+              else
+                IDEMP_DISPLAY="⚠️ ${IDEMPOTENT}"
+              fi
+
+              echo "| ${ROLE_LINK} | ${TASKS} | ${DISTROS} | ${DEPS_DISPLAY} | ${CI_DISPLAY} | ${BADGE_DISPLAY} | ${IDEMP_DISPLAY} | ${UNUSED_DISPLAY} | ${GIXY_DISPLAY} | ${DURATION} | ${LAST_CHANGE} |" >> ./report.md
             fi
           done
 
@@ -310,14 +386,33 @@ jobs:
 
           ## Legend
 
+          ### Columns
+
+          | Column | Description |
+          |--------|-------------|
+          | Tests | Number of verify tasks in molecule test |
+          | Distros | Tested distributions |
+          | Deps | Dependencies use correct `alphanodes.setup.` prefix |
+          | CI | CI workflow file exists |
+          | Badge | CI badge in README.md |
+          | Idemp | Idempotency check (changed=0 on second run) |
+          | Unused | Unused variables in defaults/main.yml |
+          | Gixy | nginx configuration security check |
+          | Duration | Molecule converge duration |
+          | Changed | Last change date |
+
+          ### Symbols
+
           | Symbol | Meaning |
           |--------|---------|
           | ✅ | No issues found |
-          | 💡 nL | n Low severity issues |
-          | ⚠️ nM | n Medium severity issues |
-          | ❌ nH | n High severity issues |
-          | 🔧 | Test missing (nginx role, but no Gixy test) |
-          | - | Not applicable (role does not use nginx) |
+          | ⚠️ n | n warnings |
+          | ❌ n | n errors |
+          | 💡 nL | n Low severity issues (Gixy) |
+          | ⚠️ nM | n Medium severity issues (Gixy) |
+          | ❌ nH | n High severity issues (Gixy) |
+          | 🔧 | Test not run |
+          | - | Not applicable |
 
           LEGEND
 
@@ -334,9 +429,10 @@ jobs:
                 ROLE_NAME=$(basename "$issue_file" .txt)
                 echo "### ${ROLE_NAME}" >> ./report.md
                 echo "" >> ./report.md
-                echo '```' >> ./report.md
-                cat "$issue_file" >> ./report.md
-                echo '```' >> ./report.md
+                echo '<pre>' >> ./report.md
+                # Convert URLs to markdown links
+                sed 's|\(https\?://[^ ]*\)|<a href="\1">\1</a>|g' "$issue_file" >> ./report.md
+                echo '</pre>' >> ./report.md
                 echo "" >> ./report.md
               fi
             done
