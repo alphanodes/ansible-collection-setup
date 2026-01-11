@@ -56,34 +56,6 @@ ansible_node_disallowed_packages:
 
 ansible_node_ansible_version: "{{ '12.3' if ansible_facts.distribution_release == 'bookworm' else '13.2' }}"
 
-# TODO: this should be moved to pip role
-# NOTE: pip is installed by apt! (not in /usr/local)
-ansible_node_old_files:
-  - /usr/local/bin/easy_install
-  - /usr/local/bin/easy_install-2.7
-  - /usr/local/bin/easy_install-3.5
-  - /usr/local/bin/easy_install-3.6
-  - /usr/local/bin/easy_install-3.7
-  - /usr/local/bin/easy_install-3.8
-  - /usr/local/bin/echo_supervisord_conf
-  - /usr/local/bin/pidproxy
-  - /usr/local/bin/pip
-  - /usr/local/bin/pip2
-  - /usr/local/bin/pip2.7
-  - /usr/local/bin/pip3
-  - /usr/local/bin/pip3.5
-  - /usr/local/bin/pip3.6
-  - /usr/local/bin/pip3.7
-  - /usr/local/bin/pip3.8
-  - /usr/local/bin/pip3.9
-  - /usr/local/bin/pip3.10
-  - /usr/local/bin/pip3.11
-  - /usr/local/lib/python2.7
-  - /usr/local/lib/python3.5
-  - /usr/local/lib/python3.6
-  - /usr/local/lib/python3.7
-  - /usr/local/lib/python3.8
-
 ansible_node_pip_packages:
   - passlib
 
