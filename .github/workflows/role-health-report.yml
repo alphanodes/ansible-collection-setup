@@ -1,16 +1,12 @@
 ---
-name: "Gixy Security Report"
+name: "Role Health Report"
 
 'on':
   push:
     branches:
       - main
     paths:
-      - 'roles/*/templates/**/*.j2'
-      - 'roles/nginx/**'
-      - 'roles/nginx_mono/**'
-      - 'molecule/*/verify.yml'
-      - '.github/workflows/gixy-report.yml'
+      - '.github/workflows/role-health-report.yml'
   workflow_dispatch:
   schedule:
     - cron: '0 3 * * 0'
@@ -29,7 +25,7 @@ jobs:
       - name: Set matrix
         id: set-matrix
         run: |
-          echo 'matrix={"role":["dendrite","grafana","hedgedoc","loki","ethercalc","element_web","mailpit","nextcloud","radicale","roundcube","matomo","redmine","jekyll","vimbadmin"]}' >> $GITHUB_OUTPUT
+          echo 'matrix={"role":["alloy","ansible_node","apt","barman","btrbk","certbot","cifs_mount","clamav","common","composer","dendrite","diagnostic","dkim","docker","dovecot","drupal","drush","element_web","ethercalc","fail2ban","git","git_config","gitlab_omnibus","gitlab_runner","goaccess","golang","grafana","hedgedoc","java","jekyll","loki","mail_autoconfig","mailpit","matomo","memcached","mysql","mysql_client","netfilter","nextcloud","nfs","nginx","nginx_mono","nodejs","php_cli","php_fpm","postfix","postgresql","postgresql_client","python","radicale","redis_server","redmine","roundcube","rspamd","rsync","ruby","rvm","sphinx","ssh","ssl","sudo","svn","swapfile","systemd_timer","unbound","vimbadmin","zabbix_agent","zabbix_server","zsh"]}' >> $GITHUB_OUTPUT
 
   gixy-scan:
     needs: collect-metadata
