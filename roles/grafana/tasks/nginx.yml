@@ -21,4 +21,3 @@
       letsencrypt_key: "{{ grafana_vhost_letsencrypt_key | default('') }}"
       ssl_cert: "{{ grafana_vhost_ssl_cert | default('') }}"
       vhost_includes: "{{ grafana_vhost_includes | default([]) }}"
-
