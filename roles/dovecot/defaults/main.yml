@@ -23,17 +23,6 @@ dovecot_db_password: ''
 
 dovecot_db_with_caching_sha2_password: false
 
-dovecot_conf_d_files:
-  - 10-auth.conf
-  - 10-mail.conf
-  - 10-master.conf
-  - 10-ssl.conf
-  - 15-lda.conf
-  - auth-sql.conf.ext
-  - auth-static.conf.ext
-  - 20-managesieve.conf
-  - 90-sieve.conf
-
 # List of supported schemes is in
 # http://wiki2.dovecot.org/Authentication/PasswordSchemes
 dovecot_default_pass_scheme: SHA512-CRYPT
@@ -48,7 +37,6 @@ dovecot_vmail_group: vmail
 dovecot_vmail_home: '/var/{{ dovecot_vmail_user }}'
 
 dovecot_mail_home: '{{ dovecot_vmail_home }}/%{user|domain}/%{user|username}'
-dovecot_mail_location: 'maildir:~/Maildir:LAYOUT=fs'
 
 dovecot_postmaster_address: 'postmaster@example.com'
 dovecot_before_sieve_script: '{{ dovecot_vmail_home }}/before.sieve'

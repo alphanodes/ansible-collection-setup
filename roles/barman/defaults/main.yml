@@ -41,6 +41,3 @@ barman_backup_options: concurrent_backup
 # - barman check <servername>
 # - barman status <servername>
 # - barman diagnose
-
-barman_job_full_backup: true
-barman_job_server_name: ''
