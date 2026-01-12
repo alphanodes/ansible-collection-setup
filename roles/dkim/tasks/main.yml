@@ -29,6 +29,7 @@
     - dkim_domains_to_process is not defined
     - dkim_domains is defined
     - dkim_domains is mapping
+    - dkim_domains | length > 0
   ansible.builtin.set_fact:
     dkim_domains_to_process: |
       {% set result = [] %}
@@ -41,30 +42,32 @@
       {% endfor %}
       {{ result }}
 
-- name: Validate DKIM configuration
-  ansible.builtin.fail:
-    msg: "No DKIM domains configured. Define dkim_domains dictionary in host_vars."
-  when:
-    - dkim_domains_to_process is not defined or dkim_domains_to_process | length == 0
+- name: Skip DKIM setup when no domains configured
+  when: dkim_domains_to_process is not defined or dkim_domains_to_process | length == 0
+  ansible.builtin.debug:
+    msg: "No DKIM domains configured. Skipping DKIM key generation."
 
-- name: Ensure required packages are installed
-  ansible.builtin.apt:
-    name:
-      - openssl
-    state: present
-    update_cache: false
+- name: Setup DKIM keys
+  when: dkim_domains_to_process is defined and dkim_domains_to_process | length > 0
+  block:
+    - name: Ensure required packages are installed
+      ansible.builtin.apt:
+        name:
+          - openssl
+        state: present
+        update_cache: false
 
-- name: Create base DKIM directory
-  ansible.builtin.file:
-    path: "{{ dkim_base_dir }}"
-    state: directory
-    mode: '0755'
-    owner: root
-    group: root
+    - name: Create base DKIM directory
+      ansible.builtin.file:
+        path: "{{ dkim_base_dir }}"
+        state: directory
+        mode: '0755'
+        owner: root
+        group: root
 
-- name: Include DKIM key generation tasks
-  ansible.builtin.include_tasks: "{{ role_path }}/tasks/generate_key.yml"
-  loop: "{{ dkim_domains_to_process }}"
-  loop_control:
-    loop_var: dkim_domain_item
-    label: "{{ dkim_domain_item.domain }}"
+    - name: Include DKIM key generation tasks
+      ansible.builtin.include_tasks: "{{ role_path }}/tasks/generate_key.yml"
+      loop: "{{ dkim_domains_to_process }}"
+      loop_control:
+        loop_var: dkim_domain_item
+        label: "{{ dkim_domain_item.domain }}"

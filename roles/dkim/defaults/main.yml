@@ -24,7 +24,7 @@ dkim_group: dkim
 #     selector: default
 #     key_size: 2048
 #
-dkim_domains: []
+dkim_domains: {}
 
 # Default selector name if not specified per domain
 dkim_default_selector: mail

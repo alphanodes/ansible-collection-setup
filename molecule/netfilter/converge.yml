@@ -10,9 +10,6 @@
         cache_valid_time: 600
       changed_when: false
 
-  vars:
-    netfilter_enabled: false  # Don't modify firewall rules in test
-
   roles:
     - role: alphanodes.setup.common
     - role: alphanodes.setup.netfilter

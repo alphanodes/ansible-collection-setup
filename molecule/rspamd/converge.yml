@@ -11,7 +11,7 @@
       changed_when: false
 
   vars:
-    # Central DKIM domains dictionary
+    # DKIM domains for testing (DKIM is optional but tested here)
     dkim_domains:
       example.com:
         selector: dkim_key

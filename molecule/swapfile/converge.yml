@@ -11,7 +11,7 @@
       changed_when: false
 
   vars:
-    swapfile_enabled: false  # Don't create swapfile in container test
+    swapfile_enable: false  # Don't create swapfile in container test
 
   roles:
     - role: alphanodes.setup.common

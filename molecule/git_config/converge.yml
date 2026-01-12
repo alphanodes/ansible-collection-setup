@@ -10,10 +10,6 @@
         cache_valid_time: 600
       changed_when: false
 
-  vars:
-    git_config_user_name: "Test User"
-    git_config_user_email: "test@example.com"
-
   roles:
     - role: alphanodes.setup.git
     - role: alphanodes.setup.git_config
