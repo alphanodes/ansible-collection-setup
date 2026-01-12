@@ -9,3 +9,8 @@
   ansible.builtin.systemd_service:
     name: apt-daily-upgrade.timer
     state: restarted
+
+- name: Restart apt-kernel-purge.timer
+  ansible.builtin.systemd_service:
+    name: apt-kernel-purge.timer
+    state: restarted

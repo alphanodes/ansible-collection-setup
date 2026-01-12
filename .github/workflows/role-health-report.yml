@@ -449,7 +449,14 @@ jobs:
                 CWF_DISPLAY="${CHANGED_WHEN_FALSE}"
               fi
 
-              echo "| ${ROLE_LINK} | ${ROLE_TASKS} | ${VERIFY_TASKS} | ${DISTROS} | ${DEPS} | ${COMMON_DISPLAY} | ${CI_DISPLAY} | ${BADGE_DISPLAY} | ${IDEMP_DISPLAY} | ${CWF_DISPLAY} | ${UNUSED_DISPLAY} | ${GIXY_DISPLAY} | ${DURATION} | ${LAST_CHANGE} |" >> ./report.md
+              # Format verify tasks (0 = warning, needs tests)
+              if [ "$VERIFY_TASKS" = "0" ] || [ -z "$VERIFY_TASKS" ]; then
+                VERIFY_DISPLAY="⚠️ 0"
+              else
+                VERIFY_DISPLAY="${VERIFY_TASKS}"
+              fi
+
+              echo "| ${ROLE_LINK} | ${ROLE_TASKS} | ${VERIFY_DISPLAY} | ${DISTROS} | ${DEPS} | ${COMMON_DISPLAY} | ${CI_DISPLAY} | ${BADGE_DISPLAY} | ${IDEMP_DISPLAY} | ${CWF_DISPLAY} | ${UNUSED_DISPLAY} | ${GIXY_DISPLAY} | ${DURATION} | ${LAST_CHANGE} |" >> ./report.md
             fi
           done
 

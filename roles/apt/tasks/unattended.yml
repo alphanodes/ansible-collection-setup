@@ -48,3 +48,42 @@
     group: root
     mode: '0644'
   notify: Restart apt-daily-upgrade.timer
+
+# Kernel purge timer - removes old kernels with --purge
+- name: Install apt-kernel-purge service and timer
+  ansible.builtin.template:
+    src: systemd/{{ item }}.j2
+    dest: /etc/systemd/system/{{ item }}
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - apt-kernel-purge.service
+    - apt-kernel-purge.timer
+  notify: Restart apt-kernel-purge.timer
+  when: apt_kernel_purge_enabled
+
+- name: Enable apt-kernel-purge.timer
+  ansible.builtin.systemd_service:
+    name: apt-kernel-purge.timer
+    enabled: true
+    daemon_reload: true
+  when: apt_kernel_purge_enabled
+
+- name: Remove apt-kernel-purge timer when disabled
+  when: not apt_kernel_purge_enabled
+  block:
+    - name: Stop and disable apt-kernel-purge.timer
+      ansible.builtin.systemd_service:
+        name: apt-kernel-purge.timer
+        state: stopped
+        enabled: false
+      failed_when: false
+
+    - name: Remove apt-kernel-purge files
+      ansible.builtin.file:
+        path: /etc/systemd/system/{{ item }}
+        state: absent
+      loop:
+        - apt-kernel-purge.service
+        - apt-kernel-purge.timer

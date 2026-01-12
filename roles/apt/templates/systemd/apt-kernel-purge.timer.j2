@@ -1,0 +1,11 @@
+{{ managed_by_ansible | comment }}
+
+[Unit]
+Description=Weekly purge of old unused kernel packages
+
+[Timer]
+OnCalendar={{ apt_kernel_purge_on_calendar }}
+Persistent=true
+
+[Install]
+WantedBy=timers.target

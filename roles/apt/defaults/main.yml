@@ -31,3 +31,8 @@ unattended_upgrade_remove_unused_dependencies: false
 unattended_upgrade_dpkg_options:
   - "--force-confdef"
   - "--force-confold"
+
+# Kernel purge timer - removes old kernels with purge (including config files)
+# Runs weekly, uses apt-get --purge autoremove
+apt_kernel_purge_enabled: true
+apt_kernel_purge_on_calendar: 'Sun *-*-* 06:00'

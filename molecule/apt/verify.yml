@@ -1,0 +1,128 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Verify unattended-upgrades package is installed
+      ansible.builtin.command: dpkg -s unattended-upgrades
+      register: unattended_pkg
+      changed_when: false
+
+    - name: Assert unattended-upgrades is installed
+      ansible.builtin.assert:
+        that:
+          - unattended_pkg.rc == 0
+          - "'Status: install ok installed' in unattended_pkg.stdout"
+        fail_msg: "unattended-upgrades package is not installed"
+
+    - name: Verify unattended-upgrades configuration syntax
+      ansible.builtin.command: unattended-upgrade --dry-run -d
+      register: unattended_syntax
+      changed_when: false
+      failed_when: false
+
+    - name: Assert unattended-upgrades config is valid
+      ansible.builtin.assert:
+        that:
+          - unattended_syntax.rc == 0
+        fail_msg: "unattended-upgrades configuration has syntax errors: {{ unattended_syntax.stderr }}"
+
+    - name: Check apt-daily.timer status
+      ansible.builtin.systemd_service:
+        name: apt-daily.timer
+      register: apt_daily_timer
+
+    - name: Assert apt-daily.timer is active and enabled
+      ansible.builtin.assert:
+        that:
+          - apt_daily_timer.status.ActiveState == 'active'
+          - apt_daily_timer.status.UnitFileState == 'enabled'
+        fail_msg: "apt-daily.timer is not active/enabled"
+
+    - name: Check apt-daily-upgrade.timer status
+      ansible.builtin.systemd_service:
+        name: apt-daily-upgrade.timer
+      register: apt_upgrade_timer
+
+    - name: Assert apt-daily-upgrade.timer is active and enabled
+      ansible.builtin.assert:
+        that:
+          - apt_upgrade_timer.status.ActiveState == 'active'
+          - apt_upgrade_timer.status.UnitFileState == 'enabled'
+        fail_msg: "apt-daily-upgrade.timer is not active/enabled"
+
+    - name: Check apt-kernel-purge.timer status
+      ansible.builtin.systemd_service:
+        name: apt-kernel-purge.timer
+      register: kernel_purge_timer
+
+    - name: Assert apt-kernel-purge.timer is active and enabled
+      ansible.builtin.assert:
+        that:
+          - kernel_purge_timer.status.ActiveState == 'active'
+          - kernel_purge_timer.status.UnitFileState == 'enabled'
+        fail_msg: "apt-kernel-purge.timer is not active/enabled"
+
+    - name: Verify apt-kernel-purge.service can be executed (dry-run)
+      ansible.builtin.command: systemd-analyze verify /etc/systemd/system/apt-kernel-purge.service
+      register: kernel_purge_verify
+      changed_when: false
+      failed_when: false
+
+    - name: Assert apt-kernel-purge.service is valid
+      ansible.builtin.assert:
+        that:
+          - kernel_purge_verify.rc == 0
+        fail_msg: "apt-kernel-purge.service has errors: {{ kernel_purge_verify.stderr }}"
+
+    - name: Read 50unattended-upgrades config
+      ansible.builtin.slurp:
+        src: /etc/apt/apt.conf.d/50unattended-upgrades
+      register: unattended_config
+
+    - name: Decode unattended-upgrades config
+      ansible.builtin.set_fact:
+        unattended_content: "{{ unattended_config.content | b64decode }}"
+
+    - name: Assert critical settings are configured
+      ansible.builtin.assert:
+        that:
+          - "'Unattended-Upgrade::Mail' in unattended_content"
+          - "'Unattended-Upgrade::Remove-Unused-Kernel-Packages' in unattended_content"
+          - "'Unattended-Upgrade::Automatic-Reboot' in unattended_content"
+        fail_msg: "Critical unattended-upgrade settings are missing"
+
+    - name: Read 20auto-upgrades config
+      ansible.builtin.slurp:
+        src: /etc/apt/apt.conf.d/20auto-upgrades
+      register: auto_upgrades_config
+
+    - name: Decode auto-upgrades config
+      ansible.builtin.set_fact:
+        auto_upgrades_content: "{{ auto_upgrades_config.content | b64decode }}"
+
+    - name: Assert auto-upgrades is enabled
+      ansible.builtin.assert:
+        that:
+          - "'APT::Periodic::Update-Package-Lists' in auto_upgrades_content"
+          - "'APT::Periodic::Unattended-Upgrade' in auto_upgrades_content"
+        fail_msg: "Auto-upgrades is not properly configured"
+
+    - name: Verify timer override directories exist
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: timer_dirs
+      loop:
+        - /etc/systemd/system/apt-daily.timer.d
+        - /etc/systemd/system/apt-daily-upgrade.timer.d
+
+    - name: Assert timer override directories exist
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isdir
+        fail_msg: "Timer override directory {{ item.item }} is missing"
+      loop: "{{ timer_dirs.results }}"
+      loop_control:
+        label: "{{ item.item }}"

@@ -1,0 +1,9 @@
+{{ managed_by_ansible | comment }}
+
+[Unit]
+Description=Purge old unused kernel packages
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/apt-get --purge autoremove -y
