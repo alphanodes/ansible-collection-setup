@@ -1,19 +1,15 @@
 {{ managed_by_ansible | comment }}
 
 # Use a different logger to use syslog
-config.log_level = :{{ redmine_instance.log_level | default('warn') }}
-{% if redmine_instance.use_logger is defined and redmine_instance.use_logger == 'journald-logger' %}
-config.logger = Journald::TraceLogger.new('{{ redmine_instance_name }}')
-config.logger.level = Logger::{{ redmine_instance.log_level | default('warn') | upper }}
-{% endif %}
-{% if redmine_instance.use_logger is undefined or redmine_instance.use_logger == 'syslog' %}
+config.log_level = :{{ redmine_instance.log_level | default(redmine_log_level) }}
+{% if redmine_instance.use_logger | default(redmine_default_logger) == 'syslog' %}
 begin
   require 'syslog/logger'
   config.logger = Syslog::Logger.new('{{ redmine_instance_name }}') if defined?(Syslog::Logger)
 rescue LoadError
   # Syslog not available, Rails uses default logger
 end
-config.logger.level = Logger::{{ redmine_instance.log_level | default('warn') | upper }}
+config.logger.level = Logger::{{ redmine_instance.log_level | default(redmine_log_level) | upper }}
 {% endif %}
 {% if active_to_time_preserves_timezone %}
 config.active_support.to_time_preserves_timezone = true

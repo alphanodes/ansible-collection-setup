@@ -26,12 +26,10 @@
     group: '{{ redmine_group }}'
     mode: '0640'
     validate: ruby -c %s
-  when:
-    - redmine_instance.use_logger is defined
-    - redmine_instance.use_logger == 'lograge'
+  when: redmine_instance.use_logger | default(redmine_default_logger) == 'lograge'
 
 - name: Disable lograte - {{ redmine_instance_name }}
   ansible.builtin.file:
     path: '{{ redmine_app_dir }}/config/initializers/lograte.rb'
     state: absent
-  when: redmine_instance.use_logger is undefined or redmine_instance.use_logger != 'lograge'
+  when: redmine_instance.use_logger | default(redmine_default_logger) != 'lograge'

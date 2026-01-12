@@ -201,7 +201,6 @@ postgresql_barman_password_encryption: scram-sha-256
 
 # ssh public key, which get access to postgres user
 postgresql_barman_ssh_public_key: ''
-postgresql_barman_wals_dir: ''
 
 # can be manually set (otherwise it is calculated)
 # postgresql_barman_archive_command: ''

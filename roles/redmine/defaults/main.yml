@@ -91,8 +91,6 @@ redmine_with_agile: false
 # this enables pghero and pg_extras, too
 redmine_with_alphanodes_enterprise_support: true
 
-redmine_env: production
-
 redmine_proxy_timeout: 120
 
 redmine_proxy_buffers: '16 128k'

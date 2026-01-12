@@ -1,8 +1,8 @@
 # {{ managed_by_ansible }}
-{% if redmine_instance.use_logger is defined and redmine_instance.use_logger != 'syslog' %}
-gem '{{redmine_instance.use_logger}}'
-{% endif %}
-{% if redmine_instance.use_logger is undefined or redmine_instance.use_logger == 'syslog' %}
+{% set instance_logger = redmine_instance.use_logger | default(redmine_default_logger) %}
+{% if instance_logger != 'syslog' %}
+gem '{{ instance_logger }}'
+{% else %}
 # NOTE: Syslog::Logger without gem is used
 {% endif %}
 {% if redmine_instance.rails_env is undefined or (redmine_instance.rails_env != 'test') %}

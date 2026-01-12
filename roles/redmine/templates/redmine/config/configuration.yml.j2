@@ -33,7 +33,7 @@ default:
 {% if ansible_facts.distribution_release == 'trixie' %}
   imagemagick_convert_command: magick
 {% endif %}
-{% if redmine_instance.use_logger is undefined or redmine_instance.use_logger == 'syslog' %}
+{% if redmine_instance.use_logger | default(redmine_default_logger) == 'syslog' %}
   reporting_use_syslog: true
 {% endif %}
 {% if redmine_instance.redmine_config is defined and redmine_instance.redmine_config | length > 0 %}
