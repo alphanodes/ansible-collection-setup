@@ -11,9 +11,6 @@
     zabbix_link_templates:
       - Linux by Zabbix agent
 
-    # PostgreSQL settings (dependency)
-    postgresql_with_pg_buffercache: true
-
     # PHP-FPM settings (dependency)
     php_fpm_listen: /run/php/php-fpm.sock
 
