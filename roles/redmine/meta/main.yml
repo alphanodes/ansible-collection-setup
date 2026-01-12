@@ -4,7 +4,6 @@ dependencies:
     public: true
   - role: alphanodes.setup.ssl
   - role: alphanodes.setup.memcached
-  # NOTE: nginx is now handled via nginx_mono in tasks/nginx.yml
   - role: alphanodes.setup.hedgedoc
     when: redmine_with_hedgedoc
 
