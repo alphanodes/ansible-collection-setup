@@ -1,0 +1,33 @@
+---
+
+- name: Ensure PostgreSQL packages are installed
+  ansible.builtin.apt:
+    name: '{{ drupal_postgresql_packages }}'
+    state: present
+
+- name: Ensure postgresql drupal user is present - {{ instance.name }}
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_user:
+    name: '{{ instance.db_user | default(instance.name) | replace("-", "_") }}'
+    password: "{{ instance.db_password }}"
+    role_attr_flags: "{{ instance.db_role_flags | default('NOSUPERUSER,CREATEDB') }}"
+  no_log: '{{ hide_sensitive_data }}'
+  when: instance.db_skip_user_setup is undefined or not instance.db_skip_user_setup
+
+- name: Ensure postgreSQL drupal database is present - {{ instance.name }}
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_db:
+    name: '{{ instance.db_name | default(instance.name) | replace("-", "_") }}'
+    owner: '{{ instance.db_user | default(instance.name) | replace("-", "_") }}'
+    state: present
+  when: instance.db_skip_db_setup is undefined or not instance.db_skip_db_setup
+
+- name: Add extention pg_stat_statements to gitlab database
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_ext:
+    name: pg_stat_statements
+    login_db: '{{ instance.db_user | default(instance.name) | replace("-", "_") }}'
+  when: not instance.db_skip_db_setup and postgresql_with_pg_stat_statements

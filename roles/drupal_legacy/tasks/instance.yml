@@ -1,0 +1,212 @@
+---
+
+- name: Include zsh role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.zsh
+  vars:
+    zsh_user: '{{ instance.drupal_user }}'
+    zsh_with_setup: false
+    zsh_user_home: '{{ instance.dir }}'
+  when: drupal_with_zsh and instance.drupal_user is defined
+
+- name: Set drupal home dir permission - {{ instance.name }}
+  ansible.builtin.file:
+    path: '{{ instance.dir }}'
+    owner: '{{ instance.drupal_user }}'
+    group: '{{ instance.drupal_group | default(nginx_group) }}'
+    mode: '0755'
+    state: directory
+  when: instance.drupal_user is defined and instance.drupal_user != 'root'
+
+- name: Include mysql tasks
+  ansible.builtin.include_tasks: instance_mysql.yml
+  tags: mysql
+  when:
+    - instance.db_driver is undefined or instance.db_driver == 'mysql'
+    - instance.db_host is undefined or instance.db_host == 'localhost' or instance.db_host == '127.0.0.1'
+
+- name: Include postgresql tasks
+  ansible.builtin.include_tasks: instance_postgresql.yml
+  tags: postgresql
+  when:
+    - instance.db_driver is defined
+    - instance.db_driver == 'pgsql'
+    - instance.db_host is undefined or instance.db_host == 'localhost' or instance.db_host == '127.0.0.1'
+
+- name: Set facts
+  ansible.builtin.set_fact:
+    file_private_path: "{{ instance.file_private_path | default(instance.dir + '/private_files') }}"
+    config_sync_directory: "{{ instance.config_sync_directory | default(instance.dir + '/config') }}"
+    sites_default_dir: "{{ instance.dir }}{{ instance.vhost_dir | default(drupal_vhost_dir) }}/sites/default"
+
+- name: Fix owner and permission for settings on checkout
+  when: instance.write_settings_file is defined and not instance.write_settings_file
+  block:
+    - name: Fix sites/default owner and permission
+      ansible.builtin.file:
+        path: "{{ sites_default_dir }}"
+        owner: "{{ instance.drupal_user | default('root') }}"
+        group: "{{ instance.drupal_group | default(nginx_group) | default('root') }}"
+        mode: '0755'
+        state: directory
+
+    - name: Fix settings.php owner and permission
+      ansible.builtin.file:
+        path: "{{ sites_default_dir }}/settings.php"
+        owner: "{{ instance.drupal_user | default('root') }}"
+        group: "{{ instance.drupal_group | default(nginx_group) | default('root') }}"
+        mode: '0644'
+        state: file
+
+    - name: Check for settings.prod.php
+      ansible.builtin.stat:
+        path: "{{ sites_default_dir }}/settings.prod.php"
+      register: prod_php
+
+    - name: Fix settings.prod.php owner and permission
+      ansible.builtin.file:
+        path: "{{ prod_php.stat.path }}"
+        owner: "{{ instance.drupal_user | default('root') }}"
+        group: "{{ instance.drupal_group | default(nginx_group) | default('root') }}"
+        mode: '0644'
+        state: file
+      when: prod_php.stat.exists
+
+- name: Install drupal - {{ instance.name }}
+  ansible.builtin.git:
+    repo: '{{ instance.repo }}'
+    dest: '{{ instance.dir }}'
+    version: '{{ instance.repo_version | default(omit) }}'
+    update: '{{ instance.repo_update | default("yes") }}'
+    accept_hostkey: true
+    force: true
+  when: instance.repo is defined
+  become: '{{ true if instance.drupal_user is defined else false }}'
+  become_user: '{{ instance.drupal_user | default("") }}'
+  register: git_result
+
+- name: Run post commands
+  ansible.builtin.command: "{{ item | replace('[drush]', '{{ instance.drush_path | default(drupal_drush_path) }} @{{ instance.name }}') }}"
+  become: '{{ true if instance.drupal_user is defined else false }}'
+  become_user: '{{ instance.drupal_user | default("") }}'
+  loop: "{{ instance.post_commands }}"
+  when:
+    - git_result.changed
+    - instance.post_commands is defined
+
+- name: Create drupal directories for permissions - {{ instance.name }}
+  ansible.builtin.file:
+    path: '{{ instance.dir }}{{ item }}'
+    state: directory
+    recurse: true
+  loop: '{{ instance.write_permissions | default([]) }}'
+
+- name: Include composer tasks {{ instance.name }}
+  ansible.builtin.include_tasks: instance_composer.yml
+
+- name: Set drupal permissions - {{ instance.name }}
+  ansible.builtin.file:
+    path: '{{ instance.dir }}{{ item }}'
+    owner: '{{ nginx_user }}'
+    group: '{{ instance.drupal_group | default(nginx_group) }}'
+    recurse: true
+  loop: '{{ instance.write_permissions | default([]) }}'
+  when: drupal_user is undefined
+
+- name: Make sure tmp directory exists and permissions are correct - {{ instance.name }}
+  ansible.builtin.file:
+    path: '{{ instance.dir }}{{ instance.tmp_dir }}'
+    owner: '{{ instance.drupal_user | default(nginx_user) }}'
+    group: '{{ instance.drupal_group | default(nginx_group) }}'
+    state: directory
+    recurse: true
+  when: instance.tmp_dir is defined
+
+- name: Check if private files directory exists - {{ instance.name }}
+  ansible.builtin.file:
+    path: '{{ file_private_path }}'
+    state: directory
+    recurse: true
+
+- name: Set private files permissions - {{ instance.name }}
+  ansible.builtin.file:
+    path: '{{ file_private_path }}'
+    owner: '{{ instance.drupal_user | default(nginx_user) }}'
+    group: '{{ instance.drupal_group | default(nginx_group) }}'
+    recurse: true
+
+- name: Set configuration sync permissions - {{ instance.name }}
+  ansible.builtin.file:
+    path: '{{ config_sync_directory }}'
+    owner: '{{ instance.drupal_user | default(nginx_user) }}'
+    group: '{{ instance.drupal_group | default(nginx_group) }}'
+    recurse: true
+
+- name: Update settings.php for Drupal - {{ instance.name }}
+  ansible.builtin.template:
+    src: default.settings.php.j2
+    dest: "{{ sites_default_dir }}/settings.php"
+    validate: 'php -l %s'
+    owner: '{{ instance.drupal_user | default("root") }}'
+    group: '{{ instance.drupal_group | default(nginx_group) }}'
+    mode: '0640'
+  when:
+    - instance.write_settings_file is undefined or instance.write_settings_file
+
+- name: Update .env
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ instance.dir }}/.env"
+    owner: '{{ instance.drupal_user | default("root") }}'
+    group: '{{ instance.drupal_group | default(nginx_group) }}'
+    mode: '0640'
+
+- name: Check trusted TLS cert
+  ansible.builtin.stat:
+    path: /etc/ssl/certs/{{ instance.vhost_ssl_cert | default(vhost_ssl_cert) }}_trusted.crt
+  register: trusted_cert
+  when: nginx_with_ssl
+
+- name: Set TLS files
+  ansible.builtin.set_fact:
+    vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
+  when:
+    - nginx_with_ssl
+    - instance.letsencrypt_cert is undefined or not instance.letsencrypt_cert
+
+- name: Update drupal vhosts configuration - {{ instance.name }}
+  tags: nginx
+  ansible.builtin.template:
+    src: etc/nginx/sites-available/drupal.j2
+    dest: /etc/nginx/sites-available/{{ instance.name }}.conf
+    mode: '0644'
+  notify: Reload nginx
+
+- name: Ensure drupal vhosts is enabled - {{ instance.name }}
+  tags: nginx
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/{{ instance.name }}.conf
+    dest: /etc/nginx/sites-enabled/{{ instance.name }}.conf
+    state: link
+  notify: Reload nginx
+
+  # restart required, because file can be not available before
+- name: Protect drupal vhost user - {{ instance.name }}
+  tags: nginx
+  community.general.htpasswd:
+    path: /etc/nginx/.htpasswd_drupal_{{ instance.name }}
+    name: '{{ item.user }}'
+    password: '{{ item.password }}'
+    owner: root
+    group: '{{ nginx_group }}'
+    mode: '0640'
+  loop: '{{ instance.vhost_users | default([]) }}'
+  when: instance.vhost_users is defined
+  notify: Restart nginx
+
+- name: Remove htpasswd file, if no base auth is in use - {{ instance.name }}
+  ansible.builtin.file:
+    path: /etc/nginx/.htpasswd_drupal_{{ instance.name }}
+    state: absent
+  when: instance.vhost_users is undefined
+  notify: Restart nginx

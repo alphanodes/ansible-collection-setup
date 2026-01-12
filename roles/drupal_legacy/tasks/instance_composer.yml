@@ -1,0 +1,37 @@
+---
+
+- name: Make sure composer path exists - {{ instance.name }}
+  ansible.builtin.file:
+    path: '{{ instance.composer_path }}'
+    mode: '0755'
+    state: directory
+  when: instance.composer_path is defined
+
+- name: Set composer_path - {{ instance.name }}
+  ansible.builtin.set_fact:
+    real_composer_path: "{{ instance.composer_path | default('') }}"
+
+- name: Set real_composer_bin - {{ instance.name }}
+  ansible.builtin.set_fact:
+    real_composer_bin: "{{ real_composer_path }}{{ '' if real_composer_path == '' else '/' }}composer"
+
+- name: Install composer, if instance use composer_path  {{ instance.name }}
+  ansible.builtin.include_role:
+    name: alphanodes.setup.composer
+  vars:
+    composer_path: "{{ real_composer_bin }}"
+    composer_home_path: "{{ instance.composer_home_path | default(omit) }}"
+    composer_version_branch: "{{ instance.composer_version_branch | default(omit) }}"
+    composer_add_to_path: false
+  when: instance.composer_path is defined
+
+- name: Run composer {{ real_composer_bin }}
+  ansible.builtin.command: '{{ real_composer_bin }} {{ instance.composer_params | default(drupal_composer_params) }}'
+  args:
+    chdir: "{{ instance.composer_json_path | default(instance.dir + drupal_vhost_dir) }}"
+  register: composer_result
+  when: >
+    instance.rollout_with_composer is defined
+    and instance.rollout_with_composer
+#    and git_result.changed
+  changed_when: composer_result.rc != 0
