@@ -12,9 +12,6 @@ nextcloud_source_file: nextcloud-{{ nextcloud_version }}.tar.bz2
 # for update procedure
 nextcloud_old_htdocs: '{{ nextcloud_dir }}/nextcloud.old'
 
-# set to proxy server, if any is used
-nextcloud_proxy_server: ''
-
 nextcloud_vhost_server: "{{ ansible_facts['fqdn'] }}"
 nextcloud_vhost_for_zabbix: false
 nextcloud_db_host: /run/postgresql

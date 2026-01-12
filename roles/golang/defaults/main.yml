@@ -25,9 +25,6 @@ golang_link_binaries:
   - go
   - gofmt
 
-# Location for GOPATH environment variable
-golang_gopath:
-
 # if true, golang is installed with packages from linux distribution
 # (not from golang_mirror)
 golang_dist_packages: false

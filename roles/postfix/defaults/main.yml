@@ -79,7 +79,6 @@ postfix_sender_access: []
 postfix_sender_canonicals: []
 
 postfix_myhostname: '{{ mail_hostname | default(hostname) | default(ansible_host) }}'
-postfix_myorigin: '{{ postfix_myhostname }}'
 
 postfix_mydestination:
   - localhost.$mydomain
@@ -110,7 +109,6 @@ postfix_smtpd_relay_restrictions:
   - reject_unauth_destination
 
 postfix_custom_options: []
-postfix_raw_options: []
 postfix_aliases: []
 
 ## Restrictions for MUAs (Mail user agents)

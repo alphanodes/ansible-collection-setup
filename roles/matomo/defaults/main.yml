@@ -29,8 +29,6 @@ matomo_vhost_letsencrypt_key: /etc/letsencrypt/live/{{ letsencrypt_default_cert 
 
 matomo_vhost_ssl_only: true
 
-matomo_location_redirect: /piwik
-
 matomo_db_host: localhost
 matomo_db_name: matomo
 matomo_db_user: matomo
