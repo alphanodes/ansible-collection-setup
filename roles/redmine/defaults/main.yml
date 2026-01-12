@@ -123,9 +123,6 @@ rails_env: production
 redmine_vhost_default: false
 redmine_vhost_for_zabbix: false
 
-# security setting
-redmine_content_security_policy: ''
-
 redmine_repo: 'https://github.com/redmine/redmine.git'
 redmine_repo_version: 6.0-stable
 redmine_repo_update: true
