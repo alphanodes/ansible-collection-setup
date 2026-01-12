@@ -584,12 +584,12 @@ Don't add new variables for:
 | radicale | 2024-11 | CalDAV/CardDAV |
 | vimbadmin | 2025-12 | Email admin, PHP-FPM pattern, HTTP_HOST fix tested |
 | redmine | 2025-12-31 | Complex multi-instance, Puma proxy, ActionCable WebSocket, legacy proxy headers |
+| drupal | 2026-01-12 | Multi-instance, PHP-FPM, nested locations via include file |
 
 ### Pending Migrations
 
 | Role | Complexity | Key Challenges |
 | ---- | ---------- | -------------- |
-| drupal | MEDIUM | Multiple instances pattern, FPM configuration |
 | gitlab | MEDIUM | Complex reverse proxy, WebSocket for action cable |
 | zabbix_web | LOW | PHP-FPM pattern |
 | typo3 | MEDIUM | PHP-FPM with special rewrites |

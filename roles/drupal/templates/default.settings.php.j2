@@ -11,15 +11,15 @@
    array (
      'default' =>
      array (
-       'database' => '{{ instance.db_name | default(instance.name) | replace('-', '_') }}',
-       'username' => '{{ instance.db_user | default(instance.name) | replace('-', '_') }}',
-       'password' => '{{ instance.db_password | default(drupal_db_password) }}',
-       'host' => '{{ instance.db_host | default(drupal_db_host) }}',
-       'port' => '{{ instance.db_port | default(drupal_db_port) }}',
-       'namespace' => 'Drupal\\Core\\Database\\Driver\\{{ instance.db_driver | default(drupal_db_driver) }}',
-       'driver' => '{{ instance.db_driver | default(drupal_db_driver) }}',
-       'prefix' => '{{ instance.db_prefix | default(drupal_db_prefix) }}',
-       'collation' => '{{ instance.db_collation | default(drupal_db_collation) }}',
+       'database' => '{{ drupal_instance.db_name | default(drupal_instance.name) | replace('-', '_') }}',
+       'username' => '{{ drupal_instance.db_user | default(drupal_instance.name) | replace('-', '_') }}',
+       'password' => '{{ drupal_instance.db_password | default(drupal_db_password) }}',
+       'host' => '{{ drupal_instance.db_host | default(drupal_db_host) }}',
+       'port' => '{{ drupal_instance.db_port | default(drupal_db_port) }}',
+       'namespace' => 'Drupal\\Core\\Database\\Driver\\{{ drupal_instance.db_driver | default(drupal_db_driver) }}',
+       'driver' => '{{ drupal_instance.db_driver | default(drupal_db_driver) }}',
+       'prefix' => '{{ drupal_instance.db_prefix | default(drupal_db_prefix) }}',
+       'collation' => '{{ drupal_instance.db_collation | default(drupal_db_collation) }}',
      ),
    ),
  );
@@ -49,9 +49,9 @@
  *   );
  * @endcode
  */
-$config_directories = array(CONFIG_SYNC_DIRECTORY => '{{ instance.config_sync_directory | default(instance.dir + '/config') }}');
+$config_directories = array(CONFIG_SYNC_DIRECTORY => '{{ drupal_instance.config_sync_directory | default(drupal_instance.dir + '/config') }}');
 
-$settings['config_sync_directory'] = '{{ instance.config_sync_directory | default(instance.dir + '/config') }}';
+$settings['config_sync_directory'] = '{{ drupal_instance.config_sync_directory | default(drupal_instance.dir + '/config') }}';
 
 /**
  * The active installation profile.
@@ -82,7 +82,7 @@ $settings['install_profile'] = 'standard';
  *   $settings['hash_salt'] = file_get_contents('/home/example/salt.txt');
  * @endcode
  */
-$settings['hash_salt'] = '{{ instance.hash_salt | default(drupal_hash_salt) }}';
+$settings['hash_salt'] = '{{ drupal_instance.hash_salt | default(drupal_hash_salt) }}';
 
 /**
  * Deployment identifier.
@@ -140,11 +140,11 @@ $settings['update_free_access'] = FALSE;
  */
 # $settings['reverse_proxy'] = TRUE;
 
-{% if instance.reverse_proxy_addresses is defined -%}
+{% if drupal_instance.reverse_proxy_addresses is defined -%}
 
 $settings['reverse_proxy'] = TRUE;
 $settings['reverse_proxy_addresses'] = array(
-{% for proxy_address in instance.reverse_proxy_addresses %}
+{% for proxy_address in drupal_instance.reverse_proxy_addresses %}
   '{{ proxy_address }}',
 {% endfor -%}
 );
@@ -167,11 +167,11 @@ $settings['reverse_proxy_addresses'] = array(
 
 $settings['file_private_path'] = '{{ file_private_path }}';
 
-{% if instance.tmp_dir is defined -%}
+{% if drupal_instance.tmp_dir is defined -%}
 
-$config['system.file']['path']['temporary'] = '{{ instance.dir }}{{ instance.tmp_dir }}';
+$config['system.file']['path']['temporary'] = '{{ drupal_instance.dir }}{{ drupal_instance.tmp_dir }}';
 
-$settings['file_temp_path'] = '{{ instance.dir }}{{ instance.tmp_dir }}';
+$settings['file_temp_path'] = '{{ drupal_instance.dir }}{{ drupal_instance.tmp_dir }}';
 
 {% endif -%}
 
@@ -185,8 +185,8 @@ $settings['file_temp_path'] = '{{ instance.dir }}{{ instance.tmp_dir }}';
  *
  * Note: This setting does not apply to installation and update pages.
  */
- {% if instance.maintenance_theme is defined and instance.maintenance_theme != '' %}
- $settings['maintenance_theme'] = '{{ instance.maintenance_theme }}';
+ {% if drupal_instance.maintenance_theme is defined and drupal_instance.maintenance_theme != '' %}
+ $settings['maintenance_theme'] = '{{ drupal_instance.maintenance_theme }}';
  {% endif %}
 
 /**
@@ -203,9 +203,9 @@ $settings['container_yamls'][] = __DIR__ . '/services.yml';
  */
 # $settings['container_base_class'] = '\Drupal\Core\DependencyInjection\Container';
 
- {% if instance.trusted_host_patterns is defined %}
+ {% if drupal_instance.trusted_host_patterns is defined %}
  $settings['trusted_host_patterns'] = array(
- {% for host_pattern in instance.trusted_host_patterns %}
+ {% for host_pattern in drupal_instance.trusted_host_patterns %}
    '{{ host_pattern }}',
  {% endfor %}
  );
@@ -226,8 +226,8 @@ $settings['file_scan_ignore_directories'] = [
   'bower_components',
 ];
 
-{% if instance.custom_conf is defined %}
-{% for custom_conf in instance.custom_conf %}
+{% if drupal_instance.custom_conf is defined %}
+{% for custom_conf in drupal_instance.custom_conf %}
 {{ custom_conf }}
 {% endfor %}
 {% endif %}

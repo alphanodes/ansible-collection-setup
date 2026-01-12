@@ -1,0 +1,70 @@
+---
+# nginx_mono integration for Drupal
+# This file is called for each Drupal instance to configure nginx
+
+- name: Calculate FPM socket path - {{ drupal_instance_name }}
+  ansible.builtin.set_fact:
+    _drupal_fpm_socket: >-
+      {{ php_fpm_base + '-' + drupal_instance.with_fpm + '.sock'
+         if drupal_instance.with_fpm is defined and drupal_instance.with_fpm != 'www'
+         else php_fpm_custom_listen | default(php_fpm_listen) }}
+
+- name: Deploy Drupal cache map configuration
+  ansible.builtin.copy:
+    src: nginx/map_cache_drupal.conf
+    dest: /etc/nginx/conf.d/map_cache_drupal.conf
+    mode: '0644'
+  notify: Reload nginx
+
+- name: Check TLS trusted certificate file - {{ drupal_instance_name }}
+  ansible.builtin.stat:
+    path: /etc/ssl/certs/{{ drupal_instance.vhost_ssl_cert | default(vhost_ssl_cert) }}_trusted.crt
+  register: trusted_cert
+  when:
+    - nginx_with_ssl
+    - drupal_instance.letsencrypt_cert is undefined or not drupal_instance.letsencrypt_cert
+    - drupal_instance.vhost_ssl_cert is defined or vhost_ssl_cert is defined
+
+- name: Set TLS files - {{ drupal_instance_name }}
+  ansible.builtin.set_fact:
+    vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
+  when:
+    - nginx_with_ssl
+    - drupal_instance.letsencrypt_cert is undefined or not drupal_instance.letsencrypt_cert
+    - trusted_cert.stat is defined
+
+- name: Render Drupal locations template - {{ drupal_instance_name }}
+  ansible.builtin.set_fact:
+    _drupal_locations_content: "{{ lookup('template', 'etc/nginx/drupal_locations.inc.j2') }}"
+
+- name: Setup nginx_mono for Drupal - {{ drupal_instance_name }}
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nginx_mono
+  vars:
+    nginx_mono_service_name: "{{ drupal_instance_name }}"
+    nginx_mono_service_enabled: "{{ drupal_instance.state is undefined or drupal_instance.state == 'active' }}"
+    nginx_mono_service_config:
+      server_name: "{{ drupal_instance.server_name }}"
+      server_alias: "{{ drupal_instance.server_alias | default(omit) }}"
+      server_port: "{{ drupal_instance.server_port | default(omit) }}"
+      root: "{{ drupal_instance.dir }}{{ drupal_instance.vhost_dir | default(drupal_vhost_dir) }}"
+      index: "index.php index.html"
+      htpasswd_name: "drupal_{{ drupal_instance_name }}"
+      vhost_default: "{{ drupal_instance.vhost_default | default(drupal_vhost_default) }}"
+      vhost_for_zabbix: "{{ drupal_instance.vhost_for_zabbix | default(drupal_vhost_for_zabbix) }}"
+      vhost_users: "{{ drupal_instance.vhost_users | default(drupal_vhost_users) }}"
+      vhost_includes: "{{ drupal_instance.vhost_includes | default(drupal_vhost_includes) }}"
+      letsencrypt: "{{ drupal_instance.letsencrypt | default(false) }}"
+      letsencrypt_cert: "{{ drupal_instance.letsencrypt_cert | default(omit) }}"
+      letsencrypt_key: "{{ drupal_instance.letsencrypt_key | default(omit) }}"
+      ssl_cert: "{{ drupal_instance.vhost_ssl_cert | default(omit) }}"
+      redirects: "{{ drupal_instance.redirects | default([]) }}"
+      external_redirects: "{{ drupal_instance.external_redirects | default([]) }}"
+      upstream_name: "drupal"
+      upstream_servers:
+        - "unix:{{ _drupal_fpm_socket }}"
+      auth_basic_realm: "{{ 'Restricted access only' if drupal_instance.vhost_users is defined and drupal_instance.vhost_users | length > 0 else omit }}"
+      raw_actions:
+        - "fastcgi_hide_header 'X-Generator';"
+        - "fastcgi_hide_header 'X-Powered-By';"
+        - "{{ _drupal_locations_content }}"

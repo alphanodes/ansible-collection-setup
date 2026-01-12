@@ -27,7 +27,7 @@ drupal_base_url: ''
 drupal_maintenance_theme: ''
 drupal_fast_404: false
 
-# instance.drupal_user is required for zsh, too
+# drupal_instance.drupal_user is required for zsh, too
 drupal_with_zsh: true
 drupal_with_memcache: false
 drupal_memcache_module: sites/all/modules/contrib/memcache
@@ -49,7 +49,7 @@ drupal_vhost_users: []
 
 drupal_composer_params: update -n
 
-# default drush path (overwrite it with instance.drush_path)
+# default drush path (overwrite it with drupal_instance.drush_path)
 drupal_drush_path: /root/.composer/vendor/bin/drush
 
 # this is not working at the moment

@@ -2,25 +2,166 @@
 - name: Converge
   hosts: all
   become: true
+  vars:
+    # Common role variable for templates
+    managed_by_ansible: "Ansible managed"
+
+    # nginx_mono configuration
+    nginx_with_ipv6: false
+    nginx_with_http3: false
+    nginx_with_protection: true
+    nginx_ssl_protocols: 'TLSv1.3'
+    hoster: 'local'
+
+    # SSL configuration - self-signed certificate for testing
+    ssl_certs:
+      - name: drupal
+        provider: selfsigned
+        subject_common_name: drupal.local
+
+    # MySQL settings - use MariaDB for ARM64 compatibility
+    mysql_backend: mariadb
+    mysql_server_tmpdir: /tmp
+
+    # PHP-FPM settings - version is auto-detected by php_fpm role
+    php_fpm_pools:
+      - name: www
+        user: www-data
+        group: www-data
+        pm_max_children: 5
+        pm_start_servers: 2
+        pm_min_spare_servers: 1
+        pm_max_spare_servers: 3
+
+    # Drupal configuration - testing nginx_mono integration
+    drupal_with_zsh: false
+    drupal_with_memcache: false
+
+    drupal_instances:
+      - name: drupal
+        server_name: drupal.local
+        dir: /srv/drupal
+        vhost_dir: /htdocs
+        db_name: drupal
+        db_user: drupal
+        db_password: test_drupal_password
+        db_skip_db_setup: true
+        db_skip_user_setup: true
+        write_settings_file: false
+        letsencrypt: false
+        vhost_ssl_cert: drupal
+        vhost_default: true
+        vhost_for_zabbix: false
+
+    # Drupal nginx variables for template (from defaults/main.yml)
+    drupal_nginx_files_static: "css|cur|js|jpe?g|gif|htc|ico|png|xml|otf|ttf|eot|woff|woff2|svg|mp4|svgz|ogg|ogv|pdf|pptx?|zip|tgz|gz|rar|bz2|doc|xls|exe|tar|mid|midi|wav|bmp|rtf|txt|map|webp"
+    drupal_nginx_not_found_regex: "\\.(engine|md|txt|inc|install|make|module|profile|po|sh|.*sql|theme|twig|tpl(\\.php)?|xtmpl|yml|yaml)(~|\\.sw[op]|\\.bak|\\.orig|\\.save)?$|^(\\.(?!well-known).*|Entries.*|Repository|Root|Tag|Template)$|(web\\.config|composer\\.(json|lock)|(package|package-lock)\\.json|yarn\\.lock)$|^#.*#$|\\.php(~|\\.sw[op]|\\.bak|\\.orig|\\.save)$"
+    drupal_nginx_files_dir_static: 'txt'
 
   pre_tasks:
-    - name: Update apt cache.
+    - name: Update apt cache
       ansible.builtin.apt:
         update_cache: true
         cache_valid_time: 600
       changed_when: false
 
-  vars:
-    # Minimal configuration for testing
-    drupal_enabled: false  # Don't actually deploy Drupal in test
+    - name: Create drupal system user
+      ansible.builtin.user:
+        name: drupal
+        system: true
+        home: /srv/drupal
+        shell: /bin/bash
+        create_home: true
 
-  roles:
-    - role: alphanodes.setup.common
-    - role: alphanodes.setup.php_cli
-    - role: alphanodes.setup.drupal
+    - name: Create drupal directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: drupal
+        group: www-data
+        mode: '0755'
+      loop:
+        - /srv/drupal
+        - /srv/drupal/htdocs
+        - /srv/drupal/htdocs/sites
+        - /srv/drupal/htdocs/sites/default
+        - /srv/drupal/htdocs/core
+        - /srv/drupal/private_files
+        - /srv/drupal/config
 
-  post_tasks:
-    - name: Check drupal role completed
-      ansible.builtin.debug:
-        msg: "Drupal role executed successfully"
-    # TODO: Requires full PHP/MySQL/nginx setup for complete testing
+    - name: Create dummy index.php for testing
+      ansible.builtin.copy:
+        content: |
+          <?php
+          echo "Drupal Test Page";
+        dest: /srv/drupal/htdocs/index.php
+        owner: drupal
+        group: www-data
+        mode: '0644'
+
+    - name: Create dummy settings.php for testing
+      ansible.builtin.copy:
+        content: |
+          <?php
+          // Drupal settings placeholder
+        dest: /srv/drupal/htdocs/sites/default/settings.php
+        owner: drupal
+        group: www-data
+        mode: '0644'
+
+  tasks:
+    - name: Include common role
+      ansible.builtin.include_role:
+        name: alphanodes.setup.common
+
+    - name: Include ssl role
+      ansible.builtin.include_role:
+        name: alphanodes.setup.ssl
+
+    - name: Include php_fpm role
+      ansible.builtin.include_role:
+        name: alphanodes.setup.php_fpm
+
+    - name: Install nginx package for conf.d directory
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+
+    - name: Ensure nginx conf.d directory exists
+      ansible.builtin.file:
+        path: /etc/nginx/conf.d
+        state: directory
+        mode: '0755'
+
+    - name: Deploy Drupal cache map configuration
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../../roles/drupal/files/nginx/map_cache_drupal.conf"
+        dest: /etc/nginx/conf.d/map_cache_drupal.conf
+        mode: '0644'
+
+    - name: Render Drupal locations template
+      ansible.builtin.set_fact:
+        _drupal_locations_content: "{{ lookup('template', playbook_dir + '/../../roles/drupal/templates/etc/nginx/drupal_locations.inc.j2') }}"
+
+    - name: Include nginx_mono for drupal
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: drupal
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: drupal.local
+          root: /srv/drupal/htdocs
+          index: index.php index.html
+          htpasswd_name: drupal_drupal
+          vhost_default: true
+          vhost_for_zabbix: false
+          letsencrypt: false
+          ssl_cert: drupal
+          upstream_name: drupal
+          upstream_servers:
+            - "unix:{{ php_fpm_listen }}"
+          raw_actions:
+            - "fastcgi_hide_header 'X-Generator';"
+            - "fastcgi_hide_header 'X-Powered-By';"
+            - "{{ _drupal_locations_content }}"

@@ -1,0 +1,333 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Set PHP version based on distribution
+      ansible.builtin.set_fact:
+        _php_version: "{{ '8.4' if ansible_distribution_release == 'trixie' else '8.2' }}"
+
+    - name: Check nginx is running
+      ansible.builtin.command: systemctl is-active nginx
+      register: nginx_status
+      changed_when: false
+
+    - name: Assert nginx is active
+      ansible.builtin.assert:
+        that:
+          - nginx_status.rc == 0
+          - nginx_status.stdout == 'active'
+        fail_msg: "nginx is not running"
+
+    - name: Check nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax
+      changed_when: false
+
+    - name: Assert nginx configuration is valid
+      ansible.builtin.assert:
+        that:
+          - nginx_syntax.rc == 0
+        fail_msg: "nginx configuration is invalid"
+
+    - name: Check PHP-FPM is running
+      ansible.builtin.command: "systemctl is-active php{{ _php_version }}-fpm"
+      register: fpm_status
+      changed_when: false
+
+    - name: Assert PHP-FPM is active
+      ansible.builtin.assert:
+        that:
+          - fpm_status.rc == 0
+          - fpm_status.stdout == 'active'
+        fail_msg: "PHP-FPM is not running"
+
+    - name: Check drupal vhost exists in sites-available
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/drupal.conf
+      register: drupal_vhost
+
+    - name: Assert drupal vhost exists
+      ansible.builtin.assert:
+        that:
+          - drupal_vhost.stat.exists
+        fail_msg: "drupal vhost configuration does not exist"
+
+    - name: Check drupal vhost is enabled
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/drupal.conf
+      register: drupal_enabled
+
+    - name: Assert drupal vhost is enabled
+      ansible.builtin.assert:
+        that:
+          - drupal_enabled.stat.exists
+          - drupal_enabled.stat.islnk
+        fail_msg: "drupal vhost is not enabled"
+
+    - name: Check drupal cache map exists in conf.d
+      ansible.builtin.stat:
+        path: /etc/nginx/conf.d/map_cache_drupal.conf
+      register: drupal_map
+
+    - name: Assert drupal cache map exists
+      ansible.builtin.assert:
+        that:
+          - drupal_map.stat.exists
+        fail_msg: "drupal cache map configuration does not exist"
+
+    - name: Check drupal vhost contains upstream block
+      ansible.builtin.command: grep -q "upstream drupal" /etc/nginx/sites-available/drupal.conf
+      register: upstream_check
+      changed_when: false
+
+    - name: Assert upstream block exists
+      ansible.builtin.assert:
+        that:
+          - upstream_check.rc == 0
+        fail_msg: "upstream block not found in drupal vhost"
+
+    - name: Check drupal vhost contains PHP-FPM unix socket
+      ansible.builtin.command: "grep -q 'unix:/run/php/php{{ _php_version }}-fpm.sock' /etc/nginx/sites-available/drupal.conf"
+      register: socket_check
+      changed_when: false
+
+    - name: Assert PHP-FPM unix socket configuration exists
+      ansible.builtin.assert:
+        that:
+          - socket_check.rc == 0
+        fail_msg: "PHP-FPM unix socket configuration not found"
+
+    - name: Check drupal vhost contains server_name
+      ansible.builtin.command: grep -q "server_name drupal.local" /etc/nginx/sites-available/drupal.conf
+      register: server_name_check
+      changed_when: false
+
+    - name: Assert server_name is configured
+      ansible.builtin.assert:
+        that:
+          - server_name_check.rc == 0
+        fail_msg: "server_name drupal.local not found"
+
+    - name: Check drupal vhost contains root directive
+      ansible.builtin.command: grep -q "root /srv/drupal/htdocs" /etc/nginx/sites-available/drupal.conf
+      register: root_check
+      changed_when: false
+
+    - name: Assert root directive exists
+      ansible.builtin.assert:
+        that:
+          - root_check.rc == 0
+        fail_msg: "root directive not found"
+
+    - name: Check drupal vhost contains @drupal named location
+      ansible.builtin.command: grep -q "location @drupal" /etc/nginx/sites-available/drupal.conf
+      register: drupal_location_check
+      changed_when: false
+
+    - name: Assert @drupal named location exists
+      ansible.builtin.assert:
+        that:
+          - drupal_location_check.rc == 0
+        fail_msg: "@drupal named location not found"
+
+    - name: Check drupal vhost contains @drupal-no-args named location
+      ansible.builtin.command: grep -q "location @drupal-no-args" /etc/nginx/sites-available/drupal.conf
+      register: drupal_no_args_check
+      changed_when: false
+
+    - name: Assert @drupal-no-args named location exists
+      ansible.builtin.assert:
+        that:
+          - drupal_no_args_check.rc == 0
+        fail_msg: "@drupal-no-args named location not found"
+
+    - name: Check drupal vhost contains try_files to @drupal
+      ansible.builtin.command: grep -q "try_files.*@drupal" /etc/nginx/sites-available/drupal.conf
+      register: try_files_check
+      changed_when: false
+
+    - name: Assert try_files directive exists
+      ansible.builtin.assert:
+        that:
+          - try_files_check.rc == 0
+        fail_msg: "try_files directive with @drupal not found"
+
+    - name: Check drupal vhost contains nested /system/files/ location
+      ansible.builtin.command: grep -q "/system/files/" /etc/nginx/sites-available/drupal.conf
+      register: system_files_check
+      changed_when: false
+
+    - name: Assert /system/files/ nested location exists
+      ansible.builtin.assert:
+        that:
+          - system_files_check.rc == 0
+        fail_msg: "/system/files/ nested location not found"
+
+    - name: Check drupal vhost contains private files location
+      ansible.builtin.command: grep -q "/sites/.*/files/private/" /etc/nginx/sites-available/drupal.conf
+      register: private_files_check
+      changed_when: false
+
+    - name: Assert private files location with internal exists
+      ansible.builtin.assert:
+        that:
+          - private_files_check.rc == 0
+        fail_msg: "private files location not found"
+
+    - name: Check drupal vhost contains index.php location
+      ansible.builtin.command: grep -q "location = /index.php" /etc/nginx/sites-available/drupal.conf
+      register: index_php_check
+      changed_when: false
+
+    - name: Assert index.php location exists
+      ansible.builtin.assert:
+        that:
+          - index_php_check.rc == 0
+        fail_msg: "index.php location not found"
+
+    - name: Check drupal vhost contains cron location
+      ansible.builtin.command: grep -q "location = /cron" /etc/nginx/sites-available/drupal.conf
+      register: cron_check
+      changed_when: false
+
+    - name: Assert cron location exists
+      ansible.builtin.assert:
+        that:
+          - cron_check.rc == 0
+        fail_msg: "cron location not found"
+
+    - name: Check drupal vhost contains update.php location
+      ansible.builtin.command: grep -q "location.*update.php" /etc/nginx/sites-available/drupal.conf
+      register: update_check
+      changed_when: false
+
+    - name: Assert update.php location exists
+      ansible.builtin.assert:
+        that:
+          - update_check.rc == 0
+        fail_msg: "update.php location not found"
+
+    - name: Check drupal vhost contains patches security block
+      ansible.builtin.command: grep -q "location.*patches" /etc/nginx/sites-available/drupal.conf
+      register: patches_check
+      changed_when: false
+
+    - name: Assert patches security block exists
+      ansible.builtin.assert:
+        that:
+          - patches_check.rc == 0
+        fail_msg: "patches security block not found"
+
+    - name: Check drupal vhost contains backup security block
+      ansible.builtin.command: grep -q "location.*backup" /etc/nginx/sites-available/drupal.conf
+      register: backup_check
+      changed_when: false
+
+    - name: Assert backup security block exists
+      ansible.builtin.assert:
+        that:
+          - backup_check.rc == 0
+        fail_msg: "backup security block not found"
+
+    - name: Check drupal vhost contains fastcgi_hide_header X-Generator
+      ansible.builtin.command: grep -q "fastcgi_hide_header 'X-Generator'" /etc/nginx/sites-available/drupal.conf
+      register: hide_generator_check
+      changed_when: false
+
+    - name: Assert fastcgi_hide_header X-Generator exists
+      ansible.builtin.assert:
+        that:
+          - hide_generator_check.rc == 0
+        fail_msg: "fastcgi_hide_header X-Generator not found"
+
+    - name: Check drupal vhost contains fastcgi_hide_header X-Powered-By
+      ansible.builtin.command: grep -q "fastcgi_hide_header 'X-Powered-By'" /etc/nginx/sites-available/drupal.conf
+      register: hide_powered_check
+      changed_when: false
+
+    - name: Assert fastcgi_hide_header X-Powered-By exists
+      ansible.builtin.assert:
+        that:
+          - hide_powered_check.rc == 0
+        fail_msg: "fastcgi_hide_header X-Powered-By not found"
+
+    - name: Check drupal vhost contains fastcgi_pass drupal
+      ansible.builtin.command: grep -q "fastcgi_pass drupal" /etc/nginx/sites-available/drupal.conf
+      register: fastcgi_pass_check
+      changed_when: false
+
+    - name: Assert fastcgi_pass drupal exists
+      ansible.builtin.assert:
+        that:
+          - fastcgi_pass_check.rc == 0
+        fail_msg: "fastcgi_pass drupal not found"
+
+    - name: Check drupal vhost contains ads.txt location
+      ansible.builtin.command: grep -q "location = /ads.txt" /etc/nginx/sites-available/drupal.conf
+      register: ads_txt_check
+      changed_when: false
+
+    - name: Assert ads.txt location exists
+      ansible.builtin.assert:
+        that:
+          - ads_txt_check.rc == 0
+        fail_msg: "ads.txt location not found"
+
+    - name: Verify SSL certificate exists
+      ansible.builtin.stat:
+        path: /etc/ssl/certs/drupal.crt
+      register: ssl_cert
+
+    - name: Assert SSL certificate exists
+      ansible.builtin.assert:
+        that:
+          - ssl_cert.stat.exists
+        fail_msg: "SSL certificate does not exist"
+
+    - name: Verify SSL key exists
+      ansible.builtin.stat:
+        path: /etc/ssl/private/drupal.key
+      register: ssl_key
+
+    - name: Assert SSL key exists
+      ansible.builtin.assert:
+        that:
+          - ssl_key.stat.exists
+        fail_msg: "SSL key does not exist"
+
+    - name: Check drupal vhost contains SSL certificate path
+      ansible.builtin.command: grep -q "ssl_certificate.*/etc/ssl/certs/drupal.crt" /etc/nginx/sites-available/drupal.conf
+      register: ssl_cert_path_check
+      changed_when: false
+
+    - name: Assert SSL certificate path is configured
+      ansible.builtin.assert:
+        that:
+          - ssl_cert_path_check.rc == 0
+        fail_msg: "SSL certificate path not found in vhost"
+
+    - name: Check drupal vhost contains SSL key path
+      ansible.builtin.command: grep -q "ssl_certificate_key.*/etc/ssl/private/drupal.key" /etc/nginx/sites-available/drupal.conf
+      register: ssl_key_path_check
+      changed_when: false
+
+    - name: Assert SSL key path is configured
+      ansible.builtin.assert:
+        that:
+          - ssl_key_path_check.rc == 0
+        fail_msg: "SSL key path not found in vhost"
+
+    - name: Display verification summary
+      ansible.builtin.debug:
+        msg: |
+          Verification complete:
+          - nginx is running with valid configuration
+          - PHP-FPM {{ _php_version }} is running
+          - drupal vhost configured with upstream and PHP-FPM socket
+          - All Drupal nginx locations present (@drupal, @drupal-no-args, nested)
+          - Security blocks configured (patches, backup)
+          - fastcgi_hide_header directives applied
+          - SSL certificate and key configured
+          - Cache map deployed to conf.d
