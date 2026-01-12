@@ -25,9 +25,8 @@ jobs:
     strategy:
       matrix:
         distro:
-          - ubuntu2404
           - debian12
-          # debian13 excluded - no MySQL packages available yet
+          - debian13
 
     steps:
       - name: Check out the codebase.
