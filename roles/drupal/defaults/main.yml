@@ -6,7 +6,6 @@ drupal_instances: []
   # - name: demo
 
 # Default values for a drupal instance (overwrite it in instance hash)
-drupal_server_name: drupal.local
 drupal_vhost_dir: '/htdocs'
 drupal_vhost_for_zabbix: false
 drupal_vhost_default: false
@@ -18,20 +17,13 @@ drupal_db_host: localhost
 drupal_db_port: 3306
 drupal_db_driver: mysql
 drupal_db_prefix: ''
-drupal_db_charset: 'utf8mb4'
 drupal_db_collation: 'utf8mb4_general_ci'
 
-drupal_write_settings_file: true
 drupal_hash_salt: ''
-drupal_base_url: ''
-drupal_maintenance_theme: ''
 drupal_fast_404: false
 
 # drupal_instance.drupal_user is required for zsh, too
 drupal_with_zsh: true
-drupal_with_memcache: false
-drupal_memcache_module: sites/all/modules/contrib/memcache
-drupal_memcache_prefix: drupal
 drupal_vhost_includes: []
 
 drupal_mysql_packages:
@@ -52,12 +44,6 @@ drupal_composer_params: update -n
 # default drush path (overwrite it with drupal_instance.drush_path)
 drupal_drush_path: /root/.composer/vendor/bin/drush
 
-# this is not working at the moment
-# no default value possible for with_subelements
-drupal_write_permissions:
-  - /htdocs/sites/default/files
-  - /htdocs/sites/all/translations
-
 # nginx
 
 # see https://github.com/wodby/nginx/blob/master/templates/presets/drupal8.conf.tmpl
@@ -65,6 +51,3 @@ drupal_write_permissions:
 drupal_nginx_files_static: "css|cur|js|jpe?g|gif|htc|ico|png|xml|otf|ttf|eot|woff|woff2|svg|mp4|svgz|ogg|ogv|pdf|pptx?|zip|tgz|gz|rar|bz2|doc|xls|exe|tar|mid|midi|wav|bmp|rtf|txt|map|webp"
 drupal_nginx_not_found_regex: "\\.(engine|md|txt|inc|install|make|module|profile|po|sh|.*sql|theme|twig|tpl(\\.php)?|xtmpl|yml|yaml)(~|\\.sw[op]|\\.bak|\\.orig|\\.save)?$|^(\\.(?!well-known).*|Entries.*|Repository|Root|Tag|Template)$|(web\\.config|composer\\.(json|lock)|(package|package-lock)\\.json|yarn\\.lock)$|^#.*#$|\\.php(~|\\.sw[op]|\\.bak|\\.orig|\\.save)$"
 drupal_nginx_files_dir_static: 'txt'
-
-# instance wide usage (for /etc/nginx/drupal.conf)
-drupal_multilanguage: []
