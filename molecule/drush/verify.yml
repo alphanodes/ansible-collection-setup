@@ -1,0 +1,112 @@
+---
+- name: Verify drush installation
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    # Core functionality: drush binary
+    - name: Check drush binary exists
+      ansible.builtin.stat:
+        path: /root/.config/composer/vendor/bin/drush
+      register: drush_binary
+
+    - name: Assert drush binary is installed and executable
+      ansible.builtin.assert:
+        that:
+          - drush_binary.stat.exists
+          - drush_binary.stat.executable
+        fail_msg: "Drush binary not found or not executable"
+
+    # Drush --version requires Drupal, so we verify via composer
+    - name: Get drush package info from composer
+      ansible.builtin.command: /usr/local/bin/composer global show drush/drush --format=json
+      changed_when: false
+      register: drush_composer_info
+
+    - name: Parse drush version from composer
+      ansible.builtin.set_fact:
+        drush_installed_version: "{{ (drush_composer_info.stdout | from_json).versions[0] }}"
+
+    - name: Assert drush version 13 is installed
+      ansible.builtin.assert:
+        that:
+          - drush_installed_version is version('13.0', '>=')
+        fail_msg: "Expected Drush 13.x, got: {{ drush_installed_version }}"
+
+    # Configuration files
+    - name: Check drush configuration directory
+      ansible.builtin.stat:
+        path: /etc/drush
+      register: drush_config_dir
+
+    - name: Assert drush config directory exists
+      ansible.builtin.assert:
+        that:
+          - drush_config_dir.stat.exists
+          - drush_config_dir.stat.isdir
+          - drush_config_dir.stat.mode == '0755'
+        fail_msg: "Drush config directory missing or wrong permissions"
+
+    - name: Check drushrc.php exists
+      ansible.builtin.stat:
+        path: /etc/drush/drushrc.php
+      register: drushrc_file
+
+    - name: Assert drushrc.php configuration
+      ansible.builtin.assert:
+        that:
+          - drushrc_file.stat.exists
+          - drushrc_file.stat.mode == '0644'
+        fail_msg: "drushrc.php missing or wrong permissions"
+
+    - name: Verify drushrc.php contains user option
+      ansible.builtin.command: grep -q "\$options\['u'\]" /etc/drush/drushrc.php
+      changed_when: false
+
+    - name: Check aliases.drushrc.php exists
+      ansible.builtin.stat:
+        path: /etc/drush/aliases.drushrc.php
+      register: aliases_file
+
+    - name: Assert aliases.drushrc.php configuration
+      ansible.builtin.assert:
+        that:
+          - aliases_file.stat.exists
+          - aliases_file.stat.mode == '0644'
+        fail_msg: "aliases.drushrc.php missing or wrong permissions"
+
+    # Sudoers configuration for Zabbix monitoring
+    - name: Check sudoers drush file exists
+      ansible.builtin.stat:
+        path: /etc/sudoers.d/drush
+      register: sudoers_drush
+
+    - name: Assert sudoers drush configuration
+      ansible.builtin.assert:
+        that:
+          - sudoers_drush.stat.exists
+          - sudoers_drush.stat.mode == '0440'
+        fail_msg: "sudoers drush file missing or wrong permissions (expected 0440)"
+
+    - name: Validate sudoers syntax
+      ansible.builtin.command: visudo -c -f /etc/sudoers.d/drush
+      changed_when: false
+      register: visudo_check
+
+    - name: Assert sudoers syntax is valid
+      ansible.builtin.assert:
+        that:
+          - visudo_check.rc == 0
+        fail_msg: "Invalid sudoers syntax in /etc/sudoers.d/drush"
+
+    - name: Display verification summary
+      ansible.builtin.debug:
+        msg: |
+          Drush verification complete:
+          - Drush binary installed and executable
+          - Drush version: {{ drush_installed_version }}
+          - Configuration directory /etc/drush exists (0755)
+          - drushrc.php configured (0644)
+          - aliases.drushrc.php configured (0644)
+          - sudoers.d/drush configured with valid syntax (0440)
