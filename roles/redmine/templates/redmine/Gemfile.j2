@@ -8,7 +8,7 @@ gem '{{redmine_instance.use_logger}}'
 {% if redmine_instance.rails_env is undefined or (redmine_instance.rails_env != 'test') %}
 gem 'puma'
 {% endif %}
-{% if redmine_instance.with_memcache is defined and redmine_instance.with_memcache %}
+{% if redmine_instance.with_memcache | default(redmine_with_memcache) %}
 {% if redmine_instance.without_dalli is undefined or not redmine_instance.without_dalli %}
 gem 'dalli'
 {% endif %}

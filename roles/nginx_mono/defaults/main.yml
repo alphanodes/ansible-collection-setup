@@ -34,9 +34,6 @@ nginx_remove_default_vhost: true
 
 nginx_vhost_with_access_log: true
 
-# e.g. required for mysql ssl connections
-nginx_in_ssl_group: false
-
 nginx_with_ssl: true
 nginx_with_ssl_stapling: false
 
@@ -101,8 +98,6 @@ nginx_fastcgi_microcache_inactive: 1h
 nginx_fastcgi_microcache_valid: 10s
 nginx_fastcgi_microcache_base_dir: /run/microcache
 
-nginx_fastcgi_microcaches: []
-
 # use if, if you use nginx as reverse proxy
 # nginx_proxy_buffer_size: 16k
 # nginx_proxy_buffers: 8 32k
@@ -147,10 +142,6 @@ nginx_disable_modules: []
 # - 50 request per minute
 # ? https://www.nginx.com/blog/rate-limiting-nginx/
 nginx_limit_req_zones: []
-
-# nginx_mono specific: Service configuration patterns
-nginx_mono_service_type: ''  # 'proxy', 'php', 'static', 'mixed'
-nginx_mono_proxy_config: {}
 
 # nginx_mono include mode: Creates /etc/nginx/SERVICE.conf instead of sites-available/SERVICE.conf
 # Useful for path-based deployments that need to be included in existing vhosts

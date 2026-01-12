@@ -23,7 +23,7 @@ config.active_support.to_time_preserves_timezone = true
 config.relative_url_root = '{{ redmine_instance.prefix }}'
 RedmineApp::Application.routes.default_scope = config.relative_url_root
 {% endif %}
-{% if redmine_instance.with_memcache is defined and redmine_instance.with_memcache %}
+{% if redmine_instance.with_memcache | default(redmine_with_memcache) %}
 config.cache_store = :mem_cache_store, '{{ redmine_instance.memcached_host | default(redmine_memcached_host) }}', { namespace: '{{ redmine_instance_name }}',
                                                             expires_in: {{ redmine_instance.memcache_expires_hours | default(redmine_memcache_expires_hours) }}.hours,
 {% if redmine_instance.db_pool is defined or real_db_pool != 0 %}
