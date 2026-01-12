@@ -1,0 +1,32 @@
+---
+
+- name: Stop and disable memcached
+  ansible.builtin.systemd:
+    name: memcached
+    state: stopped
+    enabled: false
+  ignore_errors: true
+
+- name: Remove memcached packages
+  ansible.builtin.apt:
+    name: '{{ memcached_packages }}'
+    purge: true
+    state: absent
+
+- name: Remove memcached configuration
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - '{{ memcached_config_file }}'
+
+- name: Remove memcached user
+  ansible.builtin.user:
+    name: '{{ memcached_user | default(__memcached_user) }}'
+    state: absent
+    remove: true
+
+- name: Remove memcached group
+  ansible.builtin.group:
+    name: '{{ memcached_user | default(__memcached_user) }}'
+    state: absent

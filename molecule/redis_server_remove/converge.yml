@@ -1,0 +1,28 @@
+---
+- name: Converge - Install Redis
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  roles:
+    - role: alphanodes.setup.redis_server
+      vars:
+        # Use distro packages for CI stability
+        redis_use_redis_io: false
+
+- name: Converge - Remove Redis
+  hosts: all
+  become: true
+
+  vars:
+    redis_server_remove: true
+    redis_use_redis_io: false
+
+  roles:
+    - role: alphanodes.setup.redis_server

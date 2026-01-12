@@ -1,0 +1,41 @@
+---
+
+- name: Stop and disable redis-server
+  ansible.builtin.systemd:
+    name: '{{ redis_server_service_name }}'
+    state: stopped
+    enabled: false
+  ignore_errors: true
+
+- name: Remove redis-server package
+  ansible.builtin.apt:
+    name: redis-server
+    purge: true
+    state: absent
+
+- name: Remove redis apt repository
+  ansible.builtin.deb822_repository:
+    name: redis
+    state: absent
+  when: redis_use_redis_io | default(true)
+
+- name: Remove redis files and directories
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/redis
+    - /var/lib/redis
+    - /var/log/redis
+    - /run/redis
+
+- name: Remove redis user
+  ansible.builtin.user:
+    name: redis
+    state: absent
+    remove: true
+
+- name: Remove redis group
+  ansible.builtin.group:
+    name: redis
+    state: absent

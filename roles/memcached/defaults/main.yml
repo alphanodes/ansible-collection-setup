@@ -14,3 +14,5 @@ memcached_threads: 4
 memcached_packages:
   - memcached
   - libmemcached-tools
+
+memcached_remove: false

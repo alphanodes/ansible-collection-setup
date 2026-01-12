@@ -4,4 +4,12 @@
 
 - name: Include setup tasks
   ansible.builtin.import_tasks: setup.yml
+  when: not redis_server_remove | bool
   tags: redis
+
+- name: Include remove tasks
+  ansible.builtin.import_tasks: remove.yml
+  when: redis_server_remove | bool
+  tags:
+    - redis
+    - remove

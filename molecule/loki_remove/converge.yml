@@ -1,0 +1,87 @@
+---
+- name: Converge - Install Loki (minimal)
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+    - name: Install python3-debian for deb822_repository module
+      ansible.builtin.apt:
+        name: python3-debian
+        state: present
+
+  tasks:
+    - name: Add grafana apt repository (for loki package)
+      ansible.builtin.deb822_repository:
+        name: grafana
+        uris: https://apt.grafana.com
+        types: deb
+        suites: stable
+        components: main
+        signed_by: https://apt.grafana.com/gpg.key
+        state: present
+      register: grafana_repo
+
+    - name: Update apt cache  # noqa: no-handler
+      ansible.builtin.apt:
+        update_cache: true
+      when: grafana_repo.changed
+
+    - name: Install loki package
+      ansible.builtin.apt:
+        name: loki
+        state: present
+
+    - name: Deploy minimal loki config
+      ansible.builtin.copy:
+        content: |
+          auth_enabled: false
+          server:
+            http_listen_port: 3100
+          common:
+            path_prefix: /var/lib/loki
+            storage:
+              filesystem:
+                chunks_directory: /var/lib/loki/chunks
+                rules_directory: /var/lib/loki/rules
+            replication_factor: 1
+            ring:
+              kvstore:
+                store: inmemory
+          schema_config:
+            configs:
+              - from: 2020-10-24
+                store: tsdb
+                object_store: filesystem
+                schema: v13
+                index:
+                  prefix: index_
+                  period: 24h
+        dest: /etc/loki/config.yml
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Start and enable loki
+      ansible.builtin.systemd:
+        name: loki
+        state: started
+        enabled: true
+
+- name: Converge - Remove Loki
+  hosts: all
+  become: true
+
+  vars:
+    loki_data_dir: /var/lib/loki
+    loki_packages:
+      - loki
+
+  tasks:
+    - name: Include loki remove tasks directly
+      ansible.builtin.include_tasks: ../../roles/loki/tasks/remove.yml

@@ -1,4 +1,9 @@
 ---
+
+dependencies:
+  - role: alphanodes.setup.common
+    public: true
+
 galaxy_info:
   author: AlphaNodes
   description: Installs and configures Zabbix Agent 2
@@ -12,7 +17,3 @@ galaxy_info:
     - name: Ubuntu
       versions:
         - noble
-
-dependencies:
-  - role: alphanodes.setup.common
-    public: true

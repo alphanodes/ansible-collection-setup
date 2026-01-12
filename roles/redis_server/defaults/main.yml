@@ -66,5 +66,7 @@ redis_server_disabled_commands: []
 #  - RENAME
 #  - DEBUG
 
-# zabbix template: https://github.com/cuimingkun/zbx_tem_redis
-zabbix_monitoring: false
+# for zabbix monitoring we have to make sure:
+# https://git.zabbix.com/projects/ZBX/repos/zabbix/browse/templates/db/redis
+
+redis_server_remove: false

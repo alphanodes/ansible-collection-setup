@@ -43,6 +43,10 @@ nginx_ssl_protocols: 'TLSv1.2 TLSv1.3'
 
 nginx_ssl_listen_option: "ssl{{ ' http2' if ansible_facts.distribution != 'Debian' or ansible_facts.distribution_major_version != '13' else '' }}"
 
+# enable/disable zabbix monitoring
+zabbix_monitoring: false
+zabbix_agent_home: /var/lib/zabbix
+
 # PostgreSQL extensions - used by multiple roles (redmine, drupal, zabbix_server)
 postgresql_with_pg_buffercache: true
 postgresql_with_pg_stat_statements: true

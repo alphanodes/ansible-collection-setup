@@ -1,0 +1,52 @@
+---
+- name: Verify Redis removal
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check redis-server service is stopped
+      ansible.builtin.command: systemctl is-active redis-server
+      register: redis_service
+      changed_when: false
+      failed_when: redis_service.rc == 0
+
+    - name: Check redis-server package is removed
+      ansible.builtin.command: dpkg -l redis-server
+      register: redis_package
+      changed_when: false
+      failed_when: redis_package.rc == 0
+
+    - name: Check redis config directory is removed
+      ansible.builtin.stat:
+        path: /etc/redis
+      register: redis_config
+      failed_when: redis_config.stat.exists
+
+    - name: Check redis data directory is removed
+      ansible.builtin.stat:
+        path: /var/lib/redis
+      register: redis_data
+      failed_when: redis_data.stat.exists
+
+    - name: Check redis log directory is removed
+      ansible.builtin.stat:
+        path: /var/log/redis
+      register: redis_log
+      failed_when: redis_log.stat.exists
+
+    - name: Check redis user is removed
+      ansible.builtin.command: id redis
+      register: redis_user
+      changed_when: false
+      failed_when: redis_user.rc == 0
+
+    - name: Display removal verification results
+      ansible.builtin.debug:
+        msg:
+          - "=== REDIS REMOVAL VERIFICATION ==="
+          - "Redis service stopped: OK"
+          - "Redis package removed: OK"
+          - "Redis config removed: OK"
+          - "Redis data removed: OK"
+          - "Redis logs removed: OK"
+          - "Redis user removed: OK"
+          - "=== REDIS REMOVAL SUCCESS ==="

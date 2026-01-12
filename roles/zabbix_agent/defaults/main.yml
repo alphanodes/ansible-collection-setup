@@ -26,8 +26,6 @@ zabbix_agent_start_agents: 3
 
 zabbix_agent_source_ip: ''
 
-zabbix_agent_home: /var/lib/zabbix
-
 zabbix_agent_log_file: ''
 zabbix_agent_log_file_size: 0
 # only used with zabbix_use_repo is yes

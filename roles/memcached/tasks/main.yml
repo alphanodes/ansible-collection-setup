@@ -2,5 +2,13 @@
 
 - name: Include setup tasks
   ansible.builtin.include_tasks: setup.yml
+  when: not memcached_remove | bool
   tags:
     - memcached
+
+- name: Include remove tasks
+  ansible.builtin.include_tasks: remove.yml
+  when: memcached_remove | bool
+  tags:
+    - memcached
+    - remove

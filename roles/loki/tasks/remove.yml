@@ -1,0 +1,42 @@
+---
+
+- name: Stop and disable loki
+  ansible.builtin.systemd:
+    name: loki
+    state: stopped
+    enabled: false
+  ignore_errors: true
+
+- name: Remove loki packages
+  ansible.builtin.apt:
+    name: '{{ loki_packages }}'
+    purge: true
+    state: absent
+
+- name: Remove loki apt repository
+  ansible.builtin.deb822_repository:
+    name: grafana
+    state: absent
+
+- name: Remove loki files and directories
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/loki
+    - '{{ loki_data_dir }}'
+    - /tmp/loki
+    - /etc/nginx/sites-available/loki.conf
+    - /etc/nginx/sites-enabled/loki.conf
+  notify: Restart nginx
+
+- name: Remove loki user
+  ansible.builtin.user:
+    name: loki
+    state: absent
+    remove: true
+
+- name: Remove loki group
+  ansible.builtin.group:
+    name: loki
+    state: absent

@@ -1,0 +1,55 @@
+---
+- name: Verify memcached installation
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Check memcached package is installed
+      ansible.builtin.command: dpkg -l memcached
+      register: memcached_package
+      changed_when: false
+      failed_when: memcached_package.rc != 0
+
+    - name: Check memcached service is running
+      ansible.builtin.command: systemctl is-active memcached
+      register: memcached_service
+      changed_when: false
+      failed_when: memcached_service.stdout != 'active'
+
+    - name: Check memcached service is enabled
+      ansible.builtin.command: systemctl is-enabled memcached
+      register: memcached_enabled
+      changed_when: false
+      failed_when: memcached_enabled.stdout != 'enabled'
+
+    - name: Check memcached config file exists
+      ansible.builtin.stat:
+        path: /etc/memcached.conf
+      register: memcached_config
+      failed_when: not memcached_config.stat.exists
+
+    - name: Check memcached is listening on port 11211
+      ansible.builtin.wait_for:
+        port: 11211
+        host: 127.0.0.1
+        timeout: 5
+      register: memcached_port
+
+    - name: Test memcached connection with memcstat
+      ansible.builtin.command: memcstat --servers=127.0.0.1:11211
+      register: memcached_stats
+      changed_when: false
+      failed_when: memcached_stats.rc != 0
+
+    - name: Display verification summary
+      ansible.builtin.debug:
+        msg:
+          - "=== MEMCACHED VERIFICATION ==="
+          - "Memcached package installed: OK"
+          - "Memcached service running: OK"
+          - "Memcached service enabled: OK"
+          - "Memcached config exists: OK"
+          - "Memcached listening on 11211: OK"
+          - "Memcached responding to stats: OK"
+          - "=== MEMCACHED VERIFICATION SUCCESS ==="

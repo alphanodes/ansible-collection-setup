@@ -1,0 +1,24 @@
+---
+- name: Converge - Install Memcached
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  roles:
+    - role: alphanodes.setup.memcached
+
+- name: Converge - Remove Memcached
+  hosts: all
+  become: true
+
+  vars:
+    memcached_remove: true
+
+  roles:
+    - role: alphanodes.setup.memcached

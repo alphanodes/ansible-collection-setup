@@ -1,0 +1,38 @@
+---
+- name: Verify Memcached removal
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check memcached service is stopped
+      ansible.builtin.command: systemctl is-active memcached
+      register: memcached_service
+      changed_when: false
+      failed_when: memcached_service.rc == 0
+
+    - name: Check memcached package is removed
+      ansible.builtin.command: dpkg -l memcached
+      register: memcached_package
+      changed_when: false
+      failed_when: memcached_package.rc == 0
+
+    - name: Check memcached config file is removed
+      ansible.builtin.stat:
+        path: /etc/memcached.conf
+      register: memcached_config
+      failed_when: memcached_config.stat.exists
+
+    - name: Check memcached user is removed
+      ansible.builtin.command: id memcache
+      register: memcached_user
+      changed_when: false
+      failed_when: memcached_user.rc == 0
+
+    - name: Display removal verification results
+      ansible.builtin.debug:
+        msg:
+          - "=== MEMCACHED REMOVAL VERIFICATION ==="
+          - "Memcached service stopped: OK"
+          - "Memcached package removed: OK"
+          - "Memcached config removed: OK"
+          - "Memcached user removed: OK"
+          - "=== MEMCACHED REMOVAL SUCCESS ==="

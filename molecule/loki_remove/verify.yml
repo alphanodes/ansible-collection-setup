@@ -1,0 +1,52 @@
+---
+- name: Verify Loki removal
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Check loki service is stopped
+      ansible.builtin.command: systemctl is-active loki
+      register: loki_service
+      changed_when: false
+      failed_when: loki_service.rc == 0
+
+    - name: Check loki package is removed
+      ansible.builtin.command: dpkg -l loki
+      register: loki_package
+      changed_when: false
+      failed_when: loki_package.rc == 0
+
+    - name: Check loki config directory is removed
+      ansible.builtin.stat:
+        path: /etc/loki
+      register: loki_config
+      failed_when: loki_config.stat.exists
+
+    - name: Check loki data directory is removed
+      ansible.builtin.stat:
+        path: /var/lib/loki
+      register: loki_data
+      failed_when: loki_data.stat.exists
+
+    - name: Check grafana apt repository is removed
+      ansible.builtin.stat:
+        path: /etc/apt/sources.list.d/grafana.sources
+      register: grafana_repo
+      failed_when: grafana_repo.stat.exists
+
+    - name: Check loki user is removed
+      ansible.builtin.command: id loki
+      register: loki_user
+      changed_when: false
+      failed_when: loki_user.rc == 0
+
+    - name: Display removal verification results
+      ansible.builtin.debug:
+        msg:
+          - "=== LOKI REMOVAL VERIFICATION ==="
+          - "Loki service stopped: OK"
+          - "Loki package removed: OK"
+          - "Loki config removed: OK"
+          - "Loki data removed: OK"
+          - "Grafana apt repository removed: OK"
+          - "Loki user removed: OK"
+          - "=== LOKI REMOVAL SUCCESS ==="

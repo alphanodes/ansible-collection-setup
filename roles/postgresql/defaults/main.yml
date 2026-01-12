@@ -17,8 +17,6 @@ postgresql_postgis_packages:
 
 # overwrite it from hosts_vars
 
-zabbix_monitoring: false
-zabbix_agent_home: /var/lib/zabbix
 postgresql_password_salt: "{{ common_password_salt | default('') }}"
 postgresql_zabbix_user: zbx_monitor
 postgresql_zabbix_password: '{{ [ansible_facts["machine_id"], ansible_facts["hostname"], postgresql_password_salt, "zabbix-agent-postgresql"] | join | hash("md5") }}'

@@ -2,11 +2,19 @@
 
 - name: Include setup tasks
   ansible.builtin.include_tasks: setup.yml
+  when: not loki_remove | bool
   tags:
     - loki
 
 - name: Include test tasks
   ansible.builtin.include_tasks: test.yml
-  when: loki_with_test
+  when: loki_with_test and not loki_remove | bool
   tags:
     - loki
+
+- name: Include remove tasks
+  ansible.builtin.include_tasks: remove.yml
+  when: loki_remove | bool
+  tags:
+    - loki
+    - remove
