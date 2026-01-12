@@ -1,9 +1,0 @@
----
-
-# This is idempotent, if the file is already patched it just returns 'ok'
-- name: Patch Redmine with {{ patch.file }}
-  ansible.posix.patch:
-    src: patches/{{ patch.file }}.patch
-    dest: '{{ patch.dest | default(omit) }}'
-    strip: '{{ patch.strip | default(omit) }}'
-    basedir: '{{ redmine_app_dir }}'
