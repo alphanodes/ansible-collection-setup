@@ -40,6 +40,14 @@
     login_db: '{{ redmine_db_name }}'
     state: "{{ 'present' if postgresql_with_pg_buffercache else 'absent' }}"
 
+- name: Add pgvector extension to Redmine database - {{ redmine_instance_name }}
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_ext:
+    name: vector
+    login_db: '{{ redmine_db_name }}'
+  when: redmine_instance.with_pgvector | default(false)
+
 - name: Run postgresql pre commands - {{ redmine_instance_name }}
   community.postgresql.postgresql_query:
     query: '{{ item }}'

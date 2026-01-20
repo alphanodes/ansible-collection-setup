@@ -19,6 +19,10 @@
   ansible.builtin.include_tasks: timescaledb.yml
   when: postgresql_with_timescaledb
 
+- name: Include pgvector tasks
+  ansible.builtin.include_tasks: pgvector.yml
+  when: postgresql_with_pgvector
+
 - name: Ensure PostgreSQL is started and enabled to start at boot.
   ansible.builtin.systemd_service:
     name: postgresql
@@ -75,6 +79,14 @@
     name: pg_stat_statements
     login_db: template1
   when: postgresql_with_pg_stat_statements
+
+- name: Add pgvector extension to template1
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_ext:
+    name: vector
+    login_db: template1
+  when: postgresql_with_pgvector
 
 - name: Remove entire PostgreSQL log directory if syslog is active
   ansible.builtin.file:

@@ -1,0 +1,5 @@
+---
+- name: Be sure pgvector package is installed
+  ansible.builtin.apt:
+    name: postgresql-{{ postgresql_version }}-pgvector
+    state: present

@@ -13,6 +13,9 @@ postgresql_with_postgis: false
 postgresql_postgis_packages:
   - postgresql-{{ postgresql_version }}-postgis-{{ postgresql_postgis_version }}
 
+# pgvector extension for vector similarity search (used for RAG/embeddings)
+postgresql_with_pgvector: false
+
 # enables zabbix monitoring
 
 # overwrite it from hosts_vars
