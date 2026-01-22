@@ -15,6 +15,9 @@
     proxy_set_header X-Real-IP $remote_addr;
 {% if instance.proxy_host_header is defined %}
     proxy_set_header Host {{ instance.proxy_host_header }};
+{% elif nginx_with_proxy_forwarded_hosts | default([]) | length > 0 %}
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Forwarded-Host $forwarded_host;
 {% else %}
     proxy_set_header Host $proxy_host;
 {% endif %}
