@@ -12,6 +12,11 @@
     nginx_ssl_protocols: 'TLSv1.3'
     hoster: 'local'
 
+    # Test: Reverse proxy host forwarding (like SAKD setup)
+    nginx_with_proxy_forwarded_hosts:
+      - source: int.ssl.proxy.local
+        target: proxy.local
+
     # SSL configuration - self-signed certificate for testing
     ssl_certs:
       - name: redmine
@@ -75,6 +80,15 @@
           - old.local
           - legacy.local
 
+      # Test: Reverse proxy host forwarding
+      redmine_proxy:
+        server_name: proxy.local
+        adapter: postgresql
+        db_password: test_redmine_password
+        letsencrypt_cert: false
+        vhost_ssl_cert: redmine
+        vhost_for_zabbix: false
+
   pre_tasks:
     - name: Update apt cache
       ansible.builtin.apt:
@@ -93,6 +107,7 @@
         - redmine_custom_port
         - redmine_protected
         - redmine_redirects
+        - redmine_proxy
 
     - name: Create redmine directories
       ansible.builtin.file:
@@ -108,6 +123,8 @@
         - {path: /srv/redmine_protected/redmine/public, owner: redmine_protected}
         - {path: /srv/redmine_redirects/redmine, owner: redmine_redirects}
         - {path: /srv/redmine_redirects/redmine/public, owner: redmine_redirects}
+        - {path: /srv/redmine_proxy/redmine, owner: redmine_proxy}
+        - {path: /srv/redmine_proxy/redmine/public, owner: redmine_proxy}
 
     - name: Create run directories
       ansible.builtin.file:
@@ -120,6 +137,7 @@
         - redmine_custom_port
         - redmine_protected
         - redmine_redirects
+        - redmine_proxy
 
     - name: Create dummy index.html for testing
       ansible.builtin.copy:
@@ -137,6 +155,7 @@
         - redmine_custom_port
         - redmine_protected
         - redmine_redirects
+        - redmine_proxy
 
     - name: Create dummy puma socket for testing
       ansible.builtin.file:
@@ -149,6 +168,7 @@
         - redmine_custom_port
         - redmine_protected
         - redmine_redirects
+        - redmine_proxy
 
   tasks:
     - name: Include common role
@@ -269,4 +289,32 @@
                 - "try_files $uri @puma;"
             - name: "@puma"
               proxy_pass: "http://redmine_redirects"
+              proxy_timeout: "120"
+
+    # Test 4: Reverse proxy host forwarding (nginx_with_proxy_forwarded_hosts)
+    - name: Include nginx_mono for redmine_proxy (with forwarded hosts)
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_with_websocket: false
+        nginx_mono_service_name: redmine_proxy
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: proxy.local
+          root: /srv/redmine_proxy/redmine/public
+          index: index.html
+          vhost_for_zabbix: false
+          letsencrypt: false
+          ssl_cert: redmine
+          upstream_name: redmine_proxy
+          upstream_servers:
+            - "unix:/run/redmine_proxy/redmine.sock"
+          custom_protection_rules:
+            - "if ($bad_redmine_locations) { return 404; }"
+          locations:
+            - name: "/"
+              raw_actions:
+                - "try_files $uri @puma;"
+            - name: "@puma"
+              proxy_pass: "http://redmine_proxy"
               proxy_timeout: "120"

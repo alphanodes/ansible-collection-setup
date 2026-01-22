@@ -118,6 +118,62 @@
           - redirect_301_check.rc == 0
         fail_msg: "301 redirect not found in vhost"
 
+    # Test 4: Reverse proxy host forwarding
+    - name: Check proxy vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-available/redmine_proxy.conf
+      register: proxy_vhost
+
+    - name: Assert proxy vhost exists
+      ansible.builtin.assert:
+        that:
+          - proxy_vhost.stat.exists
+        fail_msg: "proxy vhost configuration does not exist"
+
+    - name: Check redmine_maps.conf contains forwarded_host map
+      ansible.builtin.command: grep -q "map \$http_host \$forwarded_host" /etc/nginx/conf.d/redmine_maps.conf
+      register: forwarded_host_map_check
+      changed_when: false
+
+    - name: Assert forwarded_host map exists
+      ansible.builtin.assert:
+        that:
+          - forwarded_host_map_check.rc == 0
+        fail_msg: "forwarded_host map not found in redmine_maps.conf"
+
+    - name: Check redmine_maps.conf contains proxy source mapping
+      ansible.builtin.command: grep -q "int.ssl.proxy.local proxy.local" /etc/nginx/conf.d/redmine_maps.conf
+      register: proxy_mapping_check
+      changed_when: false
+
+    - name: Assert proxy source mapping exists
+      ansible.builtin.assert:
+        that:
+          - proxy_mapping_check.rc == 0
+        fail_msg: "proxy source mapping not found in redmine_maps.conf"
+
+    - name: Check vhost contains X-Forwarded-Host header
+      ansible.builtin.command: grep -q "X-Forwarded-Host \$forwarded_host" /etc/nginx/sites-available/redmine_proxy.conf
+      register: forwarded_host_header_check
+      changed_when: false
+
+    - name: Assert X-Forwarded-Host header is configured
+      ansible.builtin.assert:
+        that:
+          - forwarded_host_header_check.rc == 0
+        fail_msg: "X-Forwarded-Host header not found in proxy vhost"
+
+    - name: Check vhost uses http_host for Host header
+      ansible.builtin.command: grep -q "Host \$http_host" /etc/nginx/sites-available/redmine_proxy.conf
+      register: http_host_check
+      changed_when: false
+
+    - name: Assert Host header uses http_host
+      ansible.builtin.assert:
+        that:
+          - http_host_check.rc == 0
+        fail_msg: "Host header should use $http_host when nginx_with_proxy_forwarded_hosts is set"
+
     - name: Display verification summary
       ansible.builtin.debug:
         msg: |
@@ -126,3 +182,4 @@
           - Custom port 8443: vhost configured correctly
           - Basic auth: htpasswd file and auth_basic directive present
           - Redirects: redirect domains and 301 configured
+          - Proxy forwarded hosts: map and headers configured correctly
