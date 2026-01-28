@@ -57,11 +57,14 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Lint Ansible Playbook
-        uses: ansible/ansible-lint@main
-        with:
-          setup_python: "false"
-          requirements_file: "requirements.yml"
+      - name: Install ansible-lint
+        run: pip install ansible-lint
+
+      - name: Install Ansible collections
+        run: ansible-galaxy collection install -r requirements.yml
+
+      - name: Run ansible-lint
+        run: ansible-lint
 
   markdownlint:
     runs-on: ubuntu-latest
