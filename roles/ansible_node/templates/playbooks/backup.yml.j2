@@ -86,6 +86,9 @@
 {% if backup_lftp_mirror_options is defined %}
     backup_lftp_mirror_options: {{ backup_lftp_mirror_options }}
 {% endif %}
+{% if backup_lftp_pre_commands is defined %}
+    backup_lftp_pre_commands: '{{ backup_lftp_pre_commands }}'
+{% endif %}
 {% if backup_remote_host is defined %}
     backup_remote_host: {{ backup_remote_host }}
 {% endif %}
