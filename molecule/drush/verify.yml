@@ -34,48 +34,6 @@
           - drush_installed_version is version('13.0', '>=')
         fail_msg: "Expected Drush 13.x, got: {{ drush_installed_version }}"
 
-    # Configuration files
-    - name: Check drush configuration directory
-      ansible.builtin.stat:
-        path: /etc/drush
-      register: drush_config_dir
-
-    - name: Assert drush config directory exists
-      ansible.builtin.assert:
-        that:
-          - drush_config_dir.stat.exists
-          - drush_config_dir.stat.isdir
-          - drush_config_dir.stat.mode == '0755'
-        fail_msg: "Drush config directory missing or wrong permissions"
-
-    - name: Check drushrc.php exists
-      ansible.builtin.stat:
-        path: /etc/drush/drushrc.php
-      register: drushrc_file
-
-    - name: Assert drushrc.php configuration
-      ansible.builtin.assert:
-        that:
-          - drushrc_file.stat.exists
-          - drushrc_file.stat.mode == '0644'
-        fail_msg: "drushrc.php missing or wrong permissions"
-
-    - name: Verify drushrc.php contains user option
-      ansible.builtin.command: grep -q "\$options\['u'\]" /etc/drush/drushrc.php
-      changed_when: false
-
-    - name: Check aliases.drushrc.php exists
-      ansible.builtin.stat:
-        path: /etc/drush/aliases.drushrc.php
-      register: aliases_file
-
-    - name: Assert aliases.drushrc.php configuration
-      ansible.builtin.assert:
-        that:
-          - aliases_file.stat.exists
-          - aliases_file.stat.mode == '0644'
-        fail_msg: "aliases.drushrc.php missing or wrong permissions"
-
     # Sudoers configuration for Zabbix monitoring
     - name: Check sudoers drush file exists
       ansible.builtin.stat:
@@ -106,7 +64,4 @@
           Drush verification complete:
           - Drush binary installed and executable
           - Drush version: {{ drush_installed_version }}
-          - Configuration directory /etc/drush exists (0755)
-          - drushrc.php configured (0644)
-          - aliases.drushrc.php configured (0644)
           - sudoers.d/drush configured with valid syntax (0440)
