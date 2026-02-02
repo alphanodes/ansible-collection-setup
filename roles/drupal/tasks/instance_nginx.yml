@@ -64,6 +64,7 @@
       upstream_servers:
         - "unix:{{ _drupal_fpm_socket }}"
       auth_basic_realm: "{{ 'Restricted access only' if drupal_instance.vhost_users is defined and drupal_instance.vhost_users | length > 0 else omit }}"
+      error_403_disabled: true
       raw_actions:
         - "fastcgi_hide_header 'X-Generator';"
         - "fastcgi_hide_header 'X-Powered-By';"
