@@ -4,9 +4,6 @@
 # drush version (github branch)
 drush_version: 8.x
 
-drush_run_as_user: 1
-drush_aliases: []
-
 # set it to false, if you use drush with composer
 drush_install: true
 
