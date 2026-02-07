@@ -6,4 +6,4 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/apt-get --purge autoremove -y
+ExecStart=/bin/bash -c 'dpkg -l "linux-*" | grep "^rc" | awk "{print \$2}" | xargs --no-run-if-empty dpkg --purge'
