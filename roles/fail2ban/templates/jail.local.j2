@@ -200,7 +200,7 @@ enabled = {{ 'true' if fail2ban_nginx_botsearch and nginx_error_log_file.stat.ex
 port     = http,https
 backend = auto
 logpath  = %(nginx_error_log)s
-maxretry = 2
+maxretry = 5
 bantime  = {{ fail2ban_nginx_botsearch_bantime | default(fail2ban_default_bantime) }}
 
 [nginx-scan]
@@ -208,7 +208,7 @@ enabled = {{ 'true' if fail2ban_nginx_scan and nginx_access_log_file.stat.exists
 port     = http,https
 backend = auto
 logpath  = %(nginx_access_log)s
-maxretry = 2
+maxretry = 5
 bantime  = {{ fail2ban_nginx_scan_bantime | default(fail2ban_default_bantime) }}
 
 [roundcube-auth]
