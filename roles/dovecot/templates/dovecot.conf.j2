@@ -184,6 +184,7 @@ acl_sharing_map {
 # Dovecot maintains a file in each mailbox that manages sharing permissions
 acl_driver = vfile
 quota "User quota" {
+  driver = count
 }
 # Personal Sieve filters are stored in the home directory
 sieve_script personal {

@@ -8,6 +8,8 @@
 smtp      inet  n       -       y       -       1       postscreen
 # Postscreen passes sane clients to the real SMTP daemon here.
 smtpd      pass  -       -       y       -       -       smtpd
+# No SASL auth on port 25 - only on submission/smtps ports
+  -o smtpd_sasl_auth_enable=no
 # Reject non-FQDN HELOs on Port 25 (after passing postscreen process)
   -o smtpd_helo_restrictions=permit_mynetworks,reject_non_fqdn_helo_hostname
 {% if postfix_smtpd_proxy_filter_smtp | length > 0 %}
@@ -17,6 +19,7 @@ smtpd      pass  -       -       y       -       -       smtpd
   -o smtpd_proxy_options=speed_adjust
 {% else %}
 smtp      inet  n       -       y       -       -       smtpd
+  -o smtpd_sasl_auth_enable=no
 {% endif %}
 {% if postfix_with_smtps %}
 smtps     inet  n       -       y       -       -       smtpd
@@ -52,6 +55,7 @@ submission inet n       -       y       -       -       smtpd
   -o smtpd_client_restrictions=$mua_client_restrictions
   -o smtpd_sender_restrictions=$mua_sender_restrictions
   -o smtpd_relay_restrictions=$mua_relay_restrictions
+  -o milter_macro_daemon_name=ORIGINATING
 {% if postfix_smtpd_proxy_filter_submission | length > 0 %}
   -o smtpd_proxy_filter={{ postfix_smtpd_proxy_filter_submission }}
 {% endif %}
