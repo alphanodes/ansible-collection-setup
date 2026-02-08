@@ -203,6 +203,14 @@ logpath  = %(nginx_error_log)s
 maxretry = 2
 bantime  = {{ fail2ban_nginx_botsearch_bantime | default(fail2ban_default_bantime) }}
 
+[nginx-scan]
+enabled = {{ 'true' if fail2ban_nginx_scan and nginx_access_log_file.stat.exists else 'false' }}
+port     = http,https
+backend = auto
+logpath  = %(nginx_access_log)s
+maxretry = 2
+bantime  = {{ fail2ban_nginx_scan_bantime | default(fail2ban_default_bantime) }}
+
 [roundcube-auth]
 enabled = {{ 'true' if fail2ban_roundcube_auth else 'false' }}
 port     = http,https
@@ -222,9 +230,10 @@ port    = smtp,ssmtp,submission,imap2,imap3,imaps,pop3,pop3s
 bantime = {{ fail2ban_dovecot_bantime | default(fail2ban_default_bantime) }}
 
 [redmine-login]
-enabled = {{ 'true' if fail2ban_redmine_login else 'false' }}
+enabled = {{ 'true' if fail2ban_redmine_login and nginx_access_log_file.stat.exists else 'false' }}
 port    = http,https
 backend = auto
+logpath  = %(nginx_access_log)s
 action  = {{ fail2ban_redmine_action | default(fail2ban_login_action) }}
 maxretry = {{ fail2ban_redmine_maxretry | default(fail2ban_login_maxretry) }}
 bantime  = {{ fail2ban_redmine_login_bantime | default(fail2ban_default_bantime) }}

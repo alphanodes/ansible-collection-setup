@@ -40,8 +40,8 @@ fail2ban_sshd_port: "{{ ssh_server_port | default('ssh') }}"
 fail2ban_login_action: "%(action_with_matrix)s"
 fail2ban_login_maxretry: "{{ fail2ban_default_maxretry }}"
 
-# only for Ubuntu
 fail2ban_nginx_botsearch: false
+fail2ban_nginx_scan: false
 
 fail2ban_messenger_icon: 'https://dcah.files.wordpress.com/2013/09/adblock.png'
 fail2ban_messenger_with_start_message: false

@@ -29,6 +29,12 @@
     get_checksum: false
   register: nginx_error_log_file
 
+- name: Get access log file info
+  ansible.builtin.stat:
+    path: /var/log/nginx/access.log
+    get_checksum: false
+  register: nginx_access_log_file
+
 - name: Be sure fail2ban is installed
   ansible.builtin.apt:
     name: '{{ fail2ban_packages }}'
