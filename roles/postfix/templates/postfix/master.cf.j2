@@ -19,7 +19,6 @@ smtpd      pass  -       -       y       -       -       smtpd
   -o smtpd_proxy_options=speed_adjust
 {% else %}
 smtp      inet  n       -       y       -       -       smtpd
-  -o smtpd_sasl_auth_enable=no
 {% endif %}
 {% if postfix_with_smtps %}
 smtps     inet  n       -       y       -       -       smtpd
