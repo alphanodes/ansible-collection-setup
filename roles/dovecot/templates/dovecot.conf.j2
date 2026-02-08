@@ -138,6 +138,12 @@ service managesieve-login {
 service managesieve {
   process_limit = 256
 }
+service anvil {
+  unix_listener anvil {
+    mode = 0660
+    group = {{ dovecot_vmail_user }}
+  }
+}
 service lmtp {
   unix_listener /var/spool/postfix/private/dovecot-lmtp {
     mode = 0660
