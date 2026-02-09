@@ -22,7 +22,6 @@ RedmineApp::Application.routes.default_scope = config.relative_url_root
 {% if redmine_instance.with_memcache | default(redmine_with_memcache) %}
 config.cache_store = :mem_cache_store, '{{ redmine_instance.memcached_host | default(redmine_memcached_host) }}', { namespace: '{{ redmine_instance_name }}',
                                                             expires_in: {{ redmine_instance.memcache_expires_hours | default(redmine_memcache_expires_hours) }}.hours,
-                                                            protocol: :meta,
 {% if redmine_instance.db_pool is defined or real_db_pool != 0 %}
                                                             compress: true,
                                                             pool: { size: {{ redmine_instance.db_pool | default(real_db_pool) }}, timeout: 5 } }
