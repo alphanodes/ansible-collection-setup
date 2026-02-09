@@ -20,14 +20,15 @@ config.relative_url_root = '{{ redmine_instance.prefix }}'
 RedmineApp::Application.routes.default_scope = config.relative_url_root
 {% endif %}
 {% if redmine_instance.with_memcache | default(redmine_with_memcache) %}
-config.cache_store = :mem_cache_store, '{{ redmine_instance.memcached_host | default(redmine_memcached_host) }}', { namespace: '{{ redmine_instance_name }}',
-                                                            expires_in: {{ redmine_instance.memcache_expires_hours | default(redmine_memcache_expires_hours) }}.hours,
+_mc_opts = { namespace: '{{ redmine_instance_name }}',
+             expires_in: {{ redmine_instance.memcache_expires_hours | default(redmine_memcache_expires_hours) }}.hours,
+             compress: true }
+# Dalli 4.x (Ruby < 3.3) needs explicit meta protocol, Dalli 5.0+ only supports meta
+_mc_opts[:protocol] = :meta if RUBY_VERSION < '3.3'
 {% if redmine_instance.db_pool is defined or real_db_pool != 0 %}
-                                                            compress: true,
-                                                            pool: { size: {{ redmine_instance.db_pool | default(real_db_pool) }}, timeout: 5 } }
-{% else %}
-                                                            compress: true }
+_mc_opts[:pool] = { size: {{ redmine_instance.db_pool | default(real_db_pool) }}, timeout: 5 }
 {% endif %}
+config.cache_store = :mem_cache_store, '{{ redmine_instance.memcached_host | default(redmine_memcached_host) }}', _mc_opts
 {% endif %}
 {% if redmine_instance.with_dmsf is defined and redmine_instance.with_dmsf %}
 # Redmine DMSF's WebDAV
