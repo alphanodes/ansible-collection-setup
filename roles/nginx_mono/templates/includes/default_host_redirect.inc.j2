@@ -21,7 +21,14 @@ server {
   listen [::]:80 default_server{{ reuseport_flag }};
 {% endif %}
   server_name _;
+{% if certbot_certs is defined and certbot_certs | length > 0 %}
+  include /etc/nginx/acme-challenge.conf;
+  location / {
+    return 301 {{ 'https' if nginx_with_ssl else 'http' }}://{{ instance.server_name | default(nginx_mono_service_name) }}$request_uri;
+  }
+{% else %}
   return 301 {{ 'https' if nginx_with_ssl else 'http' }}://{{ instance.server_name | default(nginx_mono_service_name) }}$request_uri;
+{% endif %}
 }
 
 {% if nginx_with_ssl %}
