@@ -1,6 +1,9 @@
 ---
 # This task configures the acme-challenge location for webroot validation.
 # It creates the webroot directory and configures nginx to serve it.
+#
+# On fresh servers (before nginx_mono has run), it also creates a minimal
+# ACME-only server block to ensure certbot can validate challenges.
 
 - name: Ensure webroot directory exists
   ansible.builtin.file:
@@ -18,3 +21,30 @@
     group: root
     mode: "0644"
   notify: Reload nginx
+
+- name: Check for existing nginx vhost with ACME challenge support
+  ansible.builtin.find:
+    paths: /etc/nginx/sites-enabled
+    patterns: '*.conf'
+  register: _certbot_nginx_vhosts
+
+- name: Setup ACME challenge server block on fresh servers
+  when: _certbot_nginx_vhosts.files | length == 0
+  block:
+    - name: Remove default nginx vhost
+      ansible.builtin.file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+    - name: Create minimal ACME challenge server block
+      ansible.builtin.template:
+        src: acme-challenge-server.conf.j2
+        dest: /etc/nginx/sites-enabled/acme-challenge.conf
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Reload nginx for ACME challenge server block
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded

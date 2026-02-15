@@ -1,0 +1,15 @@
+# {{ ansible_managed }}
+# Minimal ACME challenge server block for initial certbot certificate creation.
+# This is replaced by nginx_mono vhost configuration on subsequent runs.
+
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+
+    include /etc/nginx/acme-challenge.conf;
+
+    location / {
+        return 444;
+    }
+}
