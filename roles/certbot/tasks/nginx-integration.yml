@@ -26,6 +26,7 @@
   ansible.builtin.find:
     paths: /etc/nginx/sites-enabled
     patterns: '*.conf'
+    file_type: any
   register: _certbot_nginx_vhosts
 
 - name: Setup ACME challenge server block on fresh servers

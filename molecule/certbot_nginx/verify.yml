@@ -1,0 +1,123 @@
+---
+- name: Verify certbot + nginx_mono integration
+  hosts: all
+  gather_facts: false
+  tasks:
+    # nginx must be running with valid config
+    - name: Check nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      register: nginx_syntax
+      changed_when: false
+
+    - name: Verify nginx config is valid
+      ansible.builtin.assert:
+        that:
+          - nginx_syntax.rc == 0
+        fail_msg: "nginx configuration is invalid: {{ nginx_syntax.stderr }}"
+
+    - name: Check nginx is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+      check_mode: true
+      register: nginx_service
+      failed_when: nginx_service.changed
+
+    # Temporary ACME server block must be removed
+    - name: Check temporary ACME challenge server block is absent
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/acme-challenge.conf
+      register: acme_server_block
+
+    - name: Verify temporary ACME server block was removed
+      ansible.builtin.assert:
+        that:
+          - not acme_server_block.stat.exists
+        fail_msg: "Temporary ACME challenge server block should have been removed by nginx_mono"
+
+    # Debian default must be removed
+    - name: Check Debian default nginx config is absent
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/default
+      register: default_config
+
+    - name: Verify Debian default config was removed
+      ansible.builtin.assert:
+        that:
+          - not default_config.stat.exists
+        fail_msg: "Debian default nginx config should have been removed"
+
+    # nginx_mono vhost must exist and be active
+    - name: Check nginx_mono vhost exists
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/certbot_test.conf
+      register: vhost_config
+
+    - name: Verify vhost is enabled
+      ansible.builtin.assert:
+        that:
+          - vhost_config.stat.exists
+        fail_msg: "nginx_mono vhost certbot_test.conf is not enabled"
+
+    # ACME challenge include must still exist (shared config, not the server block)
+    - name: Check acme-challenge.conf include exists
+      ansible.builtin.stat:
+        path: /etc/nginx/acme-challenge.conf
+      register: acme_include
+
+    - name: Verify acme-challenge.conf include exists
+      ansible.builtin.assert:
+        that:
+          - acme_include.stat.exists
+        fail_msg: "ACME challenge nginx include config not found"
+
+    # Webroot directory must exist
+    - name: Check webroot directory exists
+      ansible.builtin.stat:
+        path: /var/www/letsencrypt
+      register: webroot_dir
+
+    - name: Verify webroot directory exists
+      ansible.builtin.assert:
+        that:
+          - webroot_dir.stat.exists
+          - webroot_dir.stat.isdir
+        fail_msg: "Certbot webroot directory not found"
+
+    # Vhost must include ACME challenge in redirect block (our fix)
+    - name: Check vhost contains ACME challenge include
+      ansible.builtin.shell: |
+        set -e
+        grep -F 'include /etc/nginx/acme-challenge.conf' /etc/nginx/sites-available/certbot_test.conf
+      register: vhost_acme_check
+      changed_when: false
+      failed_when: vhost_acme_check.rc != 0
+
+    # No duplicate default_server on port 80
+    - name: Check for duplicate default_server on port 80
+      ansible.builtin.shell: |
+        set -euo pipefail
+        count=$(nginx -T 2>/dev/null | grep -c 'listen 80 default_server')
+        if [ "$count" -gt 1 ]; then
+          echo "FAIL: Found $count default_server directives on port 80"
+          exit 1
+        fi
+        echo "OK: Found $count default_server directive on port 80"
+      args:
+        executable: /bin/bash
+      register: default_server_check
+      changed_when: false
+      failed_when: default_server_check.rc != 0
+
+    - name: Display test results
+      ansible.builtin.debug:
+        msg:
+          - "nginx config valid: {{ 'OK' if nginx_syntax.rc == 0 else 'FAILED' }}"
+          - "nginx running: {{ 'OK' if not nginx_service.changed else 'FAILED' }}"
+          - "temp ACME block removed: {{ 'OK' if not acme_server_block.stat.exists else 'FAILED' }}"
+          - "default config removed: {{ 'OK' if not default_config.stat.exists else 'FAILED' }}"
+          - "vhost enabled: {{ 'OK' if vhost_config.stat.exists else 'FAILED' }}"
+          - "acme include exists: {{ 'OK' if acme_include.stat.exists else 'FAILED' }}"
+          - "webroot exists: {{ 'OK' if webroot_dir.stat.exists else 'FAILED' }}"
+          - "vhost has ACME include: {{ 'OK' if vhost_acme_check.rc == 0 else 'FAILED' }}"
+          - "no duplicate default_server: {{ 'OK' if default_server_check.rc == 0 else 'FAILED' }}"

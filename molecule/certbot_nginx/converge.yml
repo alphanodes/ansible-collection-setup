@@ -1,0 +1,78 @@
+---
+# Test: certbot + nginx_mono integration on fresh server
+#
+# Simulates the real-world deployment sequence:
+#   1. certbot runs FIRST on a fresh server (only Debian default nginx config)
+#   2. nginx_mono creates the real vhost (must not conflict with certbot's temp config)
+#   3. certbot runs AGAIN (must detect existing vhost and skip temp config)
+#
+# This catches the chicken-and-egg problem where certbot needs ACME challenge
+# support on port 80, but nginx_mono hasn't created its vhost yet.
+
+- name: Converge
+  hosts: all
+  become: true
+
+  vars:
+    nginx_with_ssl: false
+    nginx_with_ipv6: false
+    nginx_with_http3: false
+    hoster: 'local'
+
+    certbot_auto_renew: true
+    certbot_remove_cron_job: true
+    certbot_deploy_hook: "systemctl reload nginx"
+    certbot_nginx_integration: true
+    certbot_create_method: webroot
+    certbot_webroot: /var/www/letsencrypt
+    certbot_create_if_missing: false
+
+    certbot_certs:
+      - domains:
+          - test.local
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+    - name: Install nginx and cron
+      ansible.builtin.apt:
+        name:
+          - nginx
+          - cron
+        state: present
+
+    - name: Create test document root
+      ansible.builtin.file:
+        path: /srv/certbot_test
+        state: directory
+        mode: '0755'
+
+  tasks:
+    # Phase 1: certbot on fresh server (Debian default nginx config active)
+    - name: "Phase 1: Include certbot role on fresh server"
+      ansible.builtin.include_role:
+        name: alphanodes.setup.certbot
+
+    # Phase 2: nginx_mono creates vhost (must remove temp ACME config)
+    - name: "Phase 2: Include nginx_mono role to create vhost"
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: certbot_test
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: test.local
+          root: /srv/certbot_test
+          index: index.html
+          vhost_default: true
+          vhost_for_zabbix: false
+          letsencrypt: false
+
+    # Phase 3: certbot runs again (must not recreate temp ACME config)
+    - name: "Phase 3: Include certbot role again (subsequent run)"
+      ansible.builtin.include_role:
+        name: alphanodes.setup.certbot
