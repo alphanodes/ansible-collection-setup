@@ -63,6 +63,12 @@
   when: nginx_remove_default_vhost
   notify: Reload nginx
 
+- name: Remove temporary certbot ACME challenge server block
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/acme-challenge.conf
+    state: absent
+  notify: Reload nginx
+
 - name: Ensure nginx is started and enabled to start at boot.
   ansible.builtin.systemd_service:
     name: nginx
