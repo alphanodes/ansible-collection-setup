@@ -18,6 +18,9 @@
 {% if mysql_socket is defined %}
     mysql_socket: {{ mysql_socket }}
 {% endif %}
+{% if project_sync_tmp_dir is defined and project_sync_tmp_dir != '/tmp' %}
+    project_sync_tmp_dir: {{ project_sync_tmp_dir }}
+{% endif %}
     project_sync_instances:
       {{ project_sync_instances | to_nice_yaml(indent=2) | trim | indent(6) }}
 
