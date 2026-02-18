@@ -101,20 +101,20 @@
     - Reload systemd
     - Restart freshclam timer
 
-- name: Ensure freshclam timer is enabled and started
+- name: Ensure freshclam timer is configured
   ansible.builtin.systemd_service:
     name: clamav-freshclam.timer
-    state: started
-    enabled: true
+    state: "{{ 'started' if clamav_service_enabled else 'stopped' }}"
+    enabled: "{{ clamav_service_enabled }}"
     daemon_reload: true
 
 # Socket activation: systemd creates the socket, clamd receives it as file descriptor
 # The socket unit MUST be started before/with the service
-- name: Ensure clamav-daemon socket is enabled and started
+- name: Ensure clamav-daemon socket is configured
   ansible.builtin.systemd_service:
     name: clamav-daemon.socket
-    state: started
-    enabled: true
+    state: "{{ 'started' if clamav_service_enabled else 'stopped' }}"
+    enabled: "{{ clamav_service_enabled }}"
     daemon_reload: true
 
 - name: Ensure clamav-daemon service is configured
@@ -153,6 +153,7 @@
 # Using clamdscan --ping is more reliable than wait_for on socket file
 # because socket activation may not create the file until first connection
 - name: Test ClamAV daemon is working
+  when: clamav_service_enabled
   block:
     - name: Ping ClamAV daemon
       ansible.builtin.command: clamdscan --ping 3

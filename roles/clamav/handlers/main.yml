@@ -10,15 +10,15 @@
 - name: Restart clamav-daemon
   ansible.builtin.systemd_service:
     name: clamav-daemon.socket
-    state: restarted
+    state: "{{ 'restarted' if clamav_service_enabled else 'stopped' }}"
   notify: Restart clamav-daemon service
 
 - name: Restart clamav-daemon service
   ansible.builtin.systemd_service:
     name: '{{ clamav_service_name }}'
-    state: "{{ 'stopped' if clamav_on_demand else 'restarted' }}"
+    state: "{{ 'stopped' if (clamav_on_demand or not clamav_service_enabled) else 'restarted' }}"
 
 - name: Restart freshclam timer
   ansible.builtin.systemd_service:
     name: clamav-freshclam.timer
-    state: restarted
+    state: "{{ 'restarted' if clamav_service_enabled else 'stopped' }}"
