@@ -27,8 +27,8 @@ end
 
 preload_app!
 {% endif %}
-
 {% if (redmine_instance.puma_warmup | default(redmine_puma_warmup)) | bool %}
+
 on_booted do
   Thread.new do
     sleep 3
