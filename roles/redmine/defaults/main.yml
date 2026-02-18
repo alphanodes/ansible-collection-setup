@@ -109,6 +109,8 @@ redmine_puma_max_threads: "{{ puma_max_threads | default(5) }}"
 
 redmine_puma_worker_timeout: "{{ puma_worker_timeout | default(60) }}"
 
+redmine_puma_warmup: false
+
 # see https://medium.com/motive-eng/we-solved-our-rails-memory-leaks-with-jemalloc-5c3711326456
 redmine_with_jemalloc: true
 
