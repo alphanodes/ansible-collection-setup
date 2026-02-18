@@ -19,8 +19,8 @@ supported_http_methods(Puma::Const::SUPPORTED_HTTP_METHODS + ['PROPFIND', 'PROPP
 
 # @see https://www.rubydoc.info/gems/puma/Puma%2FDSL:worker_timeout
 worker_timeout {{ redmine_puma_worker_timeout }}
-
 {% if real_puma_workers | int > 1 %}
+
 before_worker_boot do
   ActiveRecord::Base.establish_connection
 end
