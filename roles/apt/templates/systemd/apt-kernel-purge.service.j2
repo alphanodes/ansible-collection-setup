@@ -6,4 +6,4 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/bin/bash -c 'dpkg -l "linux-*" | grep "^rc" | awk "{print \$2}" | xargs --no-run-if-empty dpkg --purge'
+ExecStart=/bin/bash -c 'dpkg -l "linux-*" | grep "^rc" | awk "{print $$2}" | xargs --no-run-if-empty dpkg --purge'
