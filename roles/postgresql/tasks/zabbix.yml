@@ -1,6 +1,8 @@
 ---
 - name: With zabbix monitoring
-  when: zabbix_monitoring
+  when:
+    - zabbix_monitoring
+    - zabbix_agent_remove is undefined or not zabbix_agent_remove
   block:
     - name: Add zabbix PostgreSQL user
       become_user: postgres
