@@ -1,6 +1,17 @@
 
 package_update: true
 package_upgrade: true
+{% if gitlab_runner_hetzner_docker_storage_driver | default('') | length > 0 %}
+
+# Force storage driver to work around containerd image store bug
+# in Docker 29.x (see #15045)
+write_files:
+  - path: /etc/docker/daemon.json
+    content: |
+      {
+        "storage-driver": "{{ gitlab_runner_hetzner_docker_storage_driver }}"
+      }
+{% endif %}
 
 apt:
   sources:

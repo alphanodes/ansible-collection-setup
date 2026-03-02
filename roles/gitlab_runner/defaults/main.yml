@@ -21,6 +21,8 @@ gitlab_runner_hetzner_label: 'env=test'
 # see https://gitlab.com/hetznercloud/fleeting-plugin-hetzner/-/blob/main/docs/guides/quickstart.md
 # see https://gitlab.com/hetznercloud/fleeting-plugin-hetzner/-/blob/main/docs/reference/configuration.md
 gitlab_runner_with_hetzner_fleed: true
+# Workaround for containerd image store bug in Docker 29.x (see #15045)
+gitlab_runner_hetzner_docker_storage_driver: overlay2
 gitlab_runner_hetzner_fleed_plugin: "hetznercloud/fleeting-plugin-hetzner:latest"
 gitlab_runner_timezone: "{{ ntp_timezone | default('Europe/Berlin') }}"
 
