@@ -3,8 +3,6 @@ package_update: true
 package_upgrade: true
 {% if gitlab_runner_hetzner_docker_storage_driver | default('') | length > 0 %}
 
-# Force storage driver to work around containerd image store bug
-# in Docker 29.x (see #15045)
 write_files:
   - path: /etc/docker/daemon.json
     content: |
@@ -21,7 +19,14 @@ apt:
 
 packages:
   - ca-certificates
+{% if gitlab_runner_hetzner_docker_version | default('') | length > 0 %}
+  # Pin Docker CE to avoid containerd v2 content store bug (see #15045)
+  - docker-ce={{ gitlab_runner_hetzner_docker_version }}*
+  - docker-ce-cli={{ gitlab_runner_hetzner_docker_version }}*
+  - containerd.io
+{% else %}
   - docker-ce
+{% endif %}
 
 swap:
   filename: /var/swap.bin
