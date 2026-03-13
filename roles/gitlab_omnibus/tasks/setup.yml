@@ -4,6 +4,14 @@
   ansible.builtin.set_fact:
     activ_object_store_consolidated: "{{ gitlab_object_store_consolidated and gitlab_object_store_connection | length > 1 }}"
 
+- name: Refresh GitLab apt signing key
+  ansible.builtin.get_url:
+    url: '{{ gitlab_apt_signed_by }}'
+    dest: /etc/apt/keyrings/gitlab.asc
+    mode: '0644'
+    force: true
+  when: gitlab_apt_refresh_signing_key
+
 - name: Add Gitlab apt repository
   ansible.builtin.deb822_repository:
     name: gitlab

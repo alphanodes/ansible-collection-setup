@@ -164,6 +164,7 @@ gitlab_apt_url: https://packages.gitlab.com/gitlab/gitlab-ee/debian/
 gitlab_apt_suites: '{{ ansible_facts.distribution_release }}'
 gitlab_apt_components: main
 gitlab_apt_signed_by: https://packages.gitlab.com/gitlab/gitlab-ee/gpgkey
+gitlab_apt_refresh_signing_key: false
 
 # GitLab default: 400
 gitlab_postgresql_max_connections: "{{ postgresql_max_connections | default(150) }}"
