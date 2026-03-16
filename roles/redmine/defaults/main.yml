@@ -239,6 +239,7 @@ redmine_plugin_test_files:
   - eslint.config.cjs
   - package.json
   - test
+  - vitest.config.js
 
 # https://api.rubyonrails.org/classes/ActiveJob/QueueAdapters/AsyncAdapter.html
 redmine_queue_adapter: async
