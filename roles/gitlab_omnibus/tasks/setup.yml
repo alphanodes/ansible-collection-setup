@@ -53,20 +53,27 @@
   ansible.builtin.command: gitlab-ctl reconfigure
   when: gitlab_force_reconfigure and not config_change.changed
 
-- name: Check GitLab log directories exist
-  ansible.builtin.stat:
-    path: '{{ item }}'
-  loop: '{{ gitlab_log_dirs }}'
-  register: gitlab_log_dirs_stat
-
-- name: Set ACL read access on GitLab log directories
-  ansible.posix.acl:
-    path: '{{ item.0.item }}'
-    entity: '{{ item.1 }}'
-    etype: user
-    permissions: rx
-    state: present
-  loop: "{{ gitlab_log_dirs_stat.results | selectattr('stat.exists') | product(gitlab_log_acl_users) }}"
-  loop_control:
-    label: "{{ item.1 }} -> {{ item.0.item }}"
+- name: Set up log directory ACLs
   when: gitlab_log_acl_users | length > 0
+  block:
+    - name: Ensure acl package is installed
+      ansible.builtin.apt:
+        name: acl
+        state: present
+
+    - name: Check GitLab log directories exist
+      ansible.builtin.stat:
+        path: '{{ item }}'
+      loop: '{{ gitlab_log_dirs }}'
+      register: gitlab_log_dirs_stat
+
+    - name: Set ACL read access on GitLab log directories
+      ansible.posix.acl:
+        path: '{{ item.0.item }}'
+        entity: '{{ item.1 }}'
+        etype: user
+        permissions: rx
+        state: present
+      loop: "{{ gitlab_log_dirs_stat.results | selectattr('stat.exists') | product(gitlab_log_acl_users) }}"
+      loop_control:
+        label: "{{ item.1 }} -> {{ item.0.item }}"

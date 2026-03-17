@@ -62,7 +62,9 @@ zabbix_export:
               value: error
           triggers:
             - uuid: e625db7c633d464d93a0f872d49971bc
-              expression: 'last(/GitLab/log.count[{$GITLAB.NGINX.ERROR.LOG},"(crit|alert|emerg)",,,skip])>{$GITLAB.NGINX.CRIT.MAX}'
+              expression: 'max(/GitLab/log.count[{$GITLAB.NGINX.ERROR.LOG},"(crit|alert|emerg)",,,skip],1h)>{$GITLAB.NGINX.CRIT.MAX}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/GitLab/log.count[{$GITLAB.NGINX.ERROR.LOG},"(crit|alert|emerg)",,,skip],15m)=0'
               name: 'GitLab: nginx critical errors detected'
               event_name: 'GitLab: nginx critical errors detected ({ITEM.LASTVALUE} in last check)'
               priority: WARNING
@@ -124,7 +126,9 @@ zabbix_export:
               value: error
           triggers:
             - uuid: 064116513cdf47488b38677e682782cd
-              expression: 'min(/GitLab/log.count[{$GITLAB.SIDEKIQ.LOG},"job_status.*fail",,,skip],{$GITLAB.SIDEKIQ.EVAL.PERIOD})>{$GITLAB.SIDEKIQ.FAIL.MAX}'
+              expression: 'max(/GitLab/log.count[{$GITLAB.SIDEKIQ.LOG},"job_status.*fail",,,skip],{$GITLAB.SIDEKIQ.EVAL.PERIOD})>{$GITLAB.SIDEKIQ.FAIL.MAX}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/GitLab/log.count[{$GITLAB.SIDEKIQ.LOG},"job_status.*fail",,,skip],15m)=0'
               name: 'GitLab: High Sidekiq job failure rate'
               event_name: 'GitLab: High Sidekiq job failure rate (>{$GITLAB.SIDEKIQ.FAIL.MAX} per check over {$GITLAB.SIDEKIQ.EVAL.PERIOD})'
               priority: WARNING
@@ -147,7 +151,9 @@ zabbix_export:
               value: error
           triggers:
             - uuid: 4cca2fb844b04b6995f8d4219bcbf6e7
-              expression: 'min(/GitLab/log.count[{$GITLAB.GITALY.LOG},"level.*(error|fatal)",,,skip],{$GITLAB.GITALY.EVAL.PERIOD})>{$GITLAB.GITALY.ERROR.MAX}'
+              expression: 'max(/GitLab/log.count[{$GITLAB.GITALY.LOG},"level.*(error|fatal)",,,skip],{$GITLAB.GITALY.EVAL.PERIOD})>{$GITLAB.GITALY.ERROR.MAX}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/GitLab/log.count[{$GITLAB.GITALY.LOG},"level.*(error|fatal)",,,skip],15m)=0'
               name: 'GitLab: High Gitaly error rate'
               event_name: 'GitLab: High Gitaly error rate (>{$GITLAB.GITALY.ERROR.MAX} per check over {$GITLAB.GITALY.EVAL.PERIOD})'
               priority: WARNING
