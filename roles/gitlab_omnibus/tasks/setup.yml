@@ -53,8 +53,23 @@
   ansible.builtin.command: gitlab-ctl reconfigure
   when: gitlab_force_reconfigure and not config_change.changed
 
+- name: Set up Zabbix monitoring for GitLab Omnibus
+  when:
+    - zabbix_monitoring
+    - zabbix_agent_remove is undefined or not zabbix_agent_remove
+  block:
+    - name: Deploy Zabbix agent2 Redis plugin config for Omnibus
+      ansible.builtin.template:
+        src: redis_omnibus.conf.j2
+        dest: /etc/zabbix/zabbix_agent2.d/plugins.d/redis_omnibus.conf
+        mode: '0644'
+      notify: Restart zabbix-agent2
+      when: gitlab_zabbix_redis_socket | length > 0
+
 - name: Set up log directory ACLs
-  when: gitlab_log_acl_users | length > 0
+  when:
+    - gitlab_log_acl_users | length > 0
+    - zabbix_monitoring
   block:
     - name: Ensure acl package is installed
       ansible.builtin.apt:
