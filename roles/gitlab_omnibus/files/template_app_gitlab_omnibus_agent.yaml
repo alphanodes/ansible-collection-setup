@@ -1,0 +1,199 @@
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
+      name: Templates/Applications
+  templates:
+    - uuid: 5e8c9ec936b248cd81e230527fb14a6f
+      template: 'GitLab'
+      name: 'GitLab'
+      description: |
+        Log-based error monitoring for GitLab Omnibus installations.
+        Monitors nginx, Puma, Sidekiq and Gitaly log files for errors using
+        native Zabbix log[] and log.count[] active check items.
+
+        Complementary to "GitLab by HTTP" which monitors performance metrics
+        via the /-/metrics Prometheus endpoint.
+
+        This template requires:
+        - Zabbix agent with active checks enabled (ServerActive configured)
+        - Read access to /var/log/gitlab/ for the Zabbix user
+        - GitLab Omnibus installation with default log paths
+      vendor:
+        name: AlphaNodes
+        version: 7.4-1
+      groups:
+        - name: Templates/Applications
+      items:
+        - uuid: ec2561ded72842f6bc78d9d0b669f0a9
+          name: 'nginx: Error log'
+          type: ZABBIX_ACTIVE
+          key: 'log[{$GITLAB.NGINX.ERROR.LOG},"(crit|alert|emerg|error)",,,skip,\0,{$GITLAB.LOG.MAXDELAY}]'
+          history: 7d
+          value_type: LOG
+          description: 'Captures error, critical, alert and emergency entries from the GitLab nginx error log.'
+          tags:
+            - tag: component
+              value: nginx
+            - tag: log-type
+              value: error
+          triggers:
+            - uuid: fc81c6a9794c4909becd5149697daa0f
+              expression: 'find(/GitLab/log[{$GITLAB.NGINX.ERROR.LOG},"(crit|alert|emerg|error)",,,skip,\0,{$GITLAB.LOG.MAXDELAY}],,"iregexp","Too many open files")=1'
+              name: 'GitLab: nginx file descriptor exhaustion'
+              event_name: 'GitLab: nginx "Too many open files" detected'
+              priority: HIGH
+              description: 'The system is running out of file descriptors. This causes nginx to reject connections and makes GitLab unavailable.'
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: availability
+        - uuid: d7e387b438ea45ada689e52ab7454652
+          name: 'nginx: Critical error count'
+          type: ZABBIX_ACTIVE
+          key: 'log.count[{$GITLAB.NGINX.ERROR.LOG},"(crit|alert|emerg)",,,skip]'
+          history: 7d
+          trends: 180d
+          description: 'Count of critical, alert and emergency entries in the GitLab nginx error log per check interval.'
+          tags:
+            - tag: component
+              value: nginx
+            - tag: log-type
+              value: error
+          triggers:
+            - uuid: e625db7c633d464d93a0f872d49971bc
+              expression: 'last(/GitLab/log.count[{$GITLAB.NGINX.ERROR.LOG},"(crit|alert|emerg)",,,skip])>{$GITLAB.NGINX.CRIT.MAX}'
+              name: 'GitLab: nginx critical errors detected'
+              event_name: 'GitLab: nginx critical errors detected ({ITEM.LASTVALUE} in last check)'
+              priority: WARNING
+              description: 'Critical nginx errors detected. Check the nginx error log for details.'
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: availability
+        - uuid: e17e11dfed5d47daadb4671b836a4961
+          name: 'Puma: Error log'
+          type: ZABBIX_ACTIVE
+          key: 'log[{$GITLAB.PUMA.ERROR.LOG},"(Error|error|FATAL|killed|Cannot allocate memory|out of memory)",,,skip,\0,{$GITLAB.LOG.MAXDELAY}]'
+          history: 7d
+          value_type: LOG
+          description: 'Captures error and fatal entries from the GitLab Puma stderr log. Includes memory allocation failures and OOM kills.'
+          preprocessing:
+            - type: NOT_MATCHES_REGEX
+              parameters:
+                - '(collation version mismatch|BatchLoader.*deprecated|GraphQL-Ruby)'
+              error_handler: DISCARD_VALUE
+          tags:
+            - tag: component
+              value: puma
+            - tag: log-type
+              value: error
+          triggers:
+            - uuid: 76dddd3bb4ec4c8bbd2fe8bab23617fb
+              expression: 'find(/GitLab/log[{$GITLAB.PUMA.ERROR.LOG},"(Error|error|FATAL|killed|Cannot allocate memory|out of memory)",,,skip,\0,{$GITLAB.LOG.MAXDELAY}],,"iregexp","(FATAL|killed|Cannot allocate memory|out of memory)")=1'
+              name: 'GitLab: Puma application errors detected'
+              priority: WARNING
+              description: 'Puma application server errors detected. This may indicate application crashes, memory issues or fatal errors.'
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: availability
+        - uuid: fd58a4f497ac45d9a61b58ed39b7cfac
+          name: 'Puma: Error count'
+          type: ZABBIX_ACTIVE
+          key: 'log.count[{$GITLAB.PUMA.ERROR.LOG},"(FATAL|killed|Cannot allocate memory|out of memory)",,,skip]'
+          history: 7d
+          trends: 180d
+          description: 'Count of fatal errors, OOM kills and memory allocation failures in the Puma stderr log per check interval.'
+          tags:
+            - tag: component
+              value: puma
+            - tag: log-type
+              value: error
+        - uuid: a8ecdf88d5064510a996cc92032ec084
+          name: 'Sidekiq: Failure count'
+          type: ZABBIX_ACTIVE
+          key: 'log.count[{$GITLAB.SIDEKIQ.LOG},"job_status.*fail",,,skip]'
+          history: 7d
+          trends: 180d
+          description: 'Count of failed Sidekiq background jobs per check interval.'
+          tags:
+            - tag: component
+              value: sidekiq
+            - tag: log-type
+              value: error
+          triggers:
+            - uuid: 064116513cdf47488b38677e682782cd
+              expression: 'min(/GitLab/log.count[{$GITLAB.SIDEKIQ.LOG},"job_status.*fail",,,skip],{$GITLAB.SIDEKIQ.EVAL.PERIOD})>{$GITLAB.SIDEKIQ.FAIL.MAX}'
+              name: 'GitLab: High Sidekiq job failure rate'
+              event_name: 'GitLab: High Sidekiq job failure rate (>{$GITLAB.SIDEKIQ.FAIL.MAX} per check over {$GITLAB.SIDEKIQ.EVAL.PERIOD})'
+              priority: WARNING
+              description: 'The number of failed Sidekiq jobs exceeds the threshold. This may indicate background processing issues.'
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: performance
+        - uuid: 1e8ae343048f4ed1856955cd2c5a7806
+          name: 'Gitaly: Error count'
+          type: ZABBIX_ACTIVE
+          key: 'log.count[{$GITLAB.GITALY.LOG},"level.*(error|fatal)",,,skip]'
+          history: 7d
+          trends: 180d
+          description: 'Count of error and fatal entries in the Gitaly log per check interval. Note: includes benign NotFound errors, adjust threshold accordingly.'
+          tags:
+            - tag: component
+              value: gitaly
+            - tag: log-type
+              value: error
+          triggers:
+            - uuid: 4cca2fb844b04b6995f8d4219bcbf6e7
+              expression: 'min(/GitLab/log.count[{$GITLAB.GITALY.LOG},"level.*(error|fatal)",,,skip],{$GITLAB.GITALY.EVAL.PERIOD})>{$GITLAB.GITALY.ERROR.MAX}'
+              name: 'GitLab: High Gitaly error rate'
+              event_name: 'GitLab: High Gitaly error rate (>{$GITLAB.GITALY.ERROR.MAX} per check over {$GITLAB.GITALY.EVAL.PERIOD})'
+              priority: WARNING
+              description: 'The Gitaly error rate exceeds the threshold. This may indicate Git storage issues.'
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: performance
+      tags:
+        - tag: class
+          value: software
+        - tag: subclass
+          value: devops
+        - tag: target
+          value: gitlab
+      macros:
+        - macro: '{$GITLAB.NGINX.ERROR.LOG}'
+          value: /var/log/gitlab/nginx/gitlab_error.log
+          description: 'Path to the GitLab nginx error log file.'
+        - macro: '{$GITLAB.PUMA.ERROR.LOG}'
+          value: /var/log/gitlab/puma/puma_stderr.log
+          description: 'Path to the GitLab Puma stderr log file.'
+        - macro: '{$GITLAB.SIDEKIQ.LOG}'
+          value: /var/log/gitlab/sidekiq/current
+          description: 'Path to the GitLab Sidekiq log file.'
+        - macro: '{$GITLAB.GITALY.LOG}'
+          value: /var/log/gitlab/gitaly/current
+          description: 'Path to the GitLab Gitaly log file.'
+        - macro: '{$GITLAB.NGINX.CRIT.MAX}'
+          value: '0'
+          description: 'Maximum number of critical nginx errors per check interval before triggering an alert.'
+        - macro: '{$GITLAB.SIDEKIQ.FAIL.MAX}'
+          value: '50'
+          description: 'Maximum number of Sidekiq job failures per check interval before triggering an alert.'
+        - macro: '{$GITLAB.GITALY.ERROR.MAX}'
+          value: '10'
+          description: 'Maximum number of Gitaly errors per check interval before triggering an alert.'
+        - macro: '{$GITLAB.LOG.MAXDELAY}'
+          value: '60'
+          description: 'Maximum delay in seconds for log[] items. Helps the agent skip old entries if processing falls behind.'
+        - macro: '{$GITLAB.NODATA.TIMEOUT}'
+          value: 30m
+          description: 'Timeout for nodata checks on log items.'
+        - macro: '{$GITLAB.SIDEKIQ.EVAL.PERIOD}'
+          value: 15m
+          description: 'Evaluation period for Sidekiq failure rate trigger.'
+        - macro: '{$GITLAB.GITALY.EVAL.PERIOD}'
+          value: 15m
+          description: 'Evaluation period for Gitaly error rate trigger.'

@@ -133,6 +133,91 @@ loki.process "filter_postgres_noise" {
   }
 }
 {% endif %}
+{% if alloy_with_gitlab %}
+
+loki.source.file "gitlab_nginx" {
+  targets = [
+    {
+      __path__ = "/var/log/gitlab/nginx/gitlab_error.log",
+      owner = "{{ alloy_label_owner }}",
+      env   = "{{ alloy_label_env }}",
+      app   = "gitlab",
+      host  = env("HOSTNAME"),
+      service = "nginx",
+    },
+  ]
+
+  tail_from_end = true
+  forward_to = [loki.process.filter_gitlab_nginx_noise.receiver]
+}
+
+loki.source.file "gitlab_puma" {
+  targets = [
+    {
+      __path__ = "/var/log/gitlab/puma/puma_stderr.log",
+      owner = "{{ alloy_label_owner }}",
+      env   = "{{ alloy_label_env }}",
+      app   = "gitlab",
+      host  = env("HOSTNAME"),
+      service = "puma",
+    },
+  ]
+
+  tail_from_end = true
+  forward_to = [loki.process.filter_gitlab_noise.receiver]
+}
+
+loki.source.file "gitlab_sidekiq" {
+  targets = [
+    {
+      __path__ = "/var/log/gitlab/sidekiq/current",
+      owner = "{{ alloy_label_owner }}",
+      env   = "{{ alloy_label_env }}",
+      app   = "gitlab",
+      host  = env("HOSTNAME"),
+      service = "sidekiq",
+    },
+  ]
+
+  tail_from_end = true
+  forward_to = [loki.process.filter_gitlab_noise.receiver]
+}
+
+loki.source.file "gitlab_gitaly" {
+  targets = [
+    {
+      __path__ = "/var/log/gitlab/gitaly/current",
+      owner = "{{ alloy_label_owner }}",
+      env   = "{{ alloy_label_env }}",
+      app   = "gitlab",
+      host  = env("HOSTNAME"),
+      service = "gitaly",
+    },
+  ]
+
+  tail_from_end = true
+  forward_to = [loki.process.filter_gitlab_noise.receiver]
+}
+
+// GitLab nginx noise filter (separate because nginx has different log format)
+loki.process "filter_gitlab_nginx_noise" {
+  forward_to = [loki.write.default.receiver]
+
+  // Drop empty lines
+  stage.drop {
+    expression = "^\\s*$"
+  }
+}
+
+// GitLab noise filter
+loki.process "filter_gitlab_noise" {
+  forward_to = [loki.write.default.receiver]
+
+  stage.drop {
+    expression = {{ ('(?i)(' + (alloy_drop_gitlab_regex + alloy_drop_local_gitlab_regex) | join('|') + ')') | to_json }}
+  }
+}
+{% endif %}
 {% if alloy_with_redmine %}
 
 loki.source.journal "redmine_info" {

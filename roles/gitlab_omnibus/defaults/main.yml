@@ -204,5 +204,16 @@ gitlab_postgresql_log_disconnections: "{{ postgresql_log_disconnections | defaul
 # puma['min_threads'] = 4
 # puma['max_threads'] = 4
 
+# Users that need read access to GitLab log directories via ACL
+# Default includes zabbix for log[] monitoring items
+gitlab_log_acl_users:
+  - zabbix
+
+gitlab_log_dirs:
+  - /var/log/gitlab/nginx
+  - /var/log/gitlab/puma
+  - /var/log/gitlab/sidekiq
+  - /var/log/gitlab/gitaly
+
 gitlab_kas_enable: false
 gitlab_rails_kas_enabled: false

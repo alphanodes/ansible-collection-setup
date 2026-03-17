@@ -75,6 +75,21 @@ alloy_drop_system_regex:
   - "error: kex_exchange_identification"
   - active check configuration
 
+alloy_with_gitlab: false
+alloy_drop_local_gitlab_regex: []
+alloy_drop_gitlab_regex:
+  - collation version mismatch
+  - BatchLoader.*deprecated
+  - GraphQL-Ruby
+  - "tree entry not found"
+  - "grpc\\.code.*NotFound"
+  - "Completed 304"
+  - "Completed 200"
+  - "Completed 302"
+  - "Parameters:"
+  - "Processing by"
+  - "worker.*booted in"
+
 alloy_with_redmine: false
 alloy_drop_local_redmine_regex: []
 alloy_drop_redmine_regex:
