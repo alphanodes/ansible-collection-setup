@@ -77,11 +77,11 @@ setting. All monitoring logic is contained in this template.
 
 | Name | Severity | Description |
 | ---- | -------- | ----------- |
-| nginx file descriptor exhaustion  | HIGH     | Detects "Too many open files" errors         |
-| nginx critical errors detected    | WARNING  | Critical nginx error count exceeds threshold |
-| Puma application errors detected  | WARNING  | Fatal errors, OOM kills in Puma              |
-| High Sidekiq job failure rate     | WARNING  | Sidekiq failure count exceeds threshold      |
-| High Gitaly error rate            | WARNING  | Gitaly error count exceeds threshold         |
+| nginx file descriptor exhaustion | HIGH | Detects "Too many open files" errors |
+| nginx critical errors detected | WARNING | Critical nginx error count exceeds threshold |
+| Puma application errors detected | WARNING | Fatal errors, OOM kills in Puma |
+| High Sidekiq job failure rate | WARNING | Sidekiq failure count exceeds threshold |
+| High Gitaly error rate | WARNING | Gitaly error count exceeds threshold |
 
 ### Noise filtering
 
