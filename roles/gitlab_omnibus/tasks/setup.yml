@@ -66,6 +66,15 @@
       notify: Restart zabbix-agent2
       when: gitlab_zabbix_redis_socket | length > 0
 
+    - name: Set ACL on Redis socket directory for Zabbix
+      ansible.posix.acl:
+        path: '{{ gitlab_zabbix_redis_dir }}'
+        entity: zabbix
+        etype: user
+        permissions: rx
+        state: present
+      when: gitlab_zabbix_redis_socket | length > 0
+
 - name: Set up log directory ACLs
   when:
     - gitlab_log_acl_users | length > 0

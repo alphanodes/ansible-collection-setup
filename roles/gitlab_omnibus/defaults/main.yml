@@ -217,6 +217,7 @@ gitlab_log_dirs:
 
 # Zabbix agent2 Redis plugin session for Omnibus Unix socket
 gitlab_zabbix_redis_socket: /var/opt/gitlab/redis/redis.socket
+gitlab_zabbix_redis_dir: /var/opt/gitlab/redis
 
 gitlab_kas_enable: false
 gitlab_rails_kas_enabled: false
