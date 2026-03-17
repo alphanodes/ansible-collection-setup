@@ -38,6 +38,17 @@
         shell: /usr/sbin/nologin
         create_home: false
 
+    - name: Create GitLab log directories for ACL testing
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: directory
+        mode: '0700'
+      loop:
+        - /var/log/gitlab/nginx
+        - /var/log/gitlab/puma
+        - /var/log/gitlab/sidekiq
+        - /var/log/gitlab/gitaly
+
   vars:
     # Use a valid FQDN for testing
     gitlab_vhost_server: gitlab-test.example.com
