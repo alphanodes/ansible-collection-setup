@@ -203,3 +203,46 @@ zabbix_export:
         - macro: '{$GITLAB.GITALY.EVAL.PERIOD}'
           value: 15m
           description: 'Evaluation period for Gitaly error rate trigger.'
+      dashboards:
+        - uuid: cb810681fe894d01bb164f94803d34a9
+          name: 'GitLab error overview'
+          pages:
+            - widgets:
+                - type: graph
+                  name: 'GitLab: Error rates by component'
+                  width: '72'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'GitLab'
+                        name: 'GitLab: Error rates by component'
+                    - type: STRING
+                      name: reference
+                      value: AAAAA
+  graphs:
+    - uuid: 969485b23f554d71b0b8cb543984e01a
+      name: 'GitLab: Error rates by component'
+      graph_items:
+        - drawtype: BOLD_LINE
+          color: F63100
+          item:
+            host: 'GitLab'
+            key: 'log.count[{$GITLAB.NGINX.ERROR.LOG},"(crit|alert|emerg)(?!.*SSL_read)",,,skip]'
+        - sortorder: '1'
+          drawtype: BOLD_LINE
+          color: F7941D
+          item:
+            host: 'GitLab'
+            key: 'log.count[{$GITLAB.PUMA.ERROR.LOG},"(FATAL|killed|Cannot allocate memory|out of memory)",,,skip]'
+        - sortorder: '2'
+          color: 6C59DC
+          item:
+            host: 'GitLab'
+            key: 'log.count[{$GITLAB.SIDEKIQ.LOG},"job_status.*fail",,,skip]'
+        - sortorder: '3'
+          color: 00611C
+          item:
+            host: 'GitLab'
+            key: 'log.count[{$GITLAB.GITALY.LOG},"level.*(error|fatal)",,,skip]'

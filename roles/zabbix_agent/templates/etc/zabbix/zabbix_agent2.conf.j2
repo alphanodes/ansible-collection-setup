@@ -361,7 +361,7 @@ UserParameter=drush[*], bash {{ zabbix_addons_dir }}/scripts/drush_check.sh "$1"
 {% if redmine_installed %}
 UserParameter=redmine_log[*], journalctl {{ zabbix_agent_journalctl_options }} -u $1 --since "{{ zabbix_agent_journalctl_since }}" | grep -Evi "{{ (zabbix_agent_journalctl_ignore_all + zabbix_agent_redmine_log_ignore_all + zabbix_agent_redmine_log_ignore) | join('|') }}" | grep -Ei "{{ zabbix_agent_redmine_log | join('|') }}"
 UserParameter=redmine_journal[*], journalctl {{ zabbix_agent_journalctl_redmine_options }} -u $1 --since "{{ zabbix_agent_journalctl_since }}" | grep -Evi "{{ (zabbix_agent_journalctl_ignore_all + zabbix_agent_redmine_log_ignore_all + zabbix_agent_redmine_log_ignore) | join('|') }}" | grep -Ei "{{ zabbix_agent_redmine_log | join('|') }}"
-UserParameter=puma_stats[*], sudo -u $i -i -- pumactl stats -S /run/$i/redmine.state | tail -n +2
+UserParameter=puma_stats[*], sudo -u $1 -i -- pumactl stats -S /run/$1/redmine.state | tail -n +2
 {% endif %}
 
 ### Parameter for monitoring disk performance

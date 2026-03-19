@@ -1,0 +1,548 @@
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
+      name: Templates/Applications
+  templates:
+    - uuid: 0707f9111a584674bbefea961b02ccd8
+      template: 'Puma'
+      name: 'Puma'
+      description: |
+        Performance monitoring for Puma web server via pumactl stats.
+        Collects worker, thread and request metrics from the Puma control
+        socket using UserParameter puma_stats.
+
+        Supports both cluster mode (multiple workers) and single mode.
+
+        This template requires:
+        - Zabbix agent with UserParameter puma_stats configured
+        - sudo access for zabbix user to run pumactl as the application user
+        - Puma control app enabled (activate_control_app in puma.rb)
+      vendor:
+        name: AlphaNodes
+        version: 7.4-1
+      groups:
+        - name: Templates/Applications
+      items:
+        - uuid: 3c1b830266b7440b8e4b6817dc48a178
+          name: 'Puma: Get stats'
+          type: ZABBIX_ACTIVE
+          key: 'puma_stats[{$PUMA.INSTANCE}]'
+          delay: '{$PUMA.UPDATE.INTERVAL}'
+          history: 1d
+          trends: '0'
+          value_type: TEXT
+          description: 'Raw JSON output from pumactl stats. Master item for all dependent Puma metrics.'
+          tags:
+            - tag: component
+              value: puma
+          triggers:
+            - uuid: d96e5bfe0a1149a8a328307c91a388cd
+              expression: 'nodata(/Puma/puma_stats[{$PUMA.INSTANCE}],{$PUMA.NODATA.TIMEOUT})=1'
+              name: 'Puma: No stats data received'
+              event_name: 'Puma: No stats data for {$PUMA.NODATA.TIMEOUT}'
+              priority: HIGH
+              description: 'No data received from pumactl stats. Puma may be down or the UserParameter is misconfigured.'
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: availability
+        - uuid: 7e299f06603241a5bd671426fc71a1b8
+          name: 'Puma: Workers configured'
+          type: DEPENDENT
+          key: puma.workers
+          master_item:
+            key: 'puma_stats[{$PUMA.INSTANCE}]'
+          history: 7d
+          trends: 365d
+          value_type: UNSIGNED
+          description: 'Number of worker processes configured. Returns 0 in single mode.'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - 'var data = JSON.parse(value); return data.workers || 0;'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          tags:
+            - tag: component
+              value: puma
+        - uuid: dd92f6dca4d14e7c8e6d7a03aac6b032
+          name: 'Puma: Workers booted'
+          type: DEPENDENT
+          key: puma.booted_workers
+          master_item:
+            key: 'puma_stats[{$PUMA.INSTANCE}]'
+          history: 7d
+          trends: 365d
+          value_type: UNSIGNED
+          description: 'Number of worker processes currently booted. Should match workers configured.'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - 'var data = JSON.parse(value); return data.booted_workers || 0;'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          tags:
+            - tag: component
+              value: puma
+        - uuid: 2c36e34a7fc249bd85fe07daaf96db00
+          name: 'Puma: Old workers'
+          type: DEPENDENT
+          key: puma.old_workers
+          master_item:
+            key: 'puma_stats[{$PUMA.INSTANCE}]'
+          history: 7d
+          trends: 365d
+          value_type: UNSIGNED
+          description: 'Number of old worker processes during phased restart. Should be 0 under normal operation.'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - 'var data = JSON.parse(value); return data.old_workers || 0;'
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 10m
+          tags:
+            - tag: component
+              value: puma
+          triggers:
+            - uuid: e2891d096a53415e83a806c9dee826a6
+              expression: 'min(/Puma/puma.old_workers,10m)>0'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/Puma/puma.old_workers,5m)=0'
+              name: 'Puma: Old workers present'
+              event_name: 'Puma: Old workers still running after 10m'
+              priority: INFO
+              description: 'Old worker processes are still present after a phased restart. This may indicate a stuck restart.'
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: performance
+        - uuid: 9a09b1eccc274230be7260193811201a
+          name: 'Puma: Total backlog'
+          type: DEPENDENT
+          key: puma.backlog
+          master_item:
+            key: 'puma_stats[{$PUMA.INSTANCE}]'
+          history: 7d
+          trends: 365d
+          value_type: UNSIGNED
+          description: 'Total number of requests waiting in the backlog across all workers. Non-zero values indicate worker saturation.'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var data = JSON.parse(value);
+                  if (data.worker_status) {
+                    var sum = 0;
+                    for (var i = 0; i < data.worker_status.length; i++) {
+                      var s = data.worker_status[i].last_status;
+                      if (s) sum += s.backlog || 0;
+                    }
+                    return sum;
+                  }
+                  return data.backlog || 0;
+          tags:
+            - tag: component
+              value: puma
+          triggers:
+            - uuid: bfe7a66265df49be9152b3ce02cbf0ed
+              expression: 'min(/Puma/puma.backlog,5m)>0'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/Puma/puma.backlog,5m)=0'
+              name: 'Puma: Request backlog detected'
+              event_name: 'Puma: Sustained request backlog (>{ITEM.LASTVALUE})'
+              priority: WARNING
+              description: 'Requests are waiting in the backlog for more than 5 minutes. All workers and threads are busy. Consider increasing workers or threads.'
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: performance
+            - uuid: 1a5ae03cb070487c9c763d78945154f9
+              expression: 'last(/Puma/puma.backlog)>{$PUMA.BACKLOG.HIGH}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/Puma/puma.backlog,5m)=0'
+              name: 'Puma: High request backlog'
+              event_name: 'Puma: High request backlog ({ITEM.LASTVALUE} > {$PUMA.BACKLOG.HIGH})'
+              priority: HIGH
+              description: 'The request backlog exceeds the critical threshold. Users are likely experiencing slow responses.'
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: availability
+        - uuid: 764d66bba8784573b9fc82dc466b5478
+          name: 'Puma: Pool capacity'
+          type: DEPENDENT
+          key: puma.pool_capacity
+          master_item:
+            key: 'puma_stats[{$PUMA.INSTANCE}]'
+          history: 7d
+          trends: 365d
+          value_type: UNSIGNED
+          description: 'Total number of idle threads available to accept requests across all workers.'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var data = JSON.parse(value);
+                  if (data.worker_status) {
+                    var sum = 0;
+                    for (var i = 0; i < data.worker_status.length; i++) {
+                      var s = data.worker_status[i].last_status;
+                      if (s) sum += s.pool_capacity || 0;
+                    }
+                    return sum;
+                  }
+                  return data.pool_capacity || 0;
+          tags:
+            - tag: component
+              value: puma
+        - uuid: 1a2eb975b8cf4129b77f609adfdfd1e6
+          name: 'Puma: Running threads'
+          type: DEPENDENT
+          key: puma.running
+          master_item:
+            key: 'puma_stats[{$PUMA.INSTANCE}]'
+          history: 7d
+          trends: 365d
+          value_type: UNSIGNED
+          description: 'Total number of spawned threads across all workers. Includes both busy and idle threads.'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var data = JSON.parse(value);
+                  if (data.worker_status) {
+                    var sum = 0;
+                    for (var i = 0; i < data.worker_status.length; i++) {
+                      var s = data.worker_status[i].last_status;
+                      if (s) sum += s.running || 0;
+                    }
+                    return sum;
+                  }
+                  return data.running || 0;
+          tags:
+            - tag: component
+              value: puma
+        - uuid: 4789095df11543f98248407ec9fa0819
+          name: 'Puma: Max threads'
+          type: DEPENDENT
+          key: puma.max_threads
+          master_item:
+            key: 'puma_stats[{$PUMA.INSTANCE}]'
+          history: 7d
+          trends: 365d
+          value_type: UNSIGNED
+          description: 'Total maximum thread capacity across all workers (workers × max_threads_per_worker).'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var data = JSON.parse(value);
+                  if (data.worker_status) {
+                    var sum = 0;
+                    for (var i = 0; i < data.worker_status.length; i++) {
+                      var s = data.worker_status[i].last_status;
+                      if (s) sum += s.max_threads || 0;
+                    }
+                    return sum;
+                  }
+                  return data.max_threads || 0;
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          tags:
+            - tag: component
+              value: puma
+        - uuid: 10f6af32b3284672aed1941773f7f146
+          name: 'Puma: Total requests'
+          type: DEPENDENT
+          key: puma.requests
+          master_item:
+            key: 'puma_stats[{$PUMA.INSTANCE}]'
+          history: 7d
+          trends: 365d
+          value_type: UNSIGNED
+          description: 'Cumulative total of requests served across all workers. Counter resets when workers restart.'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var data = JSON.parse(value);
+                  if (data.worker_status) {
+                    var sum = 0;
+                    for (var i = 0; i < data.worker_status.length; i++) {
+                      var s = data.worker_status[i].last_status;
+                      if (s) sum += s.requests_count || 0;
+                    }
+                    return sum;
+                  }
+                  return data.requests_count || 0;
+          tags:
+            - tag: component
+              value: puma
+        - uuid: 96739a94da384e2aa740cb06f18b8800
+          name: 'Puma: Requests per second'
+          type: DEPENDENT
+          key: puma.requests.rate
+          master_item:
+            key: 'puma_stats[{$PUMA.INSTANCE}]'
+          history: 7d
+          trends: 365d
+          value_type: FLOAT
+          units: req/s
+          description: 'Rate of requests per second, calculated from the change in total request count.'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var data = JSON.parse(value);
+                  if (data.worker_status) {
+                    var sum = 0;
+                    for (var i = 0; i < data.worker_status.length; i++) {
+                      var s = data.worker_status[i].last_status;
+                      if (s) sum += s.requests_count || 0;
+                    }
+                    return sum;
+                  }
+                  return data.requests_count || 0;
+            - type: CHANGE_PER_SECOND
+          tags:
+            - tag: component
+              value: puma
+        - uuid: 9ab6451dd00f4cc3a9603714d5f194cc
+          name: 'Puma: Thread utilization'
+          type: DEPENDENT
+          key: puma.utilization
+          master_item:
+            key: 'puma_stats[{$PUMA.INSTANCE}]'
+          history: 7d
+          trends: 365d
+          value_type: FLOAT
+          units: '%'
+          description: 'Percentage of thread capacity in use: (1 - pool_capacity / max_threads) × 100. High values indicate the server is near saturation.'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var data = JSON.parse(value);
+                  var capacity = 0, max = 0;
+                  if (data.worker_status) {
+                    for (var i = 0; i < data.worker_status.length; i++) {
+                      var s = data.worker_status[i].last_status;
+                      if (s) {
+                        capacity += s.pool_capacity || 0;
+                        max += s.max_threads || 0;
+                      }
+                    }
+                  } else {
+                    capacity = data.pool_capacity || 0;
+                    max = data.max_threads || 1;
+                  }
+                  if (max === 0) return 0;
+                  return (1 - capacity / max) * 100;
+          tags:
+            - tag: component
+              value: puma
+          triggers:
+            - uuid: 99c807c957f943119dbc1f2873fd05f7
+              expression: 'avg(/Puma/puma.utilization,5m)>{$PUMA.UTILIZATION.WARN}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'avg(/Puma/puma.utilization,10m)<{$PUMA.UTILIZATION.WARN}*0.8'
+              name: 'Puma: High thread utilization'
+              event_name: 'Puma: Thread utilization > {$PUMA.UTILIZATION.WARN}% (avg {ITEM.LASTVALUE})'
+              priority: WARNING
+              description: 'Average thread utilization exceeds the warning threshold. The server is approaching saturation.'
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: performance
+            - uuid: 6c1f9e7c292b4bc2b2122ae32a08d819
+              expression: 'avg(/Puma/puma.utilization,5m)>{$PUMA.UTILIZATION.HIGH}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'avg(/Puma/puma.utilization,10m)<{$PUMA.UTILIZATION.WARN}'
+              name: 'Puma: Critical thread utilization'
+              event_name: 'Puma: Thread utilization > {$PUMA.UTILIZATION.HIGH}% (avg {ITEM.LASTVALUE})'
+              priority: HIGH
+              description: 'Thread utilization exceeds the critical threshold. Users are likely experiencing degraded performance.'
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: availability
+      tags:
+        - tag: class
+          value: software
+        - tag: subclass
+          value: application-server
+        - tag: target
+          value: puma
+      macros:
+        - macro: '{$PUMA.INSTANCE}'
+          value: redmine
+          description: 'Puma instance name. Used as argument for the puma_stats UserParameter and must match the system user and run directory name.'
+        - macro: '{$PUMA.UPDATE.INTERVAL}'
+          value: 30s
+          description: 'How often to collect Puma stats.'
+        - macro: '{$PUMA.BACKLOG.HIGH}'
+          value: '5'
+          description: 'Critical threshold for request backlog. Requests above this are queued waiting for a free thread.'
+        - macro: '{$PUMA.UTILIZATION.WARN}'
+          value: '80'
+          description: 'Warning threshold for thread utilization percentage.'
+        - macro: '{$PUMA.UTILIZATION.HIGH}'
+          value: '95'
+          description: 'Critical threshold for thread utilization percentage.'
+        - macro: '{$PUMA.NODATA.TIMEOUT}'
+          value: 5m
+          description: 'Timeout before alerting on missing Puma stats data.'
+      dashboards:
+        - uuid: a05c3ec0581f471897c424043ce11fb9
+          name: 'Puma performance'
+          pages:
+            - widgets:
+                - type: graph
+                  name: 'Puma: Thread utilization'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'Puma'
+                        name: 'Puma: Thread utilization'
+                    - type: STRING
+                      name: reference
+                      value: AAAAA
+                - type: graph
+                  name: 'Puma: Thread pool'
+                  x: '36'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'Puma'
+                        name: 'Puma: Thread pool'
+                    - type: STRING
+                      name: reference
+                      value: AAAAB
+                - type: graph
+                  name: 'Puma: Requests per second'
+                  'y': '5'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'Puma'
+                        name: 'Puma: Requests per second'
+                    - type: STRING
+                      name: reference
+                      value: AAAAC
+                - type: graph
+                  name: 'Puma: Request backlog'
+                  x: '36'
+                  'y': '5'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'Puma'
+                        name: 'Puma: Request backlog'
+                    - type: STRING
+                      name: reference
+                      value: AAAAD
+                - type: graph
+                  name: 'Puma: Workers'
+                  'y': '10'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'Puma'
+                        name: 'Puma: Workers'
+                    - type: STRING
+                      name: reference
+                      value: AAAAE
+  triggers:
+    - uuid: 0667dda862d24b06995f90bb68bae86a
+      expression: 'last(/Puma/puma.booted_workers)<last(/Puma/puma.workers) and last(/Puma/puma.workers)>0'
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'last(/Puma/puma.booted_workers)=last(/Puma/puma.workers)'
+      name: 'Puma: Workers not fully booted'
+      event_name: 'Puma: Only {ITEM.LASTVALUE1} of {ITEM.LASTVALUE2} workers booted'
+      priority: WARNING
+      description: 'Not all configured workers are booted. This may indicate a worker crash or boot failure.'
+      manual_close: 'YES'
+      tags:
+        - tag: scope
+          value: availability
+  graphs:
+    - uuid: 0acdde75f2d34ee7869b9da905a08e8d
+      name: 'Puma: Thread utilization'
+      graph_items:
+        - drawtype: GRADIENT_LINE
+          color: 199C0D
+          item:
+            host: 'Puma'
+            key: puma.utilization
+    - uuid: 4ea059a193c249549fee071eef02218a
+      name: 'Puma: Thread pool'
+      graph_items:
+        - drawtype: BOLD_LINE
+          color: 00611C
+          item:
+            host: 'Puma'
+            key: puma.max_threads
+        - sortorder: '1'
+          color: 199C0D
+          item:
+            host: 'Puma'
+            key: puma.running
+        - sortorder: '2'
+          color: F7941D
+          item:
+            host: 'Puma'
+            key: puma.pool_capacity
+    - uuid: d422ca49088f4be2a3f3a2271855828f
+      name: 'Puma: Requests per second'
+      graph_items:
+        - drawtype: GRADIENT_LINE
+          color: 199C0D
+          item:
+            host: 'Puma'
+            key: puma.requests.rate
+    - uuid: 45024114c43e4a5c86842c8e46c301d8
+      name: 'Puma: Request backlog'
+      graph_items:
+        - drawtype: BOLD_LINE
+          color: F63100
+          item:
+            host: 'Puma'
+            key: puma.backlog
+    - uuid: 557ce5b035a7467f85f96c2cd66b9dba
+      name: 'Puma: Workers'
+      graph_items:
+        - drawtype: BOLD_LINE
+          color: 00611C
+          item:
+            host: 'Puma'
+            key: puma.workers
+        - sortorder: '1'
+          color: 199C0D
+          item:
+            host: 'Puma'
+            key: puma.booted_workers
+        - sortorder: '2'
+          color: F7941D
+          item:
+            host: 'Puma'
+            key: puma.old_workers

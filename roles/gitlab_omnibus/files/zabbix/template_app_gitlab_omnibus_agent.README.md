@@ -83,6 +83,12 @@ setting. All monitoring logic is contained in this template.
 | High Sidekiq job failure rate | WARNING | Sidekiq failure count exceeds threshold |
 | High Gitaly error rate | WARNING | Gitaly error count exceeds threshold |
 
+### Graphs
+
+| Name | Description |
+| ---- | ----------- |
+| GitLab: Error rates by component | All 4 error counts (nginx, Puma, Sidekiq, Gitaly) overlaid. Shows at a glance which component is producing errors. |
+
 ### Noise filtering
 
 The Puma error log item filters out known non-critical warnings:
