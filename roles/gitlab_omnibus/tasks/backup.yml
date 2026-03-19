@@ -18,3 +18,14 @@
         on_calendar: '{{ gitlab_backup_on_calendar }}'
         exec_start: "{{ gitlab_backup_command }}"
         syslog_identifier: gitlab-backup
+
+- name: Manage systemd timer for registry garbage collection
+  ansible.builtin.include_role:
+    name: alphanodes.setup.systemd_timer
+  vars:
+    timers:
+      gitlab-registry-gc:
+        state: "{{ 'present' if gitlab_registry_gc_enabled else 'absent' }}"
+        on_calendar: '{{ gitlab_registry_gc_on_calendar }}'
+        exec_start: "{{ gitlab_registry_gc_command }}"
+        syslog_identifier: gitlab-registry-gc

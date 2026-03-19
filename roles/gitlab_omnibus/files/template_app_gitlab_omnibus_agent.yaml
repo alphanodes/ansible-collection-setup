@@ -28,10 +28,10 @@ zabbix_export:
         - uuid: ec2561ded72842f6bc78d9d0b669f0a9
           name: 'nginx: Error log'
           type: ZABBIX_ACTIVE
-          key: 'log[{$GITLAB.NGINX.ERROR.LOG},"(crit|alert|emerg|error)",,,skip,\0,{$GITLAB.LOG.MAXDELAY}]'
+          key: 'log[{$GITLAB.NGINX.ERROR.LOG},"(crit|alert|emerg|error)(?!.*SSL_read)",,,skip,\0,{$GITLAB.LOG.MAXDELAY}]'
           history: 7d
           value_type: LOG
-          description: 'Captures error, critical, alert and emergency entries from the GitLab nginx error log.'
+          description: 'Captures error, critical, alert and emergency entries from the GitLab nginx error log. Excludes SSL_read errors on WebSocket connections.'
           tags:
             - tag: component
               value: nginx
@@ -39,7 +39,7 @@ zabbix_export:
               value: error
           triggers:
             - uuid: fc81c6a9794c4909becd5149697daa0f
-              expression: 'find(/GitLab/log[{$GITLAB.NGINX.ERROR.LOG},"(crit|alert|emerg|error)",,,skip,\0,{$GITLAB.LOG.MAXDELAY}],,"iregexp","Too many open files")=1'
+              expression: 'find(/GitLab/log[{$GITLAB.NGINX.ERROR.LOG},"(crit|alert|emerg|error)(?!.*SSL_read)",,,skip,\0,{$GITLAB.LOG.MAXDELAY}],,"iregexp","Too many open files")=1'
               name: 'GitLab: nginx file descriptor exhaustion'
               event_name: 'GitLab: nginx "Too many open files" detected'
               priority: HIGH
@@ -51,7 +51,7 @@ zabbix_export:
         - uuid: d7e387b438ea45ada689e52ab7454652
           name: 'nginx: Critical error count'
           type: ZABBIX_ACTIVE
-          key: 'log.count[{$GITLAB.NGINX.ERROR.LOG},"(crit|alert|emerg)",,,skip]'
+          key: 'log.count[{$GITLAB.NGINX.ERROR.LOG},"(crit|alert|emerg)(?!.*SSL_read)",,,skip]'
           history: 7d
           trends: 180d
           description: 'Count of critical, alert and emergency entries in the GitLab nginx error log per check interval.'
@@ -62,9 +62,9 @@ zabbix_export:
               value: error
           triggers:
             - uuid: e625db7c633d464d93a0f872d49971bc
-              expression: 'max(/GitLab/log.count[{$GITLAB.NGINX.ERROR.LOG},"(crit|alert|emerg)",,,skip],1h)>{$GITLAB.NGINX.CRIT.MAX}'
+              expression: 'max(/GitLab/log.count[{$GITLAB.NGINX.ERROR.LOG},"(crit|alert|emerg)(?!.*SSL_read)",,,skip],1h)>{$GITLAB.NGINX.CRIT.MAX}'
               recovery_mode: RECOVERY_EXPRESSION
-              recovery_expression: 'max(/GitLab/log.count[{$GITLAB.NGINX.ERROR.LOG},"(crit|alert|emerg)",,,skip],15m)=0'
+              recovery_expression: 'max(/GitLab/log.count[{$GITLAB.NGINX.ERROR.LOG},"(crit|alert|emerg)(?!.*SSL_read)",,,skip],15m)=0'
               name: 'GitLab: nginx critical errors detected'
               event_name: 'GitLab: nginx critical errors detected ({ITEM.LASTVALUE} in last check)'
               priority: WARNING

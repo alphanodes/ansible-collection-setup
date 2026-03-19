@@ -219,5 +219,11 @@ gitlab_log_dirs:
 gitlab_zabbix_redis_socket: /var/opt/gitlab/redis/redis.socket
 gitlab_zabbix_redis_dir: /var/opt/gitlab/redis
 
+# Registry garbage collection
+gitlab_registry_gc_enabled: false
+gitlab_registry_gc_command: /usr/bin/gitlab-ctl registry-garbage-collect -m
+# weekly on Sunday at 04:00
+gitlab_registry_gc_on_calendar: 'Sun *-*-* 04:00:00'
+
 gitlab_kas_enable: false
 gitlab_rails_kas_enabled: false
