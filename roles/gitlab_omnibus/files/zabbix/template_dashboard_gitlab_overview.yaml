@@ -1,0 +1,118 @@
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
+      name: Templates/Applications
+  templates:
+    - uuid: 24c2f857ca4c41af8390fd532a6051c1
+      template: 'GitLab Overview'
+      name: 'GitLab Overview'
+      description: |
+        Dashboard-only template providing a GitLab server overview.
+        Combines graphs from GitLab, Linux, Nginx and Redis templates.
+
+        Link this template alongside the GitLab template to get a
+        consolidated dashboard view.
+      vendor:
+        name: AlphaNodes
+        version: 7.4-1
+      groups:
+        - name: Templates/Applications
+      templates:
+        - name: 'GitLab'
+        - name: 'Linux'
+      dashboards:
+        - uuid: affaa40c1a4543678037b36adbf636f1
+          name: 'GitLab overview'
+          pages:
+            - widgets:
+                - type: graph
+                  name: 'GitLab: Error rates'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'GitLab'
+                        name: 'GitLab: Error rates by component'
+                    - type: STRING
+                      name: reference
+                      value: AAAAA
+                - type: graph
+                  name: 'CPU utilization'
+                  x: '36'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'Linux'
+                        name: 'Linux: CPU utilization'
+                    - type: STRING
+                      name: reference
+                      value: AAAAB
+                - type: graph
+                  name: 'Memory utilization'
+                  'y': '5'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'Linux'
+                        name: 'Linux: Memory utilization'
+                    - type: STRING
+                      name: reference
+                      value: AAAAC
+                - type: graph
+                  name: 'Nginx: Requests per second'
+                  x: '36'
+                  'y': '5'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'Nginx by Zabbix agent'
+                        name: 'Nginx: Requests per second'
+                    - type: STRING
+                      name: reference
+                      value: AAAAD
+                - type: graph
+                  name: 'Redis: Memory'
+                  'y': '10'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'Redis by Zabbix agent 2'
+                        name: 'Redis: Memory'
+                    - type: STRING
+                      name: reference
+                      value: AAAAE
+                - type: graph
+                  name: 'System load'
+                  x: '36'
+                  'y': '10'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'Linux'
+                        name: 'Linux: System load'
+                    - type: STRING
+                      name: reference
+                      value: AAAAF
+      tags:
+        - tag: class
+          value: software
+        - tag: target
+          value: gitlab

@@ -203,24 +203,6 @@ zabbix_export:
         - macro: '{$GITLAB.GITALY.EVAL.PERIOD}'
           value: 15m
           description: 'Evaluation period for Gitaly error rate trigger.'
-      dashboards:
-        - uuid: cb810681fe894d01bb164f94803d34a9
-          name: 'GitLab error overview'
-          pages:
-            - widgets:
-                - type: graph
-                  name: 'GitLab: Error rates by component'
-                  width: '72'
-                  height: '5'
-                  fields:
-                    - type: GRAPH
-                      name: graphid.0
-                      value:
-                        host: 'GitLab'
-                        name: 'GitLab: Error rates by component'
-                    - type: STRING
-                      name: reference
-                      value: AAAAA
   graphs:
     - uuid: 969485b23f554d71b0b8cb543984e01a
       name: 'GitLab: Error rates by component'

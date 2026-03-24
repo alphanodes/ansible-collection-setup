@@ -1,0 +1,120 @@
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
+      name: Templates/Applications
+  templates:
+    - uuid: 8db8dee9fc0644b78166d4509328e47d
+      template: 'Redmine Overview'
+      name: 'Redmine Overview'
+      description: |
+        Dashboard-only template providing a Redmine server overview.
+        Combines graphs from Puma, Linux, Nginx and Memcached templates.
+
+        Link this template alongside the Puma and Redmine templates to get
+        a consolidated dashboard view.
+      vendor:
+        name: AlphaNodes
+        version: 7.4-1
+      groups:
+        - name: Templates/Applications
+      templates:
+        - name: 'Puma'
+        - name: 'Linux'
+        - name: 'Nginx by Zabbix agent'
+        - name: 'Memcached by Zabbix agent 2'
+      dashboards:
+        - uuid: 8f9006d8c3c44b13b288d7471fc8090c
+          name: 'Redmine overview'
+          pages:
+            - widgets:
+                - type: graph
+                  name: 'Puma: Thread utilization'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'Puma'
+                        name: 'Puma: Thread utilization'
+                    - type: STRING
+                      name: reference
+                      value: AAAAA
+                - type: graph
+                  name: 'Puma: Requests per second'
+                  x: '36'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'Puma'
+                        name: 'Puma: Requests per second'
+                    - type: STRING
+                      name: reference
+                      value: AAAAB
+                - type: graph
+                  name: 'CPU utilization'
+                  'y': '5'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'Linux'
+                        name: 'Linux: CPU utilization'
+                    - type: STRING
+                      name: reference
+                      value: AAAAC
+                - type: graph
+                  name: 'Memory utilization'
+                  x: '36'
+                  'y': '5'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'Linux'
+                        name: 'Linux: Memory utilization'
+                    - type: STRING
+                      name: reference
+                      value: AAAAD
+                - type: graph
+                  name: 'Nginx: Requests per second'
+                  'y': '10'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'Nginx by Zabbix agent'
+                        name: 'Nginx: Requests per second'
+                    - type: STRING
+                      name: reference
+                      value: AAAAE
+                - type: graph
+                  name: 'Memcached: Keyspace'
+                  x: '36'
+                  'y': '10'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'Memcached by Zabbix agent 2'
+                        name: 'Memcached: Keyspace'
+                    - type: STRING
+                      name: reference
+                      value: AAAAF
+      tags:
+        - tag: class
+          value: software
+        - tag: target
+          value: redmine
