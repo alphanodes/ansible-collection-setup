@@ -105,13 +105,20 @@
     recurse: '{{ item.recurse | default(False) }}'
   loop: '{{ redmine_write_permission_dirs }}'
 
-- name: Set writable permission for assets
+- name: Remove precompiled assets for development - {{ redmine_instance_name }}
+  ansible.builtin.file:
+    path: '{{ redmine_app_dir }}/public/assets'
+    state: absent
+  when: redmine_rails_env == 'development'
+
+- name: Set writable permission for assets - {{ redmine_instance_name }}
   ansible.builtin.file:
     path: '{{ redmine_app_dir }}/public/assets'
     owner: root
     group: '{{ redmine_group }}'
     mode: '0775'
     state: directory
+  when: redmine_rails_env != 'development'
 
 - name: Include redmine patch tasks
   ansible.builtin.include_tasks: account_redmine_patch.yml
