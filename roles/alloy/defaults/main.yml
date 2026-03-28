@@ -73,6 +73,7 @@ alloy_drop_system_regex:
   - apparmor
   - systemd-sysv-generator
   - "error: kex_exchange_identification"
+  - "Redis does not require authentication"
   - active check configuration
 
 alloy_with_gitlab: false

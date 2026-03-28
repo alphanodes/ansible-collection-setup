@@ -75,7 +75,7 @@ redmine_with_hedgedoc: false
 
 redmine_with_redis: true
 redmine_with_remove_memcached: false
-redmine_redis_url: 'redis:///run/redis/redis.sock'
+redmine_redis_url: 'unix:///run/redis/redis.sock'
 redmine_redis_maxmemory: '128mb'
 redmine_redis_maxmemory_policy: 'volatile-lru'
 

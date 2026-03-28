@@ -142,6 +142,7 @@ zabbix_agent_journalctl_ignore: []
 zabbix_agent_journalctl_ignore_all:
   - RoutingError
   - 'WARNING\: Detected'
+  - 'Redis does not require authentication'
 
 # Redmine log uses same keywords as journalctl
 zabbix_agent_redmine_log: '{{ zabbix_agent_journalctl_keywords }}'
