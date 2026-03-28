@@ -80,6 +80,9 @@ redmine_redis_maxmemory: '128mb'
 redmine_redis_maxmemory_policy: 'volatile-lru'
 
 # Session store: 'redis' (server-side, no size limit) or 'cookie' (client-side, 4KB limit)
+# NOTE: rails_env=development always uses cookie_store because Rails'
+# config/environments/development.rb overrides cache_store with memory_store,
+# which breaks cache-based sessions (CSRF token mismatch across workers).
 redmine_session_store: 'redis'
 
 # if instance.vhost_users is defined, use access protection
