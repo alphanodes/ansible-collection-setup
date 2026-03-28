@@ -19,7 +19,7 @@ config.active_support.to_time_preserves_timezone = true
 config.relative_url_root = '{{ redmine_instance.prefix }}'
 RedmineApp::Application.routes.default_scope = config.relative_url_root
 {% endif %}
-{% if redmine_instance.with_redis | default(redmine_with_redis) %}
+{% if active_with_redis %}
 _redis_opts = { url: '{{ redmine_instance.redis_url | default(redmine_redis_url) }}',
                 namespace: '{{ redmine_instance_name }}',
                 expires_in: {{ redmine_instance.redis_cache_expires_hours | default(redmine_redis_cache_expires_hours) }}.hours,
@@ -35,7 +35,7 @@ require Rails.root.join('plugins', 'redmine_dmsf', 'lib', 'redmine_dmsf', 'webda
 config.middleware.insert_before ActionDispatch::Cookies, RedmineDmsf::Webdav::CustomMiddleware
 {% endif %}
 {% if redmine_with_nginx and nginx_with_ssl | default(true) and redmine_rails_env != 'test' %}
-{% if redmine_instance.session_store | default(redmine_session_store) == 'redis' and redmine_instance.with_redis | default(redmine_with_redis) %}
+{% if active_session_store == 'redis' and active_with_redis %}
 
 config.session_store :cache_store,
   key: '_{{ redmine_instance_name | replace("-", "_") }}_session',

@@ -1,5 +1,9 @@
 [Unit]
 Description=Puma service for Redmine
+{% if active_with_redis %}
+After=redis-server.service
+Requires=redis-server.service
+{% endif %}
 
 [Service]
 User={{ redmine_instance_name }}
