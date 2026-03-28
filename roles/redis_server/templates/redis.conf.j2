@@ -2290,3 +2290,6 @@ rdb-save-incremental-fsync yes
 # to suppress
 #
 # ignore-warnings ARM64-COW-BUG
+{% if not redis_server_requirepass %}
+ignore-warnings no-requirepass
+{% endif %}
