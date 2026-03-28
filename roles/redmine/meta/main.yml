@@ -3,7 +3,6 @@ dependencies:
   - role: alphanodes.setup.common
     public: true
   - role: alphanodes.setup.ssl
-  - role: alphanodes.setup.memcached
   - role: alphanodes.setup.hedgedoc
     when: redmine_with_hedgedoc
 

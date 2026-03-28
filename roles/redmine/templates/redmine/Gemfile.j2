@@ -8,10 +8,8 @@ gem '{{ instance_logger }}'
 {% if redmine_instance.rails_env is undefined or (redmine_instance.rails_env != 'test') %}
 gem 'puma'
 {% endif %}
-{% if redmine_instance.with_memcache | default(redmine_with_memcache) %}
-{% if redmine_instance.without_dalli is undefined or not redmine_instance.without_dalli %}
-gem 'dalli'
-{% endif %}
+{% if redmine_instance.with_redis | default(redmine_with_redis) %}
+gem 'redis'
 {% endif %}
 {% if redmine_instance.with_mysql2postgres is defined and redmine_instance.with_mysql2postgres %}
 gem 'mysql2postgres'

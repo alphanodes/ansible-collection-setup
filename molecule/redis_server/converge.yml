@@ -15,3 +15,8 @@
       vars:
         # Use distro packages for CI stability (avoid upstream repo issues)
         redis_use_redis_io: false
+        redis_server_maxmemory: '128mb'
+        redis_server_maxmemory_policy: 'volatile-lru'
+        redis_server_disabled_commands:
+          - DEBUG
+          - FLUSHALL

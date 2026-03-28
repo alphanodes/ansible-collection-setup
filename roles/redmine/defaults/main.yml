@@ -72,8 +72,14 @@ redmine_smtp_enable_starttls_auto: false
 redmine_with_nginx: true
 
 redmine_with_hedgedoc: false
-redmine_with_memcache: true
-redmine_memcached_host: '127.0.0.1:11211'
+
+redmine_with_redis: true
+redmine_redis_url: 'redis://127.0.0.1:6379/0'
+redmine_redis_maxmemory: '128mb'
+redmine_redis_maxmemory_policy: 'volatile-lru'
+
+# Session store: 'redis' (server-side, no size limit) or 'cookie' (client-side, 4KB limit)
+redmine_session_store: 'redis'
 
 # if instance.vhost_users is defined, use access protection
 # NOTE: can be disabled to use protection for e.g. pghero only
@@ -97,11 +103,12 @@ redmine_proxy_buffers: '16 128k'
 redmine_proxy_buffer_size: '128k'
 redmine_proxy_busy_buffers_size: '256k'
 
-# Used for puma workers and mem_cache_store pool_size
+# Used for puma workers and redis_cache_store pool_size
 # leave empty auto calculation with amount of cpu processors
 redmine_puma_worker_processes: "{{ puma_worker_processes | default(ansible_facts['processor_nproc']) }}"
 
-redmine_memcache_expires_hours: 6
+redmine_redis_cache_expires_hours: 6
+redmine_redis_session_expires_hours: 24
 
 # @see https://devcenter.heroku.com/articles/deploying-rails-applications-with-the-puma-web-server#workers
 redmine_puma_min_threads: "{{ puma_min_threads | default(2) }}"

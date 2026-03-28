@@ -58,3 +58,98 @@
           - redis_conf.stat.exists
           - redis_conf.stat.isreg
         fail_msg: "Redis configuration file is missing"
+
+    # Verify maxmemory configuration
+    - name: Get maxmemory setting
+      ansible.builtin.command: redis-cli CONFIG GET maxmemory
+      register: redis_maxmemory
+      changed_when: false
+
+    - name: Assert maxmemory is 128mb
+      ansible.builtin.assert:
+        that:
+          - "'134217728' in redis_maxmemory.stdout"
+        fail_msg: "maxmemory is not set to 128mb (134217728 bytes), got: {{ redis_maxmemory.stdout }}"
+
+    - name: Get maxmemory-policy setting
+      ansible.builtin.command: redis-cli CONFIG GET maxmemory-policy
+      register: redis_maxmemory_policy
+      changed_when: false
+
+    - name: Assert maxmemory-policy is volatile-lru
+      ansible.builtin.assert:
+        that:
+          - "'volatile-lru' in redis_maxmemory_policy.stdout"
+        fail_msg: "maxmemory-policy is not volatile-lru, got: {{ redis_maxmemory_policy.stdout }}"
+
+    # Verify lazyfree settings
+    - name: Get lazyfree-lazy-eviction setting
+      ansible.builtin.command: redis-cli CONFIG GET lazyfree-lazy-eviction
+      register: redis_lazyfree_eviction
+      changed_when: false
+
+    - name: Assert lazyfree-lazy-eviction is yes
+      ansible.builtin.assert:
+        that:
+          - "'yes' in redis_lazyfree_eviction.stdout"
+        fail_msg: "lazyfree-lazy-eviction is not enabled"
+
+    - name: Get lazyfree-lazy-expire setting
+      ansible.builtin.command: redis-cli CONFIG GET lazyfree-lazy-expire
+      register: redis_lazyfree_expire
+      changed_when: false
+
+    - name: Assert lazyfree-lazy-expire is yes
+      ansible.builtin.assert:
+        that:
+          - "'yes' in redis_lazyfree_expire.stdout"
+        fail_msg: "lazyfree-lazy-expire is not enabled"
+
+    - name: Get lazyfree-lazy-server-del setting
+      ansible.builtin.command: redis-cli CONFIG GET lazyfree-lazy-server-del
+      register: redis_lazyfree_server_del
+      changed_when: false
+
+    - name: Assert lazyfree-lazy-server-del is yes
+      ansible.builtin.assert:
+        that:
+          - "'yes' in redis_lazyfree_server_del.stdout"
+        fail_msg: "lazyfree-lazy-server-del is not enabled"
+
+    # Verify ACL-based command disabling
+    - name: Try disabled DEBUG command
+      ansible.builtin.command: redis-cli DEBUG SLEEP 0
+      register: redis_debug_cmd
+      changed_when: false
+      failed_when: false
+
+    - name: Assert DEBUG command is blocked
+      ansible.builtin.assert:
+        that:
+          - redis_debug_cmd.stdout != 'OK'
+        fail_msg: "DEBUG command should be blocked, got: {{ redis_debug_cmd.stdout }}"
+
+    - name: Try disabled FLUSHALL command
+      ansible.builtin.command: redis-cli FLUSHALL
+      register: redis_flushall_cmd
+      changed_when: false
+      failed_when: false
+
+    - name: Assert FLUSHALL command is blocked
+      ansible.builtin.assert:
+        that:
+          - redis_flushall_cmd.stdout != 'OK'
+        fail_msg: "FLUSHALL command should be blocked by ACL, got: {{ redis_flushall_cmd.stdout }}"
+
+    # Verify deprecated directives are absent (only active lines, not comments)
+    - name: Check config for removed directives
+      ansible.builtin.shell:
+        cmd: set -o pipefail && grep -v '^\s*#' /etc/redis/redis.conf | grep -c 'always-show-logo\|jemalloc-bg-thread\|rename-command' || true
+      register: redis_deprecated
+      changed_when: false
+
+    - name: Assert no deprecated directives in config
+      ansible.builtin.assert:
+        that:
+          - redis_deprecated.stdout | int == 0
+        fail_msg: "Found deprecated directives in redis.conf"

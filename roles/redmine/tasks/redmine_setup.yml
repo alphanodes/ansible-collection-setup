@@ -53,6 +53,14 @@
       ansible.builtin.include_role:
         name: alphanodes.setup.postgresql
 
+- name: Include Redis role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.redis_server
+  vars:
+    redis_server_maxmemory: "{{ redmine_redis_maxmemory }}"
+    redis_server_maxmemory_policy: "{{ redmine_redis_maxmemory_policy }}"
+  when: redmine_with_redis
+
 - name: Fix ImageMagick policy
   when: desired_distribution_release is defined and desired_distribution_release != 'trixie'
   block:

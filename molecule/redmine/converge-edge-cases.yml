@@ -40,7 +40,7 @@
     redmine_with_nginx: true
     redmine_with_postgresql: true
     redmine_with_mysql: false
-    redmine_with_memcache: false
+    redmine_with_redis: false
     redmine_use_rvm_as_default: false
     redmine_repo_update: false
     redmine_skip_deploy: true

@@ -19,16 +19,16 @@ config.active_support.to_time_preserves_timezone = true
 config.relative_url_root = '{{ redmine_instance.prefix }}'
 RedmineApp::Application.routes.default_scope = config.relative_url_root
 {% endif %}
-{% if redmine_instance.with_memcache | default(redmine_with_memcache) %}
-_mc_opts = { namespace: '{{ redmine_instance_name }}',
-             expires_in: {{ redmine_instance.memcache_expires_hours | default(redmine_memcache_expires_hours) }}.hours,
-             compress: true }
-# Dalli 4.x (Ruby < 3.3) needs explicit meta protocol, Dalli 5.0+ only supports meta
-_mc_opts[:protocol] = :meta if RUBY_VERSION < '3.3'
+{% if redmine_instance.with_redis | default(redmine_with_redis) %}
+_redis_opts = { url: '{{ redmine_instance.redis_url | default(redmine_redis_url) }}',
+                namespace: '{{ redmine_instance_name }}',
+                expires_in: {{ redmine_instance.redis_cache_expires_hours | default(redmine_redis_cache_expires_hours) }}.hours,
+                compress: true }
 {% if redmine_instance.db_pool is defined or real_db_pool != 0 %}
-_mc_opts[:pool] = { size: {{ redmine_instance.db_pool | default(real_db_pool) }}, timeout: 5 }
+_redis_opts[:pool_size] = {{ redmine_instance.db_pool | default(real_db_pool) }}
+_redis_opts[:pool_timeout] = 5
 {% endif %}
-config.cache_store = :mem_cache_store, '{{ redmine_instance.memcached_host | default(redmine_memcached_host) }}', _mc_opts
+config.cache_store = :redis_cache_store, _redis_opts
 {% endif %}
 {% if redmine_instance.with_dmsf is defined and redmine_instance.with_dmsf %}
 # Redmine DMSF's WebDAV
@@ -36,12 +36,22 @@ require Rails.root.join('plugins', 'redmine_dmsf', 'lib', 'redmine_dmsf', 'webda
 config.middleware.insert_before ActionDispatch::Cookies, RedmineDmsf::Webdav::CustomMiddleware
 {% endif %}
 {% if redmine_with_nginx and nginx_with_ssl | default(true) and redmine_rails_env != 'test' %}
+{% if redmine_instance.session_store | default(redmine_session_store) == 'redis' and redmine_instance.with_redis | default(redmine_with_redis) %}
+
+config.session_store :cache_store,
+  key: '_{{ redmine_instance_name | replace("-", "_") }}_session',
+  expire_after: {{ redmine_instance.redis_session_expires_hours | default(redmine_redis_session_expires_hours) }}.hours,
+  same_site: :none,
+  secure: true,
+  path: config.relative_url_root || '/'
+{% else %}
 
 config.session_store :cookie_store,
   key: '_{{ redmine_instance_name | replace("-", "_") }}_session',
   same_site: :none,
   secure: true,
   path: config.relative_url_root || '/'
+{% endif %}
 {% endif %}
 {% if redmine_rails_env == 'development' %}
 

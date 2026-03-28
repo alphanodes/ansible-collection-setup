@@ -33,7 +33,7 @@
     redmine_with_nginx: true
     redmine_with_postgresql: true
     redmine_with_mysql: false
-    redmine_with_memcache: false
+    redmine_with_redis: false
     redmine_use_rvm_as_default: false
     redmine_repo_update: false
 
@@ -56,7 +56,6 @@
         letsencrypt_cert: false
         vhost_ssl_cert: redmine
         with_agile: true
-        with_memcache: true
         vhost_for_zabbix: false
 
   pre_tasks:

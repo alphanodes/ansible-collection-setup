@@ -40,6 +40,13 @@ redis_server_timeout: 0
 redis_server_databases: 16
 redis_server_requirepass: ''
 
+# Memory limit (e.g. '128mb', '1gb'). Empty means no limit.
+redis_server_maxmemory: ''
+
+# Eviction policy when maxmemory is reached.
+# Recommended for cache use: volatile-lru (evicts only keys with expire set)
+redis_server_maxmemory_policy: 'noeviction'
+
 # use false for systemd
 redis_server_daemonize: false
 # use systemd for systemd (quotes are required here)

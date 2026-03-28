@@ -381,17 +381,6 @@ syslog-facility {{ redis_server_syslog_facility }}
 # dbid is a number between 0 and 'databases'-1
 databases {{ redis_server_databases }}
 
-{% if ansible_facts.distribution == 'Debian' %}
-# By default Redis shows an ASCII art logo only when started to log to the
-# standard output and if the standard output is a TTY and syslog logging is
-# disabled. Basically this means that normally a logo is displayed only in
-# interactive sessions.
-#
-# However it is possible to force the pre-4.0 behavior and always show a
-# ASCII art logo in startup logs by setting the following option to yes.
-always-show-logo yes
-{% endif %}
-
 # By default, Redis modifies the process title (as seen in 'top' and 'ps') to
 # provide some runtime information. It is possible to disable this and leave
 # the process name as executed by setting the following to no.
@@ -1056,7 +1045,7 @@ acllog-max-len 128
 # command, these will cause requirepass to be ignored.
 #
 # requirepass foobared
-{% if redis_server_requirepass %}
+{% if redis_server_requirepass and redis_server_disabled_commands | length == 0 %}
 requirepass {{ redis_server_requirepass }}
 {% endif %}
 
@@ -1073,33 +1062,18 @@ requirepass {{ redis_server_requirepass }}
 #
 # acl-pubsub-default resetchannels
 
-# Command renaming (DEPRECATED).
-#
-# ------------------------------------------------------------------------
-# WARNING: avoid using this option if possible. Instead use ACLs to remove
-# commands from the default user, and put them only in some admin user you
-# create for administrative purposes.
-# ------------------------------------------------------------------------
-#
-# It is possible to change the name of dangerous commands in a shared
-# environment. For instance the CONFIG command may be renamed into something
-# hard to guess so that it will still be available for internal-use tools
-# but not available for general clients.
-#
-# Example:
-#
-# rename-command CONFIG b840fc02d524045429941cc15f59e41cb7be6c52
-#
-# It is also possible to completely kill a command by renaming it into
-# an empty string:
-#
-# rename-command CONFIG ""
-#
-# Please note that changing the name of commands that are logged into the
-# AOF file or transmitted to replicas may cause problems.
-{% for redis_server_disabled_command in redis_server_disabled_commands %}
-rename-command {{ redis_server_disabled_command }} ""
-{% endfor %}
+# Disable specific commands for the default user via ACL.
+# Set redis_server_disabled_commands to a list of commands to block, e.g.:
+#   redis_server_disabled_commands: [FLUSHDB, FLUSHALL, CONFIG, DEBUG]
+{% if redis_server_disabled_commands | length > 0 %}
+{% if redis_server_requirepass %}
+user default on ~* &* >{{ redis_server_requirepass }} +@all{% for cmd in redis_server_disabled_commands %} -{{ cmd }}{% endfor %}
+
+{% else %}
+user default on nopass ~* &* +@all{% for cmd in redis_server_disabled_commands %} -{{ cmd }}{% endfor %}
+
+{% endif %}
+{% endif %}
 
 ################################### CLIENTS ####################################
 
@@ -1144,7 +1118,9 @@ rename-command {{ redis_server_disabled_command }} ""
 # limit for maxmemory so that there is some free RAM on the system for replica
 # output buffers (but this is not needed if the policy is 'noeviction').
 #
-# maxmemory <bytes>
+{% if redis_server_maxmemory %}
+maxmemory {{ redis_server_maxmemory }}
+{% endif %}
 
 # MAXMEMORY POLICY: how Redis will select what to remove when maxmemory
 # is reached. You can select one from the following behaviors:
@@ -1173,7 +1149,7 @@ rename-command {{ redis_server_disabled_command }} ""
 #
 # The default is:
 #
-# maxmemory-policy noeviction
+maxmemory-policy {{ redis_server_maxmemory_policy }}
 
 # LRU, LFU and minimal TTL algorithms are not precise algorithms but approximated
 # algorithms (in order to save memory), so you can tune it for speed or
@@ -1275,9 +1251,9 @@ rename-command {{ redis_server_disabled_command }} ""
 # in order to instead release memory in a non-blocking way like if UNLINK
 # was called, using the following configuration directives.
 
-lazyfree-lazy-eviction no
-lazyfree-lazy-expire no
-lazyfree-lazy-server-del no
+lazyfree-lazy-eviction yes
+lazyfree-lazy-expire yes
+lazyfree-lazy-server-del yes
 replica-lazy-flush no
 
 # It is also possible, for the case when to replace the user code DEL calls
@@ -2282,9 +2258,6 @@ rdb-save-incremental-fsync yes
 # Maximum number of set/hash/zset/list fields that will be processed from
 # the main dictionary scan
 # active-defrag-max-scan-fields 1000
-
-# Jemalloc background thread for purging will be enabled by default
-jemalloc-bg-thread yes
 
 # It is possible to pin different threads and processes of Redis to specific
 # CPUs in your system, in order to maximize the performances of the server.
