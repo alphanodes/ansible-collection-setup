@@ -145,6 +145,7 @@
     - name: Check config for removed directives
       ansible.builtin.shell:
         cmd: set -o pipefail && grep -v '^\s*#' /etc/redis/redis.conf | grep -c 'always-show-logo\|jemalloc-bg-thread\|rename-command' || true
+        executable: /bin/bash
       register: redis_deprecated
       changed_when: false
 
