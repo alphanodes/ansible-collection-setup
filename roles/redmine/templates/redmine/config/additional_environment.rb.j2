@@ -35,7 +35,7 @@ require Rails.root.join('plugins', 'redmine_dmsf', 'lib', 'redmine_dmsf', 'webda
 config.middleware.insert_before ActionDispatch::Cookies, RedmineDmsf::Webdav::CustomMiddleware
 {% endif %}
 {% if redmine_with_nginx and nginx_with_ssl | default(true) and redmine_rails_env != 'test' %}
-{% if active_session_store == 'redis' and active_with_redis %}
+{% if active_session_store == 'redis' and active_with_redis and redmine_rails_env != 'development' %}
 
 config.session_store :cache_store,
   key: '_{{ redmine_instance_name | replace("-", "_") }}_session',
