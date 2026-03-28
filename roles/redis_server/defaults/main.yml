@@ -18,10 +18,10 @@ redis_apt_signed_by: https://packages.redis.io/gpg
 
 redis_server_bind: '127.0.0.1 -::1'
 
-# redis_server_logfile: /var/log/redis/redis-server.log
-redis_server_logfile:
+# Empty logfile = stdout only, captured by systemd journal
+redis_server_logfile: ''
 redis_server_loglevel: notice
-redis_server_syslog_enabled: true
+redis_server_syslog_enabled: false
 redis_server_syslog_ident: redis
 # Specify the syslog facility. Must be USER or between LOCAL0-LOCAL7.
 redis_server_syslog_facility: local0
