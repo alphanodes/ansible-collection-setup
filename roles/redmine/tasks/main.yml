@@ -1,5 +1,24 @@
 ---
 
+- name: Include Redis role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.redis_server
+  vars:
+    redis_server_maxmemory: "{{ redmine_redis_maxmemory }}"
+    redis_server_maxmemory_policy: "{{ redmine_redis_maxmemory_policy }}"
+  when: redmine_with_redis
+  tags:
+    - redmine
+
+- name: Remove memcached (replaced by Redis)
+  ansible.builtin.include_role:
+    name: alphanodes.setup.memcached
+  vars:
+    memcached_remove: true
+  when: redmine_with_remove_memcached
+  tags:
+    - redmine
+
 - name: Include account setup tasks
   ansible.builtin.include_tasks: account_setup.yml
   tags:
