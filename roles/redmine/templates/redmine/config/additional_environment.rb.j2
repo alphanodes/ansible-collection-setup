@@ -25,8 +25,7 @@ _redis_opts = { url: '{{ redmine_instance.redis_url | default(redmine_redis_url)
                 expires_in: {{ redmine_instance.redis_cache_expires_hours | default(redmine_redis_cache_expires_hours) }}.hours,
                 compress: true }
 {% if redmine_instance.db_pool is defined or real_db_pool != 0 %}
-_redis_opts[:pool_size] = {{ redmine_instance.db_pool | default(real_db_pool) }}
-_redis_opts[:pool_timeout] = 5
+_redis_opts[:pool] = { size: {{ redmine_instance.db_pool | default(real_db_pool) }}, timeout: 5 }
 {% endif %}
 config.cache_store = :redis_cache_store, _redis_opts
 {% endif %}
