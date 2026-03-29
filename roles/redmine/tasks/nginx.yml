@@ -34,6 +34,11 @@
     redmine_locations: "{{ redmine_locations + [redmine_agile_locations[0] | combine(_ssl_headers)] }}"
   when: active_agile
 
+- name: Add ActionCable location for ZenEdit plugin - {{ redmine_instance_name }}
+  ansible.builtin.set_fact:
+    redmine_locations: "{{ redmine_locations + [redmine_zenedit_locations[0] | combine(_ssl_headers)] }}"
+  when: active_zenedit
+
 - name: Add no-register location - {{ redmine_instance_name }}
   ansible.builtin.set_fact:
     redmine_locations: "{{ redmine_locations + redmine_no_register_location }}"
@@ -73,7 +78,7 @@
   ansible.builtin.include_role:
     name: alphanodes.setup.nginx_mono
   vars:
-    nginx_with_websocket: "{{ nginx_with_websocket | default(false) or active_agile }}"
+    nginx_with_websocket: "{{ nginx_with_websocket | default(false) or active_agile or active_zenedit }}"
     nginx_mono_service_name: "{{ redmine_instance_name }}"
     nginx_mono_service_enabled: "{{ redmine_instance.state is undefined or redmine_instance.state == 'active' }}"
     nginx_mono_service_config:

@@ -70,6 +70,7 @@
     active_delivery_method: "{{ redmine_instance.delivery_method | default(redmine_delivery_method) }}"
     active_to_time_preserves_timezone: "{{ redmine_instance.to_time_preserves_timezone | default(redmine_to_time_preserves_timezone) }}"
     active_agile: "{{ redmine_instance.with_agile | default(redmine_with_agile) }}"
+    active_zenedit: "{{ redmine_instance.with_zenedit | default(redmine_with_zenedit) }}"
     active_with_redis: "{{ redmine_instance.with_redis | default(redmine_with_redis) }}"
     active_session_store: "{{ redmine_instance.session_store | default(redmine_session_store) }}"
     redmine_instance: "{{ redmine_instance | combine([{'error_404_enabled': true}]) }}"

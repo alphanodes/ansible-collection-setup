@@ -97,6 +97,7 @@ redmine_default_vhost_users: []
 redmine_to_time_preserves_timezone: true
 
 redmine_with_agile: false
+redmine_with_zenedit: false
 
 # this enables pghero and pg_extras, too
 redmine_with_alphanodes_enterprise_support: true
@@ -284,6 +285,15 @@ redmine_base_locations:
 redmine_agile_locations:
   - name: "/rup_cable_agile"
     proxy_pass: "http://{{ redmine_instance_name | default('redmine') | replace('-', '_') }}/rup_cable_agile"
+    proxy_websocket: true
+    proxy_timeout: "{{ redmine_proxy_timeout }}"
+    proxy_redirect: "off"
+
+# ActionCable WebSocket location for ZenEdit plugin
+# NOTE: SSL-specific proxy headers added dynamically in tasks/nginx.yml
+redmine_zenedit_locations:
+  - name: "/rup_cable_zenedit"
+    proxy_pass: "http://{{ redmine_instance_name | default('redmine') | replace('-', '_') }}/rup_cable_zenedit"
     proxy_websocket: true
     proxy_timeout: "{{ redmine_proxy_timeout }}"
     proxy_redirect: "off"
