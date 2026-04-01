@@ -129,7 +129,7 @@ zabbix_export:
             - uuid: a2f1b56f122f481f86636c13e5fdb403
               expression: 'last(/GitLab/log.count[{$GITLAB.PUMA.ERROR.LOG},"collation version mismatch",,,skip])>0'
               recovery_mode: RECOVERY_EXPRESSION
-              recovery_expression: 'max(/GitLab/log.count[{$GITLAB.PUMA.ERROR.LOG},"collation version mismatch",,,skip],3h)=0'
+              recovery_expression: 'max(/GitLab/log.count[{$GITLAB.PUMA.ERROR.LOG},"collation version mismatch",,,skip],2h)=0'
               name: 'GitLab: PostgreSQL collation version mismatch'
               priority: WARNING
               description: 'PostgreSQL collation version mismatch detected after glibc upgrade. Fix: gitlab-psql -c "ALTER DATABASE gitlabhq_production REFRESH COLLATION VERSION;" and consider REINDEX.'

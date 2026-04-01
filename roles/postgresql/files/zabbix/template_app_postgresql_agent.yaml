@@ -42,7 +42,7 @@ zabbix_export:
             - uuid: c9c61309ffcd4e14b3918cffb6b17320
               expression: 'last(/PostgreSQL Custom/pg_collation_mismatch)>0'
               recovery_mode: RECOVERY_EXPRESSION
-              recovery_expression: 'max(/PostgreSQL Custom/pg_collation_mismatch,3h)=0'
+              recovery_expression: 'max(/PostgreSQL Custom/pg_collation_mismatch,2h)=0'
               name: 'PostgreSQL: Collation version mismatch detected'
               priority: WARNING
               description: 'PostgreSQL collation version mismatch detected after glibc upgrade. Fix: sudo -u postgres psql -c "ALTER DATABASE <dbname> REFRESH COLLATION VERSION;" for each affected database. Check with: SELECT datname, datcollversion, pg_database_collation_actual_version(oid) FROM pg_database;'
