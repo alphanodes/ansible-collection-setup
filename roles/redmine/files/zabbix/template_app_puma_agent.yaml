@@ -20,7 +20,7 @@ zabbix_export:
         - Puma control app enabled (activate_control_app in puma.rb)
       vendor:
         name: AlphaNodes
-        version: 7.4-1
+        version: 7.4-__DATE__
       groups:
         - name: Templates/Applications
       items:

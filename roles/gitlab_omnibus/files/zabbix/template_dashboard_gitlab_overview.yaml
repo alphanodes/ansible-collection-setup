@@ -15,7 +15,7 @@ zabbix_export:
         consolidated dashboard view.
       vendor:
         name: AlphaNodes
-        version: 7.4-1
+        version: 7.4-__DATE__
       groups:
         - name: Templates/Applications
       templates:

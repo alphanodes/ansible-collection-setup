@@ -21,7 +21,7 @@ zabbix_export:
         - GitLab Omnibus installation with default log paths
       vendor:
         name: AlphaNodes
-        version: 7.4-1
+        version: 7.4-__DATE__
       groups:
         - name: Templates/Applications
       items:
@@ -83,7 +83,7 @@ zabbix_export:
           preprocessing:
             - type: NOT_MATCHES_REGEX
               parameters:
-                - '(collation version mismatch|BatchLoader.*deprecated|GraphQL-Ruby)'
+                - '(BatchLoader.*deprecated|GraphQL-Ruby|terminating connection due to administrator command)'
               error_handler: DISCARD_VALUE
           tags:
             - tag: component
@@ -112,6 +112,29 @@ zabbix_export:
               value: puma
             - tag: log-type
               value: error
+        - uuid: 08e156abfdba4d85812771b7bc9999e0
+          name: 'PostgreSQL: Collation version mismatch'
+          type: ZABBIX_ACTIVE
+          key: 'log.count[{$GITLAB.PUMA.ERROR.LOG},"collation version mismatch",,,skip]'
+          delay: 1h
+          history: 7d
+          trends: 180d
+          description: 'Hourly check for PostgreSQL collation version mismatch warnings in Puma stderr log. Indicates glibc was upgraded without running ALTER DATABASE ... REFRESH COLLATION VERSION.'
+          tags:
+            - tag: component
+              value: postgresql
+            - tag: log-type
+              value: warning
+          triggers:
+            - uuid: a2f1b56f122f481f86636c13e5fdb403
+              expression: 'last(/GitLab/log.count[{$GITLAB.PUMA.ERROR.LOG},"collation version mismatch",,,skip])>0'
+              name: 'GitLab: PostgreSQL collation version mismatch'
+              priority: WARNING
+              description: 'PostgreSQL collation version mismatch detected after glibc upgrade. Fix: gitlab-psql -c "ALTER DATABASE gitlabhq_production REFRESH COLLATION VERSION;" and consider REINDEX.'
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: maintenance
         - uuid: a8ecdf88d5064510a996cc92032ec084
           name: 'Sidekiq: Failure count'
           type: ZABBIX_ACTIVE
