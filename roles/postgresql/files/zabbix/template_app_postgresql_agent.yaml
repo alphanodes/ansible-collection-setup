@@ -1,0 +1,59 @@
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: 748ad4d098d447d492bb935c907f652f
+      name: Templates/Databases
+  templates:
+    - uuid: 9f3c6494ce954586a7151f635d4f022a
+      template: 'PostgreSQL Custom'
+      name: 'PostgreSQL Custom'
+      description: |
+        Custom monitoring for PostgreSQL installations.
+        Detects collation version mismatches after glibc upgrades using
+        the pg_collation_mismatch UserParameter.
+
+        Link this template alongside "PostgreSQL by Zabbix agent 2"
+        for complete PostgreSQL monitoring.
+
+        This template requires:
+        - Zabbix agent with UserParameter pg_collation_mismatch configured
+        - sudo access for zabbix user to run psql as postgres
+      vendor:
+        name: AlphaNodes
+        version: 7.4-__DATE__
+      groups:
+        - name: Templates/Databases
+      items:
+        - uuid: 7f4660849f824d26b26bb0dc3b74f9f0
+          name: 'PostgreSQL: Collation version mismatch count'
+          type: ZABBIX_ACTIVE
+          key: pg_collation_mismatch
+          delay: 1h
+          history: 7d
+          trends: 180d
+          value_type: UNSIGNED
+          description: 'Number of databases with a collation version mismatch. Non-zero means glibc was upgraded without running ALTER DATABASE ... REFRESH COLLATION VERSION.'
+          tags:
+            - tag: component
+              value: postgresql
+            - tag: log-type
+              value: warning
+          triggers:
+            - uuid: c9c61309ffcd4e14b3918cffb6b17320
+              expression: 'last(/PostgreSQL Custom/pg_collation_mismatch)>0'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/PostgreSQL Custom/pg_collation_mismatch,3h)=0'
+              name: 'PostgreSQL: Collation version mismatch detected'
+              priority: WARNING
+              description: 'PostgreSQL collation version mismatch detected after glibc upgrade. Fix: sudo -u postgres psql -c "ALTER DATABASE <dbname> REFRESH COLLATION VERSION;" for each affected database. Check with: SELECT datname, datcollversion, pg_database_collation_actual_version(oid) FROM pg_database;'
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: maintenance
+      tags:
+        - tag: class
+          value: software
+        - tag: subclass
+          value: database
+        - tag: target
+          value: postgresql
