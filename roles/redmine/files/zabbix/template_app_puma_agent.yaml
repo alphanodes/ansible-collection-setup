@@ -371,6 +371,32 @@ zabbix_export:
               tags:
                 - tag: scope
                   value: availability
+        - uuid: b6b66b001df54d69a23a433de07956ba
+          name: 'Puma: Worker max RSS'
+          type: ZABBIX_ACTIVE
+          key: 'puma_worker_rss_max[{$PUMA.INSTANCE}]'
+          delay: '{$PUMA.UPDATE.INTERVAL}'
+          history: 7d
+          trends: 365d
+          value_type: UNSIGNED
+          units: KB
+          description: 'Resident set size of the largest Puma worker process in KB. Monitors memory bloat over time.'
+          tags:
+            - tag: component
+              value: puma
+          triggers:
+            - uuid: 3e2b9ce90d0449f5a6b4a7c7f5c4e06f
+              expression: 'avg(/Puma/puma_worker_rss_max[{$PUMA.INSTANCE}],30m)>{$PUMA.WORKER.RSS.MAX}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'avg(/Puma/puma_worker_rss_max[{$PUMA.INSTANCE}],30m)<{$PUMA.WORKER.RSS.MAX}*0.8'
+              name: 'Puma: Worker memory bloat detected'
+              event_name: 'Puma: Largest worker RSS > {$PUMA.WORKER.RSS.MAX} KB (avg {ITEM.LASTVALUE})'
+              priority: WARNING
+              description: 'A Puma worker process is using more memory than expected. Consider restarting Puma or reducing worker memory limits.'
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: performance
       tags:
         - tag: class
           value: software
@@ -394,6 +420,9 @@ zabbix_export:
         - macro: '{$PUMA.UTILIZATION.HIGH}'
           value: '95'
           description: 'Critical threshold for thread utilization percentage.'
+        - macro: '{$PUMA.WORKER.RSS.MAX}'
+          value: '1048576'
+          description: 'Maximum allowed RSS per Puma worker in KB (default 1 GB). Triggers warning when average over 30 minutes exceeds this value.'
         - macro: '{$PUMA.NODATA.TIMEOUT}'
           value: 5m
           description: 'Timeout before alerting on missing Puma stats data.'
@@ -458,6 +487,21 @@ zabbix_export:
                     - type: STRING
                       name: reference
                       value: AAAAD
+                - type: graph
+                  name: 'Puma: Worker memory'
+                  x: '36'
+                  'y': '10'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'Puma'
+                        name: 'Puma: Worker memory'
+                    - type: STRING
+                      name: reference
+                      value: AAAAF
                 - type: graph
                   name: 'Puma: Workers'
                   'y': '10'
@@ -546,3 +590,11 @@ zabbix_export:
           item:
             host: 'Puma'
             key: puma.old_workers
+    - uuid: bb4c88c35af84a3dba82b1920e962ec9
+      name: 'Puma: Worker memory'
+      graph_items:
+        - drawtype: GRADIENT_LINE
+          color: 6C59DC
+          item:
+            host: 'Puma'
+            key: 'puma_worker_rss_max[{$PUMA.INSTANCE}]'
