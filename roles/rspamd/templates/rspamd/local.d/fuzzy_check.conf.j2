@@ -1,0 +1,12 @@
+# Rspamd fuzzy check - local overrides
+# see https://docs.rspamd.com/modules/fuzzy_check
+
+# Increase timeout and retransmits for more reliable fuzzy checks
+timeout = 5s;
+retransmits = 2;
+
+# Override rule to use only working fuzzy servers
+# fuzzy1.rspamd.com (217.154.45.100) has connectivity issues since 4.0.0 migration
+rule "rspamd.com" {
+  servers = "round-robin:fuzzy2.rspamd.com:11335,fuzzy1.rspamd.com:11335";
+}

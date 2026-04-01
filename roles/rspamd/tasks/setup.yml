@@ -86,6 +86,7 @@
     - greylist.conf
     - ratelimit.conf
     - dmarc.conf
+    - fuzzy_check.conf
 
 - name: Configure manual whitelists and blacklists
   ansible.builtin.template:
