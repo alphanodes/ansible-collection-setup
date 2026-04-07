@@ -40,6 +40,13 @@
     login_db: '{{ redmine_db_name }}'
     state: "{{ 'present' if postgresql_with_pg_buffercache else 'absent' }}"
 
+- name: Add pg_trgm extension to Redmine database - {{ redmine_instance_name }}
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_ext:
+    name: pg_trgm
+    login_db: '{{ redmine_db_name }}'
+
 - name: Add pgvector extension to Redmine database - {{ redmine_instance_name }}
   become_user: postgres
   become: true

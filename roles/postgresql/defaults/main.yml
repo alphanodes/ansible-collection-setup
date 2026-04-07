@@ -107,6 +107,10 @@ postgresql_auto_explain_log_min_duration: '200ms'
 postgresql_pg_stat_statements_max: 10000
 postgresql_pg_stat_statements_track: all
 
+# JIT compilation adds overhead for OLTP workloads (many short queries).
+# Disable by default, enable for analytical/OLAP workloads.
+postgresql_jit: 'off'
+
 # postgresql_seq_page_cost: '1.0'
 # see https://pgtune.leopard.in.ua/#/
 # for HDD:

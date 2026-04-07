@@ -24,7 +24,7 @@
         subject_common_name: redmine.local
 
     # PostgreSQL settings
-    postgresql_version: '17'
+    postgresql_version: '18'
     postgresql_global_config_options:
       - option: listen_addresses
         value: localhost
