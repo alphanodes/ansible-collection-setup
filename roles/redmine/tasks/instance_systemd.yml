@@ -55,3 +55,19 @@
   ansible.builtin.systemd_service:
     name: '{{ puma_service_name }}'
     enabled: true
+
+- name: Set active_puma_phased_restart_hour - {{ redmine_instance_name }}
+  ansible.builtin.set_fact:
+    active_puma_phased_restart_hour: "{{ redmine_instance.puma_phased_restart_hour | default(redmine_puma_phased_restart_hour) }}"
+
+- name: Configure daily Puma phased restart timer - {{ redmine_instance_name }}
+  ansible.builtin.include_role:
+    name: alphanodes.setup.systemd_timer
+  vars:
+    timers:
+      "{{ puma_service_name }}-phased-restart":
+        exec_start: /bin/sh -c 'kill -USR1 $(cat {{ redmine_run_base_path }}/{{ redmine_instance_name }}/redmine.pid)'
+        on_calendar: '*-*-* {{ active_puma_phased_restart_hour }}:00:00'
+        persistent: true
+        syslog_identifier: '{{ puma_service_name }}-phased-restart'
+        state: "{{ 'present' if active_puma_phased_restart_hour | string | length > 0 else 'absent' }}"

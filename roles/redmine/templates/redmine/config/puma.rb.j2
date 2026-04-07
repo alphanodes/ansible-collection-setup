@@ -10,7 +10,7 @@ bind 'unix://{{ redmine_run_base_path + "/" + redmine_instance_name }}/redmine.s
 workers {{ real_puma_workers | int }}
 threads {{ redmine_instance.puma_min_threads | default(redmine_puma_min_threads) }}, {{ redmine_instance.puma_max_threads | default(redmine_puma_max_threads) }}
 
-{% if real_puma_workers | int > 3 %}
+{% if real_puma_workers | int > 1 %}
 wait_for_less_busy_worker
 {% endif %}
 {% if redmine_instance.with_dmsf is defined and redmine_instance.with_dmsf %}
@@ -20,6 +20,10 @@ supported_http_methods(Puma::Const::SUPPORTED_HTTP_METHODS + ['PROPFIND', 'PROPP
 # @see https://www.rubydoc.info/gems/puma/Puma%2FDSL:worker_timeout
 worker_timeout {{ redmine_puma_worker_timeout }}
 {% if real_puma_workers | int > 1 %}
+
+# Fork workers from worker 0 for better CoW memory sharing
+# @see https://github.com/puma/puma/blob/master/docs/fork_worker.md
+fork_worker
 
 before_worker_boot do
   ActiveRecord::Base.establish_connection

@@ -126,6 +126,18 @@ redmine_puma_warmup: false
 # see https://medium.com/motive-eng/we-solved-our-rails-memory-leaks-with-jemalloc-5c3711326456
 redmine_with_jemalloc: true
 
+# jemalloc tuning (only effective when redmine_with_jemalloc is true)
+# - dirty_decay_ms/muzzy_decay_ms: return unused pages to OS faster (default 10000ms)
+# - narenas: fewer arenas = less fragmentation for single-threaded Ruby workers (default 4*ncpus)
+# - background_thread: async page purging
+# @see https://jemalloc.net/jemalloc.3.html
+redmine_jemalloc_conf: 'dirty_decay_ms:1000,muzzy_decay_ms:1000,narenas:2,background_thread:true'
+
+# Hour (0-23) for daily Puma phased restart to prevent worker memory bloat.
+# Empty string disables the cron job.
+# Phased restart (SIGUSR1) gracefully restarts workers one by one without downtime.
+redmine_puma_phased_restart_hour: "{{ puma_phased_restart_hour | default('') }}"
+
 # see https://api.rubyonrails.org/v5.1/classes/ActiveRecord/ConnectionAdapters/ConnectionPool.html
 # and https://github.com/boazsegev/plezi/issues/15
 # should calculated automatically: redmine_puma_worker_processes * redmine_puma_max_threads
