@@ -111,15 +111,10 @@ postgresql_pg_stat_statements_track: all
 # Disable by default, enable for analytical/OLAP workloads.
 postgresql_jit: 'off'
 
-# postgresql_seq_page_cost: '1.0'
-# see https://pgtune.leopard.in.ua/#/
-# for HDD:
-#  random_page_cost = 4
-#  effective_io_concurrency = 2
-# for SSD:
-#  random_page_cost = 1.0
-#  effective_io_concurrency = 200
-# postgresql_random_page_cost: 1.0
+# @see https://pgtune.leopard.in.ua/#/
+# HDD defaults (random_page_cost = 4, effective_io_concurrency = 2)
+# SSD: set postgresql_random_page_cost: 1.1 and postgresql_effective_io_concurrency: 200 in host/group_vars
+# postgresql_random_page_cost: 1.1
 postgresql_effective_io_concurrency: '2'
 # PostgreSQL 18+ only: I/O settings
 # postgresql_maintenance_io_concurrency: 16
