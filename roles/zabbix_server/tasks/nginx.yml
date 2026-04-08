@@ -42,4 +42,5 @@
       error_pages:
         - codes: "403 404 502 503 504"
           uri: "/index.php"
+      vhost_includes: "{{ zabbix_server_vhost_includes }}"
       locations: "{{ [{'name': '/', 'action': 'try_files $uri $uri/ =404'}] + (zabbix_server_locations | default([])) }}"
