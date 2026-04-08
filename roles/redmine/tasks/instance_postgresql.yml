@@ -5,6 +5,10 @@
     name: '{{ redmine_postgresql_packages }}'
     state: present
 
+- name: Set skip_local_pg_setup - {{ redmine_instance_name }}
+  ansible.builtin.set_fact:
+    skip_local_pg_setup: "{{ redmine_instance.db_skip_local_setup | default(false) }}"
+
 - name: Create redmine postgresql database users - {{ redmine_instance_name }}
   become_user: postgres
   become: true
@@ -14,7 +18,9 @@
     role_attr_flags: "{{ redmine_instance.rb_role_flags | default('NOSUPERUSER,CREATEDB') }}"
     state: present
   no_log: '{{ hide_sensitive_data }}'
-  when: redmine_instance.db_skip_user_setup is undefined or not redmine_instance.db_skip_user_setup
+  when:
+    - not skip_local_pg_setup
+    - redmine_instance.db_skip_user_setup is undefined or not redmine_instance.db_skip_user_setup
 
 - name: Be sure redmine postgresql databases exists - {{ redmine_instance_name }}
   become_user: postgres
@@ -23,6 +29,7 @@
     name: '{{ redmine_db_name }}'
     owner: '{{ redmine_db_user }}'
     state: present
+  when: not skip_local_pg_setup
 
 - name: Add extention pg_stat_statements to Redmine database
   become_user: postgres
@@ -30,7 +37,9 @@
   community.postgresql.postgresql_ext:
     name: pg_stat_statements
     login_db: '{{ redmine_db_name }}'
-  when: postgresql_with_pg_stat_statements
+  when:
+    - not skip_local_pg_setup
+    - postgresql_with_pg_stat_statements
 
 - name: Add extention pg_buffercache to Redmine database
   become_user: postgres
@@ -39,6 +48,7 @@
     name: pg_buffercache
     login_db: '{{ redmine_db_name }}'
     state: "{{ 'present' if postgresql_with_pg_buffercache else 'absent' }}"
+  when: not skip_local_pg_setup
 
 - name: Add unaccent extension to Redmine database - {{ redmine_instance_name }}
   become_user: postgres
@@ -46,6 +56,7 @@
   community.postgresql.postgresql_ext:
     name: unaccent
     login_db: '{{ redmine_db_name }}'
+  when: not skip_local_pg_setup
 
 - name: Add pg_trgm extension to Redmine database - {{ redmine_instance_name }}
   become_user: postgres
@@ -53,6 +64,7 @@
   community.postgresql.postgresql_ext:
     name: pg_trgm
     login_db: '{{ redmine_db_name }}'
+  when: not skip_local_pg_setup
 
 - name: Add pgvector extension to Redmine database - {{ redmine_instance_name }}
   become_user: postgres
@@ -60,7 +72,9 @@
   community.postgresql.postgresql_ext:
     name: vector
     login_db: '{{ redmine_db_name }}'
-  when: redmine_instance.with_pgvector | default(false)
+  when:
+    - not skip_local_pg_setup
+    - redmine_instance.with_pgvector | default(false)
 
 - name: Run postgresql pre commands - {{ redmine_instance_name }}
   community.postgresql.postgresql_query:
@@ -68,3 +82,4 @@
     login_user: postgres
     login_db: '{{ redmine_db_name }}'
   loop: '{{ redmine_instance.pre_db_commands | default([]) }}'
+  when: not skip_local_pg_setup
