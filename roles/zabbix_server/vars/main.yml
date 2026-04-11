@@ -4,3 +4,15 @@ zabbix_server_datafiles_path: /usr/share/doc/zabbix-server-pgsql
 zabbix_server_pid_file: /run/zabbix/zabbix_server.pid
 zabbix_server_fping_location: /usr/bin/fping
 zabbix_server_fping6_location: /usr/bin/fping6
+
+# TimescaleDB hypertable definitions
+# Migrated individually to avoid excessive temporary disk usage
+zabbix_server_timescaledb_tables:
+  - {table: history, column: clock, interval: 86400}
+  - {table: history_uint, column: clock, interval: 86400}
+  - {table: history_log, column: clock, interval: 86400}
+  - {table: history_text, column: clock, interval: 86400}
+  - {table: history_str, column: clock, interval: 86400}
+  - {table: history_bin, column: clock, interval: 86400}
+  - {table: trends, column: clock, interval: 2592000}
+  - {table: trends_uint, column: clock, interval: 2592000}

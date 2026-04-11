@@ -65,6 +65,134 @@
     login_db: '{{ zabbix_server_db_name }}'
   when: zabbix_server_with_timescaledb
 
+- name: Check if TimescaleDB hypertables are configured
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_query:
+    db: '{{ zabbix_server_db_name }}'
+    query: "SELECT COUNT(*) FROM timescaledb_information.hypertables WHERE hypertable_name = 'history'"
+  register: zabbix_timescaledb_check
+  when: zabbix_server_with_timescaledb
+
+- name: Stop zabbix-server for TimescaleDB migration
+  ansible.builtin.systemd_service:
+    name: zabbix-server
+    state: stopped
+  when:
+    - zabbix_server_with_timescaledb
+    - zabbix_timescaledb_check.query_result[0].count == 0
+
+- name: Create cuid_timestamp function for TimescaleDB
+  become_user: postgres
+  become: true
+  ansible.builtin.shell:
+    cmd: |
+      psql --set ON_ERROR_STOP=on -d {{ zabbix_server_db_name }} <<'ENDSQL'
+      CREATE OR REPLACE FUNCTION cuid_timestamp(cuid varchar(25)) RETURNS integer AS $$
+      DECLARE
+        base36 varchar;
+        a char[];
+        ret bigint;
+        i int;
+        val int;
+        chars varchar;
+      BEGIN
+        base36 := substring(cuid FROM 2 FOR 8);
+        chars := '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        FOR i IN REVERSE char_length(base36)..1 LOOP
+          a := a || substring(upper(base36) FROM i FOR 1)::char;
+        END LOOP;
+        i := 0;
+        ret := 0;
+        WHILE i < (array_length(a, 1)) LOOP
+          val := position(a[i + 1] IN chars) - 1;
+          ret := ret + (val * (36 ^ i));
+          i := i + 1;
+        END LOOP;
+        RETURN CAST(ret/1000 AS integer);
+      END;
+      $$ LANGUAGE 'plpgsql' IMMUTABLE;
+      ENDSQL
+    executable: /bin/bash
+  when:
+    - zabbix_server_with_timescaledb
+    - zabbix_timescaledb_check.query_result[0].count == 0
+
+- name: Migrate Zabbix tables to TimescaleDB hypertables
+  become_user: postgres
+  become: true
+  ansible.builtin.shell:
+    cmd: >-
+      psql --set ON_ERROR_STOP=on -d {{ zabbix_server_db_name }} -c
+      "SELECT create_hypertable('{{ item.table }}', '{{ item.column }}',
+      chunk_time_interval => {{ item.interval }},
+      migrate_data => true, if_not_exists => true);"
+    executable: /bin/bash
+  loop: "{{ zabbix_server_timescaledb_tables }}"
+  loop_control:
+    label: "{{ item.table }}"
+  when:
+    - zabbix_server_with_timescaledb
+    - zabbix_timescaledb_check.query_result[0].count == 0
+
+- name: Migrate auditlog to TimescaleDB hypertable
+  become_user: postgres
+  become: true
+  ansible.builtin.shell:
+    cmd: >-
+      psql --set ON_ERROR_STOP=on -d {{ zabbix_server_db_name }} -c
+      "SELECT create_hypertable('auditlog', 'auditid',
+      chunk_time_interval => 604800,
+      time_partitioning_func => 'cuid_timestamp',
+      migrate_data => true, if_not_exists => true);"
+    executable: /bin/bash
+  when:
+    - zabbix_server_with_timescaledb
+    - zabbix_timescaledb_check.query_result[0].count == 0
+
+- name: Configure Zabbix TimescaleDB settings
+  become_user: postgres
+  become: true
+  ansible.builtin.shell:
+    cmd: >-
+      psql --set ON_ERROR_STOP=on -d {{ zabbix_server_db_name }}
+      -c "UPDATE settings SET value_str='timescaledb' WHERE name='db_extension'"
+      -c "UPDATE settings SET value_int=1 WHERE name='hk_history_global'"
+      -c "UPDATE settings SET value_int=1 WHERE name='hk_trends_global'"
+      -c "UPDATE settings SET value_int=1 WHERE name='compression_status'"
+      -c "UPDATE settings SET value_str='7d' WHERE name='compress_older'"
+    executable: /bin/bash
+  when:
+    - zabbix_server_with_timescaledb
+    - zabbix_timescaledb_check.query_result[0].count == 0
+
+- name: Verify TimescaleDB migration
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_query:
+    db: '{{ zabbix_server_db_name }}'
+    query: >-
+      SELECT hypertable_name, num_chunks, compression_enabled
+      FROM timescaledb_information.hypertables
+      ORDER BY hypertable_name
+  register: zabbix_timescaledb_verify
+  when:
+    - zabbix_server_with_timescaledb
+    - zabbix_timescaledb_check.query_result[0].count == 0
+
+- name: Show TimescaleDB migration result
+  ansible.builtin.debug:
+    var: zabbix_timescaledb_verify.query_result
+  when: zabbix_timescaledb_verify is not skipped
+
+- name: Start zabbix-server after TimescaleDB migration
+  ansible.builtin.systemd_service:
+    name: zabbix-server
+    state: started
+  when:
+    - zabbix_server_with_timescaledb
+    - zabbix_timescaledb_check.query_result[0].count == 0
+
 - name: Check if pg_buffercache extension exists
   become_user: postgres
   become: true
