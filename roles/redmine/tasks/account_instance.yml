@@ -120,12 +120,6 @@
     state: directory
   when: redmine_rails_env != 'development'
 
-- name: Include redmine patch tasks
-  ansible.builtin.include_tasks: account_redmine_patch.yml
-  loop: "{{ active_redmine_patches }}"
-  loop_control:
-    loop_var: patch
-
 - name: RVM Mode
   when: redmine_use_rvm
   block:

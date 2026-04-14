@@ -61,6 +61,12 @@
     - redmine
     - plugin
 
+- name: Include redmine patch tasks
+  ansible.builtin.include_tasks: account_redmine_patch.yml
+  loop: "{{ active_redmine_patches }}"
+  loop_control:
+    loop_var: patch
+
 - name: Include theme tasks
   ansible.builtin.include_tasks: instance_themes.yml
   tags:
