@@ -16,9 +16,6 @@ UpdateLogFile /var/log/clamav/freshclam.log
 LogVerbose {{ 'yes' if clamav_freshclam_log_verbose else 'no' }}
 LogTime {{ 'yes' if clamav_freshclam_log_time else 'yes' }}
 
-# PID file
-PidFile {{ clamav_run_dir }}/freshclam.pid
-
 # User and group
 DatabaseOwner {{ clamav_user }}
 
