@@ -364,7 +364,7 @@ UserParameter=pg_collation_mismatch, sudo -u postgres psql -t -A -c "SELECT coun
 {% if redmine_installed %}
 UserParameter=redmine_log[*], journalctl {{ zabbix_agent_journalctl_options }} -u $1 --since "{{ zabbix_agent_journalctl_since }}" | grep -Evi "{{ (zabbix_agent_journalctl_ignore_all + zabbix_agent_redmine_log_ignore_all + zabbix_agent_redmine_log_ignore) | join('|') }}" | grep -Ei "{{ zabbix_agent_redmine_log | join('|') }}"
 UserParameter=redmine_journal[*], journalctl {{ zabbix_agent_journalctl_redmine_options }} -u $1 --since "{{ zabbix_agent_journalctl_since }}" | grep -Evi "{{ (zabbix_agent_journalctl_ignore_all + zabbix_agent_redmine_log_ignore_all + zabbix_agent_redmine_log_ignore) | join('|') }}" | grep -Ei "{{ zabbix_agent_redmine_log | join('|') }}"
-UserParameter=puma_stats[*], sudo -u $1 -i -- pumactl stats -S /run/$1/redmine.state | tail -n +2
+UserParameter=puma_stats[*], sudo -u $1 -- bash -lc 'pumactl stats -S /run/$1/redmine.state' | tail -n +2
 UserParameter=puma_worker_rss_max[*], ps -o rss= --ppid $(cat /run/$1/redmine.pid 2>/dev/null) 2>/dev/null | sort -rn | head -1
 {% endif %}
 
