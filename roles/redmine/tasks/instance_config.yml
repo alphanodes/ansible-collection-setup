@@ -29,6 +29,38 @@
   loop_control:
     loop_var: config_file
 
+- name: Active Storage configuration block (DMSF)
+  when: redmine_instance.with_dmsf is defined and redmine_instance.with_dmsf
+  block:
+    - name: Active Storage storage.yml - {{ redmine_instance_name }}
+      ansible.builtin.template:
+        src: redmine/config/storage.yml.j2
+        dest: '{{ redmine_config_dir }}/storage.yml'
+        owner: '{{ redmine_instance_name }}'
+        group: '{{ redmine_instance_name }}'
+        mode: '0640'
+
+    - name: Get storage.yml link info - {{ redmine_instance_name }}
+      ansible.builtin.stat:
+        path: '{{ redmine_app_dir }}/config/storage.yml'
+      register: storage_file_info
+
+    - name: Remove storage.yml, if not a link - {{ redmine_instance_name }}
+      ansible.builtin.file:
+        path: '{{ redmine_app_dir }}/config/storage.yml'
+        state: absent
+      when:
+        - storage_file_info.stat.islnk is defined
+        - not storage_file_info.stat.islnk
+
+    - name: Symlink to storage.yml - {{ redmine_instance_name }}
+      ansible.builtin.file:
+        src: '{{ redmine_config_dir }}/storage.yml'
+        dest: '{{ redmine_app_dir }}/config/storage.yml'
+        state: link
+      become: false
+      become_user: '{{ redmine_user }}'
+
 - name: Merge projects block
   when: redmine_instance.merge_projects_config is defined
   block:

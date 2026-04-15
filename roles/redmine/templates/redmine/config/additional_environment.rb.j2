@@ -30,6 +30,9 @@ _redis_opts[:pool] = { size: {{ redmine_instance.db_pool | default(real_db_pool)
 config.cache_store = :redis_cache_store, _redis_opts
 {% endif %}
 {% if redmine_instance.with_dmsf is defined and redmine_instance.with_dmsf %}
+# Active Storage (required by redmine_dmsf)
+require 'active_storage/engine'
+config.active_storage.service = :local
 # Redmine DMSF's WebDAV
 require Rails.root.join('plugins', 'redmine_dmsf', 'lib', 'redmine_dmsf', 'webdav', 'custom_middleware').to_s
 config.middleware.insert_before ActionDispatch::Cookies, RedmineDmsf::Webdav::CustomMiddleware
