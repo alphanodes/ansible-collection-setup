@@ -58,6 +58,7 @@
 - name: Set more instance variables - {{ redmine_instance_name }}
   ansible.builtin.set_fact:
     redmine_files_dir: "{{ redmine_instance.files_dir | default(redmine_home + '/files') }}"
+    redmine_dmsf_storage_dir: "{{ redmine_instance.dmsf_storage_dir | default(redmine_home + '/dmsf_as') }}"
     redmine_rails_env: "{{ redmine_instance.rails_env | default(rails_env) }}"
     redmine_config_dir: "{{ redmine_global_config_dir }}/{{ redmine_instance_name }}"
     redmine_plugin_dir: "{{ redmine_app_dir }}/plugins"

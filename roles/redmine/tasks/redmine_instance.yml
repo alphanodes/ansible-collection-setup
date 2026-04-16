@@ -43,6 +43,15 @@
     mode: '0750'
     state: directory
 
+- name: Ensure DMSF Active Storage directory exists - {{ redmine_instance_name }}
+  ansible.builtin.file:
+    path: '{{ redmine_dmsf_storage_dir }}'
+    owner: '{{ redmine_user }}'
+    group: '{{ redmine_group }}'
+    mode: '0750'
+    state: directory
+  when: redmine_instance.with_dmsf is defined and redmine_instance.with_dmsf
+
 - name: Include init tasks
   ansible.builtin.include_tasks: instance_init.yml
 
