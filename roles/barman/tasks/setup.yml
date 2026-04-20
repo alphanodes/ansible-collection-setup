@@ -14,6 +14,17 @@
     name: '{{ barman_packages }}'
     state: present
 
+# Overwrite package-provided /etc/cron.d/barman to add flock.
+# Barman 3.18 has a bug where concurrent cron runs cause
+# "another process is updating barman configuration files" warnings.
+# See https://github.com/EnterpriseDB/barman/issues/1169
+# Can be removed once barman >= 3.19 is available.
+- name: Deploy barman cron with flock
+  ansible.builtin.template:
+    src: barman-cron.j2
+    dest: /etc/cron.d/barman
+    mode: '0644'
+
 - name: Update barman configuration
   ansible.builtin.template:
     src: 'barman.conf.j2'
