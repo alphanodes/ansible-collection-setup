@@ -1,5 +1,0 @@
-{{ managed_by_ansible | comment }}
-# Barman cron job for WAL archival and maintenance
-# flock prevents overlapping executions (barman 3.18 bug, see https://github.com/EnterpriseDB/barman/issues/1169)
-MAILTO=root
-* * * * * barman [ -x {{ barman_bin }} ] && /usr/bin/flock -n /tmp/barman-cron.lock {{ barman_bin }} -q cron

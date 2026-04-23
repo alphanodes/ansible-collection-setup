@@ -14,16 +14,21 @@
     name: '{{ barman_packages }}'
     state: present
 
-# Overwrite package-provided /etc/cron.d/barman to add flock.
-# Barman 3.18 has a bug where concurrent cron runs cause
-# "another process is updating barman configuration files" warnings.
-# See https://github.com/EnterpriseDB/barman/issues/1169
-# Can be removed once barman >= 3.19 is available.
-- name: Deploy barman cron with flock
-  ansible.builtin.template:
-    src: barman-cron.j2
-    dest: /etc/cron.d/barman
-    mode: '0644'
+# Use systemd timer (barman.timer) instead of cron for running "barman cron".
+# The systemd service is Type=oneshot, which prevents overlapping executions
+# that cause "another process is updating barman configuration files" warnings
+# in barman 3.18. See https://github.com/EnterpriseDB/barman/issues/1169
+- name: Remove package cron job (using systemd timer instead)
+  ansible.builtin.file:
+    path: /etc/cron.d/barman
+    state: absent
+
+- name: Enable barman systemd timer
+  ansible.builtin.systemd_service:
+    name: barman.timer
+    state: started
+    enabled: true
+    daemon_reload: true
 
 - name: Update barman configuration
   ansible.builtin.template:
