@@ -55,6 +55,10 @@
   ansible.builtin.set_fact:
     active_system_infos_bool_vars: '{{ redmine_instance.system_infos_bool_vars | default(redmine_system_infos_bool_vars) }}'
 
+- name: Set active_redmine_config (defaults + instance override) - {{ redmine_instance_name }}
+  ansible.builtin.set_fact:
+    active_redmine_config: '{{ redmine_config_defaults | combine(redmine_instance.redmine_config | default({})) }}'
+
 - name: Set more instance variables - {{ redmine_instance_name }}
   ansible.builtin.set_fact:
     redmine_files_dir: "{{ redmine_instance.files_dir | default(redmine_home + '/files') }}"

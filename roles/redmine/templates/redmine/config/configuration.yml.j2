@@ -36,8 +36,8 @@ default:
 {% if redmine_instance.use_logger | default(redmine_default_logger) == 'syslog' %}
   reporting_use_syslog: true
 {% endif %}
-{% if redmine_instance.redmine_config is defined and redmine_instance.redmine_config | length > 0 %}
-{% for key, value in redmine_instance.redmine_config | dictsort %}
+{% if active_redmine_config | length > 0 %}
+{% for key, value in active_redmine_config | dictsort %}
 {% if value is boolean %}
   {{ key }}: {{ (value | bool | string | lower) }}
 {% elif value is sequence and value is not string %}

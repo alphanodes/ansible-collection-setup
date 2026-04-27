@@ -169,6 +169,12 @@ redmine_no_access_for_register: false
 
 redmine_log_level: warn
 
+# Default values for redmine_config (per-instance configuration.yml).
+# Merged with redmine_instance.redmine_config in set_instance_vars.yml,
+# instance values override defaults. Use this to set plugin-wide defaults
+# globally (e.g. via group_vars) and override per host/instance.
+redmine_config_defaults: {}
+
 redmine_user_config_files:
   - .vimrc
 
