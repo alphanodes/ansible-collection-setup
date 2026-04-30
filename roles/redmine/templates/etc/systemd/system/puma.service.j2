@@ -35,6 +35,7 @@ ExecStart={{ redmine_ruby_system_gem_home }}/bin/bundle exec puma --config {{ re
 {% endif %}
 ExecReload=/usr/bin/kill -USR2 $MAINPID
 SyslogIdentifier={{ puma_service_name }}
+LimitNOFILE=65536
 Restart=on-failure
 RestartSec=30
 
