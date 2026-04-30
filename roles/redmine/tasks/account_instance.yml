@@ -18,6 +18,7 @@
     home: '{{ redmine_home }}'
     group: '{{ redmine_group }}'
     groups: '{{ (redmine_instance.user_groups | default([])) + (["redis"] if active_with_redis else []) or omit }}'
+    append: true
     comment: Redmine {{ redmine_user }}
     shell: '{{ "/usr/bin/zsh" if redmine_with_zsh else "/usr/bin/bash" }}'
 
