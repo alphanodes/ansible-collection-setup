@@ -20,3 +20,11 @@
   ansible.builtin.file:
     path: /etc/apt/preferences.d/gitlab-runner
     state: absent
+
+- name: Remove Docker cleanup timer
+  ansible.builtin.include_role:
+    name: alphanodes.setup.systemd_timer
+  vars:
+    timers:
+      gitlab-runner-docker-cleanup:
+        state: absent

@@ -21,6 +21,10 @@ Installs GitLab Runner from the official GitLab repository with optional Hetzner
 | `gitlab_runner_concurrent` | `{{ ansible_processor_nproc }}` | Max concurrent jobs |
 | `gitlab_runner_apt_pinning` | `false` | Pin GitLab repository packages |
 | `gitlab_runner_remove` | `false` | Remove GitLab Runner instead of installing |
+| `gitlab_runner_docker_cleanup` | `false` | Install systemd timer that runs `docker system prune` periodically |
+| `gitlab_runner_docker_cleanup_oncalendar` | `*-*-* 02:00:00` | systemd `OnCalendar=` schedule for the cleanup timer |
+| `gitlab_runner_docker_cleanup_until` | `72h` | `--filter "until="` value passed to `docker system prune` |
+| `gitlab_runner_docker_cleanup_random_delay_sec` | `15min` | systemd `RandomizedDelaySec=` for the cleanup timer |
 
 See `defaults/main.yml` for all configurable options including Hetzner Cloud settings.
 

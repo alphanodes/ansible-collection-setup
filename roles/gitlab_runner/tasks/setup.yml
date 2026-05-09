@@ -84,3 +84,17 @@
 
 - name: Set systemd reload options
   ansible.builtin.import_tasks: systemd-reload.yml
+
+- name: Manage Docker cleanup timer
+  ansible.builtin.include_role:
+    name: alphanodes.setup.systemd_timer
+  vars:
+    timers:
+      gitlab-runner-docker-cleanup:
+        state: "{{ 'present' if gitlab_runner_docker_cleanup else 'absent' }}"
+        exec_start: /usr/bin/docker system prune -af --filter "until={{ gitlab_runner_docker_cleanup_until }}"
+        on_calendar: '{{ gitlab_runner_docker_cleanup_oncalendar }}'
+        randomized_delay_sec: '{{ gitlab_runner_docker_cleanup_random_delay_sec }}'
+        persistent: true
+        requires_service: docker.service
+        after_service: docker.service

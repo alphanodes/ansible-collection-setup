@@ -49,3 +49,12 @@ gitlab_runner_apt_suites: '{{ ansible_facts.distribution_release }}'
 gitlab_runner_apt_components: main
 
 gitlab_runner_remove: false
+
+# Periodic cleanup of unused Docker resources on the runner host. Helpful for
+# brokers that run local docker executors which accumulate stopped containers,
+# dangling images and BuildKit cache over time. Disabled by default - opt in
+# per host. Volumes are preserved (no --volumes flag).
+gitlab_runner_docker_cleanup: false
+gitlab_runner_docker_cleanup_oncalendar: '*-*-* 02:00:00'
+gitlab_runner_docker_cleanup_until: '72h'
+gitlab_runner_docker_cleanup_random_delay_sec: '15min'
