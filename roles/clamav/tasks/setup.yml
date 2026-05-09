@@ -6,11 +6,17 @@
     update_cache: true
     cache_valid_time: 3600
 
-- name: Stop freshclam service if running (will be replaced by timer)
+- name: Check if our freshclam timer override already exists
+  ansible.builtin.stat:
+    path: /etc/systemd/system/clamav-freshclam.timer
+  register: clamav_freshclam_timer_override
+
+- name: Stop freshclam package daemon (one-time pre-migration cleanup)
   ansible.builtin.systemd_service:
     name: '{{ clamav_freshclam_service_name }}'
     state: stopped
     enabled: false
+  when: not clamav_freshclam_timer_override.stat.exists
   failed_when: false
 
 - name: Add users to ClamAV socket group
