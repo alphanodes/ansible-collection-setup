@@ -30,6 +30,14 @@
   notify:
     - Restart nginx
 
+- name: Remove matrix-room-cleaner timer
+  ansible.builtin.include_role:
+    name: alphanodes.setup.systemd_timer
+  vars:
+    timers:
+      matrix_room_cleaner:
+        state: absent
+
 - name: Remove cleaner binary
   ansible.builtin.file:
     path: "{{ item }}"
@@ -37,8 +45,6 @@
   loop:
     - '{{ ddendrite_cleaner_bin }}'
     - '{{ dendrite_cleaner_src_dir }}'
-    - /etc/systemd/system/matrix-room-cleaner@.service
-    - /etc/systemd/system/matrix-room-cleaner@.timer
 
 - name: Remove Dendrite files
   ansible.builtin.file:

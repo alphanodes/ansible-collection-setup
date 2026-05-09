@@ -187,7 +187,7 @@
           {{ mysql_journal_logs.stdout | default('') }}
 
 - name: Ensure MySQL databases are present
-  community.mysql.mysql_db:
+  ansible.mysql.mysql_db:
     login_unix_socket: "{{ mysql_socket if (mysql_root_plugin == 'auth_socket' or mysql_socket_force) else omit }}"
     name: "{{ item.name }}"
     collation: "{{ item.collation | default('utf8_general_ci') }}"
@@ -197,7 +197,7 @@
   loop: "{{ mysql_databases }}"
 
 - name: Update debian-sys-maint mysql account for debian maintenance
-  community.mysql.mysql_user:
+  ansible.mysql.mysql_user:
     login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' or mysql_socket_force else omit }}"
     name: debian-sys-maint
     # For MySQL 8+ use plugin with plugin_auth_string, for MariaDB use password
@@ -213,7 +213,7 @@
   no_log: '{{ hide_sensitive_data }}'
 
 - name: Ensure MySQL users are present
-  community.mysql.mysql_user:
+  ansible.mysql.mysql_user:
     login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' or mysql_socket_force else omit }}"
     name: "{{ item.name }}"
     host: "{{ item.host | default('localhost') }}"

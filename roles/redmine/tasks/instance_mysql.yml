@@ -27,7 +27,7 @@
   when: redmine_instance.db_skip_user_setup is undefined or not redmine_instance.db_skip_user_setup
 
 - name: Run mysql pre commands - {{ redmine_instance_name }}
-  community.mysql.mysql_query:
+  ansible.mysql.mysql_query:
     login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
     login_db: '{{ redmine_db_name }}'
     query: '{{ item }}'

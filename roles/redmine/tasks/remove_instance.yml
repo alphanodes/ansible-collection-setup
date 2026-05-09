@@ -10,14 +10,18 @@
     state: stopped
   ignore_errors: true
 
-- name: Remove systemd files - {{ redmine_instance_name }}
+- name: Remove puma directory timer - {{ redmine_instance_name }}
+  ansible.builtin.include_role:
+    name: alphanodes.setup.systemd_timer
+  vars:
+    timers:
+      "puma-{{ redmine_instance_name }}-directory":
+        state: absent
+
+- name: Remove puma service file - {{ redmine_instance_name }}
   ansible.builtin.file:
-    path: "/etc/systemd/system/{{ item }}"
+    path: /etc/systemd/system/puma-{{ redmine_instance_name }}.service
     state: absent
-  loop:
-    - puma-{{ redmine_instance_name }}-directory.service
-    - puma-{{ redmine_instance_name }}-directory.timer
-    - puma-{{ redmine_instance_name }}.service
 
 - name: Remove sudoer file - {{ redmine_instance_name }}
   ansible.builtin.file:
@@ -48,13 +52,13 @@
     and (mysql_replication_role is undefined or mysql_replication_role != 'slave')
   block:
     - name: Remove MySQL DB - {{ redmine_instance_name }}
-      community.mysql.mysql_db:
+      ansible.mysql.mysql_db:
         login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
         name: '{{ redmine_db_name }}'
         state: absent
 
     - name: Remove MySQL user - {{ redmine_instance_name }}
-      community.mysql.mysql_user:
+      ansible.mysql.mysql_user:
         login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' else omit }}"
         name: '{{ redmine_db_user }}'
         state: absent

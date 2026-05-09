@@ -1,9 +1,0 @@
-{{ managed_by_ansible | comment }}
-
-[Unit]
-Description=Purge old unused kernel packages
-After=network.target
-
-[Service]
-Type=oneshot
-ExecStart=/bin/bash -c 'dpkg --get-selections "linux-*" | grep deinstall | cut -f1 | xargs --no-run-if-empty dpkg --purge'

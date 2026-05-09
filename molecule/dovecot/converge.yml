@@ -63,13 +63,13 @@
 
   post_tasks:
     - name: Create vimbadmin database
-      community.mysql.mysql_db:
+      ansible.mysql.mysql_db:
         name: '{{ dovecot_db_name }}'
         state: present
         login_unix_socket: /run/mysqld/mysqld.sock
 
     - name: Create vimbadmin database user
-      community.mysql.mysql_user:
+      ansible.mysql.mysql_user:
         name: '{{ dovecot_db_user }}'
         password: '{{ dovecot_db_password }}'
         host: '%'
@@ -78,7 +78,7 @@
         login_unix_socket: /run/mysqld/mysqld.sock
 
     - name: Create minimal mailbox table for testing
-      community.mysql.mysql_query:
+      ansible.mysql.mysql_query:
         login_unix_socket: /run/mysqld/mysqld.sock
         login_db: '{{ dovecot_db_name }}'
         query: |
@@ -97,7 +97,7 @@
       changed_when: false
 
     - name: Insert test mailbox entry
-      community.mysql.mysql_query:
+      ansible.mysql.mysql_query:
         login_unix_socket: /run/mysqld/mysqld.sock
         login_db: '{{ dovecot_db_name }}'
         query: |

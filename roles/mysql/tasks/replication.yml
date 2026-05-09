@@ -1,6 +1,6 @@
 ---
 - name: Ensure replication user exists on master
-  community.mysql.mysql_user:
+  ansible.mysql.mysql_user:
     login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' or mysql_socket_force else omit }}"
     name: "{{ mysql_replication_user.name }}"
     host: "{{ mysql_replication_user.host | default('%') }}"
@@ -16,7 +16,7 @@
     - (mysql_replication_master | length) > 0
 
 - name: Check slave replication status
-  community.mysql.mysql_replication:
+  ansible.mysql.mysql_replication:
     mode: getreplica
     login_user: "{{ mysql_root_username }}"
     login_password: "{{ mysql_root_password | default('') }}"
@@ -27,7 +27,7 @@
     - (mysql_replication_master | length) > 0
 
 - name: Check master replication status
-  community.mysql.mysql_replication:
+  ansible.mysql.mysql_replication:
     mode: getprimary
   # see https://github.com/ansible/ansible/issues/82264
   delegate_to: "{{ mysql_replication_master_inventory_host | default(omit, true) }}"
@@ -39,7 +39,7 @@
     - (mysql_replication_master | length) > 0
 
 - name: Configure replication on the slave
-  community.mysql.mysql_replication:
+  ansible.mysql.mysql_replication:
     mode: changeprimary
     master_host: "{{ mysql_replication_master }}"
     master_user: "{{ mysql_replication_user.name }}"
@@ -54,7 +54,7 @@
     - (mysql_replication_master | length) > 0
 
 - name: Start replication
-  community.mysql.mysql_replication:
+  ansible.mysql.mysql_replication:
     mode: startreplica
   when:
     - (slave.Is_Slave is defined and slave.Is_Slave) or (slave.Is_Replica is defined and slave.Is_Replica) or (slave.Is_Slave is undefined and slave.Is_Replica is undefined and slave is failed)
