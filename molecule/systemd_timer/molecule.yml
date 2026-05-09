@@ -21,3 +21,6 @@ provisioner:
       interpreter_python: auto_silent
   playbooks:
     converge: ${MOLECULE_PLAYBOOK:-converge.yml}
+    verify: verify.yml
+verifier:
+  name: ansible

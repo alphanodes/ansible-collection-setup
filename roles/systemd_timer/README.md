@@ -35,3 +35,29 @@ Available variables can be found in [defaults/main.yml](defaults/main.yml)
       roles:
         - alphanodes.setup.systemd_timer
 ```
+
+## Adding extra systemd directives
+
+The role hardcodes the most common fields (dependencies, environment,
+exec_start, syslog_identifier, ...). Anything else - hardening, resource
+limits, custom unit options - goes through `unit_extra` / `service_extra`
+as raw systemd syntax:
+
+```yaml
+    timers:
+      app_cleanup:
+        exec_start: /usr/local/bin/cleanup
+        on_calendar: '*-*-* 02:00:00'
+        unit_extra: |
+          Documentation=man:cleanup(1)
+        service_extra: |
+          User=app
+          PrivateTmp=yes
+          ProtectSystem=strict
+          ReadWritePaths=/var/lib/app
+          MemoryMax=512M
+```
+
+Use `unit_extra` for `[Unit]` directives and `service_extra` for
+`[Service]` directives. systemd accepts both `yes`/`no` and `true`/`false`
+for booleans.

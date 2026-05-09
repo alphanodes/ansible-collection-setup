@@ -1,6 +1,38 @@
 ---
 - name: Converge
   hosts: all
+  become: true
 
-  roles:
-    - role: alphanodes.setup.systemd_timer
+  tasks:
+    - name: Install test timer exercising hardcoded fields and extras
+      ansible.builtin.include_role:
+        name: alphanodes.setup.systemd_timer
+      vars:
+        timers:
+          test-systemd-timer:
+            exec_start: /bin/true
+            on_calendar: '*-*-* 04:00:00'
+            randomized_delay_sec: 5min
+            persistent: true
+            requires_service: network.target
+            after_service: network.target
+            syslog_identifier: test-timer
+            env:
+              - name: FOO
+                value: bar
+            unit_extra: |
+              Documentation=man:test(1)
+            service_extra: |
+              PrivateTmp=yes
+              ProtectSystem=strict
+              ReadWritePaths=/tmp
+
+    - name: Install second test timer to be removed afterwards
+      ansible.builtin.include_role:
+        name: alphanodes.setup.systemd_timer
+      vars:
+        timers:
+          test-systemd-timer-removable:
+            exec_start: /bin/true
+            on_calendar: 'daily'
+            persistent: true

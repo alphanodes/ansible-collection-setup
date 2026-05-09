@@ -14,22 +14,16 @@ Before={{ timer.before_service }}
 {% if timer.after_service is defined %}
 After={{ timer.after_service }}
 {% endif %}
+{% if timer.unit_extra is defined %}
+{{ timer.unit_extra }}
+{% endif %}
 
 [Service]
 Type={{ timer.type | default('oneshot') }}
-{% if timer.user is defined %}
-User={{ timer.user }}
-{% endif %}
-{% if timer.group is defined %}
-Group={{ timer.group }}
-{% endif %}
 {% if timer.env is defined %}
 {% for item in timer.env %}
 Environment="{{ item.name }}={{ item.value }}"
 {% endfor %}
-{% endif %}
-{% if timer.working_directory is defined %}
-WorkingDirectory={{ timer.working_directory }}
 {% endif %}
 {% if timer.exec_start_pre is defined %}
 {% if timer.exec_start_pre is iterable and timer.exec_start_pre is not string %}
@@ -59,9 +53,6 @@ ExecStartPost={{ timer.exec_start_post }}
 {% if timer.syslog_identifier is defined %}
 SyslogIdentifier={{ timer.syslog_identifier }}
 {% endif %}
-{% if timer.restart is defined %}
-Restart={{ timer.restart }}
-{% endif %}
-{% if timer.restart_sec is defined %}
-RestartSec={{ timer.restart_sec }}
+{% if timer.service_extra is defined %}
+{{ timer.service_extra }}
 {% endif %}

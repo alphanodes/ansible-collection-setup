@@ -1,0 +1,106 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Read generated service unit
+      ansible.builtin.slurp:
+        src: /etc/systemd/system/test-systemd-timer.service
+      register: service_file
+
+    - name: Decode service unit
+      ansible.builtin.set_fact:
+        service_content: '{{ service_file.content | b64decode }}'
+
+    - name: Assert hardcoded directives are rendered
+      ansible.builtin.assert:
+        that:
+          - "'Description=test-systemd-timer service' in service_content"
+          - "'Requires=network.target' in service_content"
+          - "'After=network.target' in service_content"
+          - "'Type=oneshot' in service_content"
+          - '"Environment=\"FOO=bar\"" in service_content'
+          - "'ExecStart=/bin/true' in service_content"
+          - "'SyslogIdentifier=test-timer' in service_content"
+        fail_msg: "hardcoded directives missing in test-systemd-timer.service"
+
+    - name: Assert unit_extra was injected into [Unit] block
+      ansible.builtin.assert:
+        that:
+          - "'Documentation=man:test(1)' in service_content"
+        fail_msg: "unit_extra not rendered"
+
+    - name: Assert service_extra was injected into [Service] block
+      ansible.builtin.assert:
+        that:
+          - "'PrivateTmp=yes' in service_content"
+          - "'ProtectSystem=strict' in service_content"
+          - "'ReadWritePaths=/tmp' in service_content"
+        fail_msg: "service_extra not rendered"
+
+    - name: Assert obsolete keys are NOT rendered as misnamed directives
+      ansible.builtin.assert:
+        that:
+          - "'User=' not in service_content"
+          - "'Group=' not in service_content"
+          - "'WorkingDirectory=' not in service_content"
+          - "'Restart=' not in service_content"
+          - "'RestartSec=' not in service_content"
+        fail_msg: "obsolete hardcoded fields are still rendered"
+
+    - name: Read generated timer unit
+      ansible.builtin.slurp:
+        src: /etc/systemd/system/test-systemd-timer.timer
+      register: timer_file
+
+    - name: Decode timer unit
+      ansible.builtin.set_fact:
+        timer_content: '{{ timer_file.content | b64decode }}'
+
+    - name: Assert timer directives are rendered correctly
+      ansible.builtin.assert:
+        that:
+          - "'OnCalendar=*-*-* 04:00:00' in timer_content"
+          - "'RandomizedDelaySec=5min' in timer_content"
+          - "'Persistent=yes' in timer_content"
+          - "'WantedBy=timers.target' in timer_content"
+        fail_msg: "timer directives missing or wrong"
+
+    - name: Confirm timer unit is started and enabled
+      ansible.builtin.systemd_service:
+        name: test-systemd-timer.timer
+      register: timer_status
+
+    - name: Assert timer is active and enabled
+      ansible.builtin.assert:
+        that:
+          - timer_status.status.ActiveState == 'active'
+          - timer_status.status.UnitFileState == 'enabled'
+        fail_msg: "test-systemd-timer.timer should be active+enabled"
+
+    - name: Remove the second test timer via state=absent
+      ansible.builtin.include_role:
+        name: alphanodes.setup.systemd_timer
+      vars:
+        timers:
+          test-systemd-timer-removable:
+            state: absent
+
+    - name: Assert removed service unit file is gone
+      ansible.builtin.stat:
+        path: /etc/systemd/system/test-systemd-timer-removable.service
+      register: removed_service
+
+    - name: Assert removed timer unit file is gone
+      ansible.builtin.stat:
+        path: /etc/systemd/system/test-systemd-timer-removable.timer
+      register: removed_timer
+
+    - name: Assert state=absent removes both unit files
+      ansible.builtin.assert:
+        that:
+          - not removed_service.stat.exists
+          - not removed_timer.stat.exists
+        fail_msg: "state: absent did not remove unit files"

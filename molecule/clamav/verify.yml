@@ -39,6 +39,32 @@
           - freshclam_timer.status.ActiveState == 'active'
         fail_msg: "Freshclam timer is not active"
 
+    - name: Read generated freshclam service unit
+      ansible.builtin.slurp:
+        src: /etc/systemd/system/clamav-freshclam.service
+      register: freshclam_service_file
+
+    - name: Decode freshclam service content
+      ansible.builtin.set_fact:
+        freshclam_service_content: '{{ freshclam_service_file.content | b64decode }}'
+
+    - name: Assert freshclam hardening directives survived migration
+      ansible.builtin.assert:
+        that:
+          - "'User=clamav' in freshclam_service_content"
+          - "'PrivateTmp=yes' in freshclam_service_content"
+          - "'PrivateDevices=yes' in freshclam_service_content"
+          - "'ProtectSystem=strict' in freshclam_service_content"
+          - "'ProtectHome=yes' in freshclam_service_content"
+          - "'ReadWritePaths=/var/lib/clamav' in freshclam_service_content"
+          - "'StandardOutput=journal' in freshclam_service_content"
+          - "'StandardError=journal' in freshclam_service_content"
+          - "'Documentation=man:freshclam(1) man:freshclam.conf(5)' in freshclam_service_content"
+          - "'Wants=network-online.target' in freshclam_service_content"
+          - "'After=network-online.target' in freshclam_service_content"
+          - "'ExecStart=/usr/bin/freshclam --quiet' in freshclam_service_content"
+        fail_msg: "Freshclam service is missing hardening or unit directives after migration"
+
     - name: Verify Unix socket exists
       ansible.builtin.stat:
         path: /var/run/clamav/clamd.ctl

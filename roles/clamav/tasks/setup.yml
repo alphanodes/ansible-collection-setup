@@ -81,32 +81,30 @@
   become: true
   become_user: '{{ clamav_user }}'
 
-- name: Setup freshclam systemd service
-  ansible.builtin.template:
-    src: systemd/freshclam.service.j2
-    dest: /etc/systemd/system/clamav-freshclam.service
-    owner: root
-    group: root
-    mode: '0644'
-  notify: Reload systemd
-
-- name: Setup freshclam systemd timer
-  ansible.builtin.template:
-    src: systemd/freshclam.timer.j2
-    dest: /etc/systemd/system/clamav-freshclam.timer
-    owner: root
-    group: root
-    mode: '0644'
-  notify:
-    - Reload systemd
-    - Restart freshclam timer
-
-- name: Ensure freshclam timer is configured
-  ansible.builtin.systemd_service:
-    name: clamav-freshclam.timer
-    state: "{{ 'started' if clamav_service_enabled else 'stopped' }}"
-    enabled: "{{ clamav_service_enabled }}"
-    daemon_reload: true
+- name: Manage freshclam timer
+  ansible.builtin.include_role:
+    name: alphanodes.setup.systemd_timer
+  vars:
+    timers:
+      clamav-freshclam:
+        state: "{{ 'present' if clamav_service_enabled else 'absent' }}"
+        exec_start: /usr/bin/freshclam --quiet
+        on_calendar: '{{ clamav_freshclam_on_calendar }}'
+        randomized_delay_sec: '{{ clamav_freshclam_randomized_delay_sec }}'
+        persistent: true
+        wants_service: network-online.target
+        after_service: network-online.target
+        unit_extra: |
+          Documentation=man:freshclam(1) man:freshclam.conf(5)
+        service_extra: |
+          User={{ clamav_user }}
+          StandardOutput=journal
+          StandardError=journal
+          PrivateTmp=yes
+          PrivateDevices=yes
+          ProtectSystem=strict
+          ProtectHome=yes
+          ReadWritePaths={{ clamav_db_dir }}
 
 # Socket activation: systemd creates the socket, clamd receives it as file descriptor
 # The socket unit MUST be started before/with the service

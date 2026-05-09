@@ -80,8 +80,9 @@ ansible_node_available_playbooks:
     randomized_delay_sec: 1min
     requires_service: '{{ ansible_node_redmine_timer_service }}'
     after_service: '{{ ansible_node_redmine_timer_service }}'
-    restart: on-failure
-    restart_sec: '30'
+    service_extra: |
+      Restart=on-failure
+      RestartSec=30
   redmine_helpdesk:
     playbook: redmine_helpdesk_mailer.yml
     timer_comment: every 10 minutes

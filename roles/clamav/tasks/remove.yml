@@ -6,27 +6,19 @@
     enabled: false
   failed_when: false
 
-- name: Stop freshclam timer
-  ansible.builtin.systemd_service:
-    name: clamav-freshclam.timer
-    state: stopped
-    enabled: false
-  failed_when: false
+- name: Remove freshclam timer
+  ansible.builtin.include_role:
+    name: alphanodes.setup.systemd_timer
+  vars:
+    timers:
+      clamav-freshclam:
+        state: absent
 
-- name: Stop freshclam service
-  ansible.builtin.systemd_service:
-    name: clamav-freshclam.service
-    state: stopped
-    enabled: false
-  failed_when: false
-
-- name: Remove systemd service files
+- name: Remove leftover symlinks from older installs
   ansible.builtin.file:
     path: '{{ item }}'
     state: absent
   loop:
-    - /etc/systemd/system/clamav-freshclam.service
-    - /etc/systemd/system/clamav-freshclam.timer
     - /etc/systemd/system/multi-user.target.wants/clamav-freshclam.timer
     - /etc/systemd/system/timers.target.wants/clamav-freshclam.timer
   notify: Reload systemd

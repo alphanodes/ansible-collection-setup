@@ -17,8 +17,3 @@
   ansible.builtin.systemd_service:
     name: '{{ clamav_service_name }}'
     state: "{{ 'stopped' if (clamav_on_demand or not clamav_service_enabled) else 'restarted' }}"
-
-- name: Restart freshclam timer
-  ansible.builtin.systemd_service:
-    name: clamav-freshclam.timer
-    state: "{{ 'restarted' if clamav_service_enabled else 'stopped' }}"
