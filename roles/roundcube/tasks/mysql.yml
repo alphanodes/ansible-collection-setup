@@ -17,3 +17,14 @@
     mysql_setup_user_password: '{{ roundcube_db_password }}'
     mysql_setup_user_host: '{{ roundcube_db_host }}'
     mysql_setup_salt_id: roundcube
+
+- name: Apply pending composer/js handlers before DB migration
+  ansible.builtin.meta: flush_handlers
+
+- name: Update roundcube database schema
+  ansible.builtin.command: bin/updatedb.sh --package=roundcube --dir=SQL
+  args:
+    chdir: '{{ roundcube_htdocs }}'
+  register: rcmail_updatedb
+  changed_when: "'Updating database schema' in rcmail_updatedb.stdout"
+  when: roundcube_git_install
