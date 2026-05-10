@@ -4,6 +4,14 @@
   when: roundcube_with_carddav
   block:
     # see https://github.com/mstilkerich/rcmcarddav
+    - name: Remove stale composer artifacts from previous rcmcarddav versions
+      ansible.builtin.file:
+        path: '{{ roundcube_plugins_dir }}/carddav/{{ item }}'
+        state: absent
+      loop:
+        - composer.lock
+        - vendor
+
     - name: Install rcmcarddav
       ansible.builtin.git:
         repo: https://github.com/mstilkerich/rcmcarddav.git
