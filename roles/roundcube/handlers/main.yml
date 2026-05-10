@@ -1,14 +1,9 @@
 ---
 
 - name: Run composer for roundcube
-  ansible.builtin.command: composer update -n
+  ansible.builtin.command: composer update --no-dev --no-scripts -n
   args:
     chdir: '{{ roundcube_htdocs }}'
-
-- name: Run composer for roundcube carddav
-  ansible.builtin.command: composer update --no-dev --optimize-autoloader -n
-  args:
-    chdir: '{{ roundcube_plugins_dir }}/carddav'
   environment:
     COMPOSER_ALLOW_SUPERUSER: '1'
 

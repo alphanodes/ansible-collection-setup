@@ -25,8 +25,9 @@
     dest: '{{ roundcube_htdocs }}/composer.json'
     mode: '0644'
     remote_src: true
-    force: false
-  notify: Update roundcube js
+  notify:
+    - Run composer for roundcube
+    - Update roundcube js
   when: roundcube_git_install
 
 - name: Check if roundcube configuration is provided by host
