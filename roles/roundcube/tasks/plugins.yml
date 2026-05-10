@@ -3,13 +3,12 @@
 - name: With carddav
   when: roundcube_with_carddav
   block:
-    # see https://www.c-rieger.de/roundcube-beside-nextcloud/
-    # and https://github.com/blind-coder/rcmcarddav
+    # see https://github.com/mstilkerich/rcmcarddav
     - name: Install rcmcarddav
       ansible.builtin.git:
-        repo: https://github.com/blind-coder/rcmcarddav.git
+        repo: https://github.com/mstilkerich/rcmcarddav.git
         dest: '{{ roundcube_plugins_dir }}/carddav'
-        version: 'v4'
+        version: 'v5.1.3'
         accept_hostkey: true
         force: true
       notify: Run composer for roundcube carddav
@@ -27,6 +26,7 @@
   ansible.builtin.git:
     repo: https://github.com/JohnDoh/Roundcube-Plugin-Context-Menu.git
     dest: '{{ roundcube_plugins_dir }}/contextmenu'
+    version: '3.3.1'
     accept_hostkey: true
   when: roundcube_with_contextmenu
 
