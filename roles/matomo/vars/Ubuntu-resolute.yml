@@ -1,12 +1,12 @@
 ---
 
 matomo_packages:
-  - libmaxminddb-dev
-  - php8.4-gd
+  # - php-geoip
   - php8.4-ldap
-  - php8.4-maxminddb
   - php8.4-mbstring
   - php8.4-xml
+  - php8.4-gd
+
 matomo_php_mods_available: /etc/php/8.4/mods-available
 
 matomo_redis_php_packages:

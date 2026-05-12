@@ -8,3 +8,7 @@ matomo_packages:
   - php7.4-mbstring
   - php7.4-xml
 matomo_php_mods_available: /etc/php/7.4/mods-available
+
+matomo_redis_php_packages:
+  - php7.4-redis
+  - php7.4-igbinary

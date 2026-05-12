@@ -31,6 +31,13 @@
     state: present
   notify: Restart php-fpm
 
+- name: Install matomo php redis extensions
+  ansible.builtin.apt:
+    name: '{{ matomo_redis_php_packages }}'
+    state: present
+  when: matomo_with_redis
+  notify: Restart php-fpm
+
 - name: Cleanup obsolete files
   ansible.builtin.file:
     path: '{{ item }}'

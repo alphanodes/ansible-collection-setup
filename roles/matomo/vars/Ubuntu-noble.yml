@@ -8,3 +8,7 @@ matomo_packages:
   - php8.3-gd
 
 matomo_php_mods_available: /etc/php/8.3/mods-available
+
+matomo_redis_php_packages:
+  - php8.3-redis
+  - php8.3-igbinary

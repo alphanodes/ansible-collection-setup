@@ -8,3 +8,7 @@ matomo_packages:
   - php8.2-mbstring
   - php8.2-xml
 matomo_php_mods_available: /etc/php/8.2/mods-available
+
+matomo_redis_php_packages:
+  - php8.2-redis
+  - php8.2-igbinary

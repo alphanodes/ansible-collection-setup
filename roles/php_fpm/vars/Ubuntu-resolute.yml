@@ -1,5 +1,5 @@
 ---
-php_fpm_version: '8.1'
+php_fpm_version: '8.4'
 
 php_fpm_service: php{{ php_fpm_version }}-fpm
 php_fpm_php_fpm_conf: /etc/php/{{ php_fpm_version }}/fpm/php-fpm.conf
@@ -12,11 +12,11 @@ php_fpm_listen: '{{ php_fpm_base }}.sock'
 php_fpm_pid: '{{ php_fpm_base }}.pid'
 
 php_fpm_packages:
-  - php8.1-fpm
-  - php8.1-gd
-  - php8.1-readline
-  - php8.1-mbstring
-  - php8.1-xml
+  - php8.4-fpm
+  - php8.4-gd
+  - php8.4-readline
+  - php8.4-mbstring
+  - php8.4-xml
 
 php_fpm_remove_packages:
   - php-fpm
