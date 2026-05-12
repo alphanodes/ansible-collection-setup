@@ -6,6 +6,9 @@
 unbound_packages:
   - unbound
   - unbound-anchor
+  # provides /usr/share/dns/root.key (DNSSEC trust anchor); not pulled in
+  # automatically on Debian 13 trixie unlike on Ubuntu, breaks unbound startup
+  - dns-root-data
   # for dig
   - bind9-dnsutils
 
