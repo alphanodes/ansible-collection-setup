@@ -129,7 +129,7 @@ jobs:
               sed 's/debian12/bookworm/g' | \
               sed 's/debian13/trixie/g' | \
               sed 's/ubuntu2404/noble/g' | \
-              sed 's/ubuntu2204/jammy/g' | \
+              sed 's/ubuntu2604/resolute/g' | \
               tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g')
             [ -z "$DISTROS" ] && DISTROS="-"
           else

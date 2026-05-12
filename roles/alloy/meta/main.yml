@@ -12,6 +12,7 @@ galaxy_info:
     - name: Ubuntu
       versions:
         - noble
+        - resolute
 
 dependencies:
   - role: alphanodes.setup.common

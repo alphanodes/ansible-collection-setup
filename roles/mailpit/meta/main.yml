@@ -20,8 +20,8 @@ galaxy_info:
         - trixie
     - name: Ubuntu
       versions:
-        - jammy
         - noble
+        - resolute
   galaxy_tags:
     - email
     - testing

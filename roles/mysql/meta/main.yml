@@ -14,7 +14,7 @@ galaxy_info:
   platforms:
     - name: Ubuntu
       versions:
-        - jammy
+        - resolute
     - name: Debian
       versions:
         - bullseye

@@ -16,3 +16,4 @@ galaxy_info:
     - name: Ubuntu
       versions:
         - noble
+        - resolute

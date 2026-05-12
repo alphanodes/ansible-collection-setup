@@ -25,6 +25,7 @@ galaxy_info:
     - name: Ubuntu
       versions:
         - noble
+        - resolute
     - name: Debian
       versions:
         - bookworm

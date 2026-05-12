@@ -199,7 +199,7 @@ redmine_packages:
 
 # This should be default, if system ruby version < 2.7
 # e.g. Ubuntu 20.04 or Debian 11 (or newer) can use system ruby
-# ! all maintained ubuntu versions are jammy or newer - set true as default
+# ! all maintained ubuntu versions are noble or newer - set true as default
 # ! this also requires Redmine 4.2 or newer (because of ruby 2.7)
 redmine_use_rvm_as_default: false
 
