@@ -22,3 +22,34 @@
       check_mode: true
       register: unbound_package
       failed_when: unbound_package.changed
+
+    - name: Verify dns-root-data is installed (provides /usr/share/dns/root.key)
+      ansible.builtin.package:
+        name: dns-root-data
+        state: present
+      check_mode: true
+      register: dns_root_data_package
+      failed_when: dns_root_data_package.changed
+
+    - name: Verify /usr/share/dns/root.key exists (from dns-root-data)
+      ansible.builtin.stat:
+        path: /usr/share/dns/root.key
+      register: dns_root_key_source
+      failed_when: not dns_root_key_source.stat.exists or dns_root_key_source.stat.size == 0
+
+    - name: Verify /var/lib/unbound/root.key exists with content (populated by unbound-helper)
+      ansible.builtin.stat:
+        path: /var/lib/unbound/root.key
+      register: unbound_root_key
+      failed_when: >
+        not unbound_root_key.stat.exists
+        or unbound_root_key.stat.size == 0
+        or unbound_root_key.stat.pw_name != 'unbound'
+        or unbound_root_key.stat.gr_name != 'unbound'
+        or unbound_root_key.stat.mode != '0644'
+
+    - name: Verify unbound service is active
+      ansible.builtin.command: systemctl is-active unbound
+      register: unbound_active
+      changed_when: false
+      failed_when: unbound_active.stdout != 'active'
