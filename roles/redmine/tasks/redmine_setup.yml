@@ -54,7 +54,9 @@
         name: alphanodes.setup.postgresql
 
 - name: Fix ImageMagick policy
-  when: desired_distribution_release is defined and desired_distribution_release != 'trixie'
+  when:
+    - desired_distribution_release is defined
+    - desired_distribution_release not in ['trixie', 'resolute']
   block:
     - name: Fix ImageMagick security policies for PDF preview
       ansible.builtin.lineinfile:

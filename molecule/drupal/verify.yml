@@ -6,7 +6,7 @@
   tasks:
     - name: Set PHP version based on distribution
       ansible.builtin.set_fact:
-        _php_version: "{{ '8.4' if ansible_distribution_release == 'trixie' else '8.2' }}"
+        _php_version: "{{ '8.4' if ansible_facts.distribution_release in ['trixie', 'resolute'] else '8.2' }}"
 
     - name: Check nginx is running
       ansible.builtin.command: systemctl is-active nginx

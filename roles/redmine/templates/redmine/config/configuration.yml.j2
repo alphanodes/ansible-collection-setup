@@ -30,7 +30,7 @@ default:
 {% if redmine_instance.database_cipher_key is defined and redmine_instance.database_cipher_key != '' %}
   database_cipher_key: "{{ redmine_instance.database_cipher_key }}"
 {% endif %}
-{% if ansible_facts.distribution_release == 'trixie' %}
+{% if ansible_facts.distribution_release in ['trixie', 'resolute'] %}
   imagemagick_convert_command: magick
 {% endif %}
 {% if redmine_instance.use_logger | default(redmine_default_logger) == 'syslog' %}
