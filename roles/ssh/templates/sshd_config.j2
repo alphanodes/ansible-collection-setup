@@ -91,6 +91,8 @@ X11DisplayOffset 10
 PrintMotd no
 PrintLastLog yes
 TCPKeepAlive yes
+ClientAliveInterval {{ ssh_server_client_alive_interval }}
+ClientAliveCountMax {{ ssh_server_client_alive_count_max }}
 #UseLogin no
 
 # no default banner path

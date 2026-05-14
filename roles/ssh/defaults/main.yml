@@ -18,6 +18,12 @@ ssh_server_log_level: INFO
 ssh_server_allow_tcp_forwarding: false
 ssh_server_allow_stream_local_forwarding: false
 
+# Keep-Alive on SSH application layer (in addition to TCPKeepAlive on kernel level).
+# Helps long sessions survive NAT timeouts and idle firewalls (e.g. tmux detach).
+# Default: ping every 60s, disconnect after 3 missed responses (= 3 minutes).
+ssh_server_client_alive_interval: 60
+ssh_server_client_alive_count_max: 3
+
 ssh_server_permit_root_login: without-password
 ssh_server_recreate_host_keys: false
 
