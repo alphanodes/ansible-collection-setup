@@ -7,10 +7,17 @@
   notify:
     - Real restart postfix
 
+# Use stop+start instead of restart: on Ubuntu 26.04 (resolute) the
+# postfix.service wrapper has Conflicts=postfix@-.service, which makes
+# `systemctl restart postfix` fail with "Transaction contains conflicting
+# jobs 'restart' and 'stop' for postfix@-.service". stop+start avoids
+# the conflicting-jobs transaction and works on all supported distros.
 - name: Real restart postfix
-  ansible.builtin.systemd_service:
-    name: postfix
-    state: restarted
+  ansible.builtin.shell: |
+    set -e
+    systemctl stop postfix
+    systemctl start postfix
+  changed_when: true
 
 - name: Build new aliases
   ansible.builtin.command: /usr/bin/newaliases
