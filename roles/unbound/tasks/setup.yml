@@ -9,6 +9,15 @@
 # by unbound's ExecStartPre /usr/libexec/unbound-helper root_trust_anchor_update
 # on every service start, copying it from /usr/share/dns/root.key (dns-root-data).
 
+- name: Deploy unbound server config
+  ansible.builtin.template:
+    src: ansible.conf.j2
+    dest: /etc/unbound/unbound.conf.d/ansible.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart unbound
+
 - name: Configure systemd-resolved for unbound
   when: >
     (server_resolver is defined and server_resolver == 'systemd_resolved')

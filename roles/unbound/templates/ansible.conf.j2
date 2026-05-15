@@ -1,0 +1,10 @@
+# {{ managed_by_ansible }}
+# Bind explicitly to loopback only. Disable IPv6 on hosts where it is
+# turned off system-wide, otherwise unbound fails to bind ::1.
+server:
+    interface: 127.0.0.1
+{% if server_disable_ipv6 is defined and server_disable_ipv6 %}
+    do-ip6: no
+{% else %}
+    interface: ::1
+{% endif %}
