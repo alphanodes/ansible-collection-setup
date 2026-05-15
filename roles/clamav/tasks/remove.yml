@@ -21,7 +21,7 @@
   loop:
     - /etc/systemd/system/multi-user.target.wants/clamav-freshclam.timer
     - /etc/systemd/system/timers.target.wants/clamav-freshclam.timer
-  notify: Reload systemd
+  notify: Reload systemd daemon
 
 - name: Remove ClamAV configuration files
   ansible.builtin.file:

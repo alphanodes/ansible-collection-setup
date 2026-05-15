@@ -29,7 +29,7 @@
     path: /etc/systemd/system/unbound.service.wants/unbound-resolvconf.service
     state: absent
   when: unbound_mask_resolvconf_helper
-  notify: Reload systemd
+  notify: Reload systemd daemon
 
 - name: Mask unbound-resolvconf helper service
   ansible.builtin.systemd_service:
