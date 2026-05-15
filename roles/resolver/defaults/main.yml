@@ -1,0 +1,17 @@
+---
+
+# Resolver mode: 'static' (Ansible-managed /etc/resolv.conf) or 'systemd_resolved'
+resolver_mode: static
+
+# Upstream DNS nameservers used by the host. With resolver_with_unbound=true
+# these become the fallback servers when unbound on 127.0.0.1 is unavailable.
+resolver_nameservers: []
+
+# Install and use local unbound DNS cache on 127.0.0.1
+resolver_with_unbound: false
+
+# Filename used for the systemd-resolved override snippet
+resolver_systemd_resolved_filename: ansible.conf
+
+# Search domains
+resolver_search_domains: []

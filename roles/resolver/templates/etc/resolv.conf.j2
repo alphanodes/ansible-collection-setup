@@ -1,0 +1,10 @@
+{{ managed_by_ansible | comment }}
+{% if resolver_with_unbound %}
+nameserver 127.0.0.1
+{% endif %}
+{% for ns in resolver_nameservers %}
+nameserver {{ ns }}
+{% endfor %}
+{% if resolver_search_domains | length > 0 %}
+search {{ resolver_search_domains | join(' ') }}
+{% endif %}

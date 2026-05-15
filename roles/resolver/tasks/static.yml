@@ -1,0 +1,20 @@
+---
+
+- name: Deploy static /etc/resolv.conf
+  ansible.builtin.template:
+    src: etc/resolv.conf.j2
+    dest: /etc/resolv.conf
+    owner: root
+    group: root
+    mode: '0644'
+    # /etc/resolv.conf is a bind-mount inside containers; the atomic rename
+    # then fails with EBUSY. unsafe_writes falls back to an in-place write.
+    unsafe_writes: true
+
+# In static mode we manage /etc/resolv.conf directly via Ansible; resolvconf
+# is not needed and its hooks would conflict with our managed file.
+- name: Remove resolvconf package
+  ansible.builtin.apt:
+    name: resolvconf
+    state: absent
+    purge: true

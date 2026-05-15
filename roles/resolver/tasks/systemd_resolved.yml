@@ -1,0 +1,36 @@
+---
+
+- name: Install systemd-resolved package
+  ansible.builtin.apt:
+    name: systemd-resolved
+    state: present
+
+- name: Make sure resolved.conf.d override directory exists
+  ansible.builtin.file:
+    path: /etc/systemd/resolved.conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Configure systemd-resolved
+  ansible.builtin.template:
+    src: etc/systemd/resolved.conf.d/ansible.conf.j2
+    dest: /etc/systemd/resolved.conf.d/{{ resolver_systemd_resolved_filename }}
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart systemd-resolved
+
+- name: Ensure systemd-resolved is started and enabled
+  ansible.builtin.systemd_service:
+    name: systemd-resolved
+    state: started
+    enabled: true
+
+- name: Symlink /etc/resolv.conf to systemd-resolved stub
+  ansible.builtin.file:
+    path: /etc/resolv.conf
+    src: /run/systemd/resolve/stub-resolv.conf
+    state: link
+    force: true

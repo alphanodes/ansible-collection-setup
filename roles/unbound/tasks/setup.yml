@@ -18,25 +18,15 @@
     mode: '0644'
   notify: Restart unbound
 
-- name: Configure systemd-resolved for unbound
-  when: >
-    (server_resolver is defined and server_resolver == 'systemd_resolved')
-    or server_resolver is undefined and ansible_facts.distribution == 'Ubuntu'
-  block:
-    - name: Make sure conf override dir exists
-      ansible.builtin.file:
-        path: /etc/systemd/resolved.conf.d
-        state: directory
-        owner: root
-        group: root
-        mode: '0755'
-
-    - name: Configure systemd-resolved for unbound
-      ansible.builtin.template:
-        src: resolved.conf.j2
-        dest: /etc/systemd/resolved.conf.d/unbound.conf
-        mode: '0644'
-      notify: Restart systemd-resolved
+# The distro-provided unbound-resolvconf.service registers unbound with
+# resolvconf, which is incompatible with our setups (systemd-resolved or
+# Ansible-managed static resolv.conf). It only fails or no-ops here, so
+# mask it permanently.
+- name: Mask unbound-resolvconf helper service
+  ansible.builtin.systemd_service:
+    name: unbound-resolvconf.service
+    state: stopped
+    masked: true
 
 - name: Start the unbound service (systemd)
   ansible.builtin.systemd_service:

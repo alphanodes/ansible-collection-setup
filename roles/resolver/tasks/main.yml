@@ -1,0 +1,17 @@
+---
+
+# unbound must be installed and listening before /etc/resolv.conf or
+# systemd-resolved are pointed at 127.0.0.1, otherwise lookups break for
+# the duration of the rollout.
+- name: Include unbound role for local DNS cache
+  ansible.builtin.include_role:
+    name: alphanodes.setup.unbound
+  when: resolver_with_unbound
+
+- name: Configure systemd-resolved
+  ansible.builtin.import_tasks: systemd_resolved.yml
+  when: resolver_mode == 'systemd_resolved'
+
+- name: Configure static resolv.conf
+  ansible.builtin.import_tasks: static.yml
+  when: resolver_mode == 'static'

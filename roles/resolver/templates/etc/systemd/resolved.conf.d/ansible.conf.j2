@@ -1,0 +1,16 @@
+# {{ managed_by_ansible }}
+[Resolve]
+{% if resolver_with_unbound %}
+DNS=127.0.0.1
+DNSStubListener=no
+{% if resolver_nameservers | length > 0 %}
+FallbackDNS={{ resolver_nameservers | join(' ') }}
+{% endif %}
+{% else %}
+{% if resolver_nameservers | length > 0 %}
+DNS={{ resolver_nameservers | join(' ') }}
+{% endif %}
+{% endif %}
+{% if resolver_search_domains | length > 0 %}
+Domains={{ resolver_search_domains | join(' ') }}
+{% endif %}

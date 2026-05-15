@@ -1,0 +1,75 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  vars:
+    resolver_mode: static
+    resolver_with_unbound: true
+    resolver_nameservers:
+      - 1.1.1.1
+      - 1.0.0.1
+
+  roles:
+    - role: alphanodes.setup.common
+    - role: alphanodes.setup.resolver
+
+  post_tasks:
+    - name: Verify /etc/resolv.conf exists
+      ansible.builtin.stat:
+        path: /etc/resolv.conf
+      register: resolv_conf
+      failed_when: not resolv_conf.stat.exists
+
+    - name: Read /etc/resolv.conf
+      ansible.builtin.slurp:
+        src: /etc/resolv.conf
+      register: resolv_conf_content
+
+    - name: Verify resolv.conf contains unbound localhost entry
+      ansible.builtin.assert:
+        that:
+          - "'nameserver 127.0.0.1' in (resolv_conf_content.content | b64decode)"
+        fail_msg: "Expected 'nameserver 127.0.0.1' in /etc/resolv.conf when resolver_with_unbound is true"
+
+    - name: Verify resolv.conf contains fallback nameservers
+      ansible.builtin.assert:
+        that:
+          - "'nameserver 1.1.1.1' in (resolv_conf_content.content | b64decode)"
+          - "'nameserver 1.0.0.1' in (resolv_conf_content.content | b64decode)"
+        fail_msg: "Expected fallback nameservers from resolver_nameservers in /etc/resolv.conf"
+
+    - name: Verify unbound is installed (pulled in by resolver_with_unbound)
+      ansible.builtin.package:
+        name: unbound
+        state: present
+      check_mode: true
+      register: unbound_package
+      failed_when: unbound_package.changed
+
+    - name: Verify unbound service is active
+      ansible.builtin.command: systemctl is-active unbound
+      register: unbound_active
+      changed_when: false
+      failed_when: unbound_active.stdout != 'active'
+
+    - name: Verify unbound-resolvconf helper is masked
+      ansible.builtin.command: systemctl is-enabled unbound-resolvconf.service
+      register: unbound_resolvconf_enabled
+      changed_when: false
+      failed_when: unbound_resolvconf_enabled.stdout != 'masked'
+
+    - name: Verify resolvconf package is absent (removed in static mode)
+      ansible.builtin.package:
+        name: resolvconf
+        state: absent
+      check_mode: true
+      register: resolvconf_package
+      failed_when: resolvconf_package.changed

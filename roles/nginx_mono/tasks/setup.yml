@@ -89,8 +89,8 @@
       ansible.builtin.set_fact:
         nginx_resolver: "{{ ['127.0.0.1'] }}"
       when: >
-        server_with_unbound is defined
-        and server_with_unbound
+        resolver_with_unbound is defined
+        and resolver_with_unbound
 
     - name: Set default resolver, if no resolver defined before
       ansible.builtin.set_fact:
