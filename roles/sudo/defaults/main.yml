@@ -12,7 +12,6 @@ sudo_manange_sudoers_config: true
 # Set defaults
 # e.g.
 # - ':ansible  env_keep += "PATH LD_LIBRARY_PATH LIBRARY_PATH"'
-# - ':ansible  !requiretty'
 sudo_defaults:
   - ' env_keep += "ftp_proxy http_proxy https_proxy no_proxy SSH_AUTH_SOCK"'
 
