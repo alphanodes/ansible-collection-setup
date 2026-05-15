@@ -15,3 +15,21 @@
 - name: Configure static resolv.conf
   ansible.builtin.import_tasks: static.yml
   when: resolver_mode == 'static'
+
+# Postfix in chroot mode keeps its own copy of /etc/resolv.conf under
+# /var/spool/postfix/etc/. The distro's resolvconf hook used to refresh it;
+# with resolvconf removed we sync it from here whenever the resolver runs.
+- name: Stat postfix chroot resolv.conf
+  ansible.builtin.stat:
+    path: /var/spool/postfix/etc/resolv.conf
+  register: resolver_postfix_chroot_resolv
+
+- name: Sync /etc/resolv.conf into postfix chroot
+  ansible.builtin.copy:
+    src: /etc/resolv.conf
+    dest: /var/spool/postfix/etc/resolv.conf
+    remote_src: true
+    owner: root
+    group: root
+    mode: '0644'
+  when: resolver_postfix_chroot_resolv.stat.exists
