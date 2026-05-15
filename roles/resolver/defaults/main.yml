@@ -1,11 +1,18 @@
 ---
 
-# Resolver mode: 'static' (Ansible-managed /etc/resolv.conf) or 'systemd_resolved'
-resolver_mode: static
+# Resolver mode. Leave empty (default) to NOT manage DNS resolution on the
+# host -- /etc/resolv.conf and systemd-resolved stay untouched. This is the
+# right choice on hosts whose DNS is managed by a customer admin.
+# Set explicitly to 'static' or 'systemd_resolved' to opt in to management.
+resolver_mode: ''
 
 # Upstream DNS nameservers used by the host. With resolver_with_unbound=true
 # these become the fallback servers when unbound on 127.0.0.1 is unavailable.
-resolver_nameservers: []
+# Defaults to public Cloudflare DNS. Override in group_vars/host_vars when
+# the customer provides internal DNS servers.
+resolver_nameservers:
+  - 1.1.1.1
+  - 1.0.0.1
 
 # Install and use local unbound DNS cache on 127.0.0.1
 resolver_with_unbound: false

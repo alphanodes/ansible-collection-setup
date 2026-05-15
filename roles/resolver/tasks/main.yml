@@ -1,35 +1,5 @@
 ---
 
-# unbound must be installed and listening before /etc/resolv.conf or
-# systemd-resolved are pointed at 127.0.0.1, otherwise lookups break for
-# the duration of the rollout.
-- name: Include unbound role for local DNS cache
-  ansible.builtin.include_role:
-    name: alphanodes.setup.unbound
-  when: resolver_with_unbound
-
-- name: Configure systemd-resolved
-  ansible.builtin.import_tasks: systemd_resolved.yml
-  when: resolver_mode == 'systemd_resolved'
-
-- name: Configure static resolv.conf
-  ansible.builtin.import_tasks: static.yml
-  when: resolver_mode == 'static'
-
-# Postfix in chroot mode keeps its own copy of /etc/resolv.conf under
-# /var/spool/postfix/etc/. The distro's resolvconf hook used to refresh it;
-# with resolvconf removed we sync it from here whenever the resolver runs.
-- name: Stat postfix chroot resolv.conf
-  ansible.builtin.stat:
-    path: /var/spool/postfix/etc/resolv.conf
-  register: resolver_postfix_chroot_resolv
-
-- name: Sync /etc/resolv.conf into postfix chroot
-  ansible.builtin.copy:
-    src: /etc/resolv.conf
-    dest: /var/spool/postfix/etc/resolv.conf
-    remote_src: true
-    owner: root
-    group: root
-    mode: '0644'
-  when: resolver_postfix_chroot_resolv.stat.exists
+- name: Include setup tasks
+  ansible.builtin.import_tasks: setup.yml
+  tags: resolver

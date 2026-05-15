@@ -23,6 +23,7 @@ unbound_group: unbound
 
 # Mask the distro-provided unbound-resolvconf.service helper. It registers
 # unbound with resolvconf, which conflicts with systemd-resolved or an
-# Ansible-managed static /etc/resolv.conf. Set to false if you actively
-# use resolvconf for DNS configuration.
-unbound_mask_resolvconf_helper: true
+# Ansible-managed static /etc/resolv.conf. Defaults to false so that direct
+# users of this role keep the distro behavior intact; the resolver role
+# overrides this to true when it manages /etc/resolv.conf itself.
+unbound_mask_resolvconf_helper: false
