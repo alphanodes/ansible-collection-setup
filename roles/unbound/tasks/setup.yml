@@ -19,14 +19,15 @@
   notify: Restart unbound
 
 # The distro-provided unbound-resolvconf.service registers unbound with
-# resolvconf, which is incompatible with our setups (systemd-resolved or
-# Ansible-managed static resolv.conf). It only fails or no-ops here, so
-# mask it permanently.
+# resolvconf. With systemd-resolved or Ansible-managed static resolv.conf
+# it only fails or no-ops. Opt out via unbound_mask_resolvconf_helper=false
+# when using classic resolvconf.
 - name: Mask unbound-resolvconf helper service
   ansible.builtin.systemd_service:
     name: unbound-resolvconf.service
     state: stopped
     masked: true
+  when: unbound_mask_resolvconf_helper
 
 - name: Start the unbound service (systemd)
   ansible.builtin.systemd_service:

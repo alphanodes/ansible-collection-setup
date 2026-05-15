@@ -20,3 +20,9 @@ unbound_remove: false
 unbound_root_key_file: /var/lib/unbound/root.key
 unbound_user: unbound
 unbound_group: unbound
+
+# Mask the distro-provided unbound-resolvconf.service helper. It registers
+# unbound with resolvconf, which conflicts with systemd-resolved or an
+# Ansible-managed static /etc/resolv.conf. Set to false if you actively
+# use resolvconf for DNS configuration.
+unbound_mask_resolvconf_helper: true
