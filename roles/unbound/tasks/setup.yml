@@ -22,6 +22,15 @@
 # resolvconf. With systemd-resolved or Ansible-managed static resolv.conf
 # it only fails or no-ops. Opt out via unbound_mask_resolvconf_helper=false
 # when using classic resolvconf.
+# Removing the WantedBy symlink as well so monitoring (e.g. Zabbix) does
+# not flag the service as "configured at startup".
+- name: Remove unbound-resolvconf WantedBy symlink
+  ansible.builtin.file:
+    path: /etc/systemd/system/unbound.service.wants/unbound-resolvconf.service
+    state: absent
+  when: unbound_mask_resolvconf_helper
+  notify: Reload systemd
+
 - name: Mask unbound-resolvconf helper service
   ansible.builtin.systemd_service:
     name: unbound-resolvconf.service
