@@ -1,0 +1,6 @@
+---
+# Handlers for the redmine role.
+
+- name: Reload gs AppArmor profile
+  ansible.builtin.command: apparmor_parser -r /etc/apparmor.d/gs
+  changed_when: true

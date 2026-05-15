@@ -93,6 +93,33 @@
         path: /etc/ImageMagick-6/policy.xml.dpkg-dist
         state: absent
 
+# Ubuntu 26.04 ships an enforce-mode AppArmor profile for /usr/bin/gs that
+# denies reads outside HOME/mnt/media/printers. ImageMagick then fails to
+# render PDF thumbnails ("Last OS error: Permission denied"). Drop a local
+# override so ghostscript can read Redmine attachments.
+- name: Allow ghostscript to read Redmine files (AppArmor local override)
+  when:
+    - desired_distribution_release is defined
+    - desired_distribution_release == 'resolute'
+  block:
+    - name: Stat gs AppArmor profile
+      ansible.builtin.stat:
+        path: /etc/apparmor.d/gs
+      register: gs_apparmor_profile
+
+    - name: Deploy local gs override for Redmine attachment files
+      when: gs_apparmor_profile.stat.exists
+      ansible.builtin.copy:
+        dest: /etc/apparmor.d/local/gs
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
+          # AlphaNodes local override: allow Ghostscript to read Redmine
+          # attachment files (used by ImageMagick for PDF thumbnails).
+          {{ redmine_files_dir }}/** r,
+      notify: Reload gs AppArmor profile
+
 - name: Install nginx maps for redmine
   tags:
     - nginx
