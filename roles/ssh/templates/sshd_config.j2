@@ -36,6 +36,9 @@ SyslogFacility AUTH
 LogLevel {{ ssh_server_log_level }}
 
 MaxAuthTries {{ ssh_max_auth_retries }}
+{% if ssh_server_max_startups | length > 0 %}
+MaxStartups {{ ssh_server_max_startups }}
+{% endif %}
 
 # Authentication:
 LoginGraceTime 2m
