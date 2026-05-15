@@ -53,10 +53,17 @@
       ansible.builtin.include_role:
         name: alphanodes.setup.postgresql
 
-- name: Fix ImageMagick policy
-  when:
-    - desired_distribution_release is defined
-    - desired_distribution_release not in ['trixie', 'resolute']
+# ImageMagick 6 patches: apply only on hosts that still ship the IM6
+# policy file. On distros that already moved to ImageMagick 7
+# (Debian trixie+, Ubuntu resolute+) the file does not exist and the
+# block is skipped.
+- name: Stat ImageMagick 6 policy file
+  ansible.builtin.stat:
+    path: /etc/ImageMagick-6/policy.xml
+  register: imagemagick6_policy
+
+- name: Fix ImageMagick 6 policy
+  when: imagemagick6_policy.stat.exists
   block:
     - name: Fix ImageMagick security policies for PDF preview
       ansible.builtin.lineinfile:
@@ -96,29 +103,25 @@
 # Ubuntu 26.04 ships an enforce-mode AppArmor profile for /usr/bin/gs that
 # denies reads outside HOME/mnt/media/printers. ImageMagick then fails to
 # render PDF thumbnails ("Last OS error: Permission denied"). Drop a local
-# override so ghostscript can read Redmine attachments.
-- name: Allow ghostscript to read Redmine files (AppArmor local override)
-  when:
-    - desired_distribution_release is defined
-    - desired_distribution_release == 'resolute'
-  block:
-    - name: Stat gs AppArmor profile
-      ansible.builtin.stat:
-        path: /etc/apparmor.d/gs
-      register: gs_apparmor_profile
+# override so ghostscript can read Redmine attachments. The block is skipped
+# automatically on hosts without the gs profile (no AppArmor or older distro).
+- name: Stat gs AppArmor profile
+  ansible.builtin.stat:
+    path: /etc/apparmor.d/gs
+  register: gs_apparmor_profile
 
-    - name: Deploy local gs override for Redmine attachment files
-      when: gs_apparmor_profile.stat.exists
-      ansible.builtin.copy:
-        dest: /etc/apparmor.d/local/gs
-        owner: root
-        group: root
-        mode: '0644'
-        content: |
-          # AlphaNodes local override: allow Ghostscript to read Redmine
-          # attachment files (used by ImageMagick for PDF thumbnails).
-          {{ redmine_files_dir }}/** r,
-      notify: Reload gs AppArmor profile
+- name: Deploy local gs override for Redmine attachment files
+  when: gs_apparmor_profile.stat.exists
+  ansible.builtin.copy:
+    dest: /etc/apparmor.d/local/gs
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      # AlphaNodes local override: allow Ghostscript to read Redmine
+      # attachment files (used by ImageMagick for PDF thumbnails).
+      {{ redmine_files_dir }}/** r,
+  notify: Reload gs AppArmor profile
 
 - name: Install nginx maps for redmine
   tags:
