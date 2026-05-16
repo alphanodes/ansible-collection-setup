@@ -105,23 +105,32 @@
 # render PDF thumbnails ("Last OS error: Permission denied"). Drop a local
 # override so ghostscript can read Redmine attachments. The block is skipped
 # automatically on hosts without the gs profile (no AppArmor or older distro).
+# Per-instance overrides are deployed by redmine_instance.yml into
+# /etc/apparmor.d/local/gs.d/ and pulled in by the include below.
 - name: Stat gs AppArmor profile
   ansible.builtin.stat:
     path: /etc/apparmor.d/gs
   register: gs_apparmor_profile
 
-- name: Deploy local gs override for Redmine attachment files
+- name: Configure gs AppArmor local override
   when: gs_apparmor_profile.stat.exists
-  ansible.builtin.copy:
-    dest: /etc/apparmor.d/local/gs
-    owner: root
-    group: root
-    mode: '0644'
-    content: |
-      # AlphaNodes local override: allow Ghostscript to read Redmine
-      # attachment files (used by ImageMagick for PDF thumbnails).
-      {{ redmine_files_dir }}/** r,
-  notify: Reload gs AppArmor profile
+  block:
+    - name: Ensure gs AppArmor drop-in directory exists
+      ansible.builtin.file:
+        path: /etc/apparmor.d/local/gs.d
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Deploy gs AppArmor local override include
+      ansible.builtin.template:
+        src: etc/apparmor.d/local/gs.j2
+        dest: /etc/apparmor.d/local/gs
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Reload gs AppArmor profile
 
 - name: Install nginx maps for redmine
   tags:

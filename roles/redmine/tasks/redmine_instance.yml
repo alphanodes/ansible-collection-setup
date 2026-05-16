@@ -43,6 +43,25 @@
     mode: '0750'
     state: directory
 
+# Grant Ghostscript read access to this instance's attachment files so
+# ImageMagick can render PDF thumbnails despite the enforced gs profile.
+# The main /etc/apparmor.d/local/gs file (deployed by redmine_setup.yml)
+# pulls in every file in this drop-in directory.
+- name: Stat gs AppArmor profile - {{ redmine_instance_name }}
+  ansible.builtin.stat:
+    path: /etc/apparmor.d/gs
+  register: gs_apparmor_profile_instance
+
+- name: Deploy gs AppArmor local override - {{ redmine_instance_name }}
+  when: gs_apparmor_profile_instance.stat.exists
+  ansible.builtin.template:
+    src: etc/apparmor.d/local/gs.d/instance.j2
+    dest: "/etc/apparmor.d/local/gs.d/redmine-{{ redmine_instance_name }}"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload gs AppArmor profile
+
 - name: Ensure DMSF Active Storage directory exists - {{ redmine_instance_name }}
   ansible.builtin.file:
     path: '{{ redmine_dmsf_storage_dir }}'

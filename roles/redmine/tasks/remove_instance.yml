@@ -30,6 +30,12 @@
   loop:
     - /etc/sudoers.d/{{ redmine_instance_name }}
 
+- name: Remove gs AppArmor local override - {{ redmine_instance_name }}
+  ansible.builtin.file:
+    path: "/etc/apparmor.d/local/gs.d/redmine-{{ redmine_instance_name }}"
+    state: absent
+  notify: Reload gs AppArmor profile
+
 - name: Remove redmine configuration - {{ redmine_instance_name }}
   ansible.builtin.file:
     path: '{{ redmine_config_dir }}'

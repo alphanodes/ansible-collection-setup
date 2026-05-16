@@ -1,0 +1,3 @@
+# {{ managed_by_ansible }}
+# Per-Redmine-instance rules live in /etc/apparmor.d/local/gs.d/
+include if exists "/etc/apparmor.d/local/gs.d/*"
