@@ -1,2 +1,5 @@
 # {{ managed_by_ansible }}
 {{ redmine_files_dir }}/** r,
+{% if redmine_instance.with_dmsf | default(false) %}
+{{ redmine_dmsf_storage_dir }}/** r,
+{% endif %}
