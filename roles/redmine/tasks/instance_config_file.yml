@@ -1,21 +1,21 @@
 ---
 
-- name: Update redmine configuration {{ config_file.name }}
+- name: Update redmine configuration {{ redmine_config_template.name }}
   ansible.builtin.template:
-    src: redmine/config/{{ config_file.name }}.j2
-    dest: '{{ redmine_config_dir }}/{{ config_file.name }}'
+    src: redmine/config/{{ redmine_config_template.name }}.j2
+    dest: '{{ redmine_config_dir }}/{{ redmine_config_template.name }}'
     owner: '{{ redmine_instance_name }}'
     group: '{{ redmine_instance_name }}'
-    mode: '{{ config_file.mode | default(omit) }}'
+    mode: '{{ redmine_config_template.mode | default(omit) }}'
 
 - name: Get link info - {{ redmine_instance_name }}
   ansible.builtin.stat:
-    path: '{{ redmine_app_dir }}/config/{{ config_file.name }}'
+    path: '{{ redmine_app_dir }}/config/{{ redmine_config_template.name }}'
   register: file_info
 
 - name: Remove redmine configuration file, if not a link - {{ redmine_instance_name }}
   ansible.builtin.file:
-    path: '{{ redmine_app_dir }}/config/{{ config_file.name }}'
+    path: '{{ redmine_app_dir }}/config/{{ redmine_config_template.name }}'
     state: absent
   when:
     - file_info.stat.islnk is defined
@@ -23,9 +23,9 @@
 
 - name: Symlinks to redmine/config - {{ redmine_instance_name }}
   ansible.builtin.file:
-    src: '{{ redmine_config_dir }}/{{ config_file.name }}'
-    dest: '{{ redmine_app_dir }}/config/{{ config_file.name }}'
+    src: '{{ redmine_config_dir }}/{{ redmine_config_template.name }}'
+    dest: '{{ redmine_app_dir }}/config/{{ redmine_config_template.name }}'
     state: link
   become: false
   become_user: '{{ redmine_user }}'
-  when: config_file.link
+  when: redmine_config_template.link

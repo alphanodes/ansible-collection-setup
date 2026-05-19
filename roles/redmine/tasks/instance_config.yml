@@ -27,7 +27,7 @@
   ansible.builtin.include_tasks: instance_config_file.yml
   loop: "{{ redmine_config_templates }}"
   loop_control:
-    loop_var: config_file
+    loop_var: redmine_config_template
 
 - name: Active Storage configuration block (DMSF)
   when: redmine_instance.with_dmsf is defined and redmine_instance.with_dmsf
