@@ -92,6 +92,22 @@ loki.process "filter_apt_noise" {
     expression = "^\\s*$"
   }
 }
+
+// unattended-upgrade decisions land in journald when
+// Unattended-Upgrade::SyslogEnable is true (set by roles/apt).
+loki.source.journal "apt_unattended_logs" {
+  forward_to = [loki.write.default.receiver]
+
+  matches = "SYSLOG_IDENTIFIER=unattended-upgrade"
+
+  labels = {
+    owner   = "{{ alloy_label_owner }}",
+    env     = "{{ alloy_label_env }}",
+    app     = "apt",
+    host    = env("HOSTNAME"),
+    service = "unattended-upgrade",
+  }
+}
 {% if alloy_with_postgres %}
 
 loki.source.journal "postgres_logs" {
