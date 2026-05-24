@@ -27,7 +27,7 @@ jobs:
       matrix:
         distro:
           - ubuntu2404
-          - ubuntu2604
+          # ubuntu2604: re-enable once packages.gitlab.com/runner publishes the resolute suite
           - debian12
           - debian13
 
