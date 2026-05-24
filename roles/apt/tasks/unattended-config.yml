@@ -1,0 +1,17 @@
+---
+
+# Settings that describe HOW unattended-upgrades behaves when invoked
+# (origins, reboot behaviour, mail, syslog). The runner (systemd timer
+# vs. external trigger) is handled in unattended-schedule.yml.
+
+# manuell check with: unattended-upgrade -v -d for test if it works
+- name: Unattended-Upgrade configuration
+  ansible.builtin.template:
+    src: apt/apt.conf.d/50unattended-upgrades.j2
+    dest: /etc/apt/apt.conf.d/50unattended-upgrades
+    mode: '0644'
+
+- name: Remove obsolete unattended config artefacts
+  ansible.builtin.file:
+    path: /etc/apt/apt.conf.d/50unattended-upgrades.ucf-dist
+    state: absent

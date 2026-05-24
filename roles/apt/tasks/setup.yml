@@ -4,3 +4,14 @@
   ansible.builtin.apt:
     name: '{{ apt_required_packages }}'
     state: present
+
+- name: Include unattended config tasks
+  ansible.builtin.include_tasks: unattended-config.yml
+  when: apt_manage_unattended_config | bool
+
+- name: Include unattended schedule tasks
+  ansible.builtin.include_tasks: unattended-schedule.yml
+  when: apt_manage_unattended_schedule | bool
+
+- name: Include kernel-purge tasks
+  ansible.builtin.include_tasks: kernel-purge.yml

@@ -3,16 +3,29 @@
 apt_required_packages:
   - unattended-upgrades
 
+# Independent opt-out flags for the two halves of unattended-upgrades
+# management:
+#  - _config controls /etc/apt/apt.conf.d/50unattended-upgrades (origins,
+#    reboot behaviour, mail policy etc.).
+#  - _schedule controls 20auto-upgrades and the apt-daily*.timer overrides
+#    plus the apt-kernel-purge timer (i.e. when upgrades run).
+# Hosts that delegate scheduling to an external mechanism but still want
+# the config maintained set _schedule: false and leave _config: true.
+apt_manage_unattended_config: true
+apt_manage_unattended_schedule: true
+
 # see https://unix.stackexchange.com/questions/342663/how-is-unattended-upgrades-started-and-how-can-i-modify-its-schedule
 # apt_periodic_update_package_lists: '1'
 # apt_periodic_unattended_upgrade: '1'
 apt_periodic_update_package_lists: 'always'
 apt_periodic_unattended_upgrade: 'always'
 
-apt_daily_timer_on_calendar: '*-*-* 0,4,8,12,16,20:00'
+# 4 runs per day - keeps latency on security advisories bounded to ~6h
+# while avoiding the apt-race-condition density of the old 6x schedule.
+apt_daily_timer_on_calendar: '*-*-* 0,6,12,18:00'
 apt_daily_timer_randomized_delay_sec: '5m'
 
-apt_daily_upgrade_timer_on_calendar: '*-*-* 0,4,8,12,16,20:20'
+apt_daily_upgrade_timer_on_calendar: '*-*-* 0,6,12,18:20'
 apt_daily_upgrade_timer_randomized_delay_sec: '1m'
 
 apt_automatic_reboot: true
@@ -24,6 +37,7 @@ unattended_upgrade_minimal_steps: true
 unattended_install_on_shutdown: false
 unattended_upgrade_mail: root
 unattended_upgrade_mail_report: only-on-error
+unattended_upgrade_syslog_enable: true
 unattended_upgrade_remove_unused_kernel_packages: true
 unattended_upgrade_remove_new_unused_dependencies: true
 unattended_upgrade_remove_unused_dependencies: false

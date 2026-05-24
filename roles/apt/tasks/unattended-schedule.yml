@@ -1,22 +1,21 @@
 ---
 
-# manuell check with: unattended-upgrade -v -d for test if it works
-- name: Unattended-Upgrade configuration
-  ansible.builtin.template:
-    src: apt/apt.conf.d/{{ item }}.j2
-    dest: /etc/apt/apt.conf.d/{{ item }}
-    mode: '0644'
-  loop:
-    - 20auto-upgrades
-    - 50unattended-upgrades
+# Schedule and trigger of unattended-upgrades: 20auto-upgrades enables
+# the apt.systemd.daily mechanism, the timer overrides set the run
+# cadence, and apt-kernel-purge cleans up after kernel upgrades.
+# Disable this whole block on hosts whose updates are driven by an
+# external mechanism that owns its own cadence.
 
-- name: Remove obsolete/unwanted files
+- name: Enable apt.systemd.daily activity
+  ansible.builtin.template:
+    src: apt/apt.conf.d/20auto-upgrades.j2
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    mode: '0644'
+
+- name: Remove obsolete schedule artefacts
   ansible.builtin.file:
-    path: '{{ item }}'
+    path: /etc/systemd/apt-daily.timer.d
     state: absent
-  loop:
-    - /etc/apt/apt.conf.d/50unattended-upgrades.ucf-dist
-    - /etc/systemd/apt-daily.timer.d
 
 - name: Make sure conf override dirs exists
   ansible.builtin.file:
@@ -48,16 +47,3 @@
     group: root
     mode: '0644'
   notify: Restart apt-daily-upgrade.timer
-
-# Kernel purge timer - removes old kernels with --purge
-- name: Manage apt-kernel-purge timer
-  ansible.builtin.include_role:
-    name: alphanodes.setup.systemd_timer
-  vars:
-    timers:
-      apt-kernel-purge:
-        state: "{{ 'present' if apt_kernel_purge_enabled else 'absent' }}"
-        exec_start: "/bin/bash -c 'dpkg --get-selections \"linux-*\" | grep deinstall | cut -f1 | xargs --no-run-if-empty dpkg --purge'"
-        on_calendar: '{{ apt_kernel_purge_on_calendar }}'
-        persistent: true
-        after_service: network.target

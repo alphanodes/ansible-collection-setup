@@ -85,7 +85,7 @@ Unattended-Upgrade::Automatic-Reboot-Time "{{ apt_automatic_reboot_time }}";
 //Acquire::http::Dl-Limit "70";
 
 // Enable logging to syslog. Default is False
-// Unattended-Upgrade::SyslogEnable "false";
+Unattended-Upgrade::SyslogEnable "{{ 'true' if unattended_upgrade_syslog_enable else 'false' }}";
 
 // Specify syslog facility. Default is daemon
 // Unattended-Upgrade::SyslogFacility "daemon";

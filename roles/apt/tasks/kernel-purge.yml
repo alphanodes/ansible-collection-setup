@@ -1,0 +1,19 @@
+---
+
+# Weekly maintenance cleanup of leftover linux-* packages that are in
+# dpkg "deinstall" state (removed but with config files still around).
+# This is independent of the unattended-upgrades schedule because it
+# only touches already-removed packages and never interferes with a
+# running upgrade flow.
+
+- name: Manage apt-kernel-purge timer
+  ansible.builtin.include_role:
+    name: alphanodes.setup.systemd_timer
+  vars:
+    timers:
+      apt-kernel-purge:
+        state: "{{ 'present' if apt_kernel_purge_enabled else 'absent' }}"
+        exec_start: "/bin/bash -c 'dpkg --get-selections \"linux-*\" | grep deinstall | cut -f1 | xargs --no-run-if-empty dpkg --purge'"
+        on_calendar: '{{ apt_kernel_purge_on_calendar }}'
+        persistent: true
+        after_service: network.target

@@ -7,8 +7,3 @@
   ansible.builtin.include_tasks: setup.yml
   tags:
     - apt
-
-- name: Include unattended tasks
-  ansible.builtin.include_tasks: unattended.yml
-  tags:
-    - apt

@@ -91,6 +91,7 @@
           - "'Unattended-Upgrade::Mail' in unattended_content"
           - "'Unattended-Upgrade::Remove-Unused-Kernel-Packages' in unattended_content"
           - "'Unattended-Upgrade::Automatic-Reboot' in unattended_content"
+          - '''Unattended-Upgrade::SyslogEnable "true"'' in unattended_content'
         fail_msg: "Critical unattended-upgrade settings are missing"
 
     - name: Read 20auto-upgrades config
@@ -126,3 +127,23 @@
       loop: "{{ timer_dirs.results }}"
       loop_control:
         label: "{{ item.item }}"
+
+    - name: Read timer override files
+      ansible.builtin.slurp:
+        src: "{{ item }}"
+      register: timer_overrides
+      loop:
+        - /etc/systemd/system/apt-daily.timer.d/override.conf
+        - /etc/systemd/system/apt-daily-upgrade.timer.d/override.conf
+
+    - name: Assert apt-daily.timer override carries the 4x/day schedule
+      ansible.builtin.assert:
+        that:
+          - "'OnCalendar=*-*-* 0,6,12,18:00' in (timer_overrides.results[0].content | b64decode)"
+        fail_msg: "apt-daily.timer override does not match expected 4x/day schedule"
+
+    - name: Assert apt-daily-upgrade.timer override carries the 4x/day schedule
+      ansible.builtin.assert:
+        that:
+          - "'OnCalendar=*-*-* 0,6,12,18:20' in (timer_overrides.results[1].content | b64decode)"
+        fail_msg: "apt-daily-upgrade.timer override does not match expected 4x/day schedule"
