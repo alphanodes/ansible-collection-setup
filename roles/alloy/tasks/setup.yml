@@ -11,7 +11,6 @@
     dest: "{{ alloy_apt_signed_by }}"
     mode: "0644"
     force: true
-  when: ansible_facts.distribution_release not in ['trixie', 'resolute']
 
 # see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/deb822_repository_module.html
 - name: Add Grafana APT repo
