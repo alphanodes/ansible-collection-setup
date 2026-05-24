@@ -13,7 +13,7 @@ to use `127.0.0.1` with `resolver_nameservers` as fallback.
 ## Variables
 
 | Variable | Default | Description |
-|---|---|---|
+| --- | --- | --- |
 | `resolver_mode` | `static` | `static` or `systemd_resolved` |
 | `resolver_nameservers` | `[]` | Upstream DNS servers (used directly or as fallback when unbound is active) |
 | `resolver_with_unbound` | `false` | Install + use local unbound DNS cache on 127.0.0.1 |
