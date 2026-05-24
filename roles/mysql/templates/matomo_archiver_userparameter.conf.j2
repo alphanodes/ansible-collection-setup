@@ -1,0 +1,7 @@
+{{ managed_by_ansible | comment }}
+#
+# Zabbix agent UserParameter for the Matomo Archiver template.
+# Queries the Matomo database via the zbx_monitor user (SELECT on all schemas)
+# whose credentials live in {{ zabbix_agent_home }}/.my.cnf.
+
+UserParameter=matomo.archive.last_success.age,mysql --defaults-extra-file={{ zabbix_agent_home }}/.my.cnf -N -B -e "SELECT UNIX_TIMESTAMP() - option_value FROM matomo.piwik_option WHERE option_name = 'LastCompletedFullArchiving';" 2>/dev/null

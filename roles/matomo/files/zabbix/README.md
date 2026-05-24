@@ -39,38 +39,33 @@ Thresholds are controlled by macros `{$MATOMO.ARCHIVE.AGE.WARN}`,
 
 ### Prerequisites on the monitored host
 
-The template relies on a Zabbix agent 2 UserParameter. The matomo role
-deploys the following files when `zabbix_monitoring` is enabled on the
-DB host:
+The Zabbix agent UserParameter is deployed by the **`mysql` role**, not
+the matomo role -- the check runs against the local MySQL instance and
+reuses the existing `zbx_monitor` user and its my.cnf at
+`{{ zabbix_agent_home }}/.my.cnf`. The query is inline in the
+UserParameter (no wrapper script), following the same pattern as the
+postgresql role.
+
+Opt in by setting on the DB host:
+
+```yaml
+mysql_with_matomo_archiver_check: true
+```
+
+The mysql role then deploys:
 
 | File | Purpose |
 | ---- | ------- |
-| `/etc/zabbix/zabbix_agent2.d/matomo_archiver_userparameter.conf` | UserParameter definition |
-| `/usr/local/bin/zabbix-matomo-archive-age.sh` | Helper script (mode 0755) |
-| `/etc/zabbix/matomo.my.cnf` | MySQL credentials (mode 0640, owner zabbix:zabbix) |
+| `/etc/zabbix/zabbix_agent2.d/matomo_archiver.conf` | UserParameter definition |
 
-A dedicated read-only MySQL user is required:
-
-```sql
-CREATE USER 'zabbix_monitor'@'localhost' IDENTIFIED BY '<secret>';
-GRANT SELECT ON matomo.piwik_option TO 'zabbix_monitor'@'localhost';
-FLUSH PRIVILEGES;
-```
-
-The credentials file uses the standard MySQL `[client]` format:
-
-```ini
-[client]
-user=zabbix_monitor
-password=<secret>
-host=localhost
-```
+Setting the flag back to `false` (or removing it) cleans the file up on
+the next run.
 
 ### Manual test on the monitored host
 
 ```bash
-sudo -u zabbix /usr/local/bin/zabbix-matomo-archive-age.sh
-# Expected: a single integer like 1234 (seconds since last successful run)
+sudo -u zabbix zabbix_agent2 -t matomo.archive.last_success.age
+# Expected: matomo.archive.last_success.age  [s|1234]
 ```
 
 ### Import into Zabbix

@@ -7,8 +7,3 @@
     name: apparmor
     state: restarted
   ignore_errors: true
-
-- name: Restart zabbix-agent2
-  ansible.builtin.systemd_service:
-    name: zabbix-agent2
-    state: restarted

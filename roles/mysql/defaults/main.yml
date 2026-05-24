@@ -154,6 +154,13 @@ mysql_zabbix_host: localhost
 mysql_zabbix_user: zbx_monitor
 mysql_zabbix_password: '{{ [ansible_facts["machine_id"], ansible_facts["hostname"], mysql_server_password_salt, "zabbix-agent"] | join | hash("md5") }}'
 
+# Application-specific Zabbix checks that run against this MySQL instance.
+# Opt in via host_vars on the host that holds the Matomo / Redmine / ...
+# database. Requires zabbix_monitoring=true. Reuses the zbx_monitor user
+# (SELECT on all schemas) and its my.cnf at {{ zabbix_agent_home }}/.my.cnf.
+mysql_with_matomo_archiver_check: false
+mysql_matomo_archiver_userparameter_file: /etc/zabbix/zabbix_agent2.d/matomo_archiver.conf
+
 mysql_replication_with_write: false
 mysql_secure_file_priv: ''
 mysql_server_with_local_infile: false

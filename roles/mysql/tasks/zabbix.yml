@@ -40,6 +40,29 @@
             client_user: '{{ mysql_zabbix_user }}'
             client_password: '{{ mysql_zabbix_password }}'
 
+    - name: Matomo archiver check
+      when:
+        - zabbix_monitoring
+        - mysql_with_matomo_archiver_check
+      block:
+        - name: Deploy zabbix UserParameter for matomo archiver
+          ansible.builtin.template:
+            src: matomo_archiver_userparameter.conf.j2
+            dest: '{{ mysql_matomo_archiver_userparameter_file }}'
+            owner: root
+            group: root
+            mode: '0644'
+          notify: Restart zabbix-agent
+
+    - name: Matomo archiver check disabled
+      when: not mysql_with_matomo_archiver_check
+      block:
+        - name: Remove zabbix UserParameter for matomo archiver
+          ansible.builtin.file:
+            path: '{{ mysql_matomo_archiver_userparameter_file }}'
+            state: absent
+          notify: Restart zabbix-agent
+
     - name: Disabled monitoring
       when: not zabbix_monitoring
       block:
