@@ -1,10 +1,16 @@
 ---
 
+- name: Remove legacy dearmored Grafana keyring (replaced by .asc)
+  ansible.builtin.file:
+    path: /etc/apt/keyrings/grafana.gpg
+    state: absent
+
 - name: Download Grafana GPG key
   ansible.builtin.get_url:
     url: "{{ grafana_apt_url }}/gpg.key"
     dest: "{{ grafana_apt_signed_by }}"
     mode: "0644"
+    force: true
 
 # see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/deb822_repository_module.html
 - name: Add Grafana APT repo

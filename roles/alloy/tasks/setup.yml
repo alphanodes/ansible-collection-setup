@@ -1,19 +1,16 @@
 ---
 
+- name: Remove legacy dearmored Grafana keyring (replaced by .asc)
+  ansible.builtin.file:
+    path: /etc/apt/keyrings/grafana.gpg
+    state: absent
+
 - name: Download Grafana GPG key
   ansible.builtin.get_url:
     url: "{{ alloy_apt_url }}/gpg.key"
     dest: "{{ alloy_apt_signed_by }}"
     mode: "0644"
-  when: ansible_facts.distribution_release in ['trixie', 'resolute']
-
-- name: Download and convert Grafana GPG key
-  ansible.builtin.shell: >
-    set -o pipefail &&
-    curl -fsSL {{ alloy_apt_url }}/gpg.key | gpg --dearmor > {{ alloy_apt_signed_by }}
-  args:
-    creates: "{{ alloy_apt_signed_by }}"
-    executable: /bin/bash
+    force: true
   when: ansible_facts.distribution_release not in ['trixie', 'resolute']
 
 # see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/deb822_repository_module.html

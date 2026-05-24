@@ -1,7 +1,7 @@
 ---
 
 grafana_apt_url: https://apt.grafana.com
-grafana_apt_signed_by: /etc/apt/keyrings/grafana.gpg
+grafana_apt_signed_by: /etc/apt/keyrings/grafana.asc
 grafana_apt_suites: stable
 grafana_apt_components: main
 

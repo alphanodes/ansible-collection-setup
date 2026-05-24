@@ -1,7 +1,7 @@
 ---
 
 alloy_apt_url: https://apt.grafana.com
-alloy_apt_signed_by: /etc/apt/keyrings/grafana.gpg
+alloy_apt_signed_by: /etc/apt/keyrings/grafana.asc
 alloy_apt_suites: stable
 alloy_apt_components: main
 
