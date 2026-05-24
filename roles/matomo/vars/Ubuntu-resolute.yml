@@ -2,13 +2,13 @@
 
 matomo_packages:
   # - php-geoip
-  - php8.4-ldap
-  - php8.4-mbstring
-  - php8.4-xml
-  - php8.4-gd
+  - php8.5-ldap
+  - php8.5-mbstring
+  - php8.5-xml
+  - php8.5-gd
 
-matomo_php_mods_available: /etc/php/8.4/mods-available
+matomo_php_mods_available: /etc/php/8.5/mods-available
 
 matomo_redis_php_packages:
-  - php8.4-redis
-  - php8.4-igbinary
+  - php8.5-redis
+  - php8.5-igbinary

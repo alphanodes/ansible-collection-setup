@@ -1,11 +1,11 @@
 ---
-php_cli_custom_php_ini: /etc/php/8.4/cli/conf.d/custom.ini
+php_cli_custom_php_ini: /etc/php/8.5/cli/conf.d/custom.ini
 
 php_cli_packages:
-  - php8.4-cli
-  - php8.4-curl
+  - php8.5-cli
+  - php8.5-curl
 
 php_cli_remove_packages:
-  - php8.3-common
+  - php8.4-common
   - php-cli
   - php-curl

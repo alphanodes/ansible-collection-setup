@@ -3,11 +3,11 @@
 nextcloud_packages:
   - php-imagick
   - php-redis
-  - php8.4-bcmath
-  - php8.4-bz2
-  - php8.4-gmp
-  - php8.4-intl
-  - php8.4-mbstring
-  - php8.4-xml
-  - php8.4-zip
+  - php8.5-bcmath
+  - php8.5-bz2
+  - php8.5-gmp
+  - php8.5-intl
+  - php8.5-mbstring
+  - php8.5-xml
+  - php8.5-zip
   - libmagickcore-6.q16-6-extra
