@@ -1,0 +1,10 @@
+#
+# Ansible managed: this file is managed by AlphaNodes, all changes will be lost.
+#
+# Read-only MySQL credentials for the Zabbix agent's Matomo Archiver checks.
+# Consumed by {{ matomo_zabbix_helper_script }}.
+#
+[client]
+user={{ matomo_zabbix_db_user }}
+password={{ matomo_zabbix_db_password }}
+host={{ matomo_db_host }}

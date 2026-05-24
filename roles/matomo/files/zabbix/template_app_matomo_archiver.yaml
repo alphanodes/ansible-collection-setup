@@ -1,0 +1,123 @@
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
+      name: Templates/Applications
+  templates:
+    - uuid: 7a3f8e1c9b4d4e2a8c5f6d7e8a9b0c1d
+      template: 'Matomo Archiver'
+      name: 'Matomo Archiver'
+      description: |
+        Monitors the freshness of the Matomo core:archive cron job by
+        reading the LastCompletedFullArchiving timestamp from the
+        Matomo database.
+
+        Matomo writes this option after every successful core:archive run.
+        Its age is exactly what the Matomo admin UI uses to display the
+        "archiving has not run successfully" warning banner.
+
+        This template requires:
+        - Zabbix agent 2 with active checks enabled
+        - A read-only MySQL user with SELECT on matomo.piwik_option
+        - The UserParameter and helper script deployed by the matomo role
+          (see roles/matomo/files/zabbix/README.md)
+
+        Assign this template to the host that runs the Matomo MySQL
+        database (or to the all-in-one host).
+      vendor:
+        name: AlphaNodes
+        version: 7.4-__DATE__
+      groups:
+        - name: Templates/Applications
+      items:
+        - uuid: 1f2e3d4c5b6a7980a1b2c3d4e5f60718
+          name: 'Matomo: Age of last successful archive run'
+          type: ZABBIX_ACTIVE
+          key: matomo.archive.last_success.age
+          delay: 5m
+          history: 7d
+          trends: 365d
+          units: s
+          description: |
+            Seconds elapsed since the last successful Matomo
+            core:archive run (UNIX_TIMESTAMP() - LastCompletedFullArchiving).
+            A growing value indicates the archive job is failing.
+          tags:
+            - tag: component
+              value: archiver
+            - tag: source
+              value: piwik_option
+          triggers:
+            - uuid: 2a3b4c5d6e7f80918273645566778899
+              expression: 'last(/Matomo Archiver/matomo.archive.last_success.age)>{$MATOMO.ARCHIVE.AGE.WARN}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'last(/Matomo Archiver/matomo.archive.last_success.age)<{$MATOMO.ARCHIVE.AGE.WARN}'
+              name: 'Matomo: Archive job slightly behind'
+              event_name: 'Matomo: last successful archive run is {ITEM.LASTVALUE} ago'
+              priority: WARNING
+              description: |
+                The last successful Matomo archive run is older than
+                {$MATOMO.ARCHIVE.AGE.WARN} seconds. One or two missed
+                hourly runs are usually self-healing; investigate if the
+                trigger does not clear within a few hours.
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: data-freshness
+            - uuid: 3b4c5d6e7f8091a2b3c4d5e6f7081929
+              expression: 'last(/Matomo Archiver/matomo.archive.last_success.age)>{$MATOMO.ARCHIVE.AGE.HIGH}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'last(/Matomo Archiver/matomo.archive.last_success.age)<{$MATOMO.ARCHIVE.AGE.HIGH}'
+              name: 'Matomo: Archive job stalled'
+              event_name: 'Matomo: last successful archive run is {ITEM.LASTVALUE} ago'
+              priority: HIGH
+              description: |
+                The last successful Matomo archive run is older than
+                {$MATOMO.ARCHIVE.AGE.HIGH} seconds. The admin UI will
+                show a warning banner. Check journalctl on the archiver
+                host (matomo-cron.service) for PHP fatals or other errors.
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: data-freshness
+            - uuid: 4c5d6e7f8091a2b3c4d5e6f70819293a
+              expression: 'last(/Matomo Archiver/matomo.archive.last_success.age)>{$MATOMO.ARCHIVE.AGE.DISASTER}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'last(/Matomo Archiver/matomo.archive.last_success.age)<{$MATOMO.ARCHIVE.AGE.DISASTER}'
+              name: 'Matomo: Archive job has not run for a day'
+              event_name: 'Matomo: last successful archive run is {ITEM.LASTVALUE} ago'
+              priority: DISASTER
+              description: |
+                The last successful Matomo archive run is older than
+                {$MATOMO.ARCHIVE.AGE.DISASTER} seconds. Reports in the
+                Matomo UI are stale. Immediate intervention required.
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: data-freshness
+      tags:
+        - tag: class
+          value: software
+        - tag: subclass
+          value: analytics
+        - tag: target
+          value: matomo
+      macros:
+        - macro: '{$MATOMO.ARCHIVE.AGE.WARN}'
+          value: '14400'
+          description: 'Age in seconds before WARNING triggers (default 4 hours).'
+        - macro: '{$MATOMO.ARCHIVE.AGE.HIGH}'
+          value: '43200'
+          description: 'Age in seconds before HIGH triggers (default 12 hours).'
+        - macro: '{$MATOMO.ARCHIVE.AGE.DISASTER}'
+          value: '86400'
+          description: 'Age in seconds before DISASTER triggers (default 24 hours).'
+  graphs:
+    - uuid: 5d6e7f8091a2b3c4d5e6f70819293a4b
+      name: 'Matomo: Age of last successful archive run'
+      graph_items:
+        - drawtype: BOLD_LINE
+          color: 1A7C11
+          item:
+            host: 'Matomo Archiver'
+            key: matomo.archive.last_success.age

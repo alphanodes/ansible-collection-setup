@@ -1,0 +1,40 @@
+---
+# Deploys the Zabbix agent UserParameter, helper script, MySQL credentials
+# and read-only DB user for the "Matomo Archiver" Zabbix template.
+# See roles/matomo/files/zabbix/README.md for the matching template import.
+
+- name: Create read-only matomo monitor MySQL user
+  ansible.builtin.include_role:
+    name: alphanodes.setup.mysql
+    tasks_from: create_user.yml
+  vars:
+    mysql_setup_user_name: '{{ matomo_zabbix_db_user }}'
+    mysql_setup_user_password: '{{ matomo_zabbix_db_password }}'
+    mysql_setup_user_host: localhost
+    mysql_setup_user_priv: '{{ matomo_db_name }}.*:SELECT'
+    mysql_setup_salt_id: matomo-zabbix-monitor
+
+- name: Deploy matomo MySQL credentials for Zabbix agent
+  ansible.builtin.template:
+    src: matomo.my.cnf.j2
+    dest: '{{ matomo_zabbix_my_cnf }}'
+    owner: zabbix
+    group: zabbix
+    mode: '0640'
+
+- name: Deploy zabbix matomo archive-age helper script
+  ansible.builtin.copy:
+    src: zabbix/zabbix-matomo-archive-age.sh
+    dest: '{{ matomo_zabbix_helper_script }}'
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Deploy zabbix UserParameter for matomo archiver
+  ansible.builtin.copy:
+    src: zabbix/matomo_archiver_userparameter.conf
+    dest: '{{ matomo_zabbix_user_parameter_file }}'
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart zabbix-agent2

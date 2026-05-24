@@ -83,3 +83,11 @@ matomo_console_config:
 # Upgrade settings
 # Run diagnostics:unexpected-files --delete after upgrade to clean up old files
 matomo_upgrade_cleanup_unexpected_files: true
+
+# Zabbix monitoring (deployed on the host that runs the Matomo MySQL database)
+# See roles/matomo/files/zabbix/README.md for the matching template.
+matomo_zabbix_db_user: zabbix_monitor_matomo
+matomo_zabbix_db_password: '{{ [ansible_facts["machine_id"], ansible_facts["hostname"], "matomo-zabbix-monitor"] | join | hash("md5") }}'
+matomo_zabbix_my_cnf: /etc/zabbix/matomo.my.cnf
+matomo_zabbix_helper_script: /usr/local/bin/zabbix-matomo-archive-age.sh
+matomo_zabbix_user_parameter_file: /etc/zabbix/zabbix_agent2.d/matomo_archiver.conf

@@ -24,3 +24,12 @@
   tags:
     - matomo
     - nginx
+
+- name: Include Zabbix monitoring tasks
+  ansible.builtin.include_tasks: zabbix.yml
+  when:
+    - zabbix_monitoring | default(false)
+    - matomo_with_mysql
+  tags:
+    - matomo
+    - zabbix
