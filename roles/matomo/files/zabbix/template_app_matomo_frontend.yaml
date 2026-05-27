@@ -15,7 +15,7 @@ zabbix_export:
 
         The scenario fails when:
         - the HTTP response is not 200
-        - the response body does not contain "<title>Matomo"
+        - the response body does not contain "Sign in - Matomo"
         - the request times out
 
         This template requires nothing on the monitored host -- it is
@@ -48,10 +48,10 @@ zabbix_export:
           attempts: '2'
           steps:
             - name: 'GET frontend'
-              url: '{$MATOMO.FRONTEND.URL}'
+              url: '{$MATOMO.FRONTEND.URL}index.php'
               status_codes: '200'
               timeout: 10s
-              required: '<title>Matomo'
+              required: 'Sign in - Matomo'
           tags:
             - tag: component
               value: frontend

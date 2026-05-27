@@ -135,9 +135,10 @@ sudo -u zabbix zabbix_agent2 -t matomo.queue.worker_timer_state
 
 External HTTP availability check via a Zabbix Web Scenario. The
 scenario runs from the Zabbix server itself (not from the monitored
-host) and performs a single GET request against the URL defined in
-`{$MATOMO.FRONTEND.URL}`. Fails on non-200, missing `<title>Matomo`,
-or timeout.
+host) and performs a single GET request against
+`{$MATOMO.FRONTEND.URL}index.php` (Matomo's root path returns HTTP 400,
+so the login page is hit directly). Fails on non-200, missing
+`Sign in - Matomo` in the body, or timeout.
 
 ### Frontend: host assignment
 
