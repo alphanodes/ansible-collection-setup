@@ -70,6 +70,37 @@ sudo -u zabbix zabbix_agent2 -t matomo.archive.last_success.age
 
 ### Import into Zabbix
 
-1. Zabbix UI -> Data collection -> Templates -> Import
-2. Select `template_app_matomo_archiver.yaml`
-3. Assign the template to the DB host in the host configuration
+> **Heads-up:** The template must exist in Zabbix **before** the first
+> Ansible rollout for any host that references it in
+> `zabbix_link_templates`. Otherwise the `zabbix_agent` role's API task
+> aborts with `Template not found: Matomo Archiver`.
+
+Use the central playbook in ansible_sysconfig, which validates via
+`configuration.importcompare` (real dry-run) and substitutes the
+`__DATE__` placeholder in the template's `vendor.version` field:
+
+```bash
+cd ~/dev/ansible_sysconfig
+
+# Dry-run (validate only)
+ansible-playbook zabbix_template_import.yml
+
+# Actually import / update
+ansible-playbook zabbix_template_import.yml -e zabbix_template_import=true
+```
+
+Add new template files to the `zabbix_template_files` list inside the
+playbook before the first run. After import the host assignment is
+taken care of by Ansible via `zabbix_link_templates` in the host_vars.
+
+### Template UUIDs (RFC 4122 v4)
+
+All UUIDs in `template_app_matomo_archiver.yaml` must be valid UUIDv4
+strings (hyphen-stripped). Zabbix rejects everything else with
+`Invalid parameter "/1/uuid": UUIDv4 is expected.`
+
+Generate fresh ones with:
+
+```bash
+python3 -c "import uuid; print(uuid.uuid4().hex)"
+```

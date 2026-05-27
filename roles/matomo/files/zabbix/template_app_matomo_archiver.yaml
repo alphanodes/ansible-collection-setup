@@ -4,7 +4,7 @@ zabbix_export:
     - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
       name: Templates/Applications
   templates:
-    - uuid: 7a3f8e1c9b4d4e2a8c5f6d7e8a9b0c1d
+    - uuid: 54845c37c111418abe75d4d01d0287eb
       template: 'Matomo Archiver'
       name: 'Matomo Archiver'
       description: |
@@ -30,7 +30,7 @@ zabbix_export:
       groups:
         - name: Templates/Applications
       items:
-        - uuid: 1f2e3d4c5b6a7980a1b2c3d4e5f60718
+        - uuid: 52ade909c6a147308555cf76910784f2
           name: 'Matomo: Age of last successful archive run'
           type: ZABBIX_ACTIVE
           key: matomo.archive.last_success.age
@@ -48,7 +48,7 @@ zabbix_export:
             - tag: source
               value: piwik_option
           triggers:
-            - uuid: 2a3b4c5d6e7f80918273645566778899
+            - uuid: 8eb4d3f931bd4fad9a851b8e0dc9ccc7
               expression: 'last(/Matomo Archiver/matomo.archive.last_success.age)>{$MATOMO.ARCHIVE.AGE.WARN}'
               recovery_mode: RECOVERY_EXPRESSION
               recovery_expression: 'last(/Matomo Archiver/matomo.archive.last_success.age)<{$MATOMO.ARCHIVE.AGE.WARN}'
@@ -64,7 +64,7 @@ zabbix_export:
               tags:
                 - tag: scope
                   value: data-freshness
-            - uuid: 3b4c5d6e7f8091a2b3c4d5e6f7081929
+            - uuid: 5caf46e7b8834486bb6b6f7efc54d3a7
               expression: 'last(/Matomo Archiver/matomo.archive.last_success.age)>{$MATOMO.ARCHIVE.AGE.HIGH}'
               recovery_mode: RECOVERY_EXPRESSION
               recovery_expression: 'last(/Matomo Archiver/matomo.archive.last_success.age)<{$MATOMO.ARCHIVE.AGE.HIGH}'
@@ -80,7 +80,7 @@ zabbix_export:
               tags:
                 - tag: scope
                   value: data-freshness
-            - uuid: 4c5d6e7f8091a2b3c4d5e6f70819293a
+            - uuid: 25dfa905f5084ea5b2ce5e8815503546
               expression: 'last(/Matomo Archiver/matomo.archive.last_success.age)>{$MATOMO.ARCHIVE.AGE.DISASTER}'
               recovery_mode: RECOVERY_EXPRESSION
               recovery_expression: 'last(/Matomo Archiver/matomo.archive.last_success.age)<{$MATOMO.ARCHIVE.AGE.DISASTER}'
@@ -113,7 +113,7 @@ zabbix_export:
           value: '86400'
           description: 'Age in seconds before DISASTER triggers (default 24 hours).'
   graphs:
-    - uuid: 5d6e7f8091a2b3c4d5e6f70819293a4b
+    - uuid: 385a86f022f849169affaf5bf5d4060c
       name: 'Matomo: Age of last successful archive run'
       graph_items:
         - drawtype: BOLD_LINE
