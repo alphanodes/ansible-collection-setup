@@ -1,0 +1,102 @@
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
+      name: Templates/Applications
+  templates:
+    - uuid: 28e3eae172924d2aa5cf21a2727aee7b
+      template: 'Matomo Frontend'
+      name: 'Matomo Frontend'
+      description: |
+        Monitors that the Matomo web frontend answers HTTP requests.
+        A Zabbix Web Scenario runs from the Zabbix server itself
+        (not the monitored host) and performs a single GET request
+        against the URL defined in {$MATOMO.FRONTEND.URL}.
+
+        The scenario fails when:
+        - the HTTP response is not 200
+        - the response body does not contain "<title>Matomo"
+        - the request times out
+
+        This template requires nothing on the monitored host -- it is
+        a pure external availability check. Assign it to whichever
+        host logically "owns" the public Matomo vhost (cluster: the
+        load balancer; all-in-one: the host itself).
+      vendor:
+        name: AlphaNodes
+        version: 7.4-__DATE__
+      groups:
+        - name: Templates/Applications
+      tags:
+        - tag: class
+          value: software
+        - tag: subclass
+          value: analytics
+        - tag: target
+          value: matomo
+      macros:
+        - macro: '{$MATOMO.FRONTEND.URL}'
+          value: 'https://matomo.example.com/'
+          description: 'Full URL to monitor (scheme + host + optional path). Must be overridden per host.'
+        - macro: '{$MATOMO.FRONTEND.RESPTIME.WARN}'
+          value: '5'
+          description: 'Response time threshold in seconds for the WARNING trigger.'
+      httptests:
+        - uuid: 8b04b95a796f4971932c058ca19d9274
+          name: 'Matomo frontend availability'
+          delay: 5m
+          attempts: '2'
+          steps:
+            - name: 'GET frontend'
+              url: '{$MATOMO.FRONTEND.URL}'
+              status_codes: '200'
+              timeout: 10s
+              required: '<title>Matomo'
+          tags:
+            - tag: component
+              value: frontend
+            - tag: source
+              value: http
+  triggers:
+    - uuid: aa7e0da3dfd342dcacc2c7f5c15d7135
+      expression: 'last(/Matomo Frontend/web.test.fail[Matomo frontend availability])>0'
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'last(/Matomo Frontend/web.test.fail[Matomo frontend availability])=0'
+      name: 'Matomo: Frontend HTTP check failed'
+      event_name: 'Matomo: frontend HTTP check failed ({ITEM.LASTVALUE})'
+      priority: HIGH
+      description: |
+        The Web Scenario "Matomo frontend availability" reports a
+        failed step. Either the HTTP status was not 200, the body
+        did not contain "<title>Matomo", or the request timed out.
+        Investigate nginx / php-fpm / upstream services on the
+        relevant Matomo hosts.
+      manual_close: 'YES'
+      tags:
+        - tag: scope
+          value: availability
+    - uuid: b5a8576e8f364ec99aa4ddcb2c4a974a
+      expression: 'min(/Matomo Frontend/web.test.time[Matomo frontend availability,GET frontend,resp],15m)>{$MATOMO.FRONTEND.RESPTIME.WARN}'
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: 'max(/Matomo Frontend/web.test.time[Matomo frontend availability,GET frontend,resp],15m)<{$MATOMO.FRONTEND.RESPTIME.WARN}'
+      name: 'Matomo: Frontend response time degraded'
+      event_name: 'Matomo: frontend response time {ITEM.LASTVALUE}'
+      priority: WARNING
+      description: |
+        The Matomo frontend response time has stayed above
+        {$MATOMO.FRONTEND.RESPTIME.WARN} seconds for at least
+        15 minutes. Possible causes: heavy archive run, PHP-FPM
+        saturation, slow database queries.
+      manual_close: 'YES'
+      tags:
+        - tag: scope
+          value: performance
+  graphs:
+    - uuid: a804efe4777c4178ab521fea0330799e
+      name: 'Matomo: Frontend response time'
+      graph_items:
+        - drawtype: BOLD_LINE
+          color: 199C0D
+          item:
+            host: 'Matomo Frontend'
+            key: 'web.test.time[Matomo frontend availability,GET frontend,resp]'

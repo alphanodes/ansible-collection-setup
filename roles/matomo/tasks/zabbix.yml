@@ -1,0 +1,35 @@
+---
+# Deploys Zabbix agent UserParameters for Matomo-specific templates.
+# Currently covers the Matomo Tracker template; further matomo-only
+# checks can be added here without touching the mysql role.
+
+- name: Stats for zabbix configuration
+  ansible.builtin.stat:
+    path: /etc/zabbix
+  register: matomo_zabbix_config_exists
+
+- name: Matomo tracker check
+  when:
+    - matomo_zabbix_config_exists.stat.exists
+    - zabbix_monitoring | default(false)
+    - matomo_with_tracker_check
+  block:
+    - name: Deploy zabbix UserParameter for matomo tracker
+      ansible.builtin.template:
+        src: matomo_tracker_userparameter.conf.j2
+        dest: '{{ matomo_tracker_userparameter_file }}'
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Restart zabbix-agent
+
+- name: Matomo tracker check disabled
+  when:
+    - matomo_zabbix_config_exists.stat.exists
+    - not matomo_with_tracker_check
+  block:
+    - name: Remove zabbix UserParameter for matomo tracker
+      ansible.builtin.file:
+        path: '{{ matomo_tracker_userparameter_file }}'
+        state: absent
+      notify: Restart zabbix-agent

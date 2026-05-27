@@ -83,3 +83,9 @@ matomo_console_config:
 # Upgrade settings
 # Run diagnostics:unexpected-files --delete after upgrade to clean up old files
 matomo_upgrade_cleanup_unexpected_files: true
+
+# Zabbix monitoring of the Matomo tracker queue (Matomo Tracker template).
+# Opt in on hosts that run QueuedTracking with a local Redis backend.
+# Requires zabbix_monitoring=true and a working local redis-cli.
+matomo_with_tracker_check: false
+matomo_tracker_userparameter_file: /etc/zabbix/zabbix_agent2.d/matomo_tracker.conf

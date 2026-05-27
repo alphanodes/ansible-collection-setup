@@ -1,0 +1,139 @@
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
+      name: Templates/Applications
+  templates:
+    - uuid: 2d5383adb3a3440b909cf298930a84c0
+      template: 'Matomo Tracker'
+      name: 'Matomo Tracker'
+      description: |
+        Monitors the health of the Matomo QueuedTracking pipeline:
+        - the total backlog across all Redis tracking queues
+        - the matomo-queuedtracking systemd timer that drains the queues
+
+        A growing backlog means tracking hits arrive faster than the
+        worker can process them; an inactive timer means no worker
+        runs at all.
+
+        This template requires:
+        - Zabbix agent 2 with active checks enabled
+        - QueuedTracking plugin enabled in Matomo (matomo_with_redis)
+        - Local redis-cli, readable by the zabbix user (default)
+        - The UserParameter deployed by the matomo role
+          (matomo_with_tracker_check: true in host_vars)
+
+        Assign this template to the host that runs the Matomo tracker
+        (cluster: tracker node; all-in-one: the single host).
+      vendor:
+        name: AlphaNodes
+        version: 7.4-__DATE__
+      groups:
+        - name: Templates/Applications
+      items:
+        - uuid: 730e09bd6bc24eafb0698fe4c2f24748
+          name: 'Matomo: Tracking queue backlog'
+          type: ZABBIX_ACTIVE
+          key: matomo.queue.total_size
+          delay: 2m
+          history: 7d
+          trends: 365d
+          units: ''
+          description: |
+            Sum of LLEN over all Redis keys matching trackingQueueV1*.
+            Represents tracking hits queued but not yet processed.
+          tags:
+            - tag: component
+              value: tracker
+            - tag: source
+              value: redis
+          triggers:
+            - uuid: 60a9375b81c64f338ea96612be89d987
+              expression: 'min(/Matomo Tracker/matomo.queue.total_size,30m)>{$MATOMO.QUEUE.SIZE.WARN}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/Matomo Tracker/matomo.queue.total_size,15m)<{$MATOMO.QUEUE.SIZE.WARN}'
+              name: 'Matomo: Tracking queue backlog growing'
+              event_name: 'Matomo: tracking queue at {ITEM.LASTVALUE} entries'
+              priority: HIGH
+              description: |
+                The QueuedTracking backlog has stayed above
+                {$MATOMO.QUEUE.SIZE.WARN} for at least 30 minutes.
+                The worker is not keeping up. Check the
+                matomo-queuedtracking timer and journal.
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: throughput
+            - uuid: bef21ab3e2624dd3b4588ed1bca0d26c
+              expression: 'min(/Matomo Tracker/matomo.queue.total_size,30m)>{$MATOMO.QUEUE.SIZE.DISASTER}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/Matomo Tracker/matomo.queue.total_size,15m)<{$MATOMO.QUEUE.SIZE.DISASTER}'
+              name: 'Matomo: Tracking queue critical backlog'
+              event_name: 'Matomo: tracking queue at {ITEM.LASTVALUE} entries'
+              priority: DISASTER
+              description: |
+                The QueuedTracking backlog has stayed above
+                {$MATOMO.QUEUE.SIZE.DISASTER} for at least 30 minutes.
+                Tracking data is severely delayed. Immediate
+                intervention required.
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: throughput
+        - uuid: 923c3ca91cf7412684f622955625e764
+          name: 'Matomo: Queue worker timer state'
+          type: ZABBIX_ACTIVE
+          key: matomo.queue.worker_timer_state
+          delay: 2m
+          history: 7d
+          trends: 0
+          value_type: CHAR
+          description: |
+            Output of "systemctl is-active matomo-queuedtracking.timer".
+            Expected: "active". Any other value means the worker timer
+            is not scheduled and the queue will not drain.
+          tags:
+            - tag: component
+              value: tracker
+            - tag: source
+              value: systemd
+          triggers:
+            - uuid: e6f726f74cac4f259a9154e19b06d289
+              expression: 'last(/Matomo Tracker/matomo.queue.worker_timer_state,#2)<>"active" and last(/Matomo Tracker/matomo.queue.worker_timer_state)<>"active"'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'last(/Matomo Tracker/matomo.queue.worker_timer_state)="active"'
+              name: 'Matomo: Queue worker timer not active'
+              event_name: 'Matomo: queue worker timer is {ITEM.LASTVALUE}'
+              priority: HIGH
+              description: |
+                The matomo-queuedtracking systemd timer is not in state
+                "active". Without it the tracking queue will keep
+                growing. Check "systemctl status
+                matomo-queuedtracking.timer".
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: availability
+      tags:
+        - tag: class
+          value: software
+        - tag: subclass
+          value: analytics
+        - tag: target
+          value: matomo
+      macros:
+        - macro: '{$MATOMO.QUEUE.SIZE.WARN}'
+          value: '50000'
+          description: 'Backlog size in queue entries for HIGH trigger. Matomos own notify threshold is 250000; we alert earlier.'
+        - macro: '{$MATOMO.QUEUE.SIZE.DISASTER}'
+          value: '250000'
+          description: 'Backlog size in queue entries for DISASTER trigger (matches Matomos notify_queue_threshold_single_queue default).'
+  graphs:
+    - uuid: 3aec0646b3254298854abb0c6d8d4666
+      name: 'Matomo: Tracking queue backlog'
+      graph_items:
+        - drawtype: BOLD_LINE
+          color: 2774A4
+          item:
+            host: 'Matomo Tracker'
+            key: matomo.queue.total_size

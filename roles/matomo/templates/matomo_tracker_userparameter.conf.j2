@@ -1,0 +1,7 @@
+{{ managed_by_ansible | comment }}
+#
+# Zabbix agent UserParameters for the Matomo Tracker template.
+# Inline queries; no wrapper scripts. Run as the zabbix user.
+
+UserParameter=matomo.queue.total_size,redis-cli --raw KEYS 'trackingQueueV1*' | xargs -r -I{} redis-cli LLEN {} | awk '{s+=$1} END {print s+0}'
+UserParameter=matomo.queue.worker_timer_state,systemctl is-active matomo-queuedtracking.timer 2>/dev/null || true
