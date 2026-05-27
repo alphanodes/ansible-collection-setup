@@ -33,7 +33,10 @@ matomo_db_host: localhost
 matomo_db_name: matomo
 matomo_db_user: matomo
 matomo_db_password: '{{ [ansible_facts["machine_id"], ansible_facts["hostname"], "matomo"] | join | hash("md5") }}'
-matomo_db_tables_prefix: piwik_
+# "matomo_" is Matomo's installer default; installs upgraded from Piwik
+# still carry "piwik_" and must override this per host_vars to match
+# their config.ini.php.
+matomo_db_tables_prefix: matomo_
 
 # Geolocation Settings (DBIP City Lite - free, no registration required)
 # Compatible with alphanodes.tasks.matomo_task for cluster setups
