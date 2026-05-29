@@ -35,6 +35,12 @@ fail2ban_default_maxretry: 6
 
 # fail2ban_sshd_bantime: 2h
 fail2ban_sshd_port: "{{ ssh_server_port | default('ssh') }}"
+# Ban action for the sshd jail. Default: iptables-multiport blocks only the SSH
+# port. The historical default 'iptables-allports' blocks all ports of the
+# banned IP, which is dangerous on hosts addressed by ephemeral public cloud
+# IPs (e.g. CI runners) where IP recycling can cause legitimate traffic to be
+# rejected on HTTPS/Registry ports as collateral damage.
+fail2ban_sshd_banaction: iptables-multiport
 
 # for all login filters
 fail2ban_login_action: "%(action_with_matrix)s"

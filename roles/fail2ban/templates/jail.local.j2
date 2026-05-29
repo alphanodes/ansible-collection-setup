@@ -180,7 +180,7 @@ action = {{ fail2ban_action }}
 [sshd]
 enabled = true
 port = {{ named_ssh_server_port }}
-banaction = iptables-allports
+banaction = {{ fail2ban_sshd_banaction }}
 bantime = {{ fail2ban_sshd_bantime | default(fail2ban_default_bantime) }}
 
 [sshd-ddos]
