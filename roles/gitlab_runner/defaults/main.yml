@@ -32,6 +32,15 @@ gitlab_runner_with_hetzner_fleed: true
 # Tracking: #15045
 gitlab_runner_hetzner_docker_version: '5:28.5.2'
 gitlab_runner_hetzner_docker_storage_driver: ''
+# DNS resolvers for Docker containers on the runner VM. Hetzner Cloud resolvers
+# (185.12.64.1/.2) are reliable but occasionally throttle, causing
+# "Could not resolve host" errors during git clone or artifact download. Adding
+# Cloudflare and Quad9 as fallback eliminates the single point of failure.
+gitlab_runner_hetzner_dns:
+  - 185.12.64.1
+  - 185.12.64.2
+  - 1.1.1.1
+  - 9.9.9.9
 gitlab_runner_hetzner_fleed_plugin: "hetznercloud/fleeting-plugin-hetzner:latest"
 gitlab_runner_timezone: "{{ ntp_timezone | default('Europe/Berlin') }}"
 

@@ -1,14 +1,18 @@
 
 package_update: true
 package_upgrade: true
+{% set _daemon = {} %}
 {% if gitlab_runner_hetzner_docker_storage_driver | default('') | length > 0 %}
+{% set _ = _daemon.update({'storage-driver': gitlab_runner_hetzner_docker_storage_driver}) %}
+{% endif %}
+{% if gitlab_runner_hetzner_dns | default([]) | length > 0 %}
+{% set _ = _daemon.update({'dns': gitlab_runner_hetzner_dns}) %}
+{% endif %}
+{% if _daemon | length > 0 %}
 
 write_files:
   - path: /etc/docker/daemon.json
-    content: |
-      {
-        "storage-driver": "{{ gitlab_runner_hetzner_docker_storage_driver }}"
-      }
+    content: '{{ _daemon | to_json }}'
 {% endif %}
 
 apt:
