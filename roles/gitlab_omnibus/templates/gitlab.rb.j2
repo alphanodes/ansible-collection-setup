@@ -156,6 +156,10 @@ registry_nginx['ssl_certificate'] = '{{ gitlab_registry_nginx_ssl_certificate }}
 {% if gitlab_registry_nginx_ssl_certificate_key is defined %}
 registry_nginx['ssl_certificate_key'] = '{{ gitlab_registry_nginx_ssl_certificate_key }}'
 {% endif %}
+{% if gitlab_registry_database_enabled | bool %}
+# Container Registry metadata database mode (workaround for v4.40.0 prefer-mode panic)
+registry['database'] = { 'enabled' => true }
+{% endif %}
 
 ### Pages
 gitlab_pages['enable'] = {{ gitlab_pages_enabled | lower }}
