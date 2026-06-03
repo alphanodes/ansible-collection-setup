@@ -10,4 +10,3 @@ nextcloud_packages:
   - php8.5-mbstring
   - php8.5-xml
   - php8.5-zip
-  - libmagickcore-6.q16-6-extra
