@@ -10,7 +10,7 @@
   become: true
   become_user: "{{ composer_home_owner }}"
   register: composer_global_require_result
-  with_items: "{{ composer_global_packages }}"
+  loop: "{{ composer_global_packages }}"
 
 - name: Add composer_home_path bin directory to global $PATH.
   ansible.builtin.template:
