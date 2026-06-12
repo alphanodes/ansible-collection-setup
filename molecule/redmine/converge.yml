@@ -277,7 +277,11 @@
               proxy_timeout: "120"
 
     # --- Plugin feature-flag derivation (set_instance_vars.yml) ---
-    # common ran above, so srv_path and gathered facts are available here.
+    # Dynamic include_role does not leak role defaults to later play tasks,
+    # so load the defaults explicitly (common provides srv_path).
+    - name: Load common role defaults for flag derivation
+      ansible.builtin.include_vars: "{{ playbook_dir }}/../../roles/common/defaults/main.yml"
+
     - name: Load redmine role defaults for flag derivation
       ansible.builtin.include_vars: "{{ playbook_dir }}/../../roles/redmine/defaults/main.yml"
 
