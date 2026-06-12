@@ -96,9 +96,6 @@ redmine_default_vhost_users: []
 # NOTE: this should be fixed in Redmine 6.2 (with Rails 8 support) and removed here
 redmine_to_time_preserves_timezone: true
 
-redmine_with_agile: false
-redmine_with_zenedit: false
-
 # this enables pghero and pg_extras, too
 redmine_with_alphanodes_enterprise_support: true
 

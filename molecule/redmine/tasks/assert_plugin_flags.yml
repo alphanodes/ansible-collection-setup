@@ -1,0 +1,23 @@
+---
+# Runs the real set_instance_vars.yml for one test case and checks the facts.
+# Included by path (not include_role) to avoid running the role meta deps.
+- name: "Derive facts - {{ tc.name }}"
+  ansible.builtin.include_tasks: "{{ redmine_set_instance_vars_file }}"
+  vars:
+    r_instance:
+      key: flagtest
+      value: "{{ tc.value }}"
+
+- name: "Assert - {{ tc.name }}"
+  ansible.builtin.assert:
+    that:
+      - active_agile | bool == tc.expect.agile
+      - active_zenedit | bool == tc.expect.zenedit
+      - active_dmsf | bool == tc.expect.dmsf
+      - active_ai | bool == tc.expect.ai
+      - active_pgvector | bool == tc.expect.pgvector
+    fail_msg: >-
+      {{ tc.name }}: got
+      agile={{ active_agile }} zenedit={{ active_zenedit }}
+      dmsf={{ active_dmsf }} ai={{ active_ai }} pgvector={{ active_pgvector }}
+    success_msg: "{{ tc.name }}: OK"

@@ -29,7 +29,7 @@ _redis_opts[:pool] = { size: {{ redmine_instance.db_pool | default(real_db_pool)
 {% endif %}
 config.cache_store = :redis_cache_store, _redis_opts
 {% endif %}
-{% if redmine_instance.with_dmsf is defined and redmine_instance.with_dmsf %}
+{% if active_dmsf %}
 # Active Storage (required by redmine_dmsf)
 require 'active_storage/engine'
 config.active_storage.service = :local
@@ -74,4 +74,9 @@ config.active_job.queue_adapter = :{{ queue_adapter }}
 if defined? Bullet
   Bullet.enable = {{ redmine_instance.with_bullet | bool | lower }}
 end
+{% endif %}
+{% if active_ai %}
+# redmine_ai requires ruby_llm with the new acts_as API
+require 'ruby_llm'
+RubyLLM.configure { |config| config.use_new_acts_as = true }
 {% endif %}

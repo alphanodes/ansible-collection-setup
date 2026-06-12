@@ -58,6 +58,53 @@
         with_agile: true
         vhost_for_zabbix: false
 
+    # Path to the real task file under test (kept in a var so ansible-lint
+    # does not try to statically follow the dynamic include).
+    redmine_set_instance_vars_file: "{{ playbook_dir }}/../../roles/redmine/tasks/set_instance_vars.yml"
+
+    # Cases for the active_* feature-flag derivation in set_instance_vars.yml.
+    # "expect" lists every fact so a regression in any branch fails the case.
+    redmine_flag_test_cases:
+      - name: no plugins -> all off
+        value:
+          plugins: []
+        expect: {agile: false, zenedit: false, dmsf: false, ai: false, pgvector: false}
+      - name: redmine_agile -> agile on
+        value:
+          plugins: [redmine_agile]
+        expect: {agile: true, zenedit: false, dmsf: false, ai: false, pgvector: false}
+      - name: redmine_agile_pro -> agile on (pro variant)
+        value:
+          plugins: [redmine_agile_pro]
+        expect: {agile: true, zenedit: false, dmsf: false, ai: false, pgvector: false}
+      - name: redmine_zenedit_pro -> zenedit on (pro variant)
+        value:
+          plugins: [redmine_zenedit_pro]
+        expect: {agile: false, zenedit: true, dmsf: false, ai: false, pgvector: false}
+      - name: redmine_dmsf -> dmsf on
+        value:
+          plugins: [redmine_dmsf]
+        expect: {agile: false, zenedit: false, dmsf: true, ai: false, pgvector: false}
+      - name: redmine_ai -> ai on and pgvector implied
+        value:
+          plugins: [redmine_ai]
+        expect: {agile: false, zenedit: false, dmsf: false, ai: true, pgvector: true}
+      - name: with_agile false overrides present plugin
+        value:
+          plugins: [redmine_agile]
+          with_agile: false
+        expect: {agile: false, zenedit: false, dmsf: false, ai: false, pgvector: false}
+      - name: with_dmsf true without plugin still on
+        value:
+          plugins: []
+          with_dmsf: true
+        expect: {agile: false, zenedit: false, dmsf: true, ai: false, pgvector: false}
+      - name: with_pgvector false decouples from ai
+        value:
+          plugins: [redmine_ai]
+          with_pgvector: false
+        expect: {agile: false, zenedit: false, dmsf: false, ai: true, pgvector: false}
+
   pre_tasks:
     - name: Update apt cache
       ansible.builtin.apt:
@@ -228,3 +275,18 @@
               proxy_pass: "http://redmine_agile/rup_cable_agile"
               proxy_websocket: true
               proxy_timeout: "120"
+
+    # --- Plugin feature-flag derivation (set_instance_vars.yml) ---
+    # common ran above, so srv_path and gathered facts are available here.
+    - name: Load redmine role defaults for flag derivation
+      ansible.builtin.include_vars: "{{ playbook_dir }}/../../roles/redmine/defaults/main.yml"
+
+    - name: Load redmine role vars for flag derivation
+      ansible.builtin.include_vars: "{{ playbook_dir }}/../../roles/redmine/vars/main.yml"
+
+    - name: Assert plugin flag derivation per case
+      ansible.builtin.include_tasks: tasks/assert_plugin_flags.yml
+      loop: "{{ redmine_flag_test_cases }}"
+      loop_control:
+        loop_var: tc
+        label: "{{ tc.name }}"

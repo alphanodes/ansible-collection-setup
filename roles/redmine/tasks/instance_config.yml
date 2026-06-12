@@ -30,7 +30,7 @@
     loop_var: redmine_config_template
 
 - name: Active Storage configuration block (DMSF)
-  when: redmine_instance.with_dmsf is defined and redmine_instance.with_dmsf
+  when: active_dmsf
   block:
     - name: Active Storage storage.yml - {{ redmine_instance_name }}
       ansible.builtin.template:

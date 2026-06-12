@@ -74,7 +74,7 @@
     login_db: '{{ redmine_db_name }}'
   when:
     - not skip_local_pg_setup
-    - redmine_instance.with_pgvector | default(false)
+    - active_pgvector
 
 - name: Run postgresql pre commands - {{ redmine_instance_name }}
   community.postgresql.postgresql_query:

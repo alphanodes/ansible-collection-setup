@@ -69,7 +69,7 @@
     group: '{{ redmine_group }}'
     mode: '0750'
     state: directory
-  when: redmine_instance.with_dmsf is defined and redmine_instance.with_dmsf
+  when: active_dmsf
 
 - name: Include init tasks
   ansible.builtin.include_tasks: instance_init.yml

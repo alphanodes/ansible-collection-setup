@@ -4,6 +4,7 @@
   ansible.builtin.set_fact:
     redmine_instance: "{{ r_instance.value }}"
     redmine_instance_name: "{{ r_instance.key }}"
+    redmine_instance_plugins: "{{ r_instance.value.plugins | default([]) }}"
 
 - name: Set real_puma_workers
   ansible.builtin.set_fact:
@@ -74,8 +75,13 @@
     active_redmine_repo_version: "{{ redmine_instance.repo_version | default(redmine_repo_version) }}"
     active_delivery_method: "{{ redmine_instance.delivery_method | default(redmine_delivery_method) }}"
     active_to_time_preserves_timezone: "{{ redmine_instance.to_time_preserves_timezone | default(redmine_to_time_preserves_timezone) }}"
-    active_agile: "{{ redmine_instance.with_agile | default(redmine_with_agile) }}"
-    active_zenedit: "{{ redmine_instance.with_zenedit | default(redmine_with_zenedit) }}"
+    # Plugin-derived defaults: a flag is implied by the presence of its plugin
+    # (incl. _pro variants) in the instance plugin list. An explicit
+    # with_* on the instance always wins, so it can still be forced off.
+    active_agile: "{{ redmine_instance.with_agile | default(redmine_instance_plugins | intersect(['redmine_agile', 'redmine_agile_pro']) | length > 0) }}"
+    active_zenedit: "{{ redmine_instance.with_zenedit | default(redmine_instance_plugins | intersect(['redmine_zenedit', 'redmine_zenedit_pro']) | length > 0) }}"
+    active_dmsf: "{{ redmine_instance.with_dmsf | default('redmine_dmsf' in redmine_instance_plugins) }}"
+    active_ai: "{{ redmine_instance.with_ai | default('redmine_ai' in redmine_instance_plugins) }}"
     active_with_redis: "{{ redmine_instance.with_redis | default(redmine_with_redis) }}"
     active_session_store: "{{ redmine_instance.session_store | default(redmine_session_store) }}"
     redmine_instance: "{{ redmine_instance | combine([{'error_404_enabled': true}]) }}"
@@ -83,6 +89,11 @@
     htpasswd_file: "/etc/nginx/.htpasswd_redmine_{{ redmine_instance_name }}"
     access_protection: "{{ redmine_instance.access_protection | default(redmine_access_protection) }}"
     with_alphanodes_enterprise_support: "{{ redmine_instance.with_alphanodes_enterprise_support | default(redmine_with_alphanodes_enterprise_support) }}"
+
+- name: Set pgvector requirement (follows AI unless overridden) - {{ redmine_instance_name }}
+  ansible.builtin.set_fact:
+    # redmine_ai is PostgreSQL-only and needs pgvector, so AI implies it
+    active_pgvector: "{{ redmine_instance.with_pgvector | default(active_ai) }}"
 
 - name: Set enterprise tools - {{ redmine_instance_name }}
   ansible.builtin.set_fact:
