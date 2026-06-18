@@ -264,6 +264,7 @@ redmine_plugin_test_files:
   - config/brakeman.ignore
   - eslint.config.mjs
   - eslint.config.cjs
+  - eslint.shared.cjs
   - package.json
   - test
   - vitest.config.js

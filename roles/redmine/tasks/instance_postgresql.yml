@@ -83,3 +83,44 @@
     login_db: '{{ redmine_db_name }}'
   loop: '{{ redmine_instance.pre_db_commands | default([]) }}'
   when: not skip_local_pg_setup
+
+# Per-database PostgreSQL parameters (ALTER DATABASE ... SET ...).
+# Persisted in pg_db_role_setting, survives restarts but not a database
+# re-import, so it is reapplied here on every run. Works for managed
+# databases (e.g. Cloud SQL) where ALTER SYSTEM / postgresql.conf are not
+# available: connects as the database owner over the network.
+- name: Read current per-database PostgreSQL parameters - {{ redmine_instance_name }}
+  community.postgresql.postgresql_query:
+    login_host: '{{ redmine_instance.db_host | default(omit) }}'
+    login_port: '{{ redmine_instance.db_port | default(omit) }}'
+    login_user: '{{ redmine_db_user }}'
+    login_password: '{{ redmine_instance.db_password | default(redmine_db_password) }}'
+    login_db: '{{ redmine_db_name }}'
+    query: >-
+      SELECT lower(split_part(opt, '=', 1)) AS key, split_part(opt, '=', 2) AS value
+      FROM pg_db_role_setting s
+      JOIN pg_database d ON d.oid = s.setdatabase
+      CROSS JOIN unnest(s.setconfig) AS opt
+      WHERE d.datname = %(db)s AND s.setrole = 0
+    named_args:
+      db: '{{ redmine_db_name }}'
+  register: redmine_db_current_params
+  changed_when: false
+  no_log: '{{ hide_sensitive_data }}'
+  when: (redmine_instance.db_parameters | default({})) | length > 0
+
+- name: Apply per-database PostgreSQL parameters - {{ redmine_instance_name }}
+  community.postgresql.postgresql_query:
+    login_host: '{{ redmine_instance.db_host | default(omit) }}'
+    login_port: '{{ redmine_instance.db_port | default(omit) }}'
+    login_user: '{{ redmine_db_user }}'
+    login_password: '{{ redmine_instance.db_password | default(redmine_db_password) }}'
+    login_db: '{{ redmine_db_name }}'
+    query: "ALTER DATABASE \"{{ redmine_db_name }}\" SET {{ item.key }} = '{{ item.value }}'"
+  loop: '{{ (redmine_instance.db_parameters | default({})) | dict2items }}'
+  loop_control:
+    label: '{{ item.key }} = {{ item.value }}'
+  no_log: '{{ hide_sensitive_data }}'
+  when:
+    - (redmine_instance.db_parameters | default({})) | length > 0
+    - (redmine_db_current_params.query_result | default([]) | selectattr('key', 'equalto', item.key | lower) | map(attribute='value') | first | default('')) != (item.value | string)
