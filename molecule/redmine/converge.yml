@@ -271,6 +271,12 @@
               proxy_buffers: "16 128k"
               proxy_buffer_size: "128k"
               proxy_busy_buffers_size: "256k"
+            # Central cable location (redmineup gem >= 1.1.11), added for any
+            # instance with an active cable plugin via the "shared" condition.
+            - name: "/rup_cable"
+              proxy_pass: "http://redmine_agile/rup_cable"
+              proxy_websocket: true
+              proxy_timeout: "120"
             - name: "/rup_cable_agile"
               proxy_pass: "http://redmine_agile/rup_cable_agile"
               proxy_websocket: true

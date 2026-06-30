@@ -127,6 +127,17 @@
           - agile_ws_check.rc == 0
         fail_msg: "ActionCable WebSocket location not found in redmine_agile"
 
+    - name: Check redmine_agile vhost contains central cable WebSocket location
+      ansible.builtin.command: grep -qF "location /rup_cable {" /etc/nginx/sites-available/redmine_agile.conf
+      register: agile_shared_ws_check
+      changed_when: false
+
+    - name: Assert central ActionCable WebSocket location exists
+      ansible.builtin.assert:
+        that:
+          - agile_shared_ws_check.rc == 0
+        fail_msg: "Central /rup_cable WebSocket location not found in redmine_agile"
+
     - name: Check redmine_agile contains WebSocket upgrade headers
       ansible.builtin.command: grep -q "Upgrade.*http_upgrade" /etc/nginx/sites-available/redmine_agile.conf
       register: upgrade_check

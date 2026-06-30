@@ -29,15 +29,16 @@
       - "{{ redmine_base_locations[0] }}"
       - "{{ redmine_base_locations[1] | combine(_ssl_headers) }}"
 
-- name: Add ActionCable location for Agile plugin - {{ redmine_instance_name }}
+- name: Add RedmineUP ActionCable websocket locations - {{ redmine_instance_name }}
   ansible.builtin.set_fact:
-    redmine_locations: "{{ redmine_locations + [redmine_agile_locations[0] | combine(_ssl_headers)] }}"
-  when: active_agile
-
-- name: Add ActionCable location for ZenEdit plugin - {{ redmine_instance_name }}
-  ansible.builtin.set_fact:
-    redmine_locations: "{{ redmine_locations + [redmine_zenedit_locations[0] | combine(_ssl_headers)] }}"
-  when: active_zenedit
+    redmine_locations: "{{ redmine_locations + [item.location | combine(_ssl_headers)] }}"
+  loop: "{{ redmine_cable_locations }}"
+  loop_control:
+    label: "{{ item.location.name }}"
+  when: >-
+    (item.condition == 'agile' and active_agile) or
+    (item.condition == 'zenedit' and active_zenedit) or
+    (item.condition == 'shared' and (active_agile or active_zenedit))
 
 - name: Add no-register location - {{ redmine_instance_name }}
   ansible.builtin.set_fact:

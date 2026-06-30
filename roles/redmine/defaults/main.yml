@@ -296,23 +296,36 @@ redmine_base_locations:
     proxy_busy_buffers_size: "{{ redmine_proxy_busy_buffers_size }}"
     proxy_redirect: "off"
 
-# ActionCable WebSocket location for Agile plugin
+# RedmineUP ActionCable WebSocket locations (redmineup gem). A single list
+# manages every cable proxy location; "condition" controls when each one is
+# added to the vhost (see tasks/nginx.yml):
+#   agile   -> active_agile                 (/rup_cable_agile, legacy per-plugin server)
+#   zenedit -> active_zenedit               (/rup_cable_zenedit, legacy per-plugin server)
+#   shared  -> active_agile or active_zenedit
+#              (central /rup_cable mounted by redmineup gem >= 1.1.11)
 # NOTE: SSL-specific proxy headers added dynamically in tasks/nginx.yml
-redmine_agile_locations:
-  - name: "/rup_cable_agile"
-    proxy_pass: "http://{{ redmine_instance_name | default('redmine') | replace('-', '_') }}/rup_cable_agile"
-    proxy_websocket: true
-    proxy_timeout: "{{ redmine_proxy_timeout }}"
-    proxy_redirect: "off"
-
-# ActionCable WebSocket location for ZenEdit plugin
-# NOTE: SSL-specific proxy headers added dynamically in tasks/nginx.yml
-redmine_zenedit_locations:
-  - name: "/rup_cable_zenedit"
-    proxy_pass: "http://{{ redmine_instance_name | default('redmine') | replace('-', '_') }}/rup_cable_zenedit"
-    proxy_websocket: true
-    proxy_timeout: "{{ redmine_proxy_timeout }}"
-    proxy_redirect: "off"
+redmine_cable_locations:
+  - condition: "shared"
+    location:
+      name: "/rup_cable"
+      proxy_pass: "http://{{ redmine_instance_name | default('redmine') | replace('-', '_') }}/rup_cable"
+      proxy_websocket: true
+      proxy_timeout: "{{ redmine_proxy_timeout }}"
+      proxy_redirect: "off"
+  - condition: "agile"
+    location:
+      name: "/rup_cable_agile"
+      proxy_pass: "http://{{ redmine_instance_name | default('redmine') | replace('-', '_') }}/rup_cable_agile"
+      proxy_websocket: true
+      proxy_timeout: "{{ redmine_proxy_timeout }}"
+      proxy_redirect: "off"
+  - condition: "zenedit"
+    location:
+      name: "/rup_cable_zenedit"
+      proxy_pass: "http://{{ redmine_instance_name | default('redmine') | replace('-', '_') }}/rup_cable_zenedit"
+      proxy_websocket: true
+      proxy_timeout: "{{ redmine_proxy_timeout }}"
+      proxy_redirect: "off"
 
 # Block registration location
 redmine_no_register_location:
