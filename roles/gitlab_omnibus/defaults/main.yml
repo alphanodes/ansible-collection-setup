@@ -151,6 +151,12 @@ gitlab_alertmanager_flags:
 # See: https://docs.gitlab.com/ee/administration/monitoring/ip_whitelist.html
 gitlab_monitoring_ip_whitelist: ['127.0.0.0/8']
 
+# Additional IPs exempt from Rack::Attack rate limiting (e.g. CI runners that
+# issue many git fetches during releases). 127.0.0.1 and ::1 are always kept
+# by the template. Empty leaves Rack::Attack at its GitLab default.
+# See: https://docs.gitlab.com/administration/settings/user_and_ip_rate_limits/
+gitlab_rack_attack_ip_allowlist: []
+
 gitlab_ldap_enabled: false
 gitlab_ldap_prevent_ldap_sign_in: false
 gitlab_ldap_servers:

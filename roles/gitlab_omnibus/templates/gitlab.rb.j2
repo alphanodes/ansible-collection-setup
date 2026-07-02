@@ -124,6 +124,11 @@ gitlab_rails['dependency_proxy_object_store_connection'] = {{ gitlab_object_stor
 ### Monitoring settings
 gitlab_rails['monitoring_whitelist'] = {{ gitlab_monitoring_ip_whitelist }}
 
+{% if gitlab_rack_attack_ip_allowlist %}
+### Rate limiting - exempt trusted IPs (e.g. CI runners) from Rack::Attack
+gitlab_rails['rack_attack_ip_whitelist'] = {{ ['127.0.0.1', '::1'] + gitlab_rack_attack_ip_allowlist }}
+{% endif %}
+
 ### Backup Settings
 gitlab_rails['manage_backup_path'] = {{ gitlab_manage_backup_path | lower }}
 gitlab_rails['backup_path'] = '{{ gitlab_backup_path }}'
