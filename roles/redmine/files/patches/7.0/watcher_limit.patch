@@ -1,0 +1,12 @@
+diff --git a/app/controllers/watchers_controller.rb b/app/controllers/watchers_controller.rb
+--- a/app/controllers/watchers_controller.rb
++++ b/app/controllers/watchers_controller.rb
+@@ -152,7 +152,7 @@ class WatchersController < ApplicationController
+     scope = nil
+     if params[:q].blank?
+       if @project.present?
+-        scope = @project.principals.assignable_watchers
++        scope = @project.principals.assignable_watchers.limit(100)
+       elsif @projects.present? && @projects.size > 1
+         scope = Principal.joins(:members).where(:members => { :project_id => @projects }).assignable_watchers.distinct
+       end

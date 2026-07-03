@@ -1,9 +1,19 @@
 ---
 
 # This is idempotent, if the file is already patched it just returns 'ok'
+# Prefer a Redmine-major-version specific patch variant (e.g. patches/7.0/foo.patch)
+# and fall back to the generic one. This keeps instance patch lists stable across
+# Redmine upgrades when upstream absorbs part of a patch.
 - name: Patch Redmine with {{ patch.file }}
   ansible.posix.patch:
-    src: patches/{{ patch.file }}.patch
+    src: "{{ lookup('ansible.builtin.first_found', _redmine_patch_ff) }}"
     dest: '{{ patch.dest | default(omit) }}'
     strip: '{{ patch.strip | default(omit) }}'
     basedir: '{{ redmine_app_dir }}'
+  vars:
+    _redmine_patch_ff:
+      files:
+        - "patches/{{ redmine_instance.repo_version | default('') | regex_replace('^(\\d+\\.\\d+).*', '\\1') }}/{{ patch.file }}.patch"
+        - patches/{{ patch.file }}.patch
+      paths:
+        - '{{ role_path }}/files'
