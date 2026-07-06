@@ -1,0 +1,12 @@
+diff --git a/plugins/redmine_dmsf/Gemfile b/plugins/redmine_dmsf/Gemfile
+--- a/plugins/redmine_dmsf/Gemfile
++++ b/plugins/redmine_dmsf/Gemfile
+@@ -21,7 +21,7 @@ source 'https://rubygems.org' do
+   gem 'active_record_union'
+   gem 'activestorage'
+   gem 'image_processing', '~> 1.2'
+-  gem 'ostruct' # Dav4Rack
++  # gem 'ostruct' # Dav4Rack -- provided by Redmine 7 core Gemfile; declaring it inside this source block too raises "same gem twice from different sources"
+   gem 'ox' # Dav4Rack
+   gem 'rake' unless Dir.exist?(File.expand_path('../../redmine_dashboard', __FILE__))
+   gem 'simple_enum'
