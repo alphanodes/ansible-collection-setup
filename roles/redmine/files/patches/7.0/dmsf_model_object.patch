@@ -1,0 +1,30 @@
+diff --git a/plugins/redmine_dmsf/app/controllers/dmsf_links_controller.rb b/plugins/redmine_dmsf/app/controllers/dmsf_links_controller.rb
+--- a/plugins/redmine_dmsf/app/controllers/dmsf_links_controller.rb
++++ b/plugins/redmine_dmsf/app/controllers/dmsf_links_controller.rb
+@@ -20,5 +20,5 @@
+ # Links controller
+ class DmsfLinksController < ApplicationController
+-  model_object DmsfLink
++  self.model_object = DmsfLink
+
+   before_action :find_model_object, only: %i[destroy restore]
+diff --git a/plugins/redmine_dmsf/app/controllers/dmsf_workflows_controller.rb b/plugins/redmine_dmsf/app/controllers/dmsf_workflows_controller.rb
+--- a/plugins/redmine_dmsf/app/controllers/dmsf_workflows_controller.rb
++++ b/plugins/redmine_dmsf/app/controllers/dmsf_workflows_controller.rb
+@@ -20,5 +20,5 @@
+ # WorkflowsController
+ class DmsfWorkflowsController < ApplicationController
+-  model_object DmsfWorkflow
++  self.model_object = DmsfWorkflow
+   menu_item :dmsf_approvalworkflows
+   self.main_menu = false
+diff --git a/plugins/redmine_dmsf/app/controllers/dmsf_public_urls_controller.rb b/plugins/redmine_dmsf/app/controllers/dmsf_public_urls_controller.rb
+--- a/plugins/redmine_dmsf/app/controllers/dmsf_public_urls_controller.rb
++++ b/plugins/redmine_dmsf/app/controllers/dmsf_public_urls_controller.rb
+@@ -20,5 +20,5 @@
+ # Public URL controller
+ class DmsfPublicUrlsController < ApplicationController
+-  model_object DmsfPublicUrl
++  self.model_object = DmsfPublicUrl
+   before_action :authorize, only: [:create]
+   skip_before_action :check_if_login_required, only: [:show]
