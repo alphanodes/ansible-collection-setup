@@ -192,6 +192,7 @@ redmine_packages:
   - gnupg
   - graphviz
   - imagemagick
+  - pandoc
   - subversion
 
 # This should be default, if system ruby version < 2.7
