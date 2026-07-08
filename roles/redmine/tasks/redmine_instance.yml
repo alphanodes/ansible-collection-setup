@@ -136,3 +136,6 @@
 
 - name: Include systemd tasks
   ansible.builtin.include_tasks: instance_systemd.yml
+
+- name: Include SolidQueue tasks
+  ansible.builtin.include_tasks: instance_solid_queue.yml

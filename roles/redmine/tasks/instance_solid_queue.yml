@@ -1,0 +1,185 @@
+---
+# SolidQueue setup/teardown for one instance, driven entirely by
+# active_solid_queue (= queue_adapter == 'solid_queue'). Bundled in one file so
+# the teardown order is correct: stop the worker before dropping its database.
+# Runs after instance_systemd.yml, so the solid_queue gem is bundled and
+# redmine_ruby_system_gem_home is set.
+
+# ---------------------------------------------------------------------------
+# Teardown: adapter switched away from solid_queue -> remove everything.
+# All tasks are idempotent no-ops when nothing was ever set up.
+# ---------------------------------------------------------------------------
+- name: SolidQueue teardown - {{ redmine_instance_name }}
+  when: not active_solid_queue
+  block:
+    - name: Stop and disable SolidQueue worker - {{ redmine_instance_name }}
+      ansible.builtin.systemd_service:
+        name: '{{ solid_queue_service_name }}'
+        state: stopped
+        enabled: false
+      failed_when: false
+
+    - name: Remove SolidQueue worker unit - {{ redmine_instance_name }}
+      ansible.builtin.file:
+        path: /etc/systemd/system/{{ solid_queue_service_name }}.service
+        state: absent
+      notify: Reload systemd daemon
+
+    - name: Remove SolidQueue config and schema - {{ redmine_instance_name }}
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: absent
+      loop:
+        - '{{ redmine_config_dir }}/queue.yml'
+        - '{{ redmine_app_dir }}/config/queue.yml'
+        - '{{ redmine_app_dir }}/db/queue_schema.rb'
+
+    - name: Drop SolidQueue database - {{ redmine_instance_name }}
+      become_user: postgres
+      become: true
+      community.postgresql.postgresql_db:
+        name: '{{ redmine_queue_db_name }}'
+        state: absent
+      when:
+        - active_db_adapter == 'postgresql'
+        - not (redmine_instance.db_skip_local_setup | default(false))
+
+# ---------------------------------------------------------------------------
+# Setup: solid_queue is the active adapter.
+# ---------------------------------------------------------------------------
+- name: SolidQueue setup - {{ redmine_instance_name }}
+  when: active_solid_queue
+  block:
+    # MySQL would need its own queue-DB creation + GRANT path (untested); guard
+    # instead of shipping unverified logic. Add + test when first needed.
+    - name: Fail on unsupported adapter for SolidQueue - {{ redmine_instance_name }}
+      ansible.builtin.fail:
+        msg: >-
+          SolidQueue (queue_adapter: solid_queue) currently supports the
+          postgresql adapter only, but {{ redmine_instance_name }} uses
+          {{ active_db_adapter }}.
+      when: active_db_adapter != 'postgresql'
+
+    - name: Locate solid_queue gem - {{ redmine_instance_name }}
+      become: true
+      become_user: '{{ redmine_user }}'
+      ansible.builtin.command: bash -lc "bundle show solid_queue"
+      args:
+        chdir: '{{ redmine_app_dir }}'
+      register: solid_queue_gem_path
+      changed_when: false
+
+    # Copy the schema dump from the gem. Ansible reports "changed" exactly when a
+    # gem update brought a new schema version - our schema-change detector.
+    - name: Deploy queue_schema.rb from gem - {{ redmine_instance_name }}
+      become: true
+      become_user: '{{ redmine_user }}'
+      ansible.builtin.copy:
+        src: '{{ solid_queue_gem_path.stdout }}/lib/generators/solid_queue/install/templates/db/queue_schema.rb'
+        dest: '{{ redmine_app_dir }}/db/queue_schema.rb'
+        remote_src: true
+        owner: '{{ redmine_user }}'
+        group: '{{ redmine_group }}'
+        mode: '0644'
+      register: queue_schema_file
+
+    - name: Deploy SolidQueue worker configuration - {{ redmine_instance_name }}
+      ansible.builtin.template:
+        src: redmine/config/queue.yml.j2
+        dest: '{{ redmine_config_dir }}/queue.yml'
+        owner: '{{ redmine_user }}'
+        group: '{{ redmine_group }}'
+        mode: '0640'
+      register: queue_config_file
+
+    - name: Symlink to SolidQueue configuration - {{ redmine_instance_name }}
+      become: false
+      become_user: '{{ redmine_user }}'
+      ansible.builtin.file:
+        src: '{{ redmine_config_dir }}/queue.yml'
+        dest: '{{ redmine_app_dir }}/config/queue.yml'
+        state: link
+
+    - name: Create SolidQueue database - {{ redmine_instance_name }}
+      become_user: postgres
+      become: true
+      community.postgresql.postgresql_db:
+        name: '{{ redmine_queue_db_name }}'
+        owner: '{{ redmine_db_user }}'
+        state: present
+      register: queue_db
+      when: not (redmine_instance.db_skip_local_setup | default(false))
+
+    # Detect whether the schema is actually present, so a half-finished previous
+    # run (DB created but load failed) self-heals on the next run.
+    - name: Check whether SolidQueue tables exist - {{ redmine_instance_name }}
+      become_user: postgres
+      become: true
+      community.postgresql.postgresql_query:
+        login_db: '{{ redmine_queue_db_name }}'
+        query: "SELECT 1 FROM information_schema.tables WHERE table_name = 'solid_queue_jobs'"
+      register: solid_queue_tables
+      changed_when: false
+      when: not (redmine_instance.db_skip_local_setup | default(false))
+
+    # (Re)load the schema when the DB is new, the gem's schema changed, or the
+    # tables are missing (fresh DB / recovery from a failed run).
+    - name: Set SolidQueue schema-load flag - {{ redmine_instance_name }}
+      ansible.builtin.set_fact:
+        solid_queue_needs_schema_load: >-
+          {{ (queue_db.changed | default(false))
+             or queue_schema_file.changed
+             or ((solid_queue_tables.rowcount | default(1)) == 0) }}
+
+    # Stop the worker before reloading the schema so it does not run mid-reset.
+    # failed_when handles the first setup (no worker yet).
+    - name: Stop SolidQueue worker before schema load - {{ redmine_instance_name }}
+      ansible.builtin.systemd_service:
+        name: '{{ solid_queue_service_name }}'
+        state: stopped
+      failed_when: false
+      when: solid_queue_needs_schema_load | bool
+
+    # schema:load uses force: :cascade, so it (re)creates the solid_queue_* tables.
+    - name: Load SolidQueue schema - {{ redmine_instance_name }}
+      become: true
+      become_user: '{{ redmine_user }}'
+      environment:
+        RAILS_ENV: '{{ redmine_rails_env }}'
+        # schema:load:queue targets only the queue connection (transient jobs);
+        # Rails' production guard would otherwise block the destructive load.
+        DISABLE_DATABASE_ENVIRONMENT_CHECK: '1'
+      ansible.builtin.command: bash -lc "bundle exec rake db:schema:load:queue"
+      args:
+        chdir: '{{ redmine_app_dir }}'
+      register: queue_schema_load
+      changed_when: queue_schema_load.rc == 0
+      when: solid_queue_needs_schema_load | bool
+
+    - name: Install SolidQueue worker service - {{ redmine_instance_name }}
+      ansible.builtin.template:
+        src: etc/systemd/system/solid_queue.service.j2
+        dest: /etc/systemd/system/{{ solid_queue_service_name }}.service
+        owner: root
+        group: root
+        mode: '0644'
+      register: queue_service_file
+      notify: Reload systemd daemon
+
+    - name: Flush handlers so the new unit is known - {{ redmine_instance_name }}
+      ansible.builtin.meta: flush_handlers
+
+    - name: Enable and start SolidQueue worker - {{ redmine_instance_name }}
+      ansible.builtin.systemd_service:
+        name: '{{ solid_queue_service_name }}'
+        enabled: true
+        state: started
+
+    - name: Restart SolidQueue worker on config or schema change - {{ redmine_instance_name }}
+      ansible.builtin.systemd_service:
+        name: '{{ solid_queue_service_name }}'
+        state: restarted
+      when: >-
+        queue_service_file.changed
+        or queue_config_file.changed
+        or (queue_schema_load.changed | default(false))

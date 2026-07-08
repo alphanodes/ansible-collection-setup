@@ -68,6 +68,11 @@ config.active_job.queue_adapter = ActiveJob::QueueAdapters::AsyncAdapter.new min
 {% else %}
 # SEE https://github.com/mperham/sidekiq/wiki/Active-Job
 config.active_job.queue_adapter = :{{ queue_adapter }}
+{% if active_solid_queue %}
+# SolidQueue runs against its own dedicated queue database (single Redmine repo,
+# separate DB). Without connects_to it would use the primary DB.
+config.solid_queue.connects_to = { database: { writing: :queue } }
+{% endif %}
 {% endif %}
 {% endif %}
 {% if redmine_instance.with_bullet is defined %}

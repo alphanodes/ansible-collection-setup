@@ -86,6 +86,11 @@
     active_session_store: "{{ redmine_instance.session_store | default(redmine_session_store) }}"
     redmine_instance: "{{ redmine_instance | combine([{'error_404_enabled': true}]) }}"
     queue_adapter: "{{ redmine_instance.queue_adapter | default(redmine_queue_adapter) | default('') }}"
+    # Single source of truth for the whole SolidQueue setup/teardown: derived
+    # only from queue_adapter, so there is no separate flag that could disagree.
+    active_solid_queue: "{{ (redmine_instance.queue_adapter | default(redmine_queue_adapter)) == 'solid_queue' }}"
+    redmine_queue_db_name: '{{ redmine_db_name }}_queue'
+    solid_queue_service_name: solid-queue-{{ redmine_instance_name }}
     htpasswd_file: "/etc/nginx/.htpasswd_redmine_{{ redmine_instance_name }}"
     access_protection: "{{ redmine_instance.access_protection | default(redmine_access_protection) }}"
     with_alphanodes_enterprise_support: "{{ redmine_instance.with_alphanodes_enterprise_support | default(redmine_with_alphanodes_enterprise_support) }}"

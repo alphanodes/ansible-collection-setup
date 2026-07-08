@@ -11,6 +11,9 @@ gem 'puma'
 {% if active_with_redis %}
 gem 'redis'
 {% endif %}
+{% if active_solid_queue %}
+gem 'solid_queue'
+{% endif %}
 {% if redmine_instance.with_mysql2postgres is defined and redmine_instance.with_mysql2postgres %}
 gem 'mysql2postgres'
 {% endif %}

@@ -23,8 +23,8 @@ default:
 {% endif %}
 
   attachments_storage_path: {{ redmine_files_dir }}
-{% if redmine_instance.sudo_mode is defined and redmine_instance.sudo_mode %}
-  sudo_mode: true
+{% if redmine_instance.sudo_mode is defined %}
+  sudo_mode: {{ redmine_instance.sudo_mode | bool | lower }}
   sudo_mode_timeout: {{ redmine_instance.sudo_mode_timeout | default(15) }}
 {% endif %}
 {% if redmine_instance.database_cipher_key is defined and redmine_instance.database_cipher_key != '' %}

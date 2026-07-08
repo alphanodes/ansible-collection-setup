@@ -9,5 +9,7 @@
 /config/environments/postgres.rb
 /config/environments/sqlite3.rb
 /config/merge_projects.rb
+/config/queue.yml
 /public/assets
 /public/robots.txt
+/db/queue_schema.rb

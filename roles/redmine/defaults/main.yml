@@ -277,6 +277,17 @@ redmine_async_queue_min_threads: 1
 redmine_async_queue_max_threads: 2
 redmine_async_queue_idletime: 600.seconds
 
+# SolidQueue worker settings. Only take effect when an instance sets
+# queue_adapter: solid_queue - then a dedicated queue database, config/queue.yml
+# and a systemd worker service are set up (and removed again when the adapter is
+# switched back). The worker runs one process over all queues.
+redmine_solid_queue_worker_threads: 3
+redmine_solid_queue_dispatcher_polling_interval: 1
+redmine_solid_queue_worker_polling_interval: 0.5
+# Run the worker at reduced CPU/IO priority so it never competes with the web
+# frontend. Default is normal priority; set true per instance on busy servers.
+redmine_solid_queue_low_priority: false
+
 # used for creating redmine_home = redmine_base_dir/{{ redmine_instance_name }}
 redmine_base_dir: '{{ srv_path }}'
 

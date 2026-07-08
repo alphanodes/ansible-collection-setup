@@ -1,6 +1,59 @@
 ---
 {{ managed_by_ansible | comment }}
 
+{% if active_solid_queue %}
+{# SolidQueue needs a 3-tier config (primary + dedicated queue DB). The primary
+   block mirrors the flat config below, just nested one level deeper. #}
+{{ redmine_rails_env }}:
+  primary:
+    adapter: {{ active_db_adapter }}
+    database: {{ redmine_db_name }}
+{% if active_db_host != '' %}
+    host: {{ active_db_host }}
+{% if redmine_instance.db_port is defined %}
+    port: {{ redmine_instance.db_port }}
+{% endif %}
+{% else %}
+{% if active_db_adapter == 'mysql' and active_mysql_socket != '' %}
+    socket: {{ active_mysql_socket }}
+{% endif %}
+{% endif %}
+    username: {{ redmine_db_user }}
+    password: "{{ redmine_instance.db_password | default(redmine_db_password) }}"
+    encoding: {{ active_db_encoding }}
+{% if active_db_adapter == 'postgresql' %}
+    schema_search_path: public
+    variables:
+      statement_timeout: <%= ENV["DB_STATEMENT_TIMEOUT"] || {{ redmine_instance.db_statement_timeout | default(redmine_db_statement_timeout) }} %>
+{% else %}
+    variables:
+      max_execution_time: <%= ENV["DB_STATEMENT_TIMEOUT"] || {{ redmine_instance.db_statement_timeout | default(redmine_db_statement_timeout) }} %>
+      transaction_isolation: "READ-COMMITTED"
+{% endif %}
+{% if redmine_instance.db_pool is defined or real_db_pool != 0 %}
+    pool: {{ redmine_instance.db_pool | default(real_db_pool) }}
+{% endif %}
+  queue:
+    adapter: {{ active_db_adapter }}
+    database: {{ redmine_queue_db_name }}
+{% if active_db_host != '' %}
+    host: {{ active_db_host }}
+{% if redmine_instance.db_port is defined %}
+    port: {{ redmine_instance.db_port }}
+{% endif %}
+{% else %}
+{% if active_db_adapter == 'mysql' and active_mysql_socket != '' %}
+    socket: {{ active_mysql_socket }}
+{% endif %}
+{% endif %}
+    username: {{ redmine_db_user }}
+    password: "{{ redmine_instance.db_password | default(redmine_db_password) }}"
+    encoding: {{ active_db_encoding }}
+{% if active_db_adapter == 'postgresql' %}
+    schema_search_path: public
+{% endif %}
+    migrations_paths: db/queue_migrate
+{% else %}
 {{ redmine_rails_env }}:
   adapter: {{ active_db_adapter }}
   database: {{ redmine_db_name }}
@@ -28,6 +81,7 @@
 {% endif %}
 {% if redmine_instance.db_pool is defined or real_db_pool != 0 %}
   pool: {{ redmine_instance.db_pool | default(real_db_pool) }}
+{% endif %}
 {% endif %}
 {% if redmine_instance.merge_projects_db_name is defined %}
 

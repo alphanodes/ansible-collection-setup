@@ -1,0 +1,49 @@
+[Unit]
+Description=SolidQueue worker for Redmine ({{ redmine_instance_name }})
+{% if active_db_adapter == 'postgresql' %}
+After=postgresql.service
+{% else %}
+After=mysql.service
+{% endif %}
+
+[Service]
+User={{ redmine_instance_name }}
+Group={{ redmine_instance_name }}
+WorkingDirectory={{ redmine_app_dir }}
+{% if redmine_ruby_opt != '' %}
+Environment="RUBYOPT={{ redmine_ruby_opt }}"
+{% endif %}
+{% if redmine_with_jemalloc %}
+Environment="LD_PRELOAD=libjemalloc.so.2"
+Environment="MALLOC_CONF={{ redmine_jemalloc_conf }}"
+{% else %}
+Environment=MALLOC_ARENA_MAX=2
+{% endif %}
+Environment="RAILS_ROOT={{ redmine_app_dir }}"
+Environment="RAILS_ENV={{ redmine_rails_env }}"
+Environment="HOME={{ redmine_home }}"
+Environment="USER={{ redmine_instance_name }}"
+# Automation schedules via its own systemd timer, so SolidQueue's recurring
+# scheduler is not needed - skipping it avoids an idle scheduler thread.
+Environment="SOLID_QUEUE_SKIP_RECURRING=true"
+{% if redmine_instance.env_vars is defined -%}
+{% for env_var in redmine_instance.env_vars -%}
+Environment="{{ env_var.name }}={{ env_var.value }}"
+{% endfor %}
+{% endif %}
+{% if redmine_use_rvm %}
+ExecStart={{ redmine_home }}/.rvm/wrappers/default/bundle exec rake solid_queue:start
+{% else %}
+Environment="GEM_HOME={{ redmine_ruby_system_gem_home }}"
+ExecStart={{ redmine_ruby_system_gem_home }}/bin/bundle exec rake solid_queue:start
+{% endif %}
+SyslogIdentifier={{ solid_queue_service_name }}
+{% if redmine_instance.solid_queue_low_priority | default(redmine_solid_queue_low_priority) %}
+Nice=19
+IOSchedulingClass=idle
+{% endif %}
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

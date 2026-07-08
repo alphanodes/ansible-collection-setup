@@ -1,0 +1,17 @@
+{{ managed_by_ansible | comment }}
+# SolidQueue worker for {{ redmine_instance_name }}. One worker drains all queues
+# (event_rules, scheduled, mailers, default). The recurring scheduler is disabled
+# via SOLID_QUEUE_SKIP_RECURRING in the systemd unit (Automation schedules through
+# its own systemd timer).
+default: &default
+  dispatchers:
+    - polling_interval: {{ redmine_solid_queue_dispatcher_polling_interval }}
+      batch_size: 500
+  workers:
+    - queues: "*"
+      threads: {{ redmine_instance.solid_queue_worker_threads | default(redmine_solid_queue_worker_threads) }}
+      processes: 1
+      polling_interval: {{ redmine_solid_queue_worker_polling_interval }}
+
+{{ redmine_rails_env }}:
+  <<: *default
