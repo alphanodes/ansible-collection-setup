@@ -7,7 +7,7 @@ matomo_available_plugins:
     use_git: true
     repo: https://github.com/matomo-org/plugin-CustomVariables.git
     download: https://github.com/matomo-org/plugin-CustomVariables/archive/%%version%%.tar.gz
-    version: 5.0.5
+    version: 5.0.6
   QueuedTracking:
     use_git: false
     repo: https://github.com/matomo-org/plugin-QueuedTracking.git
@@ -17,8 +17,8 @@ matomo_available_plugins:
     use_git: true
     repo: https://github.com/matomo-org/plugin-LoginLdap.git
     download: https://github.com/matomo-org/plugin-LoginLdap/archive/%%version%%.tar.gz
-    version: 5.2.1
-    branch: 5.2.1
+    version: 5.2.2
+    branch: 5.2.2
   MarketingCampaignsReporting:
     use_git: true
     repo: https://github.com/matomo-org/plugin-MarketingCampaignsReporting.git
@@ -29,7 +29,7 @@ matomo_available_plugins:
     use_git: true
     repo: https://github.com/matomo-org/plugin-Migration.git
     download: https://github.com/matomo-org/plugin-Migration/archive/%%version%%.tar.gz
-    version: 5.0.7
+    version: 5.0.8
   Provider:
     use_git: true
     repo: https://github.com/matomo-org/plugin-Provider.git
