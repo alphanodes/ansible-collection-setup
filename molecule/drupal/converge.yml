@@ -37,6 +37,9 @@
     drupal_with_zsh: false
     drupal_with_memcache: false
 
+    # drush is pulled in as a role dependency but is not part of this scenario
+    drush_install: false
+
     drupal_instances:
       - name: drupal
         server_name: drupal.local
@@ -121,6 +124,18 @@
     - name: Include php_fpm role
       ansible.builtin.include_role:
         name: alphanodes.setup.php_fpm
+
+    # instance tasks are covered by the nginx_mono block below, so only the
+    # package setup of the drupal role is executed here
+    - name: Load drupal role vars
+      ansible.builtin.include_role:
+        name: alphanodes.setup.drupal
+        tasks_from: include-vars
+
+    - name: Include drupal role package setup
+      ansible.builtin.include_role:
+        name: alphanodes.setup.drupal
+        tasks_from: setup
 
     - name: Install nginx package for conf.d directory
       ansible.builtin.apt:

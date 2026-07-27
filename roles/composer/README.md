@@ -49,6 +49,17 @@ If `true`, and if you have a project that requires Composer's `vendor/bin` direc
 
 GitHub OAuth token, used to avoid GitHub API rate limiting errors when building and rebuilding applications using Composer. Follow GitHub's directions to [Create a personal access token](https://help.github.com/articles/creating-an-access-token-for-command-line-use/) if you run into these rate limit errors.
 
+    composer_auth_homes: []
+
+Additional `COMPOSER_HOME` directories which should receive the same `auth.json`. Composer reads the `auth.json` from the `HOME` of the user running it, so a deploy user running `composer install` on its own does not see the token written to `composer_home_path`. Each list item needs an absolute `path` and an `owner`, `group` defaults to `owner`:
+
+    composer_auth_homes:
+      - path: /srv/drupal/.composer
+        owner: drupal
+        group: drupal
+
+The files are written with mode `0600` and are managed by this role, so local modifications are overwritten on the next run. Requires `composer_github_oauth_token` to be set.
+
     php_executable: php
 
 The executable name or full path to the PHP executable. This is defaulted to `php` if you don't override the variable.

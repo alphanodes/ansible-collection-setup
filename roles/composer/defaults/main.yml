@@ -23,3 +23,12 @@ composer_add_project_to_path: false
 
 # GitHub OAuth token (used to help overcome API rate limits).
 composer_github_oauth_token: ''
+
+# Additional COMPOSER_HOME directories which should receive the auth.json.
+# Required for deploy users running composer on their own, because composer
+# reads the auth.json from the HOME of the executing user. Paths must be
+# absolute, group defaults to owner.
+composer_auth_homes: []
+# - path: /srv/drupal/.composer
+#   owner: drupal
+#   group: drupal

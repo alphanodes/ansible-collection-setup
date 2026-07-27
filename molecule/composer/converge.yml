@@ -31,6 +31,28 @@
           - unzip
         state: present
 
+    - name: Create deploy user for composer_auth_homes test
+      ansible.builtin.user:
+        name: deploy
+        system: true
+        home: /srv/deploy
+        shell: /bin/bash
+        create_home: true
+
     - name: Include composer role
       ansible.builtin.include_role:
         name: alphanodes.setup.composer
+
+    # separate run, because the fake token must not end up in the global
+    # composer home, where it would break composer global require
+    - name: Include composer role to test auth.json for deploy users
+      ansible.builtin.include_role:
+        name: alphanodes.setup.composer
+      vars:
+        composer_home_path: /tmp/composer_auth_test
+        composer_global_packages: []
+        composer_github_oauth_token: 'test_token_not_a_real_credential'
+        composer_auth_homes:
+          - path: /srv/deploy/.composer
+            owner: deploy
+            group: deploy

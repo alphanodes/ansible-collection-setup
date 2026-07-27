@@ -72,6 +72,31 @@
     mode: '0644'
   when: composer_github_oauth_token | length > 0
 
+- name: Add GitHub OAuth token for additional composer homes
+  when: composer_github_oauth_token | length > 0
+  block:
+    - name: Ensure additional composer directories exist
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        owner: "{{ item.owner }}"
+        group: "{{ item.group | default(item.owner) }}"
+        state: directory
+        mode: '0755'
+      loop: "{{ composer_auth_homes }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: Add GitHub OAuth token to additional composer homes
+      ansible.builtin.template:
+        src: "auth.json.j2"
+        dest: "{{ item.path }}/auth.json"
+        owner: "{{ item.owner }}"
+        group: "{{ item.group | default(item.owner) }}"
+        mode: '0600'
+      loop: "{{ composer_auth_homes }}"
+      loop_control:
+        label: "{{ item.path }}"
+
 - name: Install global packages
   ansible.builtin.include_tasks: global-require.yml
   when: composer_global_packages | length > 0

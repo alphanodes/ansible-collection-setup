@@ -43,6 +43,17 @@
           - fpm_status.stdout == 'active'
         fail_msg: "PHP-FPM is not running"
 
+    - name: Check unzip is installed
+      ansible.builtin.command: unzip -v
+      register: unzip_check
+      changed_when: false
+
+    - name: Assert unzip is installed
+      ansible.builtin.assert:
+        that:
+          - unzip_check.rc == 0
+        fail_msg: "unzip is not installed"
+
     - name: Check drupal vhost exists in sites-available
       ansible.builtin.stat:
         path: /etc/nginx/sites-available/drupal.conf

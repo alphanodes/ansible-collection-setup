@@ -36,6 +36,31 @@
           - phpunit_installed.stat.exists
         fail_msg: "PHPUnit was not installed globally"
 
+    - name: Check auth.json in additional composer home
+      ansible.builtin.stat:
+        path: /srv/deploy/.composer/auth.json
+      register: deploy_auth_json
+
+    - name: Verify auth.json for deploy user
+      ansible.builtin.assert:
+        that:
+          - deploy_auth_json.stat.exists
+          - deploy_auth_json.stat.pw_name == 'deploy'
+          - deploy_auth_json.stat.gr_name == 'deploy'
+          - deploy_auth_json.stat.mode == '0600'
+        fail_msg: "auth.json for deploy user is missing or has wrong ownership/permissions"
+
+    - name: Read auth.json of deploy user
+      ansible.builtin.slurp:
+        src: /srv/deploy/.composer/auth.json
+      register: deploy_auth_content
+
+    - name: Verify auth.json contains the configured token
+      ansible.builtin.assert:
+        that:
+          - (deploy_auth_content.content | b64decode | from_json)['github-oauth']['github.com'] == 'test_token_not_a_real_credential'
+        fail_msg: "auth.json does not contain the configured token"
+
     - name: Check if composer PATH script exists
       ansible.builtin.stat:
         path: /etc/profile.d/composer.sh
