@@ -75,7 +75,24 @@ rspamd_whitelist_ip: []
 rspamd_whitelist_from: []
 rspamd_blacklist_ip: []
 rspamd_blacklist_from: []
+
+# Timeouts of network-bound checks. A scan is capped by task_timeout (8s by
+# default), so no single check may be allowed to stall anywhere near that
+# long - otherwise one unreachable service delays every message.
+rspamd_dns_timeout: 2s
+rspamd_dns_retransmits: 2
+rspamd_fuzzy_timeout: 2s
+rspamd_fuzzy_retransmits: 1
+rspamd_fuzzy_servers: ''  # Empty = upstream default server list
+
+# Proxy worker (milter endpoint)
+rspamd_proxy_timeout: 120s
+rspamd_proxy_max_retries: 5
 ```
+
+To find out which check is responsible for slow scans, set
+`rspamd_log_level: info` temporarily - rspamd then logs a per-message line
+with the total scan time and the time of each symbol.
 
 ## Dependencies
 

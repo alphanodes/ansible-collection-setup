@@ -53,3 +53,25 @@
       register: unbound_active
       changed_when: false
       failed_when: unbound_active.stdout != 'active'
+
+    - name: Read deployed unbound config
+      ansible.builtin.slurp:
+        src: /etc/unbound/unbound.conf.d/ansible.conf
+      register: unbound_conf
+
+    - name: Verify cache sizes and prefetch are configured
+      vars:
+        conf: '{{ unbound_conf.content | b64decode }}'
+      ansible.builtin.assert:
+        that:
+          - "'msg-cache-size: 32m' in conf"
+          - "'rrset-cache-size: 64m' in conf"
+          - "'prefetch: yes' in conf"
+          - "'prefetch-key: yes' in conf"
+        fail_msg: 'unbound tuning options missing from ansible.conf'
+
+    - name: Verify unbound accepts the full configuration
+      ansible.builtin.command: unbound-checkconf
+      register: unbound_checkconf
+      changed_when: false
+      failed_when: unbound_checkconf.rc != 0

@@ -8,3 +8,7 @@ server:
 {% else %}
     interface: ::1
 {% endif %}
+    msg-cache-size: {{ unbound_msg_cache_size }}
+    rrset-cache-size: {{ unbound_rrset_cache_size }}
+    prefetch: {{ unbound_prefetch | ternary('yes', 'no') }}
+    prefetch-key: {{ unbound_prefetch_key | ternary('yes', 'no') }}

@@ -137,6 +137,38 @@
       ansible.builtin.command: grep -q 'allow_username_mismatch = true' /etc/rspamd/local.d/dkim_signing.conf
       changed_when: false
 
+    # A single unreachable external service must not be able to push a scan
+    # into the task_timeout cap, so the worst case of every network-bound
+    # check is asserted explicitly.
+    - name: Read fuzzy_check configuration
+      ansible.builtin.slurp:
+        src: /etc/rspamd/local.d/fuzzy_check.conf
+      register: fuzzy_conf
+
+    - name: Verify fuzzy check worst case stays below task_timeout
+      vars:
+        conf: '{{ fuzzy_conf.content | b64decode }}'
+      ansible.builtin.assert:
+        that:
+          - "'timeout = 2s;' in conf"
+          - "'retransmits = 1;' in conf"
+          - "'rule \"rspamd.com\"' not in conf"
+        fail_msg: 'fuzzy_check timeouts not applied, or server override present unexpectedly'
+
+    - name: Read rspamd options
+      ansible.builtin.slurp:
+        src: /etc/rspamd/local.d/options.inc
+      register: options_conf
+
+    - name: Verify DNS timeout and retransmits are applied
+      vars:
+        conf: '{{ options_conf.content | b64decode }}'
+      ansible.builtin.assert:
+        that:
+          - "'timeout = 2s;' in conf"
+          - "'retransmits = 2;' in conf"
+        fail_msg: 'rspamd DNS timeouts not applied'
+
     - name: Verify nginx vhost file exists
       ansible.builtin.stat:
         path: /etc/nginx/sites-available/rspamd.conf

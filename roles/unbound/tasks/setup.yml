@@ -16,6 +16,7 @@
     owner: root
     group: root
     mode: '0644'
+    validate: unbound-checkconf %s
   notify: Restart unbound
 
 # The distro-provided unbound-resolvconf.service registers unbound with

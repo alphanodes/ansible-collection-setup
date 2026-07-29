@@ -21,6 +21,19 @@ unbound_root_key_file: /var/lib/unbound/root.key
 unbound_user: unbound
 unbound_group: unbound
 
+# Cache sizes. The built-in default is 4m each, which is sparse for a host
+# doing sustained lookups (mail filtering, monitoring). The rrset cache should
+# be about twice the message cache.
+unbound_msg_cache_size: 32m
+unbound_rrset_cache_size: 64m
+
+# Refresh popular records shortly before they expire, so a lookup that would
+# otherwise hit an expired entry is answered from cache instead of waiting for
+# a recursion. Costs roughly 10% more outgoing queries.
+unbound_prefetch: true
+# Same for DNSKEY records, which speeds up DNSSEC validation.
+unbound_prefetch_key: true
+
 # Mask the distro-provided unbound-resolvconf.service helper. It registers
 # unbound with resolvconf, which conflicts with systemd-resolved or an
 # Ansible-managed static /etc/resolv.conf. Defaults to false so that direct

@@ -100,6 +100,31 @@ rspamd_dns_enable_dnssec: true  # Enable DNSSEC validation
 rspamd_local_addrs: '127.0.0.0/8, ::1'  # Local networks
 rspamd_url_redirector_timeout: 10  # URL redirector timeout in seconds
 
+# Queries go to a local resolver on loopback, so packet loss is not a concern:
+# a timeout there means the resolver is still recursing, and retransmitting
+# only adds load. Keep the timeout above the usual recursion time and the
+# retransmit count low, so that a hanging lookup cannot stall a scan long
+# enough to reach task_timeout (8s by default).
+rspamd_dns_timeout: 2s
+rspamd_dns_retransmits: 2
+
+# Proxy worker (milter endpoint for postfix)
+# see https://docs.rspamd.com/workers/rspamd_proxy
+rspamd_proxy_timeout: 120s  # I/O timeout for milter connections
+rspamd_proxy_max_retries: 5  # Retries for upstream connections
+
+# Fuzzy check
+# see https://docs.rspamd.com/modules/fuzzy_check
+# The fuzzy servers are external and reached over UDP, so every attempt
+# against an unreachable server costs a full timeout. Both values are kept low
+# so that a fuzzy outage cannot stall a scan long enough to reach task_timeout
+# (8s by default), which would delay every single message.
+rspamd_fuzzy_timeout: 2s
+rspamd_fuzzy_retransmits: 1
+# Override the server list of the default "rspamd.com" rule. Empty means keep
+# the upstream default, which is the normal case.
+rspamd_fuzzy_servers: ''
+
 # DMARC Reporting configuration
 # see https://docs.rspamd.com/modules/dmarc
 # Rspamd can send DMARC aggregate reports to other domains when receiving mail

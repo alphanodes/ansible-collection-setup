@@ -1,12 +1,15 @@
 # Rspamd fuzzy check - local overrides
 # see https://docs.rspamd.com/modules/fuzzy_check
 
-# Increase timeout and retransmits for more reliable fuzzy checks
-timeout = 5s;
-retransmits = 2;
+# The fuzzy servers are external and reached over UDP, so every attempt
+# against an unreachable server costs a full timeout. Both values are kept low
+# so a fuzzy outage cannot push a scan into the task_timeout cap.
+timeout = {{ rspamd_fuzzy_timeout | default('2s') }};
+retransmits = {{ rspamd_fuzzy_retransmits | default(1) }};
+{% if rspamd_fuzzy_servers | default('') | length > 0 %}
 
-# Override rule to use only working fuzzy servers
-# fuzzy1.rspamd.com (217.154.45.100) has connectivity issues since 4.0.0 migration
+# Override the server list of the default rule
 rule "rspamd.com" {
-  servers = "round-robin:fuzzy2.rspamd.com:11335,fuzzy1.rspamd.com:11335";
+  servers = "{{ rspamd_fuzzy_servers }}";
 }
+{% endif %}

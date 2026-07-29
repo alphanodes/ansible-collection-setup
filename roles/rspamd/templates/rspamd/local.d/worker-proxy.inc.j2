@@ -4,8 +4,8 @@
 # Enable milter protocol
 milter = yes;
 
-# Timeout for processing
-timeout = 120s;
+# I/O timeout for milter connections
+timeout = {{ rspamd_proxy_timeout | default('120s') }};
 
 # Upstream configuration
 upstream "local" {
@@ -19,5 +19,5 @@ upstream "local" {
 # Bind to localhost only (security)
 bind_socket = "localhost:11332";
 
-# Maximum message size (500MB - should match postfix_message_size_limit)
-max_retries = 5;
+# Maximum number of retries for upstream connections
+max_retries = {{ rspamd_proxy_max_retries | default(5) }};

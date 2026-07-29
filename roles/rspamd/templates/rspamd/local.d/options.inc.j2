@@ -6,11 +6,13 @@ dns {
   # Use local unbound DNS resolver (avoid public DNS like 8.8.8.8)
   nameserver = ["127.0.0.1:53"];
 
-  # DNS timeout
-  timeout = 1s;
+  # DNS timeout. Must stay above the usual recursion time of the local
+  # resolver, otherwise rspamd retransmits while the resolver is still working.
+  timeout = {{ rspamd_dns_timeout | default('2s') }};
 
-  # Number of retransmits for failed requests
-  retransmits = 5;
+  # Number of retransmits for failed requests. Low on purpose: the resolver is
+  # on loopback, so a missing answer never means a lost packet.
+  retransmits = {{ rspamd_dns_retransmits | default(2) }};
 
   # Enable DNSSEC validation
   enable_dnssec = {{ rspamd_dns_enable_dnssec | default('true') }};
