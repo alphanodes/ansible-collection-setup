@@ -24,7 +24,10 @@ jobs:
       matrix:
         distro:
           - ubuntu2404
-          - ubuntu2604
+          # ubuntu2604 (resolute) is missing on purpose: rspamd.com/apt-stable
+          # only ships bullseye, bookworm, trixie, jammy and noble, so apt
+          # update fails on a release the upstream repository does not know.
+          # Add it back once resolute appears there.
           - debian12
           - debian13
 

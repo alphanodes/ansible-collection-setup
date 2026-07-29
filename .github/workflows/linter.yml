@@ -75,7 +75,10 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # 24 is the lowest version the dependency tree still installs on:
+          # ini 7 requires ^22.22.2 || ^24.15.0 || >=26.0.0, so yarn install
+          # aborts on 20.
+          node-version: '24'
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
