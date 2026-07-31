@@ -88,11 +88,35 @@ rspamd_fuzzy_servers: ''  # Empty = upstream default server list
 # Proxy worker (milter endpoint)
 rspamd_proxy_timeout: 120s
 rspamd_proxy_max_retries: 5
+
+# Checks skipped for authenticated senders. These rate the sender, which is
+# pointless once it has authenticated, and their lookups are the main source
+# of stalled outgoing scans. URL blacklists are not part of this and keep
+# running in both directions. Empty list = scan authenticated senders fully.
+rspamd_authenticated_symbols_disabled:
+  - ASN_CHECK
+  - RSPAMD_URIBL
+  - RSPAMD_EMAILBL
 ```
 
-To find out which check is responsible for slow scans, set
-`rspamd_log_level: info` temporarily - rspamd then logs a per-message line
-with the total scan time and the time of each symbol.
+### Diagnosing slow scans
+
+Set `rspamd_log_level: info` temporarily. rspamd then writes one
+`rspamd_task_write_log` line per message with the total scan time, the DNS
+request count and the symbols that fired:
+
+```bash
+journalctl -u rspamd --since "-24 hours" -o cat \
+  | grep -oE "time: [0-9.]+ms, dns req: [0-9]+"
+```
+
+Outgoing mail carries the `LOCAL_OUTBOUND` symbol and can be filtered out
+separately. Scan times clustering on an exact value (4000 ms, 8000 ms) point
+at a timeout rather than at slow processing: a check whose lookup never gets
+answered burns its full timeout budget on every message. A `*_FAIL` symbol
+such as `RSPAMD_URIBL_FAIL` names the check that gave up.
+
+Set the level back to `warning` afterwards - `info` logs every single message.
 
 ## Dependencies
 

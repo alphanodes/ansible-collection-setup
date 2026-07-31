@@ -125,6 +125,22 @@ rspamd_fuzzy_retransmits: 1
 # the upstream default, which is the normal case.
 rspamd_fuzzy_servers: ''
 
+# Checks skipped for authenticated senders (settings module)
+# see https://docs.rspamd.com/configuration/settings
+# These lookups judge the sender, which is pointless once the sender has
+# authenticated, and they are served by rspamd.com's own DNS, which stalls
+# often enough to push outgoing mail past a client's SMTP read timeout. A
+# hanging lookup costs the full DNS worst case per message.
+# Deliberately NOT listed: the URL blacklists (Spamhaus DBL, SURBL). Those
+# catch a compromised account sending phishing links and stay enabled in both
+# directions. Symbols are disabled individually rather than by group so that
+# ARC and DKIM signing are never touched.
+# Set to an empty list to scan authenticated senders like anyone else.
+rspamd_authenticated_symbols_disabled:
+  - ASN_CHECK
+  - RSPAMD_URIBL
+  - RSPAMD_EMAILBL
+
 # DMARC Reporting configuration
 # see https://docs.rspamd.com/modules/dmarc
 # Rspamd can send DMARC aggregate reports to other domains when receiving mail

@@ -155,6 +155,30 @@
           - "'rule \"rspamd.com\"' not in conf"
         fail_msg: 'fuzzy_check timeouts not applied, or server override present unexpectedly'
 
+    # configtest only proves the file parses. This proves rspamd actually
+    # merged the block into its settings section, which is where a wrongly
+    # nested override would silently end up doing nothing.
+    - name: Dump effective rspamd settings
+      ansible.builtin.command: rspamadm configdump settings
+      register: rspamd_settings
+      changed_when: false
+
+    - name: Verify authenticated senders skip the sender-rating checks
+      ansible.builtin.assert:
+        that:
+          - "'authenticated' in rspamd_settings.stdout"
+          - "'ASN_CHECK' in rspamd_settings.stdout"
+          - "'RSPAMD_URIBL' in rspamd_settings.stdout"
+          - "'RSPAMD_EMAILBL' in rspamd_settings.stdout"
+        fail_msg: 'settings.conf did not reach the effective settings section'
+
+    - name: Verify URL blacklists are not disabled for authenticated senders
+      ansible.builtin.assert:
+        that:
+          - "'URIBL_BLACK' not in rspamd_settings.stdout"
+          - "'DBL' not in rspamd_settings.stdout"
+        fail_msg: 'URL blacklists must stay enabled for authenticated senders'
+
     - name: Read rspamd options
       ansible.builtin.slurp:
         src: /etc/rspamd/local.d/options.inc

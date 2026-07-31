@@ -1,0 +1,15 @@
+# Rspamd settings - per-message check overrides
+# see https://docs.rspamd.com/configuration/settings
+{% if rspamd_authenticated_symbols_disabled | default([]) | length > 0 %}
+
+# Authenticated senders are our own users, so checks that rate the sender add
+# no protection here - they only add the latency of their DNS lookups to every
+# outgoing message. URL blacklists are not part of this and keep running.
+authenticated {
+  priority = high;
+  authenticated = yes;
+  apply {
+    symbols_disabled = [{% for symbol in rspamd_authenticated_symbols_disabled %}"{{ symbol }}"{% if not loop.last %}, {% endif %}{% endfor %}];
+  }
+}
+{% endif %}
