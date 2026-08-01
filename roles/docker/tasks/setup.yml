@@ -34,10 +34,48 @@
   tags:
     - skip_ansible_lint
 
+# A previously set hold would block any version change, so it has to go before
+# the install task runs. It is only released when the installed version does
+# not match the pin (or the pin was dropped), otherwise every run would report
+# a change and the role would not be idempotent.
+- name: Get held packages
+  ansible.builtin.command: apt-mark showhold
+  register: docker_held_packages
+  changed_when: false
+
+- name: Gather package facts
+  ansible.builtin.package_facts:
+    manager: apt
+
+- name: Release hold on Docker packages before a version change
+  ansible.builtin.dpkg_selections:
+    name: '{{ item }}'
+    selection: install
+  loop: '{{ docker_versioned_packages }}'
+  when:
+    - item in docker_held_packages.stdout_lines
+    - not docker_version
+      or item not in ansible_facts.packages
+      or not ansible_facts.packages[item][0].version.startswith(docker_version)
+
 - name: Ensure Docker packages are installed
   ansible.builtin.apt:
-    name: '{{ docker_packages }}'
+    name: >-
+      {{ docker_packages
+         if not docker_version
+         else (docker_packages | difference(docker_versioned_packages))
+              + (docker_versioned_packages | map('regex_replace', '$', '=' ~ docker_version ~ '*') | list) }}
     state: present
+    allow_downgrade: '{{ docker_version | length > 0 }}'
+
+# Holding the pinned packages keeps apt dist-upgrade (system updates) from
+# moving them. Clearing docker_version releases the hold again.
+- name: Hold Docker packages at pinned version
+  ansible.builtin.dpkg_selections:
+    name: '{{ item }}'
+    selection: hold
+  loop: '{{ docker_versioned_packages }}'
+  when: docker_version | length > 0
 
 - name: Compose tasks
   ansible.builtin.include_tasks: compose.yml

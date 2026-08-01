@@ -6,6 +6,18 @@ docker_packages:
   - docker-ce-cli
   - containerd.io
 
+# Pin docker-ce to a specific version, e.g. '5:29.6.2'. The version is matched
+# as a prefix, so the distribution suffix does not have to be spelled out.
+# Pinned packages are held afterwards, so a later apt dist-upgrade cannot move
+# them. Leave empty to install the latest available version.
+docker_version: ''
+
+# Packages that follow docker_version. containerd.io is versioned separately
+# upstream and stays unpinned.
+docker_versioned_packages:
+  - docker-ce
+  - docker-ce-cli
+
 docker_apt_url: https://download.docker.com/linux/{{ ansible_facts.distribution | lower }}
 docker_apt_signed_by: https://download.docker.com/linux/{{ ansible_facts.distribution | lower }}/gpg
 docker_apt_suites: '{{ ansible_facts.distribution_release }}'

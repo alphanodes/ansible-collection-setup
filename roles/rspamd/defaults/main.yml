@@ -125,6 +125,16 @@ rspamd_fuzzy_retransmits: 1
 # the upstream default, which is the normal case.
 rspamd_fuzzy_servers: ''
 
+# Neural network module
+# see https://docs.rspamd.com/modules/neural
+# Upstream ships this disabled; some builds enable it anyway. It is kept off
+# deliberately: the ANN profile is keyed by the set of active symbols, so every
+# configuration change invalidates it and sample collection restarts from zero.
+# A config-managed host therefore never reaches a trained model, while the
+# module still costs scan time (NEURAL_CHECK is a synchronous rule) and logs a
+# "no trained blob" warning for every message.
+rspamd_neural_enabled: false
+
 # Checks skipped for authenticated senders (settings module)
 # see https://docs.rspamd.com/configuration/settings
 # These lookups judge the sender, which is pointless once the sender has

@@ -88,6 +88,7 @@
     - dmarc.conf
     - fuzzy_check.conf
     - settings.conf
+    - neural.conf
 
 - name: Configure manual whitelists and blacklists
   ansible.builtin.template:

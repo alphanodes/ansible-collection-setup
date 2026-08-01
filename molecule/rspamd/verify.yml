@@ -179,6 +179,12 @@
           - "'DBL' not in rspamd_settings.stdout"
         fail_msg: 'URL blacklists must stay enabled for authenticated senders'
 
+    - name: Verify the neural module is off
+      ansible.builtin.command: rspamadm configdump neural
+      register: rspamd_neural
+      changed_when: false
+      failed_when: '"enabled = false" not in rspamd_neural.stdout'
+
     - name: Read rspamd options
       ansible.builtin.slurp:
         src: /etc/rspamd/local.d/options.inc

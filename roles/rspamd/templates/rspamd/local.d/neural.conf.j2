@@ -1,0 +1,5 @@
+# Rspamd neural network module
+# see https://docs.rspamd.com/modules/neural
+# Set rspamd_neural_enabled to turn this on. See defaults/main.yml for why it
+# is off by default on a configuration-managed host.
+enabled = {{ rspamd_neural_enabled | default(false) | ternary('true', 'false') }};

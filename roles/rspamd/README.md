@@ -97,6 +97,11 @@ rspamd_authenticated_symbols_disabled:
   - ASN_CHECK
   - RSPAMD_URIBL
   - RSPAMD_EMAILBL
+
+# Neural network module. Off by default: its ANN profile is keyed by the set
+# of active symbols, so every configuration change invalidates it and sample
+# collection restarts. A config-managed host never reaches a trained model.
+rspamd_neural_enabled: false
 ```
 
 ### Diagnosing slow scans

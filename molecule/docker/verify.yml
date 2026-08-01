@@ -5,8 +5,29 @@
   tasks:
     - name: Check docker version
       ansible.builtin.command: docker --version
-      register: docker_version
+      register: docker_version_output
       changed_when: false
+
+    - name: Check pinned docker version is installed
+      ansible.builtin.assert:
+        that:
+          - "'29.6.2' in docker_version_output.stdout"
+        fail_msg: >-
+          Expected pinned docker 29.6.2, got: {{ docker_version_output.stdout }}
+
+    - name: Get held packages
+      ansible.builtin.command: apt-mark showhold
+      register: docker_held_packages
+      changed_when: false
+
+    - name: Check pinned packages are held against dist-upgrade
+      ansible.builtin.assert:
+        that:
+          - "'docker-ce' in docker_held_packages.stdout_lines"
+          - "'docker-ce-cli' in docker_held_packages.stdout_lines"
+        fail_msg: >-
+          Expected docker-ce and docker-ce-cli on hold, got:
+          {{ docker_held_packages.stdout_lines }}
 
     - name: Check if docker-compose is installed
       ansible.builtin.stat:
@@ -33,7 +54,8 @@
       ansible.builtin.debug:
         msg:
           - "=== DOCKER ROLE TESTS ==="
-          - "Docker version: {{ docker_version.stdout }}"
+          - "Docker version: {{ docker_version_output.stdout }}"
+          - "Held packages: {{ docker_held_packages.stdout_lines }}"
           - "Docker-compose installed: {{ 'OK' if docker_compose_bin.stat.exists else 'FAILED' }}"
           - "Docker-compose version: {{ docker_compose_version.stdout | default('N/A') }}"
           - "Docker apt repo: {{ 'OK' if docker_repo.stat.exists else 'FAILED' }}"

@@ -12,6 +12,9 @@
 
   vars:
     docker_with_compose: true
+    # Covers the pinning path: versioned install plus dpkg hold. Mirrors what
+    # the CI runner hosts use, so a version bump there is tested here first.
+    docker_version: '5:29.6.2'
 
   roles:
     - role: alphanodes.setup.docker
