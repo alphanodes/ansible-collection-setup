@@ -1,13 +1,24 @@
 ---
 
-- name: Restart hedgedoc
-  ansible.builtin.systemd_service:
-    name: hedgedoc
-    state: restarted
-
-- name: Run yarn build
-  ansible.builtin.command: /usr/local/lib/npm/bin/yarn run build
+# Handlers are executed in the order they are defined here, so install has to
+# come before build and the restart has to come last. The yarn binary installed
+# globally by npm delegates to the yarn release shipped in the hedgedoc
+# repository (see .yarnrc.yml, yarnPath).
+- name: Run yarn install
+  ansible.builtin.command: "{{ hedgedoc_yarn_bin }} install --immutable"
   args:
     chdir: "{{ hedgedoc_path }}"
   become: true
   become_user: '{{ hedgedoc_user }}'
+
+- name: Run yarn build
+  ansible.builtin.command: "{{ hedgedoc_yarn_bin }} run build"
+  args:
+    chdir: "{{ hedgedoc_path }}"
+  become: true
+  become_user: '{{ hedgedoc_user }}'
+
+- name: Restart hedgedoc
+  ansible.builtin.systemd_service:
+    name: hedgedoc
+    state: restarted

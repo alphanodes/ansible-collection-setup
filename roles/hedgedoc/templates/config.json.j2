@@ -3,7 +3,6 @@
     "domain": "{{ hedgedoc_vhost_server }}",
     "port": "{{ hedgedoc_http_port }}",
     "urlPath": "{{ hedgedoc_url_path }}",
-    "allowOrigin": ["{{ hedgedoc_host_name }}", "{{ hedgedoc_vhost_server }}"],
     "urlAddPort": {{ 'true' if hedgedoc_url_add_port else 'false' }},
     "useSSL": {{ 'true' if hedgedoc_use_ssl else 'false' }},
     "protocolUseSSL": {{ 'true' if hedgedoc_protocol_use_ssl else 'false' }},
@@ -19,6 +18,8 @@
     "sessionName": "{{ hedgedoc_session_name }}",
     "sessionSecret": "{{ hedgedoc_session_secret }}",
     "imageUploadType": "{{ hedgedoc_image_upload_type }}",
+    "externalLinkWarning": {{ 'true' if hedgedoc_external_link_warning else 'false' }},
+    "externalLinkWhitelist": {{ hedgedoc_external_link_whitelist | to_json }},
     "db": {
       "username": "{{ hedgedoc_db_user }}",
       "password": "{{ hedgedoc_db_password }}",

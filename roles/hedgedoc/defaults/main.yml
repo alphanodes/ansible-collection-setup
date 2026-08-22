@@ -9,7 +9,14 @@ hedgedoc_vhost_users: []
 hedgedoc_vhost_for_zabbix: false
 
 hedgedoc_repository: https://github.com/hedgedoc/hedgedoc.git
-hedgedoc_repository_version: '1.11.1'
+hedgedoc_repository_version: '1.12.0'
+
+# yarn binary installed globally by the nodejs role, it delegates to the yarn
+# release shipped in the hedgedoc repository (.yarnrc.yml, yarnPath)
+hedgedoc_yarn_bin: "{{ npm_config_prefix | default('/usr/local/lib/npm') }}/bin/yarn"
+
+# minimum node version required by hedgedoc (see release notes of 1.12.0)
+hedgedoc_node_min_version: '20.17.0'
 
 hedgedoc_user: 'hedgedoc'
 hedgedoc_group: '{{ hedgedoc_user }}'
@@ -39,6 +46,8 @@ hedgedoc_allow_pdf_export: false
 hedgedoc_session_name: 'hedgedoc_session'
 hedgedoc_session_secret: '{{ [ansible_facts["machine_id"], ansible_facts["hostname"], "hedgedoc-session"] | join | hash("md5") }}'
 hedgedoc_image_upload_type: 'filesystem'
+hedgedoc_external_link_warning: true
+hedgedoc_external_link_whitelist: []
 
 hedgedoc_db_user: hedgedoc
 hedgedoc_db_password: '{{ [ansible_facts["machine_id"], ansible_facts["hostname"], "hedgedoc"] | join | hash("md5") }}'

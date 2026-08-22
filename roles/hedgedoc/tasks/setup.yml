@@ -21,6 +21,27 @@
       - name: user.name
         value: "{{ hedgedoc_user }} job"
 
+- name: Include nodejs role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nodejs
+    public: true
+
+- name: Get installed node version
+  ansible.builtin.command: "{{ nodejs_bin }} --version"
+  register: hedgedoc_node_version
+  changed_when: false
+
+# Checked before the checkout, so an unsupported node version does not leave
+# the working copy on a revision that never gets built
+- name: Ensure installed node version is supported by hedgedoc
+  ansible.builtin.assert:
+    that:
+      - hedgedoc_node_version.stdout | regex_replace('^v', '') is version(hedgedoc_node_min_version, '>=')
+    fail_msg: >-
+      hedgedoc {{ hedgedoc_repository_version }} requires node {{ hedgedoc_node_min_version }}
+      or later, but {{ hedgedoc_node_version.stdout }} is installed
+    success_msg: "node {{ hedgedoc_node_version.stdout }} is supported by hedgedoc"
+
 - name: Ensure hedgedoc is latest
   ansible.builtin.git:
     repo: "{{ hedgedoc_repository }}"
@@ -30,12 +51,9 @@
   become: true
   when: hedgedoc_update
   notify:
+    - Run yarn install
     - Run yarn build
-
-- name: Include nodejs role
-  ansible.builtin.include_role:
-    name: alphanodes.setup.nodejs
-    public: true
+    - Restart hedgedoc
 
 - name: Ensure hedgedoc configuration is latest
   ansible.builtin.template:
