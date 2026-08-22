@@ -50,6 +50,27 @@ gitlab_nginx_listen_addresses:
 
 gitlab_nginx_ssl_protocols: "{{ nginx_ssl_protocols }}"
 
+# User agents rejected by nginx with HTTP 403 before they reach Puma.
+# Entries are case-insensitive regex fragments joined into one alternation,
+# so plain substrings such as 'GPTBot' are sufficient.
+#
+# Aggressive AI crawlers walk every commit SHA times every file, which yields
+# millions of unique and therefore uncacheable URLs. Each one renders a full
+# Rails view, so on a public instance they can occupy most of the available
+# Puma slots. GitLab's unauthenticated rate limit does not help here because
+# it counts per single IP while these crawlers spread over whole IPv6 prefixes.
+#
+# Empty by default, so nothing is blocked unless explicitly requested.
+# Recommended starting set:
+#   - meta-externalagent
+#   - GPTBot
+#   - ClaudeBot
+#   - Bytespider
+#   - Amazonbot
+#   - PerplexityBot
+#   - CCBot
+gitlab_nginx_blocked_user_agents: []
+
 gitlab_registry_nginx_listen_addresses: '{{ gitlab_nginx_listen_addresses }}'
 
 # Passthrough all downloads via GitLab instead of using Redirects to Object Storage.

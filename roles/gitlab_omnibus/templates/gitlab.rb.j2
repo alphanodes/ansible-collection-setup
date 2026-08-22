@@ -194,6 +194,11 @@ nginx['ssl_certificate'] = '{{ gitlab_nginx_ssl_certificate }}'
 nginx['ssl_certificate_key'] = '{{ gitlab_nginx_ssl_certificate_key }}'
 {% endif %}
 nginx['listen_addresses'] = {{ gitlab_nginx_listen_addresses | to_json }}
+{% if gitlab_nginx_blocked_user_agents | length > 0 %}
+# Reject unwanted crawlers before they reach Puma. Single-quoted on the Ruby
+# side so the nginx variable and the regex quoting pass through untouched.
+nginx['custom_gitlab_server_config'] = 'if ($http_user_agent ~* "({{ gitlab_nginx_blocked_user_agents | join('|') }})") { return 403; }'
+{% endif %}
 {% if gitlab_letsencrypt_enable is defined %}
 letsencrypt['enable'] = {{ gitlab_letsencrypt_enable | lower }}
 {% endif %}
