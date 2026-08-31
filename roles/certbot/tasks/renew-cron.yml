@@ -49,3 +49,20 @@
     enabled: true
     state: started
     daemon_reload: true
+  when: not certbot_with_venv | default(false)
+
+# A venv install has no Debian certbot.timer, so the role provides its own.
+# Same cadence as Debian's unit: twice a day with a large random delay, so the
+# renewal does not hit Let's Encrypt at a predictable minute.
+- name: Manage certbot renewal timer for venv installations
+  ansible.builtin.include_role:
+    name: alphanodes.setup.systemd_timer
+  vars:
+    timers:
+      certbot-venv-renew:
+        state: "{{ 'present' if certbot_with_venv | default(false) else 'absent' }}"
+        timer_comment: (Let's Encrypt renewal from venv)
+        exec_start: "{{ certbot_venv_path }}/bin/certbot -q renew"
+        on_calendar: '*-*-* 00,12:00:00'
+        randomized_delay_sec: 12h
+        persistent: true

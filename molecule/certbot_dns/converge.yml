@@ -1,0 +1,42 @@
+---
+# Test: certbot DNS-01 setup with a plugin that is not packaged for Debian.
+#
+# Only the setup is exercised - certificate creation is off, because a real
+# DNS-01 challenge would need live credentials and a public zone.
+#
+# The plugin (certbot-dns-hetzner) is not in Debian, and Debian 13 marks the
+# system Python as externally managed (PEP 668). certbot therefore has to move
+# into a venv together with the plugin.
+
+- name: Converge
+  hosts: all
+  become: true
+
+  vars:
+    certbot_create_method: dns
+    certbot_create_if_missing: false
+    certbot_nginx_integration: false
+    certbot_auto_renew: true
+    certbot_dns_plugin: hetzner
+    certbot_dns_pip_packages:
+      - certbot-dns-hetzner
+    certbot_dns_propagation_seconds: 90
+    certbot_dns_credentials:
+      api_token: molecule-dummy-token
+    certbot_certs:
+      - name: example.test
+        domains:
+          - '*.example.test'
+          - example.test
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  tasks:
+    - name: Include certbot role
+      ansible.builtin.include_role:
+        name: alphanodes.setup.certbot

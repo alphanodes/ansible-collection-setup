@@ -22,6 +22,12 @@
     mode: "0644"
   notify: Reload nginx
 
+# The vhosts include this file via a glob, so nginx only picks it up after a
+# reload. Certificate creation happens later in this same role, so the reload
+# cannot wait for the end of the play.
+- name: Apply acme-challenge include before requesting certificates
+  ansible.builtin.meta: flush_handlers
+
 - name: Check for existing nginx vhost with ACME challenge support
   ansible.builtin.find:
     paths: /etc/nginx/sites-enabled

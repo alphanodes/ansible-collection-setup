@@ -1,12 +1,24 @@
 ---
+# certbot is taken from apt unless a DNS plugin has to be installed via pip -
+# then certbot itself moves into the venv, because the apt certbot binary
+# cannot see packages installed anywhere else.
+- name: Set certbot installation mode
+  ansible.builtin.set_fact:
+    certbot_with_venv: "{{ certbot_create_method == 'dns' and certbot_dns_pip_packages | length > 0 }}"
+
 - name: Install certbot package
   ansible.builtin.apt:
     name: certbot
     state: present
+  when: not certbot_with_venv
 
 - name: Set certbot script variable
   ansible.builtin.set_fact:
-    certbot_script: certbot
+    certbot_script: "{{ certbot_venv_path ~ '/bin/certbot' if certbot_with_venv else 'certbot' }}"
+
+- name: Include DNS plugin setup tasks
+  ansible.builtin.include_tasks: dns-setup.yml
+  when: certbot_create_method == 'dns'
 
 - name: Include nginx integration tasks
   ansible.builtin.include_tasks: nginx-integration.yml
@@ -31,6 +43,15 @@
   when:
     - certbot_create_if_missing
     - certbot_create_method == 'webroot'
+
+- name: Include DNS certificate tasks
+  ansible.builtin.include_tasks: cert-dns.yml
+  loop: "{{ certbot_certs }}"
+  loop_control:
+    loop_var: cert_item
+  when:
+    - certbot_create_if_missing
+    - certbot_create_method == 'dns'
 
 - name: Include renewal cron tasks
   ansible.builtin.include_tasks: renew-cron.yml

@@ -28,6 +28,32 @@ certbot_expand: false
 # Default webroot for acme-challenge, can be overwritten per cert.
 certbot_webroot: /var/www/letsencrypt
 
+# DNS-01 challenge (certbot_create_method: dns).
+# Required for wildcard certificates - Let's Encrypt does not accept HTTP-01
+# for those.
+#
+# Plugin name without the "dns-" prefix, e.g. hetzner, cloudflare, rfc2136.
+certbot_dns_plugin: ""
+# Plugin credentials, written to certbot_dns_credentials_file. Keys are
+# prefixed automatically, so {'api_token': 'abc'} with plugin "hetzner"
+# becomes "dns_hetzner_api_token = abc".
+certbot_dns_credentials: {}
+certbot_dns_credentials_file: /etc/letsencrypt/dns-{{ certbot_dns_plugin }}.ini
+# Seconds to wait for the TXT record to propagate. 0 keeps the plugin default.
+certbot_dns_propagation_seconds: 0
+# Debian ships plugins for cloudflare, desec, google, infomaniak, rfc2136 and
+# route53. List the package here when the plugin is available via apt.
+certbot_dns_apt_packages: []
+# For plugins that are not packaged for Debian (e.g. certbot-dns-hetzner).
+# Setting this installs certbot plus the plugin into certbot_venv_path,
+# because Debian 13 marks the system Python as externally managed (PEP 668)
+# and pip would otherwise need --break-system-packages.
+certbot_dns_pip_packages: []
+certbot_venv_path: /opt/certbot/venv
+# Upgrade certbot and the plugin in the venv on every run. Off by default so
+# a rollout does not silently pull a new certbot version.
+certbot_venv_upgrade: false
+
 # List of certificates to create.
 # Example:
 # certbot_certs:
@@ -48,13 +74,29 @@ certbot_create_standalone_stop_services: []
 
 # The certbot command constructed from variables.
 # Can be overwritten for special use cases.
+# Authenticator part of the certbot call. Kept separate because DNS-01 needs
+# the plugin name and its credentials file instead of a plain --<method> flag.
+certbot_authenticator_args: >-
+  {% if certbot_create_method == 'dns' %}
+  {# "--authenticator dns-<plugin>" instead of "--dns-<plugin>": plugins that
+     do not register their own shortcut flag make the short form an ambiguous
+     argparse prefix of --dns-<plugin>-credentials. #}
+  --authenticator dns-{{ certbot_dns_plugin }}
+  --dns-{{ certbot_dns_plugin }}-credentials {{ certbot_dns_credentials_file }}
+  {{ '--dns-' ~ certbot_dns_plugin ~ '-propagation-seconds ' ~ certbot_dns_propagation_seconds
+     if certbot_dns_propagation_seconds | int > 0 else '' }}
+  {% elif certbot_create_method == 'webroot' %}
+  --webroot --webroot-path {{ cert_item.webroot | default(certbot_webroot) }}
+  {% else %}
+  --{{ certbot_create_method }}
+  {% endif %}
+
 certbot_create_command: >-
-  {{ certbot_script }} certonly --{{ certbot_create_method }}
+  {{ certbot_script }} certonly {{ certbot_authenticator_args }}
   {{ '--hsts' if certbot_hsts else '' }}
   {{ '--test-cert' if certbot_testmode else '' }}
   --noninteractive --agree-tos
   --email {{ cert_item.email | default(certbot_admin_email) }}
-  {{ '--webroot-path ' ~ (cert_item.webroot | default(certbot_webroot)) if certbot_create_method == 'webroot' else '' }}
   {{ certbot_create_extra_args }}
   --cert-name {{ cert_item_name }}
   -d {{ cert_item.domains | join(',') }}

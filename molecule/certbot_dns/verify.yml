@@ -1,0 +1,105 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+
+  vars:
+    certbot_venv_path: /opt/certbot/venv
+    certbot_dns_credentials_file: /etc/letsencrypt/dns-hetzner.ini
+
+  tasks:
+    # certbot must NOT come from apt here - the apt binary cannot see the
+    # pip-installed plugin, so a mixed install would fail at renewal time.
+    - name: Check apt certbot package
+      ansible.builtin.command: dpkg-query -W -f='${Status}' certbot
+      register: apt_certbot
+      changed_when: false
+      failed_when: false
+
+    - name: Verify certbot was not installed from apt
+      ansible.builtin.assert:
+        that:
+          - "'install ok installed' not in apt_certbot.stdout"
+        fail_msg: >-
+          certbot was installed from apt although the venv path is in use -
+          the apt binary would not find the pip-installed DNS plugin.
+        success_msg: certbot correctly not installed from apt
+
+    - name: Check certbot venv binary
+      ansible.builtin.stat:
+        path: "{{ certbot_venv_path }}/bin/certbot"
+      register: venv_certbot
+
+    - name: Verify certbot venv exists
+      ansible.builtin.assert:
+        that:
+          - venv_certbot.stat.exists
+          - venv_certbot.stat.executable
+        fail_msg: certbot binary missing in {{ certbot_venv_path }}
+        success_msg: certbot venv binary present
+
+    # The whole point of the venv: the plugin must actually register itself.
+    - name: List certbot plugins
+      ansible.builtin.command: "{{ certbot_venv_path }}/bin/certbot plugins --non-interactive"
+      register: certbot_plugins
+      changed_when: false
+
+    - name: Verify DNS plugin is registered
+      ansible.builtin.assert:
+        that:
+          - "'dns-hetzner' in certbot_plugins.stdout"
+        fail_msg: "dns-hetzner plugin not registered: {{ certbot_plugins.stdout }}"
+        success_msg: dns-hetzner plugin is registered
+
+    - name: Check credentials file
+      ansible.builtin.stat:
+        path: "{{ certbot_dns_credentials_file }}"
+      register: creds
+
+    # certbot refuses credentials files that are readable by others.
+    - name: Verify credentials file exists with strict permissions
+      ansible.builtin.assert:
+        that:
+          - creds.stat.exists
+          - creds.stat.mode == '0600'
+        fail_msg: "credentials file missing or too permissive: {{ creds.stat.mode | default('absent') }}"
+        success_msg: credentials file present with mode 0600
+
+    - name: Read credentials file
+      ansible.builtin.slurp:
+        src: "{{ certbot_dns_credentials_file }}"
+      register: creds_content
+
+    # The key must carry the plugin prefix certbot expects, not the bare name.
+    - name: Verify credentials key is prefixed for the plugin
+      ansible.builtin.assert:
+        that:
+          - "'dns_hetzner_api_token = molecule-dummy-token' in (creds_content.content | b64decode)"
+        fail_msg: "credentials file has wrong key format: {{ creds_content.content | b64decode }}"
+        success_msg: credentials key correctly prefixed
+
+    # Debian's certbot.timer does not exist without the apt package, so the
+    # role has to provide its own renewal timer.
+    - name: Check renewal timer unit
+      ansible.builtin.stat:
+        path: /etc/systemd/system/certbot-venv-renew.timer
+      register: renew_timer
+
+    - name: Verify renewal timer was created
+      ansible.builtin.assert:
+        that:
+          - renew_timer.stat.exists
+        fail_msg: certbot-venv-renew.timer missing - certificates would never renew
+        success_msg: renewal timer present
+
+    - name: Read renewal service unit
+      ansible.builtin.slurp:
+        src: /etc/systemd/system/certbot-venv-renew.service
+      register: renew_service
+
+    - name: Verify renewal uses the venv certbot
+      ansible.builtin.assert:
+        that:
+          - "certbot_venv_path ~ '/bin/certbot -q renew' in (renew_service.content | b64decode)"
+        fail_msg: "renewal service does not call the venv certbot: {{ renew_service.content | b64decode }}"
+        success_msg: renewal service calls the venv certbot

@@ -13,12 +13,14 @@ server {
   server_name {{ instance.server_name }};
 {% endif %}
 
-{% if certbot_certs is defined and certbot_certs | length > 0 %}
-  include /etc/nginx/acme-challenge.conf;
+{# The ACME include is unconditional on purpose: it must already be in place
+   when certbot runs for the first time on a host that got its vhosts rendered
+   earlier. The glob makes nginx tolerate a missing file, so hosts without
+   certbot are unaffected. The redirect has to live inside "location /" - a
+   server level "return" is evaluated in the rewrite phase, before location
+   matching, and would swallow the challenge requests. #}
+  include /etc/nginx/acme-challenge*.conf;
   location / {
     return 301 {{ redirect_url }};
   }
-{% else %}
-  return 301 {{ redirect_url }};
-{% endif %}
 }

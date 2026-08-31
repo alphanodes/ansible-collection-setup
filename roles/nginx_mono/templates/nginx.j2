@@ -34,6 +34,16 @@ http {
                      '"$http_user_agent" "$http_x_forwarded_for" '
                      '$request_time $upstream_response_time "$upstream_addr"';
 
+    # Same fields as "main" plus the requested host name, appended at the end.
+    # Appending (never prepending) keeps the field positions of "main" intact,
+    # so the position-based fail2ban filters (nginx-scan, redmine-login) still
+    # match. Useful on catch-all/default_server vhosts to find out which host
+    # names actually reach them.
+    log_format  vhost  '$remote_addr - $remote_user [$time_local] "$request" '
+                       '$status $body_bytes_sent "$http_referer" '
+                       '"$http_user_agent" "$http_x_forwarded_for" '
+                       '"$host"';
+
     ## Default log
     access_log {{ nginx_access_log }};
 

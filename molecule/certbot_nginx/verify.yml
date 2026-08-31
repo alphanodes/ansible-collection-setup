@@ -84,14 +84,31 @@
           - webroot_dir.stat.isdir
         fail_msg: "Certbot webroot directory not found"
 
-    # Vhost must include ACME challenge in redirect block (our fix)
+    # Vhost must include ACME challenge in redirect block (our fix).
+    # The include uses a glob so nginx tolerates a missing file on hosts
+    # without certbot - see nginx_mono/templates/includes/port_redirect.inc.j2.
+    # Converge phase 4 re-renders this vhost with an empty certbot_certs, so
+    # this also guards against the include becoming conditional again.
     - name: Check vhost contains ACME challenge include
       ansible.builtin.shell: |
         set -e
-        grep -F 'include /etc/nginx/acme-challenge.conf' /etc/nginx/sites-available/certbot_test.conf
+        grep -F 'include /etc/nginx/acme-challenge*.conf' /etc/nginx/sites-available/certbot_test.conf
       register: vhost_acme_check
       changed_when: false
       failed_when: vhost_acme_check.rc != 0
+
+    # The redirect must sit inside "location /" - a server level "return" runs
+    # in the rewrite phase, before location matching, and would swallow the
+    # ACME challenge requests.
+    - name: Check redirect is wrapped in location block
+      ansible.builtin.shell: |
+        set -e -o pipefail
+        grep -A2 -F 'include /etc/nginx/acme-challenge*.conf' /etc/nginx/sites-available/certbot_test.conf | grep -qF 'location / {'
+      args:
+        executable: /bin/bash
+      register: vhost_location_check
+      changed_when: false
+      failed_when: vhost_location_check.rc != 0
 
     # No duplicate default_server on port 80
     - name: Check for duplicate default_server on port 80

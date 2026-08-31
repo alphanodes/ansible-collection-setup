@@ -1,0 +1,64 @@
+---
+# Installs the certbot DNS plugin and writes its credentials file.
+#
+# Two installation paths:
+#   - certbot_dns_apt_packages: plugin is packaged for Debian (cloudflare,
+#     desec, google, infomaniak, rfc2136, route53)
+#   - certbot_dns_pip_packages: plugin is not packaged, so certbot and the
+#     plugin go into a dedicated venv. Debian 13 marks the system Python as
+#     externally managed (PEP 668), and installing into it with
+#     --break-system-packages would silently break on the next apt upgrade
+#     of certbot - which nobody notices until a renewal fails.
+
+- name: Validate DNS plugin configuration
+  ansible.builtin.assert:
+    that:
+      - certbot_dns_plugin | length > 0
+      - certbot_dns_apt_packages | length > 0 or certbot_dns_pip_packages | length > 0
+    fail_msg: >-
+      certbot_create_method is 'dns', so certbot_dns_plugin and either
+      certbot_dns_apt_packages or certbot_dns_pip_packages must be set.
+    success_msg: DNS plugin configuration is valid
+
+- name: Install DNS plugin from apt
+  ansible.builtin.apt:
+    name: "{{ certbot_dns_apt_packages }}"
+    state: present
+  when: certbot_dns_apt_packages | length > 0
+
+- name: Install DNS plugin into a virtualenv
+  when: certbot_dns_pip_packages | length > 0
+  block:
+    - name: Install virtualenv prerequisites
+      ansible.builtin.apt:
+        name: python3-venv
+        state: present
+
+    - name: Create certbot virtualenv
+      ansible.builtin.command:
+        cmd: python3 -m venv {{ certbot_venv_path }}
+        creates: "{{ certbot_venv_path }}/bin/python"
+
+    - name: Install certbot and DNS plugin into the virtualenv
+      ansible.builtin.pip:
+        name: "{{ ['certbot'] + certbot_dns_pip_packages }}"
+        state: "{{ 'latest' if certbot_venv_upgrade else 'present' }}"
+        virtualenv: "{{ certbot_venv_path }}"
+
+- name: Ensure letsencrypt config directory exists
+  ansible.builtin.file:
+    path: "{{ certbot_dns_credentials_file | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install DNS plugin credentials
+  ansible.builtin.template:
+    src: dns-credentials.ini.j2
+    dest: "{{ certbot_dns_credentials_file }}"
+    owner: root
+    group: root
+    # certbot refuses to use a credentials file that is readable by others.
+    mode: "0600"
+  no_log: true

@@ -18,6 +18,14 @@ nginx_ssl_web_users: []
 
 # nginx_error_log: '/var/log/nginx/error.log warn'
 nginx_error_log: 'stderr warn'
+# Available log formats (defined in templates/nginx.j2):
+#   main  - default
+#   app   - main plus request/upstream timings
+#   vhost - main plus the requested "$host", appended at the end
+# Per vhost the format can be selected with the instance key "access_log",
+# e.g. access_log: '/var/log/nginx/catchall-access.log vhost'
+# Keep the "access.log" suffix on custom log files - fail2ban reads
+# /var/log/nginx/*access.log, so anything else silently drops out of the jails.
 nginx_access_log: '/var/log/nginx/access.log main buffer=16k flush=1m'
 
 nginx_types_hash_max_size: 2048
