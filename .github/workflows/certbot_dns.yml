@@ -1,0 +1,60 @@
+---
+name: "alphanodes.setup.certbot_dns"
+'on':
+  pull_request:
+  push:
+    branches:
+      - main
+    paths:
+      - 'roles/certbot/**'
+      - 'molecule/certbot_dns/**'
+      - '.github/workflows/certbot_dns.yml'
+  # Scheduled like the certbot workflow, but 5 minutes later so the two do not
+  # start at the same time. The schedule matters more here than for the other
+  # scenarios: this one installs certbot and certbot-dns-hetzner from PyPI, so
+  # it can break without a single commit on our side.
+  schedule:
+    - cron: 30 4 * * 2
+
+defaults:
+  run:
+    working-directory: 'certbot_dns'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      PY_COLORS: 1
+      ANSIBLE_FORCE_COLOR: 1
+
+    strategy:
+      fail-fast: false
+      matrix:
+        distro:
+          - ubuntu2404
+          - ubuntu2604
+          - debian12
+          - debian13
+
+    steps:
+      - name: Check out the codebase.
+        uses: actions/checkout@v5
+        with:
+          path: 'certbot_dns'
+
+      - name: Set up Python 3.
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install test dependencies.
+        run: |
+          python -m pip install --no-cache-dir --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Run Molecule tests.
+        run: |
+          molecule --version
+          molecule test -s certbot_dns
+        env:
+          MOLECULE_DISTRO: ${{ matrix.distro }}
