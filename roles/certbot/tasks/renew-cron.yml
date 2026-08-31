@@ -2,9 +2,18 @@
 # Use Debian's built-in certbot.timer instead of cron.
 # The timer runs twice daily with RandomizedDelaySec=43200 (12h jitter).
 
-- name: Check if crontab is available
-  ansible.builtin.command:
-    cmd: which crontab
+# Checking for the crontab binary alone is not enough: Ubuntu ships
+# /usr/bin/crontab without the cron package, and the cron module then dies with
+# "Unable to read crontab". Hosts that only use systemd timers - which is our
+# default - look exactly like that. So look for the actual entry instead, and
+# touch the crontab only when there is something to remove.
+- name: Check for a legacy certbot cron job
+  ansible.builtin.shell: |
+    set -o pipefail
+    command -v crontab > /dev/null || exit 1
+    crontab -l -u root 2> /dev/null | grep -q 'Certbot automatic renewal.'
+  args:
+    executable: /bin/bash
   register: crontab_check
   changed_when: false
   failed_when: false
@@ -17,7 +26,7 @@
     state: absent
   when:
     - certbot_remove_cron_job
-    - crontab_check.rc == 0
+    - crontab_check.rc | default(1) == 0
 
 - name: Ensure renewal-hooks deploy directory exists
   ansible.builtin.file:
