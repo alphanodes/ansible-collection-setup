@@ -45,9 +45,12 @@
   when: letsencrypt_cert.stat.exists
   block:
     - name: Register certificate domains
+      # certbot renamed the "Domains" line to "Identifiers" in 4.0 (it can
+      # hold IP addresses now). Debian still ships an older certbot, the venv
+      # install pulls the current one - so both spellings have to match.
       ansible.builtin.shell: |
         set -o pipefail
-        {{ certbot_script }} certificates --cert-name {{ cert_item_name }} | grep Domains | cut -d':' -f2
+        {{ certbot_script }} certificates --cert-name {{ cert_item_name }} | grep -E 'Domains|Identifiers' | cut -d':' -f2
       args:
         executable: /bin/bash
       changed_when: false
