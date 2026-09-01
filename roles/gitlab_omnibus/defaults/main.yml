@@ -135,10 +135,22 @@ gitlab_terraform_state_object_store_bucket: gl-terraform
 gitlab_pages_enabled: false
 gitlab_pages_domain: ''
 
+# Serve pages through the bundled nginx, which proxies to the pages daemon.
+# This shares the GitLab IP address and is what a wildcard pages domain needs.
+#
+# Set to false only for custom domains: the daemon then binds the addresses in
+# gitlab_pages_external_http/https itself, which requires a secondary IP
+# because the bundled nginx already holds port 80 and 443.
+gitlab_pages_behind_nginx: true
+
 gitlab_pages_external_http: ["{{ gitlab_pages_domain }}:80"]
 gitlab_pages_external_https: ["{{ gitlab_pages_domain }}:443"]
 
 gitlab_pages_with_tls: true
+# Wildcard certificate for *.<pages domain>. Leave empty to let GitLab use its
+# default path /etc/gitlab/ssl/<pages domain>.crt. The bundled Let's Encrypt
+# integration cannot issue this one - it only does HTTP-01, so a wildcard needs
+# the certbot role with a DNS-01 challenge.
 gitlab_pages_nginx_ssl_certificate: ''
 gitlab_pages_nginx_ssl_certificate_key: ''
 

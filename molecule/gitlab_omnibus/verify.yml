@@ -1,0 +1,51 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Read the generated gitlab.rb
+      ansible.builtin.slurp:
+        src: /etc/gitlab/gitlab.rb
+      register: gitlab_rb
+
+    - name: Decode gitlab.rb
+      ansible.builtin.set_fact:
+        gitlab_rb_content: "{{ gitlab_rb.content | b64decode }}"
+
+    - name: Assert pages is enabled with its external url
+      ansible.builtin.assert:
+        that:
+          - "\"gitlab_pages['enable'] = true\" in gitlab_rb_content"
+          - "\"pages_external_url 'https://pages.example.com'\" in gitlab_rb_content"
+        fail_msg: pages is not configured in gitlab.rb
+
+    - name: Assert the wildcard certificate is wired into the bundled nginx
+      ansible.builtin.assert:
+        that:
+          - "\"pages_nginx['ssl_certificate'] = '/etc/gitlab/ssl/pages-wildcard.crt'\" in gitlab_rb_content"
+          - "\"pages_nginx['ssl_certificate_key'] = '/etc/gitlab/ssl/pages-wildcard.key'\" in gitlab_rb_content"
+          - "\"pages_nginx['redirect_http_to_https'] = true\" in gitlab_rb_content"
+        fail_msg: the pages certificate is not configured for the bundled nginx
+
+    # The daemon binding these itself needs a secondary IP, because the bundled
+    # nginx already listens on port 80 and 443. Leaving them in silently breaks
+    # pages, which is what the old template did.
+    - name: Assert the pages daemon does not bind the external ports itself
+      ansible.builtin.assert:
+        that:
+          - "\"gitlab_pages['external_http']\" not in gitlab_rb_content"
+          - "\"gitlab_pages['external_https']\" not in gitlab_rb_content"
+        fail_msg: pages daemon binds the external ports, which collides with the bundled nginx
+
+    - name: Read the generated pages nginx configuration
+      ansible.builtin.slurp:
+        src: /var/opt/gitlab/nginx/conf/service_conf/gitlab-pages.conf
+      register: pages_nginx_conf
+
+    - name: Assert nginx serves the wildcard pages domain with the certificate
+      ansible.builtin.assert:
+        that:
+          - "'/etc/gitlab/ssl/pages-wildcard.crt' in pages_nginx_conf.content | b64decode"
+        fail_msg: nginx does not use the wildcard certificate for pages

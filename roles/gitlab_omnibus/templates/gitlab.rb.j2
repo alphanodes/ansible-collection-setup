@@ -169,13 +169,23 @@ registry['database'] = { 'enabled' => true }
 ### Pages
 gitlab_pages['enable'] = {{ gitlab_pages_enabled | lower }}
 {% if gitlab_pages_enabled %}
+pages_external_url '{{ gitlab_pages_external_url }}'
+{% if gitlab_pages_behind_nginx | bool %}
+{# The bundled nginx proxies to the pages daemon, so pages shares the GitLab
+   IP address. external_http/external_https must stay unset here - they make
+   the daemon bind those ports itself, which collides with the nginx. #}
+{% if gitlab_pages_with_tls %}
+pages_nginx['redirect_http_to_https'] = true
+{% if gitlab_pages_nginx_ssl_certificate %}
+pages_nginx['ssl_certificate'] = '{{ gitlab_pages_nginx_ssl_certificate }}'
+pages_nginx['ssl_certificate_key'] = '{{ gitlab_pages_nginx_ssl_certificate_key }}'
+{% endif %}
+{% endif %}
+{% else %}
 gitlab_pages['external_http'] = {{ gitlab_pages_external_http }}
 {% if gitlab_pages_with_tls %}
 gitlab_pages['external_https'] = {{ gitlab_pages_external_https }}
-pages_external_url '{{ gitlab_pages_external_url }}'
-# pages_nginx['redirect_http_to_https'] = true
-# pages_nginx['ssl_certificate'] = '{{ gitlab_pages_nginx_ssl_certificate }}'
-# pages_nginx['ssl_certificate_key'] = '{{ gitlab_pages_nginx_ssl_certificate_key }}'
+{% endif %}
 {% endif %}
 gitlab_pages['artifacts_server'] = {{ gitlab_pages_artifacts_server | lower }}
 gitlab_pages['access_control'] = {{ gitlab_pages_access_control | lower }}

@@ -31,7 +31,13 @@
   block:
     - name: Install virtualenv prerequisites
       ansible.builtin.apt:
-        name: python3-venv
+        # python3-packaging is for the pip module itself, which imports it with
+        # the target's system python to compare versions. It is not pulled in by
+        # a base Debian install, so without it the task below dies with
+        # "Failed to import the required Python library (packaging)".
+        name:
+          - python3-venv
+          - python3-packaging
         state: present
 
     - name: Create certbot virtualenv

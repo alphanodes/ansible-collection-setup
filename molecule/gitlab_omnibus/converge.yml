@@ -32,6 +32,16 @@
           -subj "/C=US/ST=Test/L=Test/O=Test/CN=gitlab-test.example.com"
         creates: /etc/gitlab/ssl/gitlab-test.example.com.crt
 
+    - name: Generate self-signed wildcard certificate for the pages domain
+      ansible.builtin.command:
+        cmd: >
+          openssl req -x509 -nodes -days 365 -newkey rsa:2048
+          -keyout /etc/gitlab/ssl/pages-wildcard.key
+          -out /etc/gitlab/ssl/pages-wildcard.crt
+          -subj "/C=US/ST=Test/L=Test/O=Test/CN=*.pages.example.com"
+          -addext "subjectAltName=DNS:*.pages.example.com,DNS:pages.example.com"
+        creates: /etc/gitlab/ssl/pages-wildcard.crt
+
     - name: Create zabbix user for ACL testing
       ansible.builtin.user:
         name: zabbix
@@ -55,6 +65,12 @@
     gitlab_vhost_server: gitlab-test.example.com
     # Disable Let's Encrypt for testing (use self-signed cert instead)
     gitlab_vhost_letsencrypt: false
+    # Pages behind the bundled nginx with a wildcard certificate. The daemon
+    # must not bind port 80 and 443 itself here - the nginx already holds them.
+    gitlab_pages_enabled: true
+    gitlab_pages_domain: pages.example.com
+    gitlab_pages_nginx_ssl_certificate: /etc/gitlab/ssl/pages-wildcard.crt
+    gitlab_pages_nginx_ssl_certificate_key: /etc/gitlab/ssl/pages-wildcard.key
 
   roles:
     - role: alphanodes.setup.common
