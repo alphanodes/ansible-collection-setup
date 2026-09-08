@@ -27,9 +27,11 @@ dovecot_db_with_caching_sha2_password: false
 # http://wiki2.dovecot.org/Authentication/PasswordSchemes
 dovecot_default_pass_scheme: SHA512-CRYPT
 
-# SSL certificates (override in host_vars for Let's Encrypt)
-dovecot_ssl_cert: /etc/ssl/certs/ssl-cert-snakeoil.pem
-dovecot_ssl_key: /etc/ssl/private/ssl-cert-snakeoil.key
+# SSL certificates (override in host_vars for Let's Encrypt).
+# These names have to match the ones dovecot-ssl.conf.j2 reads, otherwise the
+# role fails with an undefined variable instead of falling back to snakeoil.
+dovecot_ssl_cert_file: /etc/ssl/certs/ssl-cert-snakeoil.pem
+dovecot_ssl_key_file: /etc/ssl/private/ssl-cert-snakeoil.key
 
 dovecot_vmail_user: vmail
 dovecot_vmail_group: vmail

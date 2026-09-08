@@ -31,6 +31,15 @@ in `templates/dovecot.conf.j2`.
 
 ```yaml
 dovecot_db_password: 'your_database_password'
+```
+
+### TLS certificates
+
+The role falls back to the snakeoil certificate, which is fine for tests but
+not for anything reachable from outside. Point these at a real certificate in
+host_vars:
+
+```yaml
 dovecot_ssl_cert_file: /etc/letsencrypt/live/mail.example.com/fullchain.pem
 dovecot_ssl_key_file: /etc/letsencrypt/live/mail.example.com/privkey.pem
 ```
@@ -53,6 +62,10 @@ dovecot_postmaster_address: 'postmaster@example.com'
 
 # Password scheme
 dovecot_default_pass_scheme: SHA512-CRYPT
+
+# TLS certificates, see above
+dovecot_ssl_cert_file: /etc/ssl/certs/ssl-cert-snakeoil.pem
+dovecot_ssl_key_file: /etc/ssl/private/ssl-cert-snakeoil.key
 
 # Global spam filing rule, see "Server side spam filing" below
 dovecot_spam_header_name: X-Spam-Flag

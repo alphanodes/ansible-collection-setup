@@ -18,8 +18,38 @@ repository: 'https://github.com/alphanodes/ansible-collection-setup/'
 homepage: 'https://alphanodes.com'
 issues: 'https://github.com/alphanodes/ansible-collection-setup/issues'
 build_ignore:
-  - codecov.yml
+  # Everything listed in .gitignore plus the local development tooling. These
+  # are not just noise: .env holds a GitHub token and CLAUDE.md documents
+  # internal infrastructure, and both used to be shipped inside the built
+  # collection. Keep this list in sync with .gitignore.
+  - .ansible
+  - '*/.ansible'
+  - .claude
+  - .DS_Store
+  - '*/.DS_Store'
+  - .env
+  - .mcp.json
+  - .python-version
+  - .ruby-lsp
+  - .venv
+  - .vscode
+  - AGENTS.md
+  - CLAUDE.md
+  - CONTRIBUTING.md
+  - Gemfile.lock
+  - hosts
+  - node_modules
+  - tmp
+  - '*.retry'
+  - '*.tar.gz'
+  # Development tooling, not needed by an installed collection
+  - .ansible-lint
   - .github
   - .gitignore
-  - requirements.txt
+  - .markdownlint.json
+  - .markdownlintignore
   - .yamllint
+  - codecov.yml
+  - package.json
+  - requirements.txt
+  - yarn.lock

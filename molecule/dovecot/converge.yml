@@ -17,9 +17,8 @@
     dovecot_db_name: 'vimbadmin'
     dovecot_db_user: 'vimbadmin'
 
-    # Use snakeoil certs for testing
-    dovecot_ssl_cert_file: /etc/ssl/certs/ssl-cert-snakeoil.pem
-    dovecot_ssl_key_file: /etc/ssl/private/ssl-cert-snakeoil.key
+    # No dovecot_ssl_cert_file / dovecot_ssl_key_file here on purpose: this
+    # scenario covers the snakeoil fallback from the role defaults.
 
     # Test postmaster address
     dovecot_postmaster_address: 'postmaster@example.com'
