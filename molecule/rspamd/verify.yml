@@ -220,3 +220,37 @@
     - name: Verify nginx configuration is valid
       ansible.builtin.command: nginx -t
       changed_when: false
+
+    # The following checks guard the disabled feature flags. They make this
+    # scenario a regression test for hosts that do not opt into bayes autolearn
+    # or the spam header.
+    - name: Verify bayes classifier configuration exists
+      ansible.builtin.stat:
+        path: /etc/rspamd/local.d/classifier-bayes.conf
+      register: rspamd_bayes_conf
+      failed_when: not rspamd_bayes_conf.stat.exists
+
+    - name: Dump effective bayes classifier configuration
+      ansible.builtin.command: rspamadm configdump classifier
+      register: rspamd_classifier
+      changed_when: false
+
+    - name: Verify bayes autolearn is off
+      ansible.builtin.assert:
+        that:
+          - rspamd_classifier.stdout is not search('autolearn')
+        fail_msg: bayes autolearn is active although rspamd_bayes_autolearn is false
+
+    - name: Read milter headers configuration
+      ansible.builtin.slurp:
+        src: /etc/rspamd/local.d/milter_headers.conf
+      register: rspamd_milter_headers
+
+    - name: Verify the spam header routine is not configured
+      vars:
+        conf: '{{ rspamd_milter_headers.content | b64decode }}'
+      ansible.builtin.assert:
+        that:
+          - "'spam-header' not in conf"
+          - "'x-spam-status' in conf"
+        fail_msg: the spam-header routine is active although rspamd_with_spam_header is false

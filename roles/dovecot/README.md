@@ -53,7 +53,46 @@ dovecot_postmaster_address: 'postmaster@example.com'
 
 # Password scheme
 dovecot_default_pass_scheme: SHA512-CRYPT
+
+# Global spam filing rule, see "Server side spam filing" below
+dovecot_spam_header_name: X-Spam-Flag
+dovecot_spam_header_value: 'YES'
+dovecot_spam_mailbox: Junk
 ```
+
+## Server side spam filing
+
+The role deploys a global Sieve script (`before.sieve`) that runs before every
+personal filter and files marked mail into the Junk folder. Which header it
+matches is configurable:
+
+```yaml
+dovecot_spam_header_name: X-Spam-Flag
+dovecot_spam_header_value: 'YES'
+dovecot_spam_mailbox: Junk
+```
+
+The defaults are inert on purpose: rspamd emits no `X-Spam-Flag`, so the rule
+matches nothing and no mail is moved. That keeps the role from silently
+changing where mail lands on an existing installation.
+
+To activate server side filing, enable the spam header in the rspamd role and
+point both sides at the same header:
+
+```yaml
+# rspamd host
+rspamd_with_spam_header: true
+rspamd_spam_header_name: X-Spam
+rspamd_spam_header_value: 'Yes'
+
+# dovecot host
+dovecot_spam_header_name: X-Spam
+dovecot_spam_header_value: 'Yes'
+```
+
+Mail scoring at or above `rspamd_action_add_header` then moves out of the inbox
+into the Junk folder, where nobody looks by default - so weigh the false
+positive risk before enabling it.
 
 ## Dependencies
 

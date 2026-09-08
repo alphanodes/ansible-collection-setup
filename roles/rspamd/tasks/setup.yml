@@ -89,6 +89,7 @@
     - fuzzy_check.conf
     - settings.conf
     - neural.conf
+    - classifier-bayes.conf
 
 - name: Configure manual whitelists and blacklists
   ansible.builtin.template:

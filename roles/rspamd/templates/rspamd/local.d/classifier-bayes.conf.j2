@@ -1,0 +1,22 @@
+# Rspamd bayes classifier
+# see https://docs.rspamd.com/configuration/statistic
+{% if rspamd_bayes_autolearn %}
+
+# Train the classifier from rspamd's own verdict. Rspamd never trains bayes on
+# its own, so on a host where nobody sorts their Junk folder by hand the
+# statfiles stay empty, BAYES_* never reaches min_learns (200 per class) and the
+# classifier contributes nothing to any verdict while still being queried for
+# every message.
+autolearn {
+  # Learn as spam from this score upwards
+  spam_threshold = {{ rspamd_bayes_autolearn_spam_threshold }};
+  # Learn as spam when the message was filed as junk from this score upwards
+  junk_threshold = {{ rspamd_bayes_autolearn_junk_threshold }};
+  # Learn as ham from this score downwards
+  ham_threshold = {{ rspamd_bayes_autolearn_ham_threshold }};
+  # Ham vastly outnumbers spam on a normal mail flow. Without a balance guard
+  # the ham statfile outgrows the spam one and biases every verdict.
+  check_balance = {{ rspamd_bayes_autolearn_check_balance | ternary('true', 'false') }};
+  min_balance = {{ rspamd_bayes_autolearn_min_balance }};
+}
+{% endif %}

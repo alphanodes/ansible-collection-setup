@@ -151,6 +151,40 @@ rspamd_authenticated_symbols_disabled:
   - RSPAMD_URIBL
   - RSPAMD_EMAILBL
 
+# Bayes classifier
+# see https://docs.rspamd.com/configuration/statistic
+# Rspamd ships the classifier enabled but never trains it on its own. Without
+# either autolearn or manual training the statfiles stay empty, BAYES_* never
+# reaches min_learns (200 per class), and the classifier contributes nothing to
+# any verdict while still being queried for every message.
+# Autolearn trains from rspamd's own verdict and needs no user interaction. The
+# trade-off is that it confirms what the other rules already decided instead of
+# adding an independent signal.
+rspamd_bayes_autolearn: false
+rspamd_bayes_autolearn_spam_threshold: 6.0
+rspamd_bayes_autolearn_junk_threshold: 4.0
+rspamd_bayes_autolearn_ham_threshold: -0.5
+rspamd_bayes_autolearn_check_balance: true
+rspamd_bayes_autolearn_min_balance: 0.9
+
+# Headers added by the milter_headers module
+# see https://docs.rspamd.com/modules/milter_headers
+rspamd_milter_headers_use:
+  - x-spamd-bar
+  - x-spam-level
+  - x-spam-status
+  - authentication-results
+
+# Spam header for filtering on the MDA side
+# Adds a header to every message that reached the add_header action or a
+# stricter one, so a Sieve rule can file it into the Junk folder. Rspamd names
+# this header "Deliver-To: Junk" by default, which no MDA in this setup
+# evaluates, so name and value are set explicitly.
+# Keep in sync with dovecot_spam_header_name and dovecot_spam_header_value.
+rspamd_with_spam_header: false
+rspamd_spam_header_name: X-Spam
+rspamd_spam_header_value: 'Yes'
+
 # DMARC Reporting configuration
 # see https://docs.rspamd.com/modules/dmarc
 # Rspamd can send DMARC aggregate reports to other domains when receiving mail

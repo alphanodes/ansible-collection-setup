@@ -39,6 +39,17 @@ dovecot_vmail_home: '/var/{{ dovecot_vmail_user }}'
 dovecot_mail_home: '{{ dovecot_vmail_home }}/%{user|domain}/%{user|username}'
 
 dovecot_postmaster_address: 'postmaster@example.com'
+
+# Global spam filing rule deployed as before.sieve
+# The header has to be produced by the spam filter in front of dovecot. Rspamd
+# emits no X-Spam-Flag on its own, so with these defaults the rule never
+# matches and nothing is filed automatically. To activate server side filing,
+# set rspamd_with_spam_header on the rspamd host and point both sides at the
+# same header name and value.
+dovecot_spam_header_name: X-Spam-Flag
+dovecot_spam_header_value: 'YES'
+dovecot_spam_mailbox: Junk
+
 dovecot_before_sieve_script: '{{ dovecot_vmail_home }}/before.sieve'
 dovecot_before_sieve_svbin: '{{ dovecot_vmail_home }}/before.svbin'
 

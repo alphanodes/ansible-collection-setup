@@ -1,0 +1,61 @@
+---
+# Variables shared by converge.yml and verify.yml.
+# They live here rather than in molecule.yml because molecule runs shell style
+# placeholder substitution over its own config, which mangles values such as
+# the "$2$..." rspamd password hash.
+
+# Test mailbox used by the roundtrip
+mail_test_domain: example.com
+mail_test_user: test
+mail_test_address: '{{ mail_test_user }}@{{ mail_test_domain }}'
+mail_test_password: MoleculeRoundtrip123
+
+# Shared database, read by both the dovecot and the postfix templates
+mail_db_name: vimbadmin
+mail_db_user: vimbadmin
+mail_db_password: test_vimbadmin_password
+
+# Debian native MariaDB instead of Oracle MySQL, for ARM64 compatibility
+# during local runs. See CLAUDE.md, Database Policy.
+mysql_backend: mariadb
+mysql_root_password: test_root_password
+mysql_socket_force: true
+# The default /run/mysqld does not work in docker. Do not point this at /tmp:
+# the mysql role chowns its tmpdir to mysql:mysql 0775, which strips the sticky
+# bit and leaves apt unable to write its signature check files afterwards.
+mysql_server_tmpdir: /var/tmp/mysql
+
+dovecot_db_name: '{{ mail_db_name }}'
+dovecot_db_user: '{{ mail_db_user }}'
+dovecot_db_password: '{{ mail_db_password }}'
+dovecot_db_host: 127.0.0.1
+dovecot_postmaster_address: 'postmaster@{{ mail_test_domain }}'
+dovecot_ssl_cert_file: /etc/ssl/certs/ssl-cert-snakeoil.pem
+dovecot_ssl_key_file: /etc/ssl/private/ssl-cert-snakeoil.key
+# Both sides have to name the same header, otherwise the global sieve rule
+# matches nothing. This is the pairing that is broken with the role defaults.
+dovecot_spam_header_name: X-Spam
+dovecot_spam_header_value: 'Yes'
+
+dkim_domains:
+  example.com:
+    selector: dkim_key
+    key_size: 2048
+
+rspamd_worker_controller_password: '$2$testpasswordhash'
+# No nginx in this scenario, the web UI is covered by the rspamd scenario
+rspamd_vhost_server: ''
+rspamd_bayes_autolearn: true
+rspamd_with_spam_header: true
+
+postfix_myhostname: mail.molecule.test
+postfix_with_vimbadmin: true
+postfix_with_rspamd: true
+postfix_with_postscreen: true
+postfix_with_smtps: true
+postfix_header_cleanup: true
+postfix_tls_auth_only: true
+# rspamd is wired in as a milter, so the before-queue proxy filter of the
+# amavis era has to stay off or postfix hands mail to a dead port.
+postfix_smtpd_proxy_filter_smtp: ''
+postfix_smtpd_proxy_filter_submission: ''

@@ -1,2 +1,19 @@
-use = ["x-spamd-bar", "x-spam-level", "x-spam-status", "authentication-results"];
+# Rspamd milter headers module
+# see https://docs.rspamd.com/modules/milter_headers
+
+use = [{{ (rspamd_milter_headers_use + (['spam-header'] if rspamd_with_spam_header else [])) | map('to_json') | join(', ') }}];
 authenticated_headers = ["authentication-results"];
+{% if rspamd_with_spam_header %}
+
+# Marks every message that reached the add_header action or a stricter one, so
+# a Sieve rule on the MDA side can file it away. The routine default is
+# "Deliver-To: Junk", which nothing in this setup evaluates, so header name and
+# value are set explicitly. Authenticated and local senders are skipped by the
+# module itself, so outgoing mail is never marked.
+routines {
+  "spam-header" {
+    header = "{{ rspamd_spam_header_name }}";
+    value = "{{ rspamd_spam_header_value }}";
+  }
+}
+{% endif %}

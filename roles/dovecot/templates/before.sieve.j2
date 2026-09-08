@@ -1,4 +1,4 @@
 require "fileinto";
-if header :contains "X-Spam-Flag" "YES" {
-  fileinto "Junk";
+if header :contains "{{ dovecot_spam_header_name }}" "{{ dovecot_spam_header_value }}" {
+  fileinto "{{ dovecot_spam_mailbox }}";
 }

@@ -1,0 +1,209 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+
+  vars_files:
+    - vars/main.yml
+
+  tasks:
+    - name: Verify all mail services are running
+      ansible.builtin.systemd_service:
+        name: '{{ item }}'
+      register: mail_services
+      failed_when: mail_services.status.ActiveState != 'active'
+      loop:
+        - mariadb
+        - redis-server
+        - rspamd
+        - dovecot
+        - postfix
+
+    - name: Verify all mail ports are listening
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: '{{ item }}'
+        timeout: 30
+      loop:
+        - 25     # smtp, behind postscreen
+        - 143    # imap
+        - 465    # smtps
+        - 587    # submission
+        - 4190   # managesieve
+        - 11332  # rspamd milter
+
+    # The sockets below are what the dovecot 2.3 to 2.4 migration got wrong:
+    # each role was correct on its own, only the handover was broken. No linter
+    # catches that, and no single-role scenario does either.
+    - name: Stat the dovecot LMTP socket postfix delivers through
+      ansible.builtin.stat:
+        path: /var/spool/postfix/private/dovecot-lmtp
+      register: mail_lmtp_socket
+
+    - name: Verify the LMTP socket is reachable for postfix
+      ansible.builtin.assert:
+        that:
+          - mail_lmtp_socket.stat.exists
+          - mail_lmtp_socket.stat.gr_name == 'postfix'
+          - mail_lmtp_socket.stat.mode == '0660'
+        fail_msg: the dovecot LMTP socket is missing or not group readable for postfix
+
+    - name: Stat the dovecot SASL socket postfix authenticates against
+      ansible.builtin.stat:
+        path: /var/spool/postfix/private/auth
+      register: mail_auth_socket
+
+    - name: Verify the SASL socket is reachable for postfix
+      ansible.builtin.assert:
+        that:
+          - mail_auth_socket.stat.exists
+          - mail_auth_socket.stat.gr_name == 'postfix'
+          - mail_auth_socket.stat.mode == '0660'
+        fail_msg: the dovecot SASL socket is missing or not group readable for postfix
+
+    - name: Stat the dovecot anvil socket
+      ansible.builtin.stat:
+        path: /run/dovecot/anvil
+      register: mail_anvil_socket
+
+    - name: Verify the anvil socket is reachable for the vmail user
+      ansible.builtin.assert:
+        that:
+          - mail_anvil_socket.stat.exists
+          - mail_anvil_socket.stat.gr_name == 'vmail'
+          - mail_anvil_socket.stat.mode == '0660'
+        fail_msg: the anvil socket is not group readable for vmail, LMTP will fail
+
+    - name: Read parameters explicitly set in main.cf
+      ansible.builtin.command: /usr/sbin/postconf -n
+      register: mail_main_cf
+      changed_when: false
+
+    - name: Verify the vimbadmin lookups are configured
+      ansible.builtin.assert:
+        that:
+          - mail_main_cf.stdout is search('(?m)^virtual_mailbox_domains\s*=\s*proxy:mysql:')
+          - mail_main_cf.stdout is search('(?m)^virtual_mailbox_maps\s*=\s*proxy:mysql:')
+          - mail_main_cf.stdout is search('(?m)^virtual_alias_maps\s*=\s*proxy:mysql:')
+          - mail_main_cf.stdout is search('(?m)^transport_maps\s*=\s*mysql:')
+          - mail_main_cf.stdout is search('(?m)^smtpd_sender_login_maps\s*=\s*proxy:mysql:')
+        fail_msg: the vimbadmin lookups are not configured although postfix_with_vimbadmin is true
+
+    - name: Verify the rspamd milter is configured
+      ansible.builtin.assert:
+        that:
+          - mail_main_cf.stdout is search('(?m)^smtpd_milters\s*=\s*inet:localhost:11332')
+          - mail_main_cf.stdout is search('(?m)^non_smtpd_milters\s*=\s*inet:localhost:11332')
+        fail_msg: the rspamd milter is not configured although postfix_with_rspamd is true
+
+    - name: Verify no before-queue proxy filter points at a dead port
+      ansible.builtin.assert:
+        that:
+          - mail_main_cf.stdout is not search('smtpd_proxy_filter')
+        fail_msg: a before-queue proxy filter is configured next to the rspamd milter
+
+    - name: Read effective master.cf services
+      ansible.builtin.command: /usr/sbin/postconf -M
+      register: mail_master_cf
+      changed_when: false
+
+    - name: Verify postscreen, smtps and submission are active
+      ansible.builtin.assert:
+        that:
+          - mail_master_cf.stdout is search('(?m)^smtp\s+inet\s+.*\spostscreen(\s|$)')
+          - mail_master_cf.stdout is search('(?m)^smtps\s+inet\s+.*\ssmtpd(\s|$)')
+          - mail_master_cf.stdout is search('(?m)^submission\s+inet\s+.*\ssmtpd(\s|$)')
+          - mail_master_cf.stdout is search('(?m)^submission-header-cleanup\s')
+        fail_msg: master.cf does not contain the expected services
+
+    - name: Stat the postfix mysql map files
+      ansible.builtin.stat:
+        path: '/etc/postfix/mysql/{{ item }}'
+      register: mail_mysql_maps
+      loop:
+        - virtual_alias_maps.cf
+        - virtual_domains_maps.cf
+        - virtual_mailbox_maps.cf
+        - virtual_transport_maps.cf
+
+    - name: Verify the mysql map files hold their credentials privately
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.mode == '0640'
+          - item.stat.gr_name == 'postfix'
+        fail_msg: '{{ item.item }} is missing or world readable'
+      loop: '{{ mail_mysql_maps.results }}'
+      loop_control:
+        label: '{{ item.item }}'
+
+    - name: Dump effective bayes classifier configuration
+      ansible.builtin.command: rspamadm configdump classifier
+      register: mail_classifier
+      changed_when: false
+
+    - name: Verify bayes autolearn is active with a balance guard
+      ansible.builtin.assert:
+        that:
+          - mail_classifier.stdout is search('autolearn')
+          - mail_classifier.stdout is search('spam_threshold = 6')
+          - mail_classifier.stdout is search('ham_threshold = -0.5')
+          - mail_classifier.stdout is search('check_balance = true')
+        fail_msg: bayes autolearn is not configured as expected
+
+    - name: Read milter headers configuration
+      ansible.builtin.slurp:
+        src: /etc/rspamd/local.d/milter_headers.conf
+      register: mail_milter_headers
+
+    - name: Verify the spam header routine names the header the sieve rule expects
+      vars:
+        conf: '{{ mail_milter_headers.content | b64decode }}'
+      ansible.builtin.assert:
+        that:
+          - '"spam-header" in conf'
+          - '''header = "X-Spam";'' in conf'
+          - '''value = "Yes";'' in conf'
+        fail_msg: the spam-header routine does not emit the header before.sieve matches
+
+    - name: Read before.sieve script
+      ansible.builtin.slurp:
+        src: /var/vmail/before.sieve
+      register: mail_before_sieve
+
+    - name: Verify before.sieve matches the header rspamd emits
+      vars:
+        sieve: '{{ mail_before_sieve.content | b64decode }}'
+      ansible.builtin.assert:
+        that:
+          - '''header :contains "X-Spam" "Yes"'' in sieve'
+          - '''fileinto "Junk";'' in sieve'
+        fail_msg: before.sieve does not match the header configured in rspamd
+
+    - name: Verify the compiled before.svbin exists
+      ansible.builtin.stat:
+        path: /var/vmail/before.svbin
+      register: mail_before_svbin
+      failed_when: not mail_before_svbin.stat.exists
+
+    - name: Install the roundtrip helper
+      ansible.builtin.copy:
+        src: mail_roundtrip.py
+        dest: /usr/local/lib/mail_roundtrip.py
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Send a message through submission and read it back over IMAP
+      ansible.builtin.command: python3 /usr/local/lib/mail_roundtrip.py
+      register: mail_roundtrip
+      changed_when: false
+      environment:
+        MAIL_HOST: 127.0.0.1
+        MAIL_USER: '{{ mail_test_address }}'
+        MAIL_PASSWORD: '{{ mail_test_password }}'
+
+    - name: Show where the message was delivered
+      ansible.builtin.debug:
+        var: mail_roundtrip.stdout

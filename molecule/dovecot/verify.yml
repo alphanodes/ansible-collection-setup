@@ -127,3 +127,20 @@
         host: 127.0.0.1
         port: 4190
         timeout: 5
+
+    # The following checks guard the default spam filing rule. They make this
+    # scenario a regression test for hosts that have not switched their spam
+    # header over to the one rspamd actually emits.
+    - name: Read before.sieve script
+      ansible.builtin.slurp:
+        src: /var/vmail/before.sieve
+      register: dovecot_before_sieve_content
+
+    - name: Verify before.sieve uses the configured spam header and mailbox
+      vars:
+        sieve: '{{ dovecot_before_sieve_content.content | b64decode }}'
+      ansible.builtin.assert:
+        that:
+          - '''header :contains "X-Spam-Flag" "YES"'' in sieve'
+          - '''fileinto "Junk";'' in sieve'
+        fail_msg: before.sieve does not match the role defaults

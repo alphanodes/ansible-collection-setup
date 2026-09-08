@@ -1,0 +1,233 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+
+  vars:
+    # Parameters read back from the running postfix instance. Reading them via
+    # postconf instead of grepping main.cf verifies what postfix actually uses,
+    # including values it rejects or normalizes.
+    postfix_verify_parameters:
+      - compatibility_level
+      - disable_vrfy_command
+      - message_size_limit
+      - mailbox_size_limit
+      - myhostname
+      - mydestination
+      - mynetworks_style
+      - relayhost
+      - smtp_sasl_auth_enable
+      - smtp_sasl_password_maps
+      - smtp_sasl_security_options
+      - smtp_tls_security_level
+      - smtpd_relay_restrictions
+      - smtpd_tls_security_level
+      - smtpd_tls_auth_only
+
+  tasks:
+    - name: Verify postfix package is installed
+      ansible.builtin.command: dpkg -l postfix
+      register: postfix_pkg
+      changed_when: false
+      failed_when: postfix_pkg.rc != 0
+
+    - name: Verify libsasl2-modules package is installed
+      ansible.builtin.command: dpkg -l libsasl2-modules
+      register: postfix_sasl_pkg
+      changed_when: false
+      failed_when: postfix_sasl_pkg.rc != 0
+
+    - name: Verify postfix service is running
+      ansible.builtin.systemd_service:
+        name: postfix
+      register: postfix_service
+      failed_when: postfix_service.status.ActiveState != 'active'
+
+    - name: Verify postfix configuration passes its own check
+      ansible.builtin.command: /usr/sbin/postfix -c /etc/postfix check
+      register: postfix_check
+      changed_when: false
+      failed_when: postfix_check.rc != 0 or postfix_check.stderr | length > 0
+
+    - name: Read effective postfix parameters
+      ansible.builtin.command: /usr/sbin/postconf -h {{ item }}
+      register: postfix_postconf
+      changed_when: false
+      loop: '{{ postfix_verify_parameters }}'
+
+    - name: Build parameter lookup
+      ansible.builtin.set_fact:
+        postfix_conf: >-
+          {{ dict(postfix_postconf.results | map(attribute='item')
+                  | zip(postfix_postconf.results | map(attribute='stdout') | map('trim'))) }}
+
+    - name: Verify relayhost is set with explicit port and without MX lookup
+      ansible.builtin.assert:
+        that:
+          - postfix_conf['relayhost'] == '[smtp.gmail.com]:587'
+        fail_msg: "relayhost is '{{ postfix_conf['relayhost'] }}', expected '[smtp.gmail.com]:587'"
+
+    - name: Verify SASL client authentication is enabled
+      ansible.builtin.assert:
+        that:
+          - postfix_conf['smtp_sasl_auth_enable'] == 'yes'
+          - postfix_conf['smtp_sasl_password_maps'] == 'hash:/etc/postfix/sasl_passwd'
+          - postfix_conf['smtp_sasl_security_options'] == 'noanonymous'
+        fail_msg: SASL client configuration does not match the role defaults
+
+    - name: Verify TLS defaults are opportunistic and not enforced
+      ansible.builtin.assert:
+        that:
+          - postfix_conf['smtp_tls_security_level'] == 'may'
+          - postfix_conf['smtpd_tls_security_level'] == 'may'
+          - postfix_conf['smtpd_tls_auth_only'] == 'no'
+        fail_msg: TLS security levels do not match the role defaults
+
+    - name: Verify VRFY is disabled to prevent address harvesting
+      ansible.builtin.assert:
+        that:
+          - postfix_conf['disable_vrfy_command'] == 'yes'
+        fail_msg: disable_vrfy_command is not set
+
+    - name: Verify size limits and compatibility level
+      ansible.builtin.assert:
+        that:
+          - postfix_conf['compatibility_level'] == '3.6'
+          - postfix_conf['message_size_limit'] == '20480000'
+          - postfix_conf['mailbox_size_limit'] == '0'
+        fail_msg: Size limits or compatibility level do not match the role defaults
+
+    - name: Verify relay restrictions close the open relay in the right order
+      ansible.builtin.assert:
+        that:
+          - postfix_conf['smtpd_relay_restrictions'].replace(' ', '').split(',') == expected_relay_restrictions
+        fail_msg: "smtpd_relay_restrictions is '{{ postfix_conf['smtpd_relay_restrictions'] }}'"
+      vars:
+        expected_relay_restrictions:
+          - permit_mynetworks
+          - permit_sasl_authenticated
+          - reject_unauth_destination
+
+    - name: Verify mynetworks is limited to the host itself
+      ansible.builtin.assert:
+        that:
+          - postfix_conf['mynetworks_style'] == 'host'
+        fail_msg: "mynetworks_style is '{{ postfix_conf['mynetworks_style'] }}', expected 'host'"
+
+    - name: Verify SASL password map exists
+      ansible.builtin.stat:
+        path: /etc/postfix/sasl_passwd
+      register: postfix_sasl_map
+      failed_when: not postfix_sasl_map.stat.exists
+
+    - name: Verify SASL password map is not world readable
+      ansible.builtin.assert:
+        that:
+          - postfix_sasl_map.stat.mode == '0600'
+        fail_msg: "/etc/postfix/sasl_passwd has mode {{ postfix_sasl_map.stat.mode }}, expected 0600"
+
+    - name: Verify compiled SASL password map exists
+      ansible.builtin.stat:
+        path: /etc/postfix/sasl_passwd.db
+      register: postfix_sasl_map_db
+      failed_when: not postfix_sasl_map_db.stat.exists
+
+    - name: Verify compiled SASL password map is not world readable
+      ansible.builtin.assert:
+        that:
+          - postfix_sasl_map_db.stat.mode == '0600'
+        fail_msg: "/etc/postfix/sasl_passwd.db has mode {{ postfix_sasl_map_db.stat.mode }}, expected 0600"
+
+    - name: Read effective master.cf services
+      ansible.builtin.command: /usr/sbin/postconf -M
+      register: postfix_master
+      changed_when: false
+
+    - name: Verify smtp on port 25 is served by smtpd
+      ansible.builtin.assert:
+        that:
+          - postfix_master.stdout is search('(?m)^smtp\s+inet\s+.*\ssmtpd(\s|$)')
+        fail_msg: master.cf does not hand port 25 to smtpd
+
+    - name: Verify aliases database was built
+      ansible.builtin.stat:
+        path: /etc/aliases.db
+      register: postfix_aliases_db
+      failed_when: not postfix_aliases_db.stat.exists
+
+    - name: Verify mailname matches myhostname
+      ansible.builtin.slurp:
+        src: /etc/mailname
+      register: postfix_mailname
+
+    - name: Assert mailname matches myhostname
+      ansible.builtin.assert:
+        that:
+          - (postfix_mailname.content | b64decode).strip() == postfix_conf['myhostname']
+        fail_msg: /etc/mailname does not match myhostname
+
+    - name: Test SMTP port is listening
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: 25
+        timeout: 10
+
+    # The following checks guard the disabled feature flags. They are what makes
+    # this scenario a regression test for hosts that do not opt into postscreen,
+    # smtps, vimbadmin or rspamd.
+    - name: Verify postscreen is not active
+      ansible.builtin.assert:
+        that:
+          - postfix_master.stdout is not search('postscreen')
+          - postfix_master.stdout is not search('dnsblog')
+        fail_msg: postscreen is active although postfix_with_postscreen is false
+
+    - name: Verify smtps on port 465 is not active
+      ansible.builtin.assert:
+        that:
+          - postfix_master.stdout is not search('(?m)^smtps\s')
+        fail_msg: smtps is active although postfix_with_smtps is false
+
+    - name: Read parameters explicitly set in main.cf
+      ansible.builtin.command: /usr/sbin/postconf -n
+      register: postfix_main_cf
+      changed_when: false
+
+    - name: Verify rspamd milter is not configured
+      ansible.builtin.assert:
+        that:
+          - postfix_main_cf.stdout is not search('(?m)^smtpd_milters\s*=')
+          - postfix_main_cf.stdout is not search('(?m)^non_smtpd_milters\s*=')
+        fail_msg: milters are configured although postfix_with_rspamd is false
+
+    - name: Verify vimbadmin lookups are not configured
+      ansible.builtin.assert:
+        that:
+          - postfix_main_cf.stdout is not search('(?m)^virtual_mailbox_domains\s*=')
+          - postfix_main_cf.stdout is not search('(?m)^virtual_mailbox_maps\s*=')
+          - postfix_main_cf.stdout is not search('(?m)^transport_maps\s*=')
+          - postfix_main_cf.stdout is not search('(?m)^smtpd_sender_login_maps\s*=')
+        fail_msg: vimbadmin lookups are configured although postfix_with_vimbadmin is false
+
+    - name: Stat optional files that must be absent
+      ansible.builtin.stat:
+        path: '{{ item }}'
+      register: postfix_absent_files
+      loop:
+        - /etc/postfix/mysql
+        - /etc/postfix/submission_header_cleanup
+        - /etc/postfix/sender-access
+        - /etc/postfix/sender-canonical
+        - /etc/postfix/recipient-canonical
+        - /etc/postfix/main.cf.proto
+        - /etc/postfix/master.cf.proto
+
+    - name: Verify optional files are absent
+      ansible.builtin.assert:
+        that:
+          - not item.stat.exists
+        fail_msg: "{{ item.item }} exists although its feature is disabled"
+      loop: '{{ postfix_absent_files.results }}'
+      loop_control:
+        label: '{{ item.item }}'

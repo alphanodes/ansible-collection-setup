@@ -1,0 +1,127 @@
+---
+# Integration scenario: mysql, redis, rspamd, dovecot and postfix on one host,
+# with every optional mail feature turned on. The single-role scenarios cover
+# the same roles with the features off, so together they test both paths.
+- name: Prepare database
+  hosts: all
+  become: true
+
+  vars_files:
+    - vars/main.yml
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  roles:
+    - role: alphanodes.setup.mysql
+
+  post_tasks:
+    - name: Create vimbadmin database
+      ansible.mysql.mysql_db:
+        name: '{{ mail_db_name }}'
+        state: present
+        login_unix_socket: /run/mysqld/mysqld.sock
+
+    - name: Create vimbadmin database user
+      ansible.mysql.mysql_user:
+        name: '{{ mail_db_user }}'
+        password: '{{ mail_db_password }}'
+        host: '%'
+        priv: '{{ mail_db_name }}.*:ALL'
+        state: present
+        login_unix_socket: /run/mysqld/mysqld.sock
+
+    # Minimal subset of the vimbadmin schema: the tables the dovecot and
+    # postfix templates query. Column names have to match the queries.
+    - name: Create vimbadmin tables
+      ansible.mysql.mysql_query:
+        login_unix_socket: /run/mysqld/mysqld.sock
+        login_db: '{{ mail_db_name }}'
+        query:
+          - |
+            CREATE TABLE IF NOT EXISTS mailbox (
+              username VARCHAR(255) NOT NULL PRIMARY KEY,
+              password VARCHAR(255) NOT NULL,
+              homedir VARCHAR(255) NOT NULL,
+              maildir VARCHAR(255) NOT NULL,
+              uid INT NOT NULL DEFAULT 5000,
+              gid INT NOT NULL DEFAULT 5000,
+              quota BIGINT NOT NULL DEFAULT 0,
+              access_restriction VARCHAR(50) NOT NULL DEFAULT 'ALL',
+              active TINYINT NOT NULL DEFAULT 1
+            )
+          - |
+            CREATE TABLE IF NOT EXISTS domain (
+              domain VARCHAR(255) NOT NULL PRIMARY KEY,
+              transport VARCHAR(255) NOT NULL DEFAULT '',
+              backupmx TINYINT NOT NULL DEFAULT 0,
+              active TINYINT NOT NULL DEFAULT 1
+            )
+          - |
+            CREATE TABLE IF NOT EXISTS alias (
+              address VARCHAR(255) NOT NULL PRIMARY KEY,
+              goto TEXT NOT NULL,
+              active TINYINT NOT NULL DEFAULT 1
+            )
+      # CREATE TABLE IF NOT EXISTS is idempotent
+      changed_when: false
+
+    - name: Insert test domain
+      ansible.mysql.mysql_query:
+        login_unix_socket: /run/mysqld/mysqld.sock
+        login_db: '{{ mail_db_name }}'
+        query: >-
+          INSERT INTO domain (domain, transport, backupmx, active)
+          VALUES (%s, 'lmtp:unix:private/dovecot-lmtp', 0, 1)
+          ON DUPLICATE KEY UPDATE transport = VALUES(transport)
+        positional_args:
+          - '{{ mail_test_domain }}'
+      # ON DUPLICATE KEY UPDATE writes the same row on every run
+      changed_when: false
+
+    - name: Insert test mailbox
+      ansible.mysql.mysql_query:
+        login_unix_socket: /run/mysqld/mysqld.sock
+        login_db: '{{ mail_db_name }}'
+        query: >-
+          INSERT INTO mailbox
+            (username, password, homedir, maildir, uid, gid, quota, access_restriction, active)
+          VALUES (%s, %s, %s, %s, 5000, 5000, 1073741824, 'ALL', 1)
+          ON DUPLICATE KEY UPDATE password = VALUES(password)
+        positional_args:
+          - '{{ mail_test_address }}'
+          - "{{ mail_test_password | password_hash('sha512', 'moleculesalt') }}"
+          - '/var/vmail/{{ mail_test_domain }}/{{ mail_test_user }}'
+          - '/var/vmail/{{ mail_test_domain }}/{{ mail_test_user }}/Maildir/'
+      changed_when: false
+
+    # smtpd_sender_login_maps resolves through virtual_alias_maps, so the
+    # authenticated user needs to own its own address. Without this row
+    # reject_authenticated_sender_login_mismatch rejects the submission.
+    - name: Insert sender login alias
+      ansible.mysql.mysql_query:
+        login_unix_socket: /run/mysqld/mysqld.sock
+        login_db: '{{ mail_db_name }}'
+        query: >-
+          INSERT INTO alias (address, goto, active) VALUES (%s, %s, 1)
+          ON DUPLICATE KEY UPDATE goto = VALUES(goto)
+        positional_args:
+          - '{{ mail_test_address }}'
+          - '{{ mail_test_address }}'
+      changed_when: false
+
+- name: Converge
+  hosts: all
+  become: true
+
+  vars_files:
+    - vars/main.yml
+
+  roles:
+    - role: alphanodes.setup.rspamd
+    - role: alphanodes.setup.dovecot
+    - role: alphanodes.setup.postfix

@@ -104,6 +104,83 @@ rspamd_authenticated_symbols_disabled:
 rspamd_neural_enabled: false
 ```
 
+### Bayes classifier
+
+Rspamd ships the bayes classifier enabled but never trains it. Without training
+the statfiles stay empty, `BAYES_HAM` and `BAYES_SPAM` never reach `min_learns`
+(200 per class), and the classifier contributes nothing to any verdict while
+still being queried for every message. Check with `rspamc stat`:
+
+```text
+Statfile: BAYES_SPAM ... learned: 0
+Statfile: BAYES_HAM  ... learned: 0
+```
+
+Autolearn trains the classifier from rspamd's own verdict, so it needs no user
+interaction and no IMAP side setup. The trade-off is that it confirms what the
+other rules already decided rather than adding an independent signal.
+
+```yaml
+# Off by default. Turning it on changes no delivery behaviour, it only starts
+# filling the statfiles.
+rspamd_bayes_autolearn: true
+
+# Learn as spam from this score upwards
+rspamd_bayes_autolearn_spam_threshold: 6.0
+# Learn as spam when the message was filed as junk from this score upwards
+rspamd_bayes_autolearn_junk_threshold: 4.0
+# Learn as ham from this score downwards
+rspamd_bayes_autolearn_ham_threshold: -0.5
+# Ham vastly outnumbers spam on a normal mail flow. Without a balance guard the
+# ham statfile outgrows the spam one and biases every verdict.
+rspamd_bayes_autolearn_check_balance: true
+rspamd_bayes_autolearn_min_balance: 0.9
+```
+
+Verify after a few days that both statfiles are growing:
+
+```bash
+rspamc stat | grep -E "Statfile|Messages learned"
+```
+
+### Spam header for filtering on the MDA side
+
+Rspamd emits no `X-Spam-Flag`. Its default headers are `X-Spamd-Bar`,
+`X-Spam-Level`, `X-Spam-Status` and `Authentication-Results` - and
+`X-Spam-Status` is present on every message, spam or not:
+
+```text
+X-Spamd-Bar: -----
+X-Spam-Status: No, score=-5.65
+```
+
+A Sieve rule matching `X-Spam-Flag` therefore never fires and nothing is filed
+away. Enable the `spam-header` routine to get an unambiguous marker on every
+message that reached the `add_header` action or a stricter one. Rspamd names
+this header `Deliver-To: Junk` by default, which most MDAs ignore, so name and
+value are set explicitly:
+
+```yaml
+rspamd_with_spam_header: true
+rspamd_spam_header_name: X-Spam
+rspamd_spam_header_value: 'Yes'
+```
+
+Authenticated and local senders are skipped by the module itself, so outgoing
+mail is never marked.
+
+The dovecot role has to match this exactly, otherwise the header is written but
+nothing acts on it:
+
+```yaml
+dovecot_spam_header_name: X-Spam
+dovecot_spam_header_value: 'Yes'
+```
+
+Note that this changes what users see: mail scoring at or above
+`rspamd_action_add_header` moves out of the inbox into the Junk folder. Check
+`rspamc stat` for the share of messages this affects before enabling it.
+
 ### Diagnosing slow scans
 
 Set `rspamd_log_level: info` temporarily. rspamd then writes one
