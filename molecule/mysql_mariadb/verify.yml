@@ -84,3 +84,23 @@
     - name: Show reusable tasks verification results
       ansible.builtin.debug:
         msg: "Reusable MySQL tasks verified: database 'test_app_db' and user 'test_app_user' created successfully"
+
+    # The role used to chown its tmpdir unconditionally. With /tmp configured
+    # that stripped the sticky bit, and everything else writing there broke -
+    # apt could no longer create its signature check files.
+    - name: Stat the shared /tmp used as MySQL tmpdir
+      ansible.builtin.stat:
+        path: /tmp
+      register: mysql_shared_tmp
+
+    - name: Verify /tmp kept its sticky bit and ownership
+      ansible.builtin.assert:
+        that:
+          - mysql_shared_tmp.stat.mode == '1777'
+          - mysql_shared_tmp.stat.pw_name == 'root'
+        fail_msg: "the mysql role took ownership of /tmp (mode {{ mysql_shared_tmp.stat.mode }}, owner {{ mysql_shared_tmp.stat.pw_name }})"
+
+    - name: Verify apt can still update its cache after the role ran
+      ansible.builtin.apt:
+        update_cache: true
+      changed_when: false

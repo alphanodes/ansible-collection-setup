@@ -117,8 +117,20 @@
     mode: '0700'
     setype: mysqld_db_t
 
-- name: Ensure MySQL tmpdir exists and writable
+- name: Stat MySQL tmpdir
+  ansible.builtin.stat:
+    path: "{{ mysql_server_tmpdir }}"
+  register: mysql_tmpdir_stat
   when: mysql_server_tmpdir is defined and mysql_server_tmpdir | length > 0
+
+- name: Ensure MySQL tmpdir exists and writable
+  when:
+    - mysql_server_tmpdir is defined and mysql_server_tmpdir | length > 0
+    # Skip shared system directories such as /tmp. They are already world
+    # writable, so mysql needs no help there, and taking ownership would strip
+    # the sticky bit and break every other user of the directory - apt, for
+    # one, can no longer create its signature check files afterwards.
+    - not (mysql_tmpdir_stat.stat.exists | default(false) and mysql_tmpdir_stat.stat.isdir | default(false) and mysql_tmpdir_stat.stat.woth | default(false))
   ansible.builtin.file:
     path: "{{ mysql_server_tmpdir }}"
     state: directory

@@ -122,3 +122,23 @@
           - mysql_datadir.stat.exists
           - mysql_datadir.stat.isdir
         fail_msg: "MySQL data directory is missing"
+
+    # The role used to chown its tmpdir unconditionally. With /tmp configured
+    # that stripped the sticky bit, and everything else writing there broke -
+    # apt could no longer create its signature check files.
+    - name: Stat the shared /tmp used as MySQL tmpdir
+      ansible.builtin.stat:
+        path: /tmp
+      register: mysql_shared_tmp
+
+    - name: Verify /tmp kept its sticky bit and ownership
+      ansible.builtin.assert:
+        that:
+          - mysql_shared_tmp.stat.mode == '1777'
+          - mysql_shared_tmp.stat.pw_name == 'root'
+        fail_msg: "the mysql role took ownership of /tmp (mode {{ mysql_shared_tmp.stat.mode }}, owner {{ mysql_shared_tmp.stat.pw_name }})"
+
+    - name: Verify apt can still update its cache after the role ran
+      ansible.builtin.apt:
+        update_cache: true
+      changed_when: false

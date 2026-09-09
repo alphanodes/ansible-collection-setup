@@ -173,7 +173,9 @@ mysql_server_with_local_infile: false
 # use server as multi-source replication slave
 mysql_server_gtid_mode: false
 
-# use ram disk for tmp directoy - leave empty for mysql default
+# use ram disk for tmp directory - leave empty for mysql default.
+# A shared system directory such as /tmp works too and is left untouched: the
+# role only takes ownership of a tmpdir that is not already world writable.
 mysql_server_tmpdir: /run/mysqld
 
 # 400 + (table_open_cache / 2) (this is default with MySQL 5.6)
