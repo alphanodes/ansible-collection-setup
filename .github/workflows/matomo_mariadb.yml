@@ -1,16 +1,21 @@
 ---
-name: "alphanodes.setup.dovecot"
+name: "alphanodes.setup.matomo_mariadb"
 'on':
   pull_request:
   push:
     branches:
       - main
     paths:
-      - 'roles/dovecot/**'
+      - 'roles/matomo/**'
       - 'roles/mysql/**'
+      - 'roles/nginx_mono/**'
       - 'roles/common/**'
-      - 'molecule/dovecot/**'
-      - '.github/workflows/dovecot.yml'
+      - 'molecule/matomo_mariadb/**'
+      - '.github/workflows/matomo_mariadb.yml'
+
+defaults:
+  run:
+    working-directory: 'matomo_mariadb'
 
 jobs:
   build:
@@ -22,12 +27,17 @@ jobs:
     strategy:
       matrix:
         distro:
-          # Only Debian 13+ supported (Dovecot 2.4 requirement)
+          # MariaDB comes from the distribution, so every supported release works
+          - ubuntu2404
+          - ubuntu2604
+          - debian12
           - debian13
 
     steps:
       - name: Check out the codebase.
         uses: actions/checkout@v5
+        with:
+          path: 'matomo_mariadb'
 
       - name: Set up Python 3.
         uses: actions/setup-python@v5
@@ -42,6 +52,6 @@ jobs:
       - name: Run Molecule tests.
         run: |
           molecule --version
-          molecule test -s dovecot
+          molecule test -s matomo_mariadb
         env:
           MOLECULE_DISTRO: ${{ matrix.distro }}

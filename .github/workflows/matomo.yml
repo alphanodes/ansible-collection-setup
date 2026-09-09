@@ -7,6 +7,7 @@ name: "alphanodes.setup.matomo"
       - main
     paths:
       - 'roles/matomo/**'
+      - 'roles/mysql/**'
       - 'roles/nginx_mono/**'
       - 'roles/common/**'
       - 'molecule/matomo/**'
