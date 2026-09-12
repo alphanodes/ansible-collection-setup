@@ -98,7 +98,7 @@ source_redmine:
 {% endif %}
   username: {{ redmine_instance.merge_projects_db_user }}
   password: "{{ redmine_instance.merge_projects_db_password }}"
-  encoding: utf8
+  encoding: {{ active_db_encoding }}
 {% if redmine_instance.merge_projects_adapter is defined and redmine_instance.merge_projects_adapter=='postgresql' %}
   schema_search_path: public
 {% endif %}

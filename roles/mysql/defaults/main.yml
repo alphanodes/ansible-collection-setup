@@ -122,8 +122,8 @@ mysql_slow_query_log_file: /var/log/mysql/mysql-slow.log
 # Databases.
 mysql_databases: []
 #   - name: example
-#     collation: utf8_general_ci
-#     encoding: utf8
+#     collation: utf8mb4_general_ci
+#     encoding: utf8mb4
 #     replicate: 1
 
 # Users.

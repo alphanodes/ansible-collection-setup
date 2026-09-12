@@ -11,8 +11,8 @@
     tasks_from: create_database.yml
   vars:
     mysql_setup_db_name: '{{ redmine_db_name }}'
-    mysql_setup_db_collation: utf8_general_ci
-    mysql_setup_db_encoding: utf8
+    mysql_setup_db_collation: utf8mb4_general_ci
+    mysql_setup_db_encoding: utf8mb4
 
 - name: Create redmine mysql database user - {{ redmine_instance_name }}
   ansible.builtin.include_role:
