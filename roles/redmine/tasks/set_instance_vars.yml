@@ -100,12 +100,30 @@
     # redmine_ai is PostgreSQL-only and needs pgvector, so AI implies it
     active_pgvector: "{{ redmine_instance.with_pgvector | default(active_ai) }}"
 
+- name: Fail on unsupported adapter for enterprise tools - {{ redmine_instance_name }}
+  ansible.builtin.fail:
+    msg: >-
+      with_pghero and with_pg_extras require the postgresql adapter, but
+      {{ redmine_instance_name }} uses {{ active_db_adapter }}.
+  when:
+    - active_db_adapter != 'postgresql'
+    - redmine_instance.with_pghero | default(false) or redmine_instance.with_pg_extras | default(false)
+
 - name: Set enterprise tools - {{ redmine_instance_name }}
   ansible.builtin.set_fact:
+    # Both tools read pg_stat_* views, so they are PostgreSQL-only and stay off
+    # for MySQL instances even when enterprise support is enabled.
     # see https://github.com/ankane/pghero
-    active_pghero: "{{ redmine_instance.with_pghero | default(with_alphanodes_enterprise_support) }}"
+    active_pghero: "{{ active_db_adapter == 'postgresql' and (redmine_instance.with_pghero | default(with_alphanodes_enterprise_support)) }}"
     # see https://github.com/pawurb/rails-pg-extras
-    active_pg_extras: "{{ redmine_instance.with_pg_extras | default(with_alphanodes_enterprise_support) }}"
+    active_pg_extras: "{{ active_db_adapter == 'postgresql' and (redmine_instance.with_pg_extras | default(with_alphanodes_enterprise_support)) }}"
+
+- name: Set enterprise tool route blocking - {{ redmine_instance_name }}
+  ansible.builtin.set_fact:
+    # The plugin mounts both engines unconditionally and they bypass Redmine
+    # auth, relying on nginx alone, so an inactive tool needs its route blocked.
+    blocked_pghero: "{{ with_alphanodes_enterprise_support and not active_pghero }}"
+    blocked_pg_extras: "{{ with_alphanodes_enterprise_support and not active_pg_extras }}"
 
 - name: Set redmine_theme_dir - {{ redmine_instance_name }}
   ansible.builtin.set_fact:

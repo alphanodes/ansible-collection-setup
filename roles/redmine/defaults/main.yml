@@ -96,7 +96,7 @@ redmine_default_vhost_users: []
 # NOTE: this should be fixed in Redmine 6.2 (with Rails 8 support) and removed here
 redmine_to_time_preserves_timezone: true
 
-# this enables pghero and pg_extras, too
+# this enables pghero and pg_extras, too (PostgreSQL instances only)
 redmine_with_alphanodes_enterprise_support: true
 
 redmine_proxy_timeout: 120
@@ -359,3 +359,14 @@ redmine_pg_extras_locations:
       - 'auth_basic "Restricted access only";'
       - "auth_basic_user_file {{ htpasswd_file | default('/etc/nginx/.htpasswd_redmine') }};"
       - "try_files $uri @puma;"
+
+# The enterprise support plugin mounts both engines regardless of the adapter
+# and relies on nginx for access control, so block the routes whenever the
+# tool itself is not active.
+redmine_pghero_blocked_locations:
+  - name: "/pghero"
+    action: "deny all"
+
+redmine_pg_extras_blocked_locations:
+  - name: "/pg_extras"
+    action: "deny all"

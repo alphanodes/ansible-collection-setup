@@ -16,8 +16,14 @@
       - active_dmsf | bool == tc.expect.dmsf
       - active_ai | bool == tc.expect.ai
       - active_pgvector | bool == tc.expect.pgvector
+      - active_pghero | bool == tc.expect.pghero
+      - active_pg_extras | bool == tc.expect.pg_extras
+      - blocked_pghero | bool == tc.expect.blocked_pghero
+      - blocked_pg_extras | bool == tc.expect.blocked_pg_extras
     fail_msg: >-
       {{ tc.name }}: got
       agile={{ active_agile }} zenedit={{ active_zenedit }}
       dmsf={{ active_dmsf }} ai={{ active_ai }} pgvector={{ active_pgvector }}
+      pghero={{ active_pghero }} pg_extras={{ active_pg_extras }}
+      blocked_pghero={{ blocked_pghero }} blocked_pg_extras={{ blocked_pg_extras }}
     success_msg: "{{ tc.name }}: OK"

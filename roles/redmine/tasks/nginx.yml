@@ -59,6 +59,20 @@
     - not access_protection
     - active_pg_extras
 
+- name: Block pghero location - {{ redmine_instance_name }}
+  ansible.builtin.set_fact:
+    redmine_locations: "{{ redmine_locations + redmine_pghero_blocked_locations }}"
+  when:
+    - not access_protection
+    - blocked_pghero
+
+- name: Block pg_extras location - {{ redmine_instance_name }}
+  ansible.builtin.set_fact:
+    redmine_locations: "{{ redmine_locations + redmine_pg_extras_blocked_locations }}"
+  when:
+    - not access_protection
+    - blocked_pg_extras
+
 - name: Add custom instance locations - {{ redmine_instance_name }}
   ansible.builtin.set_fact:
     redmine_locations: "{{ redmine_locations + redmine_instance.locations }}"

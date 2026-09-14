@@ -1,0 +1,25 @@
+---
+# Runs the real set_instance_vars.yml for one case that must abort, and checks
+# that it aborts for the expected reason (not by accident somewhere else).
+- name: "Expect failure - {{ tc.name }}"
+  block:
+    - name: "Derive facts - {{ tc.name }}"
+      ansible.builtin.include_tasks: "{{ redmine_set_instance_vars_file }}"
+      vars:
+        r_instance:
+          key: flagtest
+          value: "{{ tc.value }}"
+
+    - name: "Assert - {{ tc.name }}"
+      ansible.builtin.fail:
+        msg: "{{ tc.name }}: expected a failure, but the facts were derived without one"
+
+  rescue:
+    - name: "Assert failure reason - {{ tc.name }}"
+      ansible.builtin.assert:
+        that:
+          - tc.expect_msg in ansible_failed_result.msg | default('')
+        fail_msg: >-
+          {{ tc.name }}: failed for the wrong reason:
+          {{ ansible_failed_result.msg | default('no message') }}
+        success_msg: "{{ tc.name }}: OK"

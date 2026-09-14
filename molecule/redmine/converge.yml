@@ -68,42 +68,84 @@
       - name: no plugins -> all off
         value:
           plugins: []
-        expect: {agile: false, zenedit: false, dmsf: false, ai: false, pgvector: false}
+        expect: {agile: false, zenedit: false, dmsf: false, ai: false, pgvector: false, pghero: false, pg_extras: false, blocked_pghero: true, blocked_pg_extras: true}
       - name: redmine_agile -> agile on
         value:
           plugins: [redmine_agile]
-        expect: {agile: true, zenedit: false, dmsf: false, ai: false, pgvector: false}
+        expect: {agile: true, zenedit: false, dmsf: false, ai: false, pgvector: false, pghero: false, pg_extras: false, blocked_pghero: true, blocked_pg_extras: true}
       - name: redmine_agile_pro -> agile on (pro variant)
         value:
           plugins: [redmine_agile_pro]
-        expect: {agile: true, zenedit: false, dmsf: false, ai: false, pgvector: false}
+        expect: {agile: true, zenedit: false, dmsf: false, ai: false, pgvector: false, pghero: false, pg_extras: false, blocked_pghero: true, blocked_pg_extras: true}
       - name: redmine_zenedit_pro -> zenedit on (pro variant)
         value:
           plugins: [redmine_zenedit_pro]
-        expect: {agile: false, zenedit: true, dmsf: false, ai: false, pgvector: false}
+        expect: {agile: false, zenedit: true, dmsf: false, ai: false, pgvector: false, pghero: false, pg_extras: false, blocked_pghero: true, blocked_pg_extras: true}
       - name: redmine_dmsf -> dmsf on
         value:
           plugins: [redmine_dmsf]
-        expect: {agile: false, zenedit: false, dmsf: true, ai: false, pgvector: false}
+        expect: {agile: false, zenedit: false, dmsf: true, ai: false, pgvector: false, pghero: false, pg_extras: false, blocked_pghero: true, blocked_pg_extras: true}
       - name: redmine_ai -> ai on and pgvector implied
         value:
           plugins: [redmine_ai]
-        expect: {agile: false, zenedit: false, dmsf: false, ai: true, pgvector: true}
+        expect: {agile: false, zenedit: false, dmsf: false, ai: true, pgvector: true, pghero: false, pg_extras: false, blocked_pghero: true, blocked_pg_extras: true}
       - name: with_agile false overrides present plugin
         value:
           plugins: [redmine_agile]
           with_agile: false
-        expect: {agile: false, zenedit: false, dmsf: false, ai: false, pgvector: false}
+        expect: {agile: false, zenedit: false, dmsf: false, ai: false, pgvector: false, pghero: false, pg_extras: false, blocked_pghero: true, blocked_pg_extras: true}
       - name: with_dmsf true without plugin still on
         value:
           plugins: []
           with_dmsf: true
-        expect: {agile: false, zenedit: false, dmsf: true, ai: false, pgvector: false}
+        expect: {agile: false, zenedit: false, dmsf: true, ai: false, pgvector: false, pghero: false, pg_extras: false, blocked_pghero: true, blocked_pg_extras: true}
       - name: with_pgvector false decouples from ai
         value:
           plugins: [redmine_ai]
           with_pgvector: false
-        expect: {agile: false, zenedit: false, dmsf: false, ai: true, pgvector: false}
+        expect: {agile: false, zenedit: false, dmsf: false, ai: true, pgvector: false, pghero: false, pg_extras: false, blocked_pghero: true, blocked_pg_extras: true}
+      # pghero and pg_extras are PostgreSQL-only, so enterprise support alone
+      # must not switch them on for a MySQL instance.
+      - name: postgresql with enterprise support -> pghero and pg_extras on
+        value:
+          plugins: []
+          adapter: postgresql
+        expect: {agile: false, zenedit: false, dmsf: false, ai: false, pgvector: false, pghero: true, pg_extras: true, blocked_pghero: false, blocked_pg_extras: false}
+      - name: mysql2 with enterprise support -> pghero and pg_extras off
+        value:
+          plugins: []
+          adapter: mysql2
+        expect: {agile: false, zenedit: false, dmsf: false, ai: false, pgvector: false, pghero: false, pg_extras: false, blocked_pghero: true, blocked_pg_extras: true}
+      - name: postgresql without enterprise support -> pghero and pg_extras off
+        value:
+          plugins: []
+          adapter: postgresql
+          with_alphanodes_enterprise_support: false
+        expect: {agile: false, zenedit: false, dmsf: false, ai: false, pgvector: false, pghero: false, pg_extras: false, blocked_pghero: false, blocked_pg_extras: false}
+      # An inactive tool still has its route mounted by the plugin, so nginx has
+      # to block it - this is the only thing keeping the engine unreachable.
+      - name: with_pghero false blocks the pghero route
+        value:
+          plugins: []
+          adapter: postgresql
+          with_pghero: false
+        expect: {agile: false, zenedit: false, dmsf: false, ai: false, pgvector: false, pghero: false, pg_extras: true, blocked_pghero: true, blocked_pg_extras: false}
+
+    # Cases that must abort the run: asking for a PostgreSQL-only tool on a
+    # MySQL instance is a configuration error and must not be swallowed.
+    redmine_flag_failure_cases:
+      - name: with_pghero true on mysql2 -> fail
+        value:
+          plugins: []
+          adapter: mysql2
+          with_pghero: true
+        expect_msg: require the postgresql adapter
+      - name: with_pg_extras true on mysql2 -> fail
+        value:
+          plugins: []
+          adapter: mysql2
+          with_pg_extras: true
+        expect_msg: require the postgresql adapter
 
   pre_tasks:
     - name: Update apt cache
@@ -297,6 +339,13 @@
     - name: Assert plugin flag derivation per case
       ansible.builtin.include_tasks: tasks/assert_plugin_flags.yml
       loop: "{{ redmine_flag_test_cases }}"
+      loop_control:
+        loop_var: tc
+        label: "{{ tc.name }}"
+
+    - name: Assert plugin flag derivation fails per invalid case
+      ansible.builtin.include_tasks: tasks/assert_flag_failure.yml
+      loop: "{{ redmine_flag_failure_cases }}"
       loop_control:
         loop_var: tc
         label: "{{ tc.name }}"
