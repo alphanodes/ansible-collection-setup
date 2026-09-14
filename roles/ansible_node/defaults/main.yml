@@ -20,7 +20,7 @@ ansible_node_identifier: '{{ inventory_hostname }}'
 ansible_node_roles: []
 
 ansible_node_collections:
-  - name: 'git+https://github.com/alphanodes/ansible-collection-tasks.git,main'
+  - name: 'git+https://git.alphanodes.com/alphanodes/ansible-collection-tasks.git,main'
     action: install -U
 
 ansible_host_key_checking: false
