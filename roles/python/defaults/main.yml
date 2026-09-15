@@ -6,6 +6,18 @@ python_packages:
 
 python_with_dev: false
 
+# pip executable name, if not set the ansible/system default is used
+# python_pip_executable: pip3
+
+# Packages to install with pip, either plain names or items with
+# name, version, state (e.g. absent, latest, forcereinstall) and virtualenv.
+# Example:
+# python_pip_packages:
+#   - docker
+#   - name: awscli
+#     version: "1.11.91"
+#   - name: docker
+#     virtualenv: /my_app/venv
 python_pip_packages: []
 
 python_pip_default_state: latest

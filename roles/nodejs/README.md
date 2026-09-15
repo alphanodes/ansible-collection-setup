@@ -1,4 +1,4 @@
-# Ansible Role: Nodejs
+# Ansible Role: nodejs
 
 Setup [Nodejs](https://nodejs.org) on Debian and Ubuntu servers.
 

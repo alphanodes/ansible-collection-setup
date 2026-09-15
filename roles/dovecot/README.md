@@ -1,96 +1,36 @@
-# Dovecot Role
+# Ansible Role: dovecot
 
-Installs and configures Dovecot 2.4 IMAP/LMTP server with Sieve support.
+An Ansible Role that installs Dovecot 2.4 IMAP/LMTP server with Sieve support on Debian and Ubuntu servers.
 
 ## Requirements
 
-- **Debian 13 (Trixie) or newer** - Dovecot 2.4 has breaking changes incompatible with older versions
-- MySQL database with ViMbAdmin schema (or compatible)
-- Postfix for SMTP integration
-
-## Features
-
-- IMAP and LMTP protocols
-- Sieve mail filtering with ManageSieve
-- MySQL authentication (optimized for ViMbAdmin)
-- Shared mailboxes with ACL support
-- Quota management with Postfix policy service
-- SSL/TLS encryption
-
-## ViMbAdmin Integration
-
-This role is optimized for use with [ViMbAdmin](https://www.vimbadmin.net/) as the mail
-account management interface. The SQL queries are tailored to the vimbadmin database schema.
-
-If you use a different mail management system, you may need to adjust the SQL queries
-in `templates/dovecot.conf.j2`.
+- Debian 13 (Trixie) or newer, Dovecot 2.4 is incompatible with older configurations
+- MySQL database with the ViMbAdmin schema, the SQL queries in `templates/dovecot.conf.j2` are tailored to it
 
 ## Role Variables
 
-### Required Variables (set in host_vars)
+Available variables can be found in [defaults/main.yml](defaults/main.yml)
+
+## Example Playbook
 
 ```yaml
-dovecot_db_password: 'your_database_password'
+    - hosts: all
+
+      vars:
+        dovecot_db_password: "{{ vault_dovecot_db_password }}"
+        dovecot_ssl_cert_file: /etc/letsencrypt/live/mail.example.com/fullchain.pem
+        dovecot_ssl_key_file: /etc/letsencrypt/live/mail.example.com/privkey.pem
+        dovecot_postmaster_address: postmaster@example.com
+
+      roles:
+        - alphanodes.setup.dovecot
 ```
 
-### TLS certificates
+Without `dovecot_ssl_cert_file` and `dovecot_ssl_key_file` the role falls back to the snakeoil certificate, which is only suitable for tests.
 
-The role falls back to the snakeoil certificate, which is fine for tests but
-not for anything reachable from outside. Point these at a real certificate in
-host_vars:
+## Server Side Spam Filing
 
-```yaml
-dovecot_ssl_cert_file: /etc/letsencrypt/live/mail.example.com/fullchain.pem
-dovecot_ssl_key_file: /etc/letsencrypt/live/mail.example.com/privkey.pem
-```
-
-### Optional Variables
-
-```yaml
-# Database configuration
-dovecot_db_name: vimbadmin
-dovecot_db_user: vimbadmin
-dovecot_db_host: 127.0.0.1
-
-# Mail storage
-dovecot_vmail_user: vmail
-dovecot_vmail_group: vmail
-dovecot_vmail_home: '/var/vmail'
-
-# Postmaster address for bounce messages
-dovecot_postmaster_address: 'postmaster@example.com'
-
-# Password scheme
-dovecot_default_pass_scheme: SHA512-CRYPT
-
-# TLS certificates, see above
-dovecot_ssl_cert_file: /etc/ssl/certs/ssl-cert-snakeoil.pem
-dovecot_ssl_key_file: /etc/ssl/private/ssl-cert-snakeoil.key
-
-# Global spam filing rule, see "Server side spam filing" below
-dovecot_spam_header_name: X-Spam-Flag
-dovecot_spam_header_value: 'YES'
-dovecot_spam_mailbox: Junk
-```
-
-## Server side spam filing
-
-The role deploys a global Sieve script (`before.sieve`) that runs before every
-personal filter and files marked mail into the Junk folder. Which header it
-matches is configurable:
-
-```yaml
-dovecot_spam_header_name: X-Spam-Flag
-dovecot_spam_header_value: 'YES'
-dovecot_spam_mailbox: Junk
-```
-
-The defaults are inert on purpose: rspamd emits no `X-Spam-Flag`, so the rule
-matches nothing and no mail is moved. That keeps the role from silently
-changing where mail lands on an existing installation.
-
-To activate server side filing, enable the spam header in the rspamd role and
-point both sides at the same header:
+A global Sieve script (`before.sieve`) runs before every personal filter and files marked mail into `dovecot_spam_mailbox`. The defaults are inert on purpose: rspamd emits no `X-Spam-Flag`, so the rule matches nothing and an existing installation keeps delivering to the inbox. To activate filing, enable the spam header in the rspamd role and point both sides at the same header:
 
 ```yaml
 # rspamd host
@@ -103,27 +43,4 @@ dovecot_spam_header_name: X-Spam
 dovecot_spam_header_value: 'Yes'
 ```
 
-Mail scoring at or above `rspamd_action_add_header` then moves out of the inbox
-into the Junk folder, where nobody looks by default - so weigh the false
-positive risk before enabling it.
-
-## Dependencies
-
-- `alphanodes.setup.common`
-
-## Example Playbook
-
-```yaml
-- hosts: mailservers
-  roles:
-    - role: alphanodes.setup.dovecot
-      vars:
-        dovecot_db_password: "{{ vault_dovecot_db_password }}"
-        dovecot_ssl_cert_file: /etc/letsencrypt/live/{{ ansible_host }}/fullchain.pem
-        dovecot_ssl_key_file: /etc/letsencrypt/live/{{ ansible_host }}/privkey.pem
-        dovecot_postmaster_address: postmaster@example.com
-```
-
-## License
-
-MIT
+Mail scoring at or above `rspamd_action_add_header` then moves into the Junk folder, where nobody looks by default, so weigh the false positive risk before enabling it.

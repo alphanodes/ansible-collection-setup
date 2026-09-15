@@ -1,4 +1,4 @@
-# Ansible Role: Drupal
+# Ansible Role: drupal
 
 Setup [Drupal](https://www.drupal.org/) on Debian and Ubuntu servers without Docker.
 

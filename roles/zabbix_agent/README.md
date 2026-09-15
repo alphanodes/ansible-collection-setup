@@ -1,23 +1,19 @@
-# Role: zabbix_agent
+# Ansible Role: zabbix_agent
 
-Installs and configures Zabbix Agent 2 with custom monitoring scripts.
+An Ansible Role that installs [Zabbix](https://www.zabbix.com/) Agent 2 with custom monitoring scripts on Debian and Ubuntu servers.
 
-## Supported platforms
+## Role Variables
 
-- Debian 12/13
-- Ubuntu 24.04
+Available variables can be found in [defaults/main.yml](defaults/main.yml)
 
-## Dependencies
+## Example Playbook
 
-- alphanodes.setup.common
-- alphanodes.setup.rsync
+```yaml
+    - hosts: all
 
-## Variables
+      vars:
+        zabbix_server_vhost: monitor.example.com
 
-See `defaults/main.yml` for all configurable options. Key variables:
-
-- `zabbix_server_vhost` - Zabbix server hostname
-- `zabbix_version` - Zabbix version (default: 7.4)
-- `zabbix_agent_server_api` - Enable Zabbix API integration
-- `zabbix_host_groups` - Host groups for Zabbix API
-- `zabbix_link_templates` - Templates to link via API
+      roles:
+        - alphanodes.setup.zabbix_agent
+```

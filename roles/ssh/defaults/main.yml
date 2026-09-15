@@ -4,6 +4,7 @@
 ssh_server_packages:
   - openssh-server
 
+# Include /etc/ssh/sshd_config.d/*.conf, which can overwrite settings of this role
 ssh_server_include_sshd_config_d: false
 
 ssh_server_port: 22
@@ -29,7 +30,9 @@ ssh_server_max_startups: ''
 ssh_server_client_alive_interval: 60
 ssh_server_client_alive_count_max: 3
 
+# Possible values: without-password, 'yes' or 'no'
 ssh_server_permit_root_login: without-password
+# Recreate host keys on next run, do not set it permanently
 ssh_server_recreate_host_keys: false
 
 ssh_server_hostkeys:
@@ -37,6 +40,7 @@ ssh_server_hostkeys:
   - /etc/ssh/ssh_host_rsa_key
   - /etc/ssh/ssh_host_ecdsa_key
 
+# Match blocks: keywords below a matching line override the global sshd settings
 ssh_server_match_group: false
 ssh_server_match_user: false
 
@@ -96,11 +100,18 @@ ssh_deny_groups: ''
 #
 ssh_groups: []
 
+# Users configured for ssh, see README for the item structure
+# (access, private_keys, known_hosts, with_management_access)
 ssh_users:
   - name: root
 
+# Public keys added to authorized_keys of users with with_management_access
+# (default true for root and ansible_user, false for all other users)
 ssh_management_access: []
+# known_hosts entries for all users, a user specific known_hosts replaces them.
+# Create entries with: ssh-keyscan -t ed25519,rsa,ecdsa HOST
 ssh_known_hosts: []
+# Same as ssh_known_hosts, but always added and not replaceable per user
 ssh_all_known_hosts: []
 
 ssh_with_config_file_cleanup: true

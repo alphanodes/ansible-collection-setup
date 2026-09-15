@@ -1,4 +1,4 @@
-# Ansible Role: Git
+# Ansible Role: ruby
 
 Setup [Ruby](https://www.ruby-lang.org/) on Debian and Ubuntu servers.
 

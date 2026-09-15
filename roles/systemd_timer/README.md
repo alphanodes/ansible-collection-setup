@@ -1,5 +1,7 @@
 # Ansible Role: systemd_timer
 
+An Ansible Role that creates and removes systemd timers with their service units on Debian and Ubuntu servers.
+
 ## Role Variables
 
 Available variables can be found in [defaults/main.yml](defaults/main.yml)
@@ -32,16 +34,14 @@ Available variables can be found in [defaults/main.yml](defaults/main.yml)
         timers:
           microcache_directory:
             state: absent
+
       roles:
         - alphanodes.setup.systemd_timer
 ```
 
 ## Adding extra systemd directives
 
-The role hardcodes the most common fields (dependencies, environment,
-exec_start, syslog_identifier, ...). Anything else - hardening, resource
-limits, custom unit options - goes through `unit_extra` / `service_extra`
-as raw systemd syntax:
+The role covers the most common fields (dependencies, environment, exec_start, syslog_identifier, ...). Anything else, like hardening, resource limits or custom unit options, goes through `unit_extra` (`[Unit]`) and `service_extra` (`[Service]`) as raw systemd syntax:
 
 ```yaml
     timers:
@@ -57,7 +57,3 @@ as raw systemd syntax:
           ReadWritePaths=/var/lib/app
           MemoryMax=512M
 ```
-
-Use `unit_extra` for `[Unit]` directives and `service_extra` for
-`[Service]` directives. systemd accepts both `yes`/`no` and `true`/`false`
-for booleans.

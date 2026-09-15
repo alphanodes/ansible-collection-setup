@@ -1,4 +1,4 @@
-# Ansible Role: Diagnostic tools
+# Ansible Role: diagnostic
 
 Setup diagnostic tools on Debian and Ubuntu servers.
 

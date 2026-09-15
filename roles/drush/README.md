@@ -1,4 +1,4 @@
-# Ansible Role: Drush
+# Ansible Role: drush
 
 Setup [Drush](https://www.drush.org) on Debian and Ubuntu servers.
 

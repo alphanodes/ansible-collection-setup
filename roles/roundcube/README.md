@@ -1,48 +1,27 @@
-# Roundcube
+# Ansible Role: roundcube
 
-Ansible role to install and configure Roundcube webmail.
-
-## Requirements
-
-- Debian 13 (Trixie)
+An Ansible Role that installs [Roundcube](https://roundcube.net/) webmail on Debian and Ubuntu servers.
 
 ## Role Variables
 
-| Variable | Default | Description |
-| -------- | ------- | ----------- |
-| `roundcube_vhost_server` | `roundcube.example.com` | Server name for nginx vhost |
-| `roundcube_vhost_letsencrypt` | `false` | Enable Let's Encrypt SSL |
-| `roundcube_vhost_ssl_cert` | `''` | SSL certificate name (from ssl role) |
-| `roundcube_db_password` | required | Database password for Roundcube |
-| `roundcube_git_install` | `false` | Install from Git instead of package |
-
-## Dependencies
-
-- `alphanodes.setup.common`
-- `alphanodes.setup.ssl`
-- `alphanodes.setup.php_fpm`
-- `alphanodes.setup.mysql`
-- `alphanodes.setup.nginx_mono`
+Available variables can be found in [defaults/main.yml](defaults/main.yml)
 
 ## Example Playbook
 
 ```yaml
-- hosts: mail
-  roles:
-    - role: alphanodes.setup.roundcube
+    - hosts: all
+
       vars:
         roundcube_vhost_server: webmail.example.com
-        roundcube_vhost_ssl_cert: webmail
-        roundcube_db_password: "{{ vault_roundcube_db_password }}"
+        roundcube_vhost_letsencrypt: true
+
+      roles:
+        - alphanodes.setup.roundcube
 ```
 
 ## Custom Files
 
-Customer-specific files are loaded from playbook directory:
+The role picks up optional files from the playbook directory, a file named after the host wins over one named after the first group of the host:
 
-- `{{ playbook_dir }}/files/roundcube/logo/{{ inventory_hostname }}.png` - Custom logo
-- `{{ playbook_dir }}/files/roundcube/config/{{ inventory_hostname }}/config.inc.php` - Custom config
-
-## License
-
-MIT
+- `files/roundcube/logo/<inventory_hostname or group>.png` for a custom logo
+- `files/roundcube/config/<inventory_hostname or group>/config.inc.php` for additional configuration

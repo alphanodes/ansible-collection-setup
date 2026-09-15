@@ -12,15 +12,15 @@ dkim_base_dir: /var/lib/dkim
 dkim_user: root
 dkim_group: dkim
 
-# DKIM domains configuration
+# DKIM domains configuration (dictionary keyed by domain)
 # Each domain can have its own selector and key size
 #
 # Example:
 # dkim_domains:
-#   - domain: example.com
+#   example.com:
 #     selector: mail
 #     key_size: 2048
-#   - domain: example.org
+#   example.org:
 #     selector: default
 #     key_size: 2048
 #
@@ -37,7 +37,7 @@ dkim_default_key_size: 2048
 # DKIM TXT record flags (optional tags)
 # See https://datatracker.ietf.org/doc/html/rfc6376#section-3.6.1
 # s=email: Restricts key to email signing only (recommended)
-# Note: We do NOT use t=s (strict) because mail.alphanodes.com signs for alphanodes.com (subdomain signing)
+# Note: t=s (strict) is not used, because a mail host like mail.example.com signs for example.com (subdomain signing)
 dkim_txt_service_type: email  # Service type (email = only for email, * = all services)
 
 # Force regeneration of existing keys

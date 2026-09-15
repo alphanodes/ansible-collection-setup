@@ -1,4 +1,4 @@
-# Ansible Role: Apt
+# Ansible Role: apt
 
 Setup [Apt](https://en.wikipedia.org/wiki/APT_(software)) on Debian and Ubuntu servers.
 

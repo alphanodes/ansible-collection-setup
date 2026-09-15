@@ -1,4 +1,4 @@
-# Ansible Role: PHP FPM
+# Ansible Role: php_fpm
 
 Setup PHP FPM on Debian and Ubuntu servers.
 

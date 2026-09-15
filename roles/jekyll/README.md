@@ -1,4 +1,4 @@
-# Ansible Role: Jekyll
+# Ansible Role: jekyll
 
 Installs [Jekyll](https://jekyllrb.com/) on Debian and Ubuntu servers without docker.
 

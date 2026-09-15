@@ -1,21 +1,16 @@
-# Role: element_web
+# Ansible Role: element_web
 
-Summary
+An Ansible Role that installs the [Element Web](https://github.com/element-hq/element-web) Matrix client on Debian and Ubuntu servers.
 
-- Installs and configures Element Web (static build) on Debian/Ubuntu, typically served behind nginx.
+## Role Variables
 
-Supported platforms
+Available variables can be found in [defaults/main.yml](defaults/main.yml)
 
-- Debian, Ubuntu
+## Example Playbook
 
-Dependencies
+```yaml
+    - hosts: all
 
-- No external dependencies outside this collection.
-
-Variables
-
-- See `defaults/main.yml` and `vars/` for configurable options.
-
-Notes
-
-- For TLS/host configuration, see the nginx/nginx_mono integration in the service roles.
+      roles:
+        - alphanodes.setup.element_web
+```

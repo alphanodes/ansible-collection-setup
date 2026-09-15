@@ -13,8 +13,10 @@ svn_server_group: svn
 # svn_server_user_password:
 
 svn_server_home: '{{ srv_path }}/{{ svn_server_user }}'
+# All repositories are stored here, make sure the partition has enough disk space
 svn_server_repositories: '{{ svn_server_home }}/repositories'
 
 # do uninstall svn with all data, set it to yes
 svn_server_remove: false
+# Also remove the Debian packages when svn_server_remove is true
 svn_server_remove_packages: false

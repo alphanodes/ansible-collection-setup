@@ -1,4 +1,4 @@
-# Ansible Role: Ansible node
+# Ansible Role: ansible_node
 
 Setup Ansible on Debian and Ubuntu servers.
 

@@ -1,6 +1,10 @@
-# Ansible Role: PostgreSQL
+# Ansible Role: postgresql
 
-Installs PostgreSQL server on Debian and Ubuntu servers.
+An Ansible Role that installs PostgreSQL server on Debian and Ubuntu servers.
+
+## Role Variables
+
+Available variables can be found in [defaults/main.yml](defaults/main.yml)
 
 ## Example Playbook
 

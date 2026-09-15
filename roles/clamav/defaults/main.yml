@@ -18,7 +18,7 @@ clamav_socket_group: clamav
 clamav_socket_mode: '0660'
 
 # Users that need access to ClamAV socket (added to clamav_socket_group)
-# Example: ['www-data', 'redmine-sakd']
+# Example: ['www-data', 'redmine']
 clamav_socket_users: []
 
 # Resource limits for clamd to prevent excessive memory usage

@@ -30,7 +30,7 @@ rspamd_log_level: warning
 #
 # Define centralized dkim_domains dictionary in host_vars:
 #   dkim_domains:
-#     alphanodes.com:
+#     example.com:
 #       selector: dkim_key
 #       key_size: 2048
 #     example.org:
@@ -72,7 +72,7 @@ rspamd_blacklist_from: []
 
 # see https://rspamd.com/doc/workers/controller.html
 # generate it with: rspamadm pw
-# and provide it with rspamd_worker_controller_password
+# and provide it with rspamd_worker_controller_password (required, the hash, not the plain password)
 # rspamd_worker_controller_password:
 
 rspamd_worker_controller_secure_ip: 127.0.0.1

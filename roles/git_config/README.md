@@ -1,4 +1,4 @@
-# Ansible Role: Git config
+# Ansible Role: git_config
 
 Setup git config on Debian and Ubuntu servers.
 

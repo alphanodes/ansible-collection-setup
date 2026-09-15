@@ -1,4 +1,4 @@
-# Ansible Role: Netfilter
+# Ansible Role: netfilter
 
 Setup netfilter on Debian and Ubuntu servers.
 

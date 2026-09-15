@@ -1,65 +1,32 @@
-# Role: gitlab_runner
+# Ansible Role: gitlab_runner
 
-Installs GitLab Runner from the official GitLab repository with optional Hetzner Cloud Fleeting Plugin support.
+An Ansible Role that installs [GitLab Runner](https://docs.gitlab.com/runner/) with optional Hetzner Cloud Fleeting Plugin support on Debian and Ubuntu servers.
 
-## Supported Platforms
+## Role Variables
 
-- Debian (bookworm, trixie)
-- Ubuntu (noble)
+Available variables can be found in [defaults/main.yml](defaults/main.yml)
 
-## Dependencies
+## Example Playbook
 
-- `alphanodes.setup.common`
-- `alphanodes.setup.docker`
+```yaml
+    - hosts: all
 
-## Variables
+      vars:
+        gitlab_runner_coordinator_url: https://gitlab.example.com
+        gitlab_runner_concurrent: 10
 
-| Variable | Default | Description |
-| -------- | ------- | ----------- |
-| `gitlab_runner_coordinator_url` | `''` | GitLab server URL |
-| `gitlab_runner_with_hetzner_fleed` | `true` | Install Hetzner Fleeting Plugin |
-| `gitlab_runner_concurrent` | `{{ ansible_processor_nproc }}` | Max concurrent jobs |
-| `gitlab_runner_apt_pinning` | `false` | Pin GitLab repository packages |
-| `gitlab_runner_remove` | `false` | Remove GitLab Runner instead of installing |
-| `gitlab_runner_docker_cleanup` | `false` | Install systemd timer that runs `docker system prune` periodically |
-| `gitlab_runner_docker_cleanup_oncalendar` | `*-*-* 02:00:00` | systemd `OnCalendar=` schedule for the cleanup timer |
-| `gitlab_runner_docker_cleanup_until` | `72h` | `--filter "until="` value passed to `docker system prune` |
-| `gitlab_runner_docker_cleanup_random_delay_sec` | `15min` | systemd `RandomizedDelaySec=` for the cleanup timer |
+      roles:
+        - alphanodes.setup.gitlab_runner
+```
 
-See `defaults/main.yml` for all configurable options including Hetzner Cloud settings.
+## Runner Configuration
 
-## Configuration
-
-The role looks for a host-specific config.toml template at:
+The role does not generate `config.toml` itself. It only deploys a host specific template, if one exists in the playbook directory:
 
 ```text
 {{ playbook_dir }}/files/gitlab-runner/{{ inventory_hostname }}.toml.j2
 ```
 
-## Example Usage
-
-```yaml
-- hosts: runners
-  roles:
-    - role: alphanodes.setup.gitlab_runner
-      vars:
-        gitlab_runner_coordinator_url: https://gitlab.example.com
-        gitlab_runner_concurrent: 10
-```
-
 ## Hetzner Cloud Fleeting Plugin
 
-When `gitlab_runner_with_hetzner_fleed: true`, the Hetzner Fleeting Plugin is installed for autoscaling runners in Hetzner Cloud.
-
-Key variables:
-
-- `gitlab_runner_hetzner_server_location`: Hetzner datacenter (default: `nbg1`)
-- `gitlab_runner_hetzner_server_type`: Server type (default: `cx23`)
-- `gitlab_runner_hetzner_image`: OS image (default: `debian-13`)
-- `gitlab_runner_hetzner_api_token`: Hetzner Cloud API token
-
-## Notes
-
-- Uses official GitLab Runner repository
-- Configures systemd service with graceful shutdown (720s timeout)
-- Removes bash_logout to prevent logout issues
+With `gitlab_runner_with_hetzner_fleed: true` (default) the Hetzner Fleeting Plugin is installed for autoscaling runners in Hetzner Cloud. The plugin itself is configured in the `config.toml` template, which can use the `gitlab_runner_hetzner_*` variables.

@@ -1,4 +1,4 @@
-# Ansible Role: go
+# Ansible Role: golang
 
 An Ansible Role that installs Go language on Debian and Ubuntu servers.
 

@@ -1,4 +1,4 @@
-# Ansible Role: Goaccess
+# Ansible Role: goaccess
 
 Setup [GoAccess](https://goaccess.io/) on Debian and Ubuntu servers.
 

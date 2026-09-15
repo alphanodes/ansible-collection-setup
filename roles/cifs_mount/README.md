@@ -1,4 +1,4 @@
-# Ansible Role: CIFS mount
+# Ansible Role: cifs_mount
 
 Setup CIFS mount on Debian and Ubuntu servers.
 

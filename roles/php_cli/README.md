@@ -1,4 +1,4 @@
-# Ansible Role: PHP CLI
+# Ansible Role: php_cli
 
 Setup PHP CLI on Debian and Ubuntu servers.
 

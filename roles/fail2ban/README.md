@@ -1,4 +1,4 @@
-# Ansible Role: Fail2ban
+# Ansible Role: fail2ban
 
 Setup [Fail2ban](https://www.fail2ban.org/) on Debian and Ubuntu servers.
 

@@ -1,4 +1,4 @@
-# Ansible Role: EtherCalc
+# Ansible Role: ethercalc
 
 Setup [EtherCalc](https://ethercalc.net/) on Debian and Ubuntu servers.
 

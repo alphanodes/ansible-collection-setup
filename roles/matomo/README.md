@@ -1,4 +1,4 @@
-# Ansible Role: Matomo
+# Ansible Role: matomo
 
 Installs [Matomo](https://matomo.org/) on Debian and Ubuntu servers without docker.
 

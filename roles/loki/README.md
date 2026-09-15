@@ -1,21 +1,16 @@
-# Role: loki
+# Ansible Role: loki
 
-Summary
+An Ansible Role that installs [Grafana Loki](https://grafana.com/oss/loki/) on Debian and Ubuntu servers.
 
-- Installs and configures Grafana Loki on Debian/Ubuntu.
+## Role Variables
 
-Supported platforms
+Available variables can be found in [defaults/main.yml](defaults/main.yml)
 
-- Debian, Ubuntu
+## Example Playbook
 
-Dependencies
+```yaml
+    - hosts: all
 
-- No external dependencies outside this collection.
-
-Variables
-
-- See `defaults/main.yml` and `vars/` for configurable options.
-
-Notes
-
-- For ingestion/ingress via HTTP, a reverse proxy can be provided by nginx/nginx_mono.
+      roles:
+        - alphanodes.setup.loki
+```

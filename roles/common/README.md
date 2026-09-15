@@ -1,6 +1,6 @@
-# Ansible Role: Common
+# Ansible Role: common
 
-This role is used by other roles in this collections to share common configuration.
+An Ansible Role that shares common configuration between the other roles of this collection.
 
 ## Role Variables
 

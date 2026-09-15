@@ -1,22 +1,20 @@
-# Role: alloy
+# Ansible Role: alloy
 
-Installs and configures Grafana Alloy for log shipping to Loki.
+An Ansible Role that installs [Grafana Alloy](https://grafana.com/docs/alloy/) and ships logs to Loki on Debian and Ubuntu servers.
 
-## Supported platforms
+## Role Variables
 
-- Debian 12/13
-- Ubuntu 24.04
+Available variables can be found in [defaults/main.yml](defaults/main.yml)
 
-## Dependencies
+## Example Playbook
 
-- alphanodes.setup.common
+```yaml
+    - hosts: all
 
-## Variables
+      vars:
+        alloy_loki_url: https://loki.example.com
+        alloy_basic_pass: secret
 
-See `defaults/main.yml` for all configurable options. Key variables:
-
-- `alloy_loki_url` - Loki endpoint URL
-- `alloy_basic_user` / `alloy_basic_pass` - Authentication credentials
-- `alloy_with_postgres` - Enable PostgreSQL log collection
-- `alloy_with_redmine` - Enable Redmine log collection
-- `alloy_drop_*_regex` - Noise filter patterns
+      roles:
+        - alphanodes.setup.alloy
+```

@@ -1,4 +1,4 @@
-# Ansible Role: Nfs
+# Ansible Role: nfs
 
 Setup nfs on Debian and Ubuntu servers.
 

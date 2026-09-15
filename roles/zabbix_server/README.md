@@ -1,35 +1,19 @@
-# Zabbix Server
+# Ansible Role: zabbix_server
 
-Installs and configures Zabbix Server with PostgreSQL backend and nginx web frontend.
-
-## Requirements
-
-- PostgreSQL database server
-- PHP-FPM for web interface
-- nginx (via nginx_mono role)
+An Ansible Role that installs [Zabbix](https://www.zabbix.com/) Server with PostgreSQL backend and nginx web frontend on Debian and Ubuntu servers.
 
 ## Role Variables
 
-See `defaults/main.yml` for available variables.
-
-## Dependencies
-
-- alphanodes.setup.common
-- alphanodes.setup.zabbix_agent
-- alphanodes.setup.postgresql
-- alphanodes.setup.php_fpm
+Available variables can be found in [defaults/main.yml](defaults/main.yml)
 
 ## Example Playbook
 
 ```yaml
-- hosts: monitoring
-  roles:
-    - role: alphanodes.setup.zabbix_server
+    - hosts: all
+
       vars:
         zabbix_server_vhost: monitor.example.com
-        zabbix_server_vhost_ssl_cert: monitor
+
+      roles:
+        - alphanodes.setup.zabbix_server
 ```
-
-## License
-
-Apache-2.0

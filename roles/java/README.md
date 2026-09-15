@@ -1,4 +1,4 @@
-# Ansible Role: Java
+# Ansible Role: java
 
 Installs Java on Debian and Ubuntu servers.
 

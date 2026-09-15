@@ -1,21 +1,16 @@
-# Role: grafana
+# Ansible Role: grafana
 
-Summary
+An Ansible Role that installs [Grafana](https://grafana.com/) on Debian and Ubuntu servers.
 
-- Installs and configures Grafana on Debian/Ubuntu.
+## Role Variables
 
-Supported platforms
+Available variables can be found in [defaults/main.yml](defaults/main.yml)
 
-- Debian, Ubuntu
+## Example Playbook
 
-Dependencies
+```yaml
+    - hosts: all
 
-- No external dependencies outside this collection.
-
-Variables
-
-- See `defaults/main.yml` and `vars/` for configurable options.
-
-Notes
-
-- Reverse proxy setup can be handled via the nginx/nginx_mono role.
+      roles:
+        - alphanodes.setup.grafana
+```

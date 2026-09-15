@@ -1,4 +1,4 @@
-# Ansible Role: PostgreSQL-Client
+# Ansible Role: postgresql_client
 
 Installs PostgreSQL client on Debian and Ubuntu servers.
 

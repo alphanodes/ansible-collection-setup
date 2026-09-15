@@ -1,4 +1,4 @@
-# Ansible Role: Git
+# Ansible Role: git
 
 Setup [Git](https://git-scm.com/) on Debian and Ubuntu servers.
 

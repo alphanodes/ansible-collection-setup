@@ -1,4 +1,4 @@
-# Ansible Role: Nextcloud
+# Ansible Role: nextcloud
 
 Setup [Nextcloud](https://nextcloud.com/) on Debian and Ubuntu servers.
 
