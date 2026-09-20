@@ -123,6 +123,19 @@
       changed_when: "update_redmine_result.rc != 0"
       when: mysql_replication_role is undefined or mysql_replication_role!='slave'
 
+    - name: Collect database statistics - {{ redmine_instance_name }}
+      # Migrations leave new tables without planner statistics (PostgreSQL
+      # reports reltuples = -1), and autovacuum only analyzes after 50 changed
+      # rows. Until the weekly maintenance run the planner therefore misjudges
+      # conditions on such a table, which has caused statement timeouts on
+      # search and activity pages. A full ANALYZE takes seconds.
+      ansible.builtin.command: >
+        bash -lc "{{ redmine_instance.update_prefix | default('') }}bundle exec rails runner \"c = ActiveRecord::Base.connection; c.execute('ANALYZE') if c.adapter_name == 'PostgreSQL'\""
+      args:
+        chdir: '{{ redmine_app_dir }}'
+      changed_when: false
+      when: mysql_replication_role is undefined or mysql_replication_role!='slave'
+
     - name: Precompile assets - {{ redmine_instance_name }}
       ansible.builtin.command: bash -lc "bundle exec rake assets:precompile"
       args:
