@@ -180,3 +180,14 @@ zabbix_agent_redmine_log_ignore_all:
   - 'Deal as a proc'
   - 'ReportingLog\: Failed to resolve hostname'
   - 'logged_type=>.AutomationRule'
+  # Internet measurement bots request the entry page with an
+  # "Accept: application/json" header. Redmine has no JSON template for these
+  # two actions, so Rails answers 406 and logs a "missing a template" line.
+  # Client-side content negotiation, not a server problem. Kept narrow on
+  # purpose: a 406 on any other controller can only come from an
+  # authenticated client and is worth seeing.
+  - 'responding with 406. (WelcomeController.index|AccountController.login)'
+  # Redmine core sets this Rails option itself, so it is logged on every Puma
+  # start and cannot be fixed from our side. Matched by the config key alone
+  # to keep the generic "deprecated and will be removed" keyword effective.
+  - 'config.active_support.to_time_preserves_timezone'
