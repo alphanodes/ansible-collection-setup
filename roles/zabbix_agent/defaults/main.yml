@@ -179,6 +179,9 @@ zabbix_agent_journalctl_ignore_all:
   # daemon-reload, it does not affect ssh
   - 'Failed to query local AF_VSOCK CID'
   - 'systemd-ssh-generator failed with exit status'
+  # Debian 13 has no /run/utmp anymore, sshd still tries to record the
+  # logout there after each interactive session
+  - 'syslogin_perform_logout: logout\(\) returned an error'
   # The agent cannot reach the Zabbix server while it restarts, which hits
   # all hosts at once. A permanent outage cannot be reported through this
   # check anyway, Zabbix detects it by the agent availability.
