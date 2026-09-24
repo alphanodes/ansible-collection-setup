@@ -179,6 +179,10 @@ zabbix_agent_journalctl_ignore_all:
   # daemon-reload, it does not affect ssh
   - 'Failed to query local AF_VSOCK CID'
   - 'systemd-ssh-generator failed with exit status'
+  # The agent cannot reach the Zabbix server while it restarts, which hits
+  # all hosts at once. A permanent outage cannot be reported through this
+  # check anyway, Zabbix detects it by the agent availability.
+  - 'cannot connect to \[[^]]+:10051\]'
   # Redmine automation summaries without errors
   - '\(errors: 0, skipped: [0-9]+\)'
   # Scanners probing public web servers
