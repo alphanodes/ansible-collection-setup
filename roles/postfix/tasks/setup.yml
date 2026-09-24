@@ -15,15 +15,14 @@
   ansible.builtin.getent:
     database: group
     key: ssl-cert
-  register: ssl_cert_group
-  ignore_errors: true
+    fail_key: false
 
 - name: Add postfix user to ssl-cert group
   ansible.builtin.user:
     name: postfix
     groups: ssl-cert
     append: true
-  when: ssl_cert_group is succeeded
+  when: ansible_facts.getent_group['ssl-cert'] is not none
 
 - name: Set relayhost with mxlookup
   ansible.builtin.set_fact:
