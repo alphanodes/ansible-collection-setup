@@ -10,7 +10,8 @@ mysql_backend: mysql
 # or sudo access
 mysql_user_home: /root
 mysql_user_name: root
-mysql_user_password: root
+# Required if mysql_user_name is not the root user
+mysql_user_password: ''
 
 # The default root user installed by mysql - almost always root
 mysql_root_home: /root

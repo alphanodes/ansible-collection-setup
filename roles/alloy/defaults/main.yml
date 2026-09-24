@@ -16,7 +16,8 @@ alloy_logging_format: logfmt
 alloy_loki_url: "https://loki.local"
 alloy_loki_push_url: "{{ alloy_loki_url }}/loki/api/v1/push"
 alloy_basic_user: shipper
-alloy_basic_pass: "CHANGE_ME"
+# Required, basic auth password for the Loki push endpoint
+alloy_basic_pass: ''
 
 alloy_label_owner: unknown
 alloy_label_env: prod

@@ -36,7 +36,9 @@ roundcube_smtp_host: 'localhost:587'
 roundcube_support_url: ''
 roundcube_product_name: 'Webmail'
 roundcube_skin_logo: images/logo.png
-roundcube_des_key: 'GNo-uOiEF5eNlBYUfDP8!HUZ'
+# Key to encrypt the IMAP password in the session, exactly 24 characters
+# for the default cipher method. Required, set a random value per host.
+roundcube_des_key: ''
 
 roundcube_plugins:
   - additional_message_headers

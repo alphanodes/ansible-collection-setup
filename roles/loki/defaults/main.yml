@@ -63,7 +63,7 @@ loki_vhost_for_zabbix: false
 # required!
 loki_web_user: shipper
 # required!
-loki_web_password: 'top_secret_but_change_it'
+loki_web_password: ''
 
 # optional
 # loki_customer_web_user: customer

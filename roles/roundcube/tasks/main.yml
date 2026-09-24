@@ -2,6 +2,15 @@
 - name: Include vars
   ansible.builtin.import_tasks: include-vars.yml
 
+- name: Ensure a Roundcube des_key is configured
+  ansible.builtin.assert:
+    that:
+      - roundcube_des_key | length == 24
+    fail_msg: >-
+      roundcube_des_key must be set to a random value of exactly 24 characters,
+      a public default would allow decrypting the IMAP passwords in sessions
+    quiet: true
+
 - name: Include plugins tasks
   ansible.builtin.include_tasks: plugins.yml
   tags:

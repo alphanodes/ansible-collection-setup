@@ -1,5 +1,15 @@
 ---
 
+- name: Ensure a Loki web password is configured
+  ansible.builtin.assert:
+    that:
+      - loki_web_password | length > 0
+    fail_msg: loki_web_password is required, it protects the Loki push and query endpoint
+    quiet: true
+  when: not loki_remove | bool
+  tags:
+    - loki
+
 - name: Include setup tasks
   ansible.builtin.include_tasks: setup.yml
   when: not loki_remove | bool

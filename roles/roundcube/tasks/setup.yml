@@ -36,6 +36,8 @@
   ignore_errors: true
   register: config_by_host
   delegate_to: localhost
+  # Reads the playbook directory on the controller, root is not required
+  become: false
 
 - name: Check if roundcube configuration is provided by group
   ansible.builtin.stat:
@@ -43,6 +45,8 @@
   ignore_errors: true
   register: config_by_group
   delegate_to: localhost
+  # Reads the playbook directory on the controller, root is not required
+  become: false
   when: not config_by_host.stat.exists
 
 - name: Generate roundcube configuration
@@ -78,6 +82,8 @@
   ignore_errors: true
   register: logo_by_host
   delegate_to: localhost
+  # Reads the playbook directory on the controller, root is not required
+  become: false
 
 - name: Check if roundcube logo is provided by group
   ansible.builtin.stat:
@@ -85,6 +91,8 @@
   ignore_errors: true
   register: logo_by_group
   delegate_to: localhost
+  # Reads the playbook directory on the controller, root is not required
+  become: false
   when: not logo_by_host.stat.exists
 
 - name: Install roundcube logo (by host)

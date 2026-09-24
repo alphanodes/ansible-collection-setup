@@ -77,7 +77,8 @@ dendrite_sync_api_search_language: de
 dendrite_key_validity_period: '168h0m0s'
 dendrite_metrics_enabled: false
 dendrite_metrics_basic_auth_username: metrics
-dendrite_metrics_basic_auth_password: metrics
+# Required if dendrite_metrics_enabled
+dendrite_metrics_basic_auth_password: ''
 # Optional DNS cache. The DNS cache may reduce the load on DNS servers if there
 # is no local caching resolver available for use.
 dendrite_dns_cache_enabled: false
@@ -118,7 +119,8 @@ dendrite_media_api_max_thumbnail_generators: 10
 ## matrix room cleaner
 dendrite_with_matrix_room_cleaner: false
 dendrite_cleaner_matrix_base: "https://{{ dendrite_server_name }}"
-dendrite_cleaner_matrix_token: "REDACT_TOKEN"
+# Required if dendrite_with_matrix_room_cleaner
+dendrite_cleaner_matrix_token: ''
 dendrite_cleaner_matrix_room_id: "!abc123:example.org"
 dendrite_cleaner_matrix_max_age_days: 7
 dendrite_cleaner_src_dir: /usr/local/src/matrix_room_cleaner

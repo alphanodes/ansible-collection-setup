@@ -69,7 +69,8 @@ zabbix_install_pip_packages: true
 
 zabbix_url: "https://{{ zabbix_server_vhost }}"
 zabbix_api_user: Admin
-zabbix_api_pass: zabbix
+# Required if zabbix_agent_server_api is enabled
+zabbix_api_pass: ''
 zabbix_api_create_hostgroup: false
 zabbix_api_create_hosts: true
 # or absent

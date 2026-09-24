@@ -3,6 +3,16 @@
 - name: Load backend-specific variables
   ansible.builtin.include_vars: "{{ mysql_backend }}.yml"
 
+- name: Ensure a password is configured for the MySQL admin user
+  ansible.builtin.assert:
+    that:
+      - mysql_user_password | length > 0
+    fail_msg: mysql_user_password is required if mysql_user_name is not the root user
+    quiet: true
+  when: mysql_user_name != mysql_root_username
+  tags:
+    - mysql
+
 - name: Include setup tasks
   ansible.builtin.include_tasks: setup.yml
   tags:

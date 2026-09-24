@@ -1,5 +1,15 @@
 ---
 
+- name: Ensure an Alloy basic auth password is configured
+  ansible.builtin.assert:
+    that:
+      - alloy_basic_pass | length > 0
+    fail_msg: alloy_basic_pass is required, it authenticates the log shipping to Loki
+    quiet: true
+  when: not alloy_remove
+  tags:
+    - alloy
+
 - name: Include setup tasks
   ansible.builtin.include_tasks: setup.yml
   when: not alloy_remove

@@ -2,6 +2,17 @@
 - name: Include vars
   ansible.builtin.import_tasks: include-vars.yml
 
+- name: Ensure Zabbix API credentials are configured
+  ansible.builtin.assert:
+    that:
+      - zabbix_api_pass | length > 0
+    fail_msg: zabbix_api_pass is required if zabbix_agent_server_api is enabled
+    quiet: true
+  when: zabbix_agent_server_api and not zabbix_agent_remove
+  tags:
+    - zabbix
+    - zabbix-agent
+
 - name: Include setup tasks
   ansible.builtin.include_tasks: setup.yml
   tags:

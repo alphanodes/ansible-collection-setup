@@ -31,6 +31,7 @@ grafana_listen_port: 3000
 grafana_provision_loki: true
 grafana_loki_url: "{{ alloy_loki_url | default('https://' + grafana_vhost_server) }}"
 grafana_loki_basic_auth_user: "{{ alloy_basic_user | default('shipper') }}"
-grafana_loki_basic_auth_pass: "{{ alloy_basic_pass | default('SuperSecret-ChangeMe....') }}"
+# Basic auth is only configured if user and password are set
+grafana_loki_basic_auth_pass: "{{ alloy_basic_pass | default('') }}"
 grafana_datasource_name: "Loki"
 grafana_datasource_is_default: true

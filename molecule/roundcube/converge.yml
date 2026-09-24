@@ -41,6 +41,7 @@
     roundcube_vhost_for_zabbix: false
     roundcube_git_install: false
     roundcube_db_password: 'test_roundcube_password'
+    roundcube_des_key: 'molecule-test-des-key-24'
 
   pre_tasks:
     - name: Update apt cache

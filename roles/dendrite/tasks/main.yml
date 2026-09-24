@@ -1,5 +1,17 @@
 ---
 
+- name: Ensure Dendrite secrets are configured for enabled features
+  ansible.builtin.assert:
+    that:
+      - not dendrite_metrics_enabled or dendrite_metrics_basic_auth_password | length > 0
+      - not dendrite_with_matrix_room_cleaner or dendrite_cleaner_matrix_token | length > 0
+    fail_msg: dendrite_metrics_basic_auth_password or dendrite_cleaner_matrix_token is missing for an enabled feature
+    quiet: true
+  when: not dendrite_remove | bool
+  tags:
+    - dendrite
+    - matrix
+
 - name: Include PostgreSQL tasks
   ansible.builtin.include_tasks: postgresql.yml
   tags:
