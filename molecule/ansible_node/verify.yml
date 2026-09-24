@@ -1,0 +1,25 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Read redmine_automation service unit
+      ansible.builtin.slurp:
+        src: /etc/systemd/system/redmine-automation.service
+      register: automation_unit
+
+    - name: Decode redmine_automation service unit
+      ansible.builtin.set_fact:
+        automation_unit_decoded: "{{ automation_unit.content | b64decode }}"
+
+    # Requires= would stop a running playbook whenever puma is restarted
+    - name: Verify playbook service only wants the puma service
+      ansible.builtin.assert:
+        that:
+          - "'Wants=puma-redmine.service' in automation_unit_decoded"
+          - "'After=puma-redmine.service' in automation_unit_decoded"
+          - "'Requires=' not in automation_unit_decoded"
+        fail_msg: "redmine-automation.service must use Wants= and After=, not Requires=: {{ automation_unit_decoded }}"
+        success_msg: "redmine-automation.service uses Wants= and After="

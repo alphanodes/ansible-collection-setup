@@ -18,6 +18,9 @@
         ansible_node_collections:
           - name: 'git+https://git.alphanodes.com/alphanodes/ansible-collection-tasks.git,main'
             action: install
+        # A timer depending on a service, to verify the unit dependencies
+        ansible_node_playbooks:
+          - name: redmine_automation
 
   post_tasks:
     - name: Verify ansible is installed
