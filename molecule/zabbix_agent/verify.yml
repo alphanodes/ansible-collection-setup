@@ -205,3 +205,39 @@
           both failed: {{ systemd_status_both.stdout }},
           only ignored failed: {{ systemd_status_ignored.stdout }}
         success_msg: "systemd status ignores SentinelOne tasks and reports other failed units"
+
+    # zabbix may only run the exact root commands of linux_check.sh, generic
+    # tools like cat or find with arbitrary arguments would grant root access
+    - name: Run allowed root commands as zabbix via sudo
+      ansible.builtin.command: "sudo -n {{ item }}"
+      become: true
+      become_user: zabbix
+      loop:
+        - /usr/bin/find /etc -type f -perm -002
+        - /usr/bin/find /etc -type d -perm -002
+        - /usr/bin/passwd -S root
+      changed_when: false
+
+    - name: Try forbidden root commands as zabbix via sudo
+      ansible.builtin.command: "sudo -n {{ item }}"
+      become: true
+      become_user: zabbix
+      loop:
+        - /bin/cat /etc/shadow
+        - /usr/bin/tail /etc/shadow
+        - /usr/bin/test -f /etc/shadow
+        - /usr/bin/stat /etc/shadow
+        - /usr/bin/find /etc -maxdepth 0 -exec /bin/true ;
+        - /usr/bin/find / -maxdepth 0
+      register: zabbix_forbidden_sudo
+      changed_when: false
+      failed_when: false
+
+    - name: Verify forbidden root commands are rejected
+      ansible.builtin.assert:
+        that:
+          - zabbix_forbidden_sudo.results | map(attribute='rc') | select('equalto', 0) | list | length == 0
+        fail_msg: >-
+          zabbix can run a forbidden command as root:
+          {{ zabbix_forbidden_sudo.results | selectattr('rc', 'equalto', 0) | map(attribute='item') | list }}
+        success_msg: "zabbix sudo rights are limited to the linux_check.sh commands"

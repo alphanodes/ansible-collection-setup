@@ -1,4 +1,7 @@
 {{ managed_by_ansible | comment }}
-Cmnd_Alias ZABBIX = /usr/bin/test, /bin/cat, /usr/bin/stat, /usr/bin/find, /usr/bin/tail, /usr/bin/passwd -S *, /usr/sbin/smartctl
+# Only the exact root commands used by linux_check.sh. Never allow generic
+# tools like cat or find with arbitrary arguments, they grant root access
+# (e.g. find -exec). passwd -S refuses the modifying options.
+Cmnd_Alias ZABBIX = /usr/bin/find /etc -type f -perm -002, /usr/bin/find /etc -type d -perm -002, /usr/bin/passwd -S *
 Cmnd_Alias MON_APT = /usr/bin/apt-get -qq update, /usr/bin/apt-get -dqq dist-upgrade
 zabbix ALL = NOPASSWD:SETENV: ZABBIX, MON_APT

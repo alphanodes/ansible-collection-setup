@@ -182,6 +182,8 @@
     src: etc/sudoers.d/zabbix.j2
     dest: /etc/sudoers.d/zabbix
     mode: '0440'
+    # A broken file in sudoers.d disables sudo on the whole host
+    validate: visudo -cf %s
 
 - name: Start the zabbix-agent2 service
   ansible.builtin.systemd_service:
