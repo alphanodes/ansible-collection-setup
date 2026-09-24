@@ -174,12 +174,17 @@
         name: '{{ solid_queue_service_name }}'
         enabled: true
         state: started
+      register: queue_service_start
 
+    # Skip the restart if the worker was just started above (e.g. after the
+    # schema load stopped it): it already runs with the new config, and a
+    # restart during boot kills it with SIGTERM and a failed unit.
     - name: Restart SolidQueue worker on config or schema change - {{ redmine_instance_name }}
       ansible.builtin.systemd_service:
         name: '{{ solid_queue_service_name }}'
         state: restarted
       when: >-
-        queue_service_file.changed
-        or queue_config_file.changed
-        or (queue_schema_load.changed | default(false))
+        not queue_service_start.changed
+        and (queue_service_file.changed
+             or queue_config_file.changed
+             or (queue_schema_load.changed | default(false)))
