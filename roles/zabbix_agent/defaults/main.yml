@@ -171,6 +171,14 @@ zabbix_agent_journalctl_ignore_all:
   # "fatal:" or a non-zero failed counter.
   - 'TASK \[[^]]*\] \*\*\*'
   - 'unreachable=[0-9]+ +failed=0 '
+  # Every Ansible module logs its arguments on the target host, paths like
+  # error_pages or error.log would match keywords after each rollout.
+  # Failures are reported by the controller, not by these lines.
+  - 'ansible-[a-z0-9_.]+ Invoked with'
+  # Debian 13 on VMs without vsock support logs this on every boot and
+  # daemon-reload, it does not affect ssh
+  - 'Failed to query local AF_VSOCK CID'
+  - 'systemd-ssh-generator failed with exit status'
   # Redmine automation summaries without errors
   - '\(errors: 0, skipped: [0-9]+\)'
   # Scanners probing public web servers

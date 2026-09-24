@@ -128,9 +128,12 @@
       # reports reltuples = -1), and autovacuum only analyzes after 50 changed
       # rows. Until the weekly maintenance run the planner therefore misjudges
       # conditions on such a table, which has caused statement timeouts on
-      # search and activity pages. A full ANALYZE takes seconds.
+      # search and activity pages. Analyzing all tables takes seconds.
+      # The tables are listed explicitly: a plain ANALYZE also covers the
+      # shared system catalogs, which the Redmine role does not own, and
+      # PostgreSQL logs a permission warning for each of them.
       ansible.builtin.command: >
-        bash -lc "{{ redmine_instance.update_prefix | default('') }}bundle exec rails runner \"c = ActiveRecord::Base.connection; c.execute('ANALYZE') if c.adapter_name == 'PostgreSQL'\""
+        bash -lc "{{ redmine_instance.update_prefix | default('') }}bundle exec rails runner \"c = ActiveRecord::Base.connection; c.execute('ANALYZE ' + c.tables.map { |t| c.quote_table_name(t) }.join(', ')) if c.adapter_name == 'PostgreSQL'\""
       args:
         chdir: '{{ redmine_app_dir }}'
       changed_when: false
