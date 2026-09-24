@@ -61,24 +61,99 @@
       ansible.builtin.set_fact:
         zabbix_conf_decoded: "{{ zabbix_conf_content.content | b64decode }}"
 
-    - name: Verify journalctl UserParameter has joined keywords
+    - name: Verify journal UserParameters use the wrapper script
       ansible.builtin.assert:
         that:
-          - "'undefined|failed|warning|missing' in zabbix_conf_decoded"
-        fail_msg: "journalctl keywords not properly joined with pipe"
-        success_msg: "journalctl keywords correctly joined"
+          - "'UserParameter=journalctl[*], bash /usr/share/zabbix_addons/scripts/journal_check.sh global' in zabbix_conf_decoded"
+          - "'UserParameter=journalctl_service[*], bash /usr/share/zabbix_addons/scripts/journal_check.sh service' in zabbix_conf_decoded"
+        fail_msg: "journal UserParameters do not call journal_check.sh"
+        success_msg: "journal UserParameters call journal_check.sh"
 
-    - name: Verify journalctl_service UserParameter exists with correct pattern
+    - name: Verify no configuration line exceeds the agent limit of 2048 bytes
       ansible.builtin.assert:
         that:
-          - "'UserParameter=journalctl_service' in zabbix_conf_decoded"
-          - "'grep -Ei' in zabbix_conf_decoded"
-        fail_msg: "journalctl_service UserParameter not found or malformed"
-        success_msg: "journalctl_service UserParameter correctly configured"
+          - zabbix_conf_decoded.split('\n') | map('length') | max <= 2048
+        fail_msg: "zabbix_agent2.conf contains a line longer than 2048 bytes, agent will not start"
+        success_msg: "all configuration lines within 2048 bytes"
 
-    - name: Verify ignore patterns are joined correctly
+    - name: Read journal pattern files
+      ansible.builtin.slurp:
+        src: /etc/zabbix/journal/{{ item }}.list
+      loop:
+        - keywords
+        - ignore
+        - redmine_keywords
+        - redmine_ignore
+      register: journal_patterns
+
+    # An empty line matches everything, with grep -v it would hide all lines
+    - name: Verify journal pattern files are filled and contain no empty lines
       ansible.builtin.assert:
         that:
-          - "'RoutingError|WARNING' in zabbix_conf_decoded"
-        fail_msg: "ignore_all patterns not properly joined"
-        success_msg: "ignore_all patterns correctly joined"
+          - pattern_lines | length > 0
+          - pattern_lines | select('equalto', '') | list | length == 0
+        fail_msg: "{{ item.item }}.list is empty or contains empty lines"
+        success_msg: "{{ item.item }}.list is valid"
+      vars:
+        pattern_lines: "{{ (item.content | b64decode).rstrip('\n').split('\n') }}"
+      loop: "{{ journal_patterns.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Verify keyword and ignore patterns are deployed
+      ansible.builtin.assert:
+        that:
+          - "'status=deferred' in (journal_patterns.results[0].content | b64decode)"
+          - "'RoutingError' in (journal_patterns.results[1].content | b64decode)"
+          - "'RoutingError' in (journal_patterns.results[3].content | b64decode)"
+        fail_msg: "journal patterns are missing expected entries"
+        success_msg: "journal patterns contain expected entries"
+
+    # Ansible logs the module arguments to the journal, so the test messages
+    # use a random marker passed by environment, which never shows up there.
+    - name: Generate journal test marker
+      ansible.builtin.command: cat /proc/sys/kernel/random/uuid
+      register: journal_marker
+      changed_when: false
+
+    - name: Write test messages to the journal
+      ansible.builtin.shell: |
+        set -o pipefail
+        echo "$MARK relay status=deferred (connect to relay: Connection timed out)" | systemd-cat -t molecule-relay
+        echo "$MARK warning: unknown[192.0.2.1]: SASL LOGIN authentication failed" | systemd-cat -t molecule-smtpd
+        systemd-run --unit=puma-molecule --wait --quiet --setenv=MARK="$MARK" /bin/sh -c 'echo "$MARK puma error"'
+        systemctl reset-failed puma-molecule.service 2>/dev/null || true
+        journalctl --flush
+      args:
+        executable: /bin/bash
+      environment:
+        MARK: "{{ journal_marker.stdout }}"
+      changed_when: false
+
+    - name: Run journalctl item through the agent
+      ansible.builtin.command: zabbix_agent2 -c /etc/zabbix/zabbix_agent2.conf -t 'journalctl[]'
+      register: journal_item
+      changed_when: false
+
+    - name: Run journalctl_service item through the agent
+      ansible.builtin.command: zabbix_agent2 -c /etc/zabbix/zabbix_agent2.conf -t 'journalctl_service[puma-molecule]'
+      register: journal_service_item
+      changed_when: false
+
+    # Redmine UserParameters only exist on Redmine hosts, call the script directly
+    - name: Run journal_check.sh in redmine mode
+      ansible.builtin.command: bash /usr/share/zabbix_addons/scripts/journal_check.sh redmine puma-molecule
+      register: journal_redmine
+      changed_when: false
+
+    - name: Verify journal checks detect errors and skip ignored lines
+      ansible.builtin.assert:
+        that:
+          - "'ZBX_NOTSUPPORTED' not in journal_item.stdout"
+          - "(journal_marker.stdout ~ ' relay status=deferred') in journal_item.stdout"
+          - "(journal_marker.stdout ~ ' warning: unknown') not in journal_item.stdout"
+          - "(journal_marker.stdout ~ ' puma error') not in journal_item.stdout"
+          - "(journal_marker.stdout ~ ' puma error') in journal_service_item.stdout"
+          - "(journal_marker.stdout ~ ' puma error') in journal_redmine.stdout"
+        fail_msg: "journal check result is wrong: {{ journal_item.stdout }}"
+        success_msg: "journal checks report errors, ignore patterns and puma exclusion work"

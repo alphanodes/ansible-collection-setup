@@ -83,6 +83,30 @@
     state: directory
     recurse: true
 
+- name: Make sure journal pattern directory exists
+  ansible.builtin.file:
+    path: '{{ zabbix_agent_journal_patterns_dir }}'
+    state: directory
+    mode: '0755'
+
+# Read by journal_check.sh at runtime, no agent restart required
+- name: Install journal pattern files
+  ansible.builtin.template:
+    src: etc/zabbix/journal/patterns.list.j2
+    dest: '{{ zabbix_agent_journal_patterns_dir }}/{{ item.name }}.list'
+    mode: '0644'
+  loop:
+    - name: keywords
+      patterns: '{{ zabbix_agent_journalctl_keywords }}'
+    - name: ignore
+      patterns: '{{ zabbix_agent_journalctl_ignore_all + zabbix_agent_journalctl_ignore }}'
+    - name: redmine_keywords
+      patterns: '{{ zabbix_agent_redmine_log }}'
+    - name: redmine_ignore
+      patterns: '{{ zabbix_agent_journalctl_ignore_all + zabbix_agent_redmine_log_ignore_all + zabbix_agent_redmine_log_ignore }}'
+  loop_control:
+    label: '{{ item.name }}'
+
 - name: Update zabbix-agent configuration
   ansible.builtin.template:
     src: etc/zabbix/zabbix_agent2.conf.j2
@@ -122,6 +146,7 @@
     group: zabbix
   loop:
     - linux_check.sh
+    - journal_check.sh
     - php_check.sh
     - diskstats_lld.py
   notify: Restart zabbix-agent

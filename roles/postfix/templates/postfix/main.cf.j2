@@ -75,9 +75,6 @@ mynetworks = {{ postfix_mynetworks | join(' ') }}
 {% if postfix_relayhost != '' %}
 relayhost = {{ real_postfix_relayhost }}
 {% endif %}
-{% if postfix_relaytls %}
-smtp_use_tls = yes
-{% endif %}
 {% if postfix_redirect_all_mails_to is defined %}
 recipient_canonical_maps = regexp:/etc/postfix/recipient-canonical
 {% endif %}

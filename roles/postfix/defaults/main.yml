@@ -98,7 +98,6 @@ postfix_relayhost: ''
 postfix_relayhost_mxlookup: false
 # default port is 25, see http://www.postfix.org/postconf.5.html#relayhost
 # postfix_relayhost_port: 25
-postfix_relaytls: false
 
 postfix_compatibility_level: '3.6'
 

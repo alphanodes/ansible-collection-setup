@@ -1,0 +1,3 @@
+{% for pattern in item.patterns if pattern | string | trim | length > 0 %}
+{{ pattern }}
+{% endfor %}

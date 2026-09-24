@@ -117,7 +117,14 @@ zabbix_agent_remove: false
 zabbix_host:
 
 zabbix_agent_journalctl_since: "4 hours ago"
+# Maximum number of lines returned by journalctl[*]. The trigger only checks
+# for a non-empty value, the latest lines are enough for diagnosis and keep
+# the Zabbix text history small (values above 64 KB are truncated anyway).
+zabbix_agent_journalctl_max_lines: 50
 zabbix_agent_journalctl_options: '-o short --case-sensitive=false'
+# journalctl[*] shows the unit instead of the syslog identifier, so the
+# Redmine puma units (checked by redmine_log) can be excluded
+zabbix_agent_journalctl_global_options: '-o with-unit --case-sensitive=false'
 zabbix_agent_journalctl_redmine_options: '-o json --output-fields=MESSAGE,CODE_FILE,CODE_FUNC,CODE_LINE --case-sensitive=false'
 
 # Keywords for journalctl error detection
@@ -136,13 +143,64 @@ zabbix_agent_journalctl_keywords:
   - QueryCanceled
   - upstream timed out
   - deprecated and will be removed
+  # Postfix logs a failed delivery to the relay at info priority and only
+  # mentions the cause in the text, e.g. "connect to ...: Connection timed out"
+  - Connection timed out
+  - Connection refused
+  # Any mail delivery postponed by postfix. On relay clients this always
+  # means the relay is not usable, whatever the reason. A mail server
+  # delivering to the internet needs a host-specific ignore instead.
+  - status=deferred
 
-# Patterns to ignore in journalctl output (host-specific additions possible)
+# Keywords and ignore patterns are written to pattern files (one extended
+# regex per line, case-insensitive) in this directory and read by
+# journal_check.sh at runtime. This keeps the UserParameter lines short,
+# the agent refuses to start with a configuration line above 2048 bytes.
+zabbix_agent_journal_patterns_dir: /etc/zabbix/journal
+
+# Patterns to ignore in journalctl output (host-specific additions possible).
+# journalctl[*] scans the whole journal, so the patterns must not rely on the
+# syslog identifier (e.g. postfix/smtpd), that output only shows the unit.
 zabbix_agent_journalctl_ignore: []
 zabbix_agent_journalctl_ignore_all:
   - RoutingError
   - 'WARNING\: Detected'
   - 'Redis does not require authentication'
+  # Ansible runs: task headers and the recap line of a successful run
+  # contain keywords like "failed=0". Real failures still show up with
+  # "fatal:" or a non-zero failed counter.
+  - 'TASK \[[^]]*\] \*\*\*'
+  - 'unreachable=[0-9]+ +failed=0 '
+  # Redmine automation summaries without errors
+  - '\(errors: 0, skipped: [0-9]+\)'
+  # Scanners probing public web servers
+  - 'directory index of .* is forbidden'
+  - 'access forbidden by rule'
+  - '\(2: No such file or directory\), client:'
+  - 'Primary script unknown'
+  - 'MathJax/extensions/TeX/no(Errors|Undefined)\.js'
+  # Scanners and brute force on public mail and ssh servers. Password
+  # attempts are handled by fail2ban. Only the server side (smtpd, which
+  # names the SASL mechanism) is ignored, a failed authentication of our own
+  # hosts at a relay ("SASL authentication failed; server ... said") stays
+  # visible.
+  - 'kex_exchange_identification'
+  - 'SSL_accept error from'
+  - 'SASL (LOGIN|PLAIN|CRAM-MD5|DIGEST-MD5) authentication failed'
+  - 'warning: hostname .* does not resolve to address'
+  - 'TLS library problem: .*(wrong version number|unexpected eof|no shared cipher|unsupported protocol|http request|version too low|no suitable signature|record layer failure|data length too long|bad key share)'
+  - 'warning: non-SMTP command from'
+  - 'NOQUEUE: reject: RCPT from .* Protocol error'
+  - 'warning: getpeername: Transport endpoint is not connected'
+  - '-login: Login aborted'
+  # CI job failures on GitLab runners are reported by GitLab itself
+  - 'Job failed: exit code'
+  - 'job-status=failed'
+  # Redmine core sets this Rails option itself, so it is logged on every
+  # start of Puma and of Rails based automation tasks and cannot be fixed
+  # from our side. Matched by the config key alone to keep the generic
+  # "deprecated and will be removed" keyword effective.
+  - 'config.active_support.to_time_preserves_timezone'
 
 # Redmine log uses same keywords as journalctl
 zabbix_agent_redmine_log: '{{ zabbix_agent_journalctl_keywords }}'
@@ -187,7 +245,3 @@ zabbix_agent_redmine_log_ignore_all:
   # purpose: a 406 on any other controller can only come from an
   # authenticated client and is worth seeing.
   - 'responding with 406. (WelcomeController.index|AccountController.login)'
-  # Redmine core sets this Rails option itself, so it is logged on every Puma
-  # start and cannot be fixed from our side. Matched by the config key alone
-  # to keep the generic "deprecated and will be removed" keyword effective.
-  - 'config.active_support.to_time_preserves_timezone'

@@ -1,0 +1,67 @@
+#!/bin/bash
+##################################
+# Zabbix monitoring script
+#
+# journal:
+#  - search the systemd journal for error keywords
+#
+# Usage: journal_check.sh <mode> [unit]
+#
+#  global        whole journal, Redmine puma units excluded (see redmine),
+#                limited to the latest lines
+#  service       single unit
+#  redmine       single Redmine puma unit with Redmine ignore patterns
+#  redmine_json  like redmine, with JSON output incl. code location
+#
+# Keywords and ignore patterns are read from pattern files (one extended
+# regex per line). A grep error (e.g. invalid pattern, missing file) is
+# returned as item value on purpose, so it cannot silence the check.
+#
+##################################
+
+MODE="$1"
+UNIT="$2"
+
+PATTERNS_DIR='{{ zabbix_agent_journal_patterns_dir }}'
+SINCE='{{ zabbix_agent_journalctl_since }}'
+
+require_unit(){
+  if [ -z "$UNIT" ]; then
+    echo "journal_check.sh: mode $MODE requires a unit"
+    exit 1
+  fi
+}
+
+case "$MODE" in
+  global)
+    journalctl {{ zabbix_agent_journalctl_global_options }} --since "$SINCE" 2>&1 \
+      | grep -Evi -e ' puma-[^ ]+\.service\[' -f "$PATTERNS_DIR/ignore.list" \
+      | grep -Ei -f "$PATTERNS_DIR/keywords.list" \
+      | tail -n {{ zabbix_agent_journalctl_max_lines }}
+    ;;
+  service)
+    require_unit
+    journalctl {{ zabbix_agent_journalctl_options }} -u "$UNIT" --since "$SINCE" 2>&1 \
+      | grep -Evi -f "$PATTERNS_DIR/ignore.list" \
+      | grep -Ei -f "$PATTERNS_DIR/keywords.list"
+    ;;
+  redmine)
+    require_unit
+    journalctl {{ zabbix_agent_journalctl_options }} -u "$UNIT" --since "$SINCE" 2>&1 \
+      | grep -Evi -f "$PATTERNS_DIR/redmine_ignore.list" \
+      | grep -Ei -f "$PATTERNS_DIR/redmine_keywords.list"
+    ;;
+  redmine_json)
+    require_unit
+    journalctl {{ zabbix_agent_journalctl_redmine_options }} -u "$UNIT" --since "$SINCE" 2>&1 \
+      | grep -Evi -f "$PATTERNS_DIR/redmine_ignore.list" \
+      | grep -Ei -f "$PATTERNS_DIR/redmine_keywords.list"
+    ;;
+  *)
+    echo "journal_check.sh: unknown mode '$MODE'"
+    exit 1
+    ;;
+esac
+
+# grep exits with 1 if nothing matched, which is the normal case
+exit 0

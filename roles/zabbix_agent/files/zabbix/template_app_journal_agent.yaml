@@ -1,0 +1,59 @@
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: 846977d1dfed4968bc5f8bdb363285bc
+      name: 'Templates/Operating systems'
+  templates:
+    - uuid: 2f0fa87d321641278b69d6d9caefdf9a
+      template: Journal
+      name: Journal
+      description: |
+        Scans the whole systemd journal for error keywords, so problems of
+        services without a dedicated check (postfix, redis, postgresql, ...)
+        do not go unnoticed.
+
+        Link this template into the "Linux" template, so every host gets it
+        through its template chain. Do not link it to hosts directly.
+
+        This template requires:
+        - Zabbix agent with UserParameter journalctl[*] configured by the
+          alphanodes.setup.zabbix_agent role
+
+        Keywords, the scanned time window and ignore patterns are defined in
+        the role defaults (zabbix_agent_journalctl_*). Add host-specific
+        ignore patterns with zabbix_agent_journalctl_ignore.
+      vendor:
+        name: AlphaNodes
+        version: 7.4-__DATE__
+      groups:
+        - name: 'Templates/Operating systems'
+      items:
+        - uuid: ab7889574439459280758aebb6032980
+          name: 'Journal: Error messages'
+          type: ZABBIX_ACTIVE
+          key: 'journalctl[]'
+          delay: 10m
+          history: 2w
+          trends: '0'
+          value_type: TEXT
+          description: 'Journal lines of all units matching the error keywords within the configured time window (default: 4 hours), ignore patterns already applied. Empty means no errors.'
+          tags:
+            - tag: component
+              value: journal
+            - tag: log-type
+              value: error
+          triggers:
+            - uuid: 85fc0aa2fef54492ac12e428e6390923
+              expression: 'last(/Journal/journalctl[])<>""'
+              name: 'Journal: Error messages found'
+              priority: WARNING
+              description: 'The journal contains error messages. Check the latest item value for details. The trigger resolves once no matching lines are left in the scanned time window. Harmless messages belong into zabbix_agent_journalctl_ignore (host-specific) or zabbix_agent_journalctl_ignore_all.'
+              status: DISABLED
+              tags:
+                - tag: scope
+                  value: notice
+      tags:
+        - tag: class
+          value: os
+        - tag: target
+          value: linux
