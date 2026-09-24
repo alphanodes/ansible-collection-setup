@@ -379,7 +379,7 @@ UserParameter=fail2ban.discovery,sudo /usr/bin/fail2ban-client status | grep 'Ja
 {% endraw %}
 UserParameter=systemctl.status[*], systemctl status $1
 UserParameter=systemctl.status_rc[*], systemctl status $1; echo $?
-UserParameter=systemctl.global_status, systemctl status | grep 'State\: ' | xargs
+UserParameter=systemctl.global_status, bash {{ zabbix_addons_dir }}/scripts/systemd_status.sh
 
 ### Option: UserParameterDir
 #	Directory to execute UserParameter commands from. Only one entry is allowed.

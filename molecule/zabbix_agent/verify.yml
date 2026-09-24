@@ -157,3 +157,51 @@
           - "(journal_marker.stdout ~ ' puma error') in journal_redmine.stdout"
         fail_msg: "journal check result is wrong: {{ journal_item.stdout }}"
         success_msg: "journal checks report errors, ignore patterns and puma exclusion work"
+
+    - name: Read systemd global status before the test
+      ansible.builtin.command: zabbix_agent2 -c /etc/zabbix/zabbix_agent2.conf -t systemctl.global_status
+      register: systemd_status_before
+      changed_when: false
+
+    # A failed transient unit named like SentinelOne maintenance tasks must not
+    # change the reported state, any other failed unit must turn it degraded
+    - name: Create failed units for the systemd status test
+      ansible.builtin.shell: |
+        systemd-run --unit=sentinel-agent-task-molecule --wait --quiet /bin/false || true
+        systemd-run --unit=molecule-failing-unit --wait --quiet /bin/false || true
+        systemctl list-units --failed --no-legend --plain
+      args:
+        executable: /bin/bash
+      register: systemd_failed_units
+      changed_when: false
+
+    - name: Read systemd global status with both failed units
+      ansible.builtin.command: zabbix_agent2 -c /etc/zabbix/zabbix_agent2.conf -t systemctl.global_status
+      register: systemd_status_both
+      changed_when: false
+
+    - name: Reset the other failed unit
+      ansible.builtin.command: systemctl reset-failed molecule-failing-unit.service
+      changed_when: false
+
+    - name: Read systemd global status with only the ignored unit failed
+      ansible.builtin.command: zabbix_agent2 -c /etc/zabbix/zabbix_agent2.conf -t systemctl.global_status
+      register: systemd_status_ignored
+      changed_when: false
+
+    - name: Reset the ignored failed unit
+      ansible.builtin.command: systemctl reset-failed sentinel-agent-task-molecule.service
+      changed_when: false
+
+    - name: Verify ignored failed units do not degrade the systemd status
+      ansible.builtin.assert:
+        that:
+          - "'sentinel-agent-task-molecule.service' in systemd_failed_units.stdout"
+          - "'molecule-failing-unit.service' in systemd_failed_units.stdout"
+          - "'State: degraded' in systemd_status_both.stdout"
+          - "(systemd_status_ignored.stdout | regex_search('State: [a-z]+')) == (systemd_status_before.stdout | regex_search('State: [a-z]+'))"
+        fail_msg: >-
+          before: {{ systemd_status_before.stdout }},
+          both failed: {{ systemd_status_both.stdout }},
+          only ignored failed: {{ systemd_status_ignored.stdout }}
+        success_msg: "systemd status ignores SentinelOne tasks and reports other failed units"

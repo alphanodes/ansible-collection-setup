@@ -116,6 +116,13 @@ zabbix_agent_remove: false
 # if defined, this is used to host to zabbix server
 zabbix_host:
 
+# Failed systemd units that do not turn systemctl.global_status to degraded
+# (extended regex, matched against the full unit name).
+# SentinelOne runs its own maintenance tasks as transient units, which stay
+# failed until reset-failed, although the agent itself keeps running.
+zabbix_agent_systemd_failed_ignore:
+  - 'sentinel-agent-task-.*\.service'
+
 zabbix_agent_journalctl_since: "4 hours ago"
 # Maximum number of lines returned by journalctl[*]. The trigger only checks
 # for a non-empty value, the latest lines are enough for diagnosis and keep

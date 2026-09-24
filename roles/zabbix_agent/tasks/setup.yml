@@ -147,6 +147,7 @@
   loop:
     - linux_check.sh
     - journal_check.sh
+    - systemd_status.sh
     - php_check.sh
     - diskstats_lld.py
   notify: Restart zabbix-agent

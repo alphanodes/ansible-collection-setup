@@ -1,0 +1,30 @@
+#!/bin/bash
+##################################
+# Zabbix monitoring script
+#
+# systemd:
+#  - report the global system state as "State: <state>"
+#  - a degraded state caused only by failed units matching
+#    zabbix_agent_systemd_failed_ignore is reported as running
+#
+##################################
+
+IGNORE_PATTERNS=(
+{% for pattern in zabbix_agent_systemd_failed_ignore %}
+  {{ pattern | quote }}
+{% endfor %}
+)
+
+state=$(systemctl is-system-running 2>/dev/null)
+
+if [ "$state" = "degraded" ]; then
+  failed=$(systemctl list-units --failed --no-legend --plain 2>/dev/null | awk '{print $1}')
+  for pattern in "${IGNORE_PATTERNS[@]}"; do
+    failed=$(printf '%s\n' "$failed" | grep -Ev "^(${pattern})$")
+  done
+  if [ -z "$failed" ]; then
+    state=running
+  fi
+fi
+
+echo "State: ${state}"
