@@ -49,6 +49,33 @@
   register: config_change
   notify: Reconfigure GitLab
 
+# Log access was granted by ACL entries before. As long as a directory has an
+# ACL, its group permission comes from the ACL group entry and not from the
+# mode GitLab sets, so the log group could not read.
+- name: Find GitLab log directories with ACL entries
+  ansible.builtin.shell: >-
+    set -o pipefail;
+    command -v getfacl >/dev/null || exit 0;
+    [ -d /var/log/gitlab ] || exit 0;
+    find /var/log/gitlab -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null
+    | xargs -0 -r getfacl --skip-base --absolute-names
+    | sed -n 's/^# file: //p'
+  args:
+    executable: /bin/bash
+  register: gitlab_log_acl_dirs
+  changed_when: false
+  when: gitlab_log_group | length > 0
+
+- name: Remove ACL entries from GitLab log directories
+  ansible.builtin.command:
+    argv:
+      - setfacl
+      - --remove-all
+      - '{{ item }}'
+  loop: '{{ gitlab_log_acl_dirs.stdout_lines | default([]) }}'
+  changed_when: true
+  notify: Reconfigure GitLab
+
 - name: Force reconfigure GitLab
   ansible.builtin.command: gitlab-ctl reconfigure
   when: gitlab_force_reconfigure and not config_change.changed

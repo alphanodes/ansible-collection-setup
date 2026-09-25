@@ -42,6 +42,21 @@
           -addext "subjectAltName=DNS:*.pages.example.com,DNS:pages.example.com"
         creates: /etc/gitlab/ssl/pages-wildcard.crt
 
+    - name: Install acl for the legacy log ACL test
+      ansible.builtin.apt:
+        name: acl
+        state: present
+
+    # Hosts that granted log access by ACL before, the role has to remove it.
+    # Only before the first install, so idempotence is not affected.
+    - name: Create a log directory with a legacy ACL entry
+      ansible.builtin.shell: >-
+        mkdir -p /var/log/gitlab/puma
+        && chmod 0700 /var/log/gitlab/puma
+        && setfacl -m u:nobody:rx /var/log/gitlab/puma
+      args:
+        creates: /opt/gitlab/bin/gitlab-ctl
+
   vars:
     # Use a valid FQDN for testing
     gitlab_vhost_server: gitlab-test.example.com

@@ -79,6 +79,28 @@
       loop_control:
         label: '{{ item.item }}'
 
+    - name: List log directories that still have ACL entries
+      ansible.builtin.command: getfacl --skip-base --absolute-names /var/log/gitlab/puma /var/log/gitlab/gitaly
+      register: log_dir_acls
+      changed_when: false
+
+    - name: Assert the legacy ACL entries are removed
+      ansible.builtin.assert:
+        that:
+          - log_dir_acls.stdout | length == 0
+        fail_msg: "ACL entries left: {{ log_dir_acls.stdout }}"
+
+    - name: Create a member of the log group
+      ansible.builtin.user:
+        name: logreader
+        groups: adm
+        shell: /usr/sbin/nologin
+        create_home: false
+
+    - name: Read a log file as member of the log group
+      ansible.builtin.command: runuser -u logreader -- test -r /var/log/gitlab/puma/current
+      changed_when: false
+
     # The deployed script is copied with a failing test command, a test
     # directory and a retention of one day, the rest stays unchanged
     - name: Read the deployed backup script
