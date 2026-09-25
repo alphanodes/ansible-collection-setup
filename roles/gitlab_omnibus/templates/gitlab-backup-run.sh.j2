@@ -1,0 +1,57 @@
+#!/bin/bash
+{{ managed_by_ansible | comment }}
+#
+# Runs the GitLab backup. GitLab removes expired backups only at the end of a
+# successful run, so once the disk is full every following run fails and
+# nothing is ever removed again. After a failed run this script removes the
+# archive of that run and applies the retention itself, but always keeps the
+# newest remaining backup.
+
+set -u
+
+backup_dir={{ gitlab_backup_path | quote }}
+keep_time={{ gitlab_backup_keep_time | int }}
+start=$(date +%s)
+
+{{ gitlab_backup_command }}
+rc=$?
+
+[ "$rc" -eq 0 ] && exit 0
+[ -d "$backup_dir" ] || exit "$rc"
+
+# backup id prefix of an archive file name: the start time as epoch
+backup_time() {
+  local name
+  name=$(basename "$1")
+  echo "${name%%_*}"
+}
+
+now=$(date +%s)
+remaining=()
+newest=''
+
+# the epoch prefix makes the glob order chronological
+for file in "$backup_dir"/*_gitlab_backup.tar; do
+  [ -e "$file" ] || continue
+  ts=$(backup_time "$file")
+  [[ $ts =~ ^[0-9]{10}$ ]] || continue
+  if [ "$ts" -ge "$start" ]; then
+    echo "Removing archive of the failed backup run: $file"
+    rm -f -- "$file"
+  else
+    remaining+=("$file")
+    newest=$file
+  fi
+done
+
+if [ "$keep_time" -gt 0 ] && [ -n "$newest" ]; then
+  for file in "${remaining[@]}"; do
+    [ "$file" = "$newest" ] && continue
+    if [ "$(backup_time "$file")" -lt $((now - keep_time)) ]; then
+      echo "Removing expired backup: $file"
+      rm -f -- "$file"
+    fi
+  done
+fi
+
+exit "$rc"

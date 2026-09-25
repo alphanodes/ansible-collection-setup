@@ -49,3 +49,98 @@
         that:
           - "'/etc/gitlab/ssl/pages-wildcard.crt' in pages_nginx_conf.content | b64decode"
         fail_msg: nginx does not use the wildcard certificate for pages
+
+    - name: Assert the log group is set in gitlab.rb
+      ansible.builtin.assert:
+        that:
+          - "\"logging['log_group'] = 'adm'\" in gitlab_rb_content"
+        fail_msg: the log group is not configured in gitlab.rb
+
+    # reconfigure resets the mode of these directories, so readers must get
+    # access through the group and not through ACL entries
+    - name: Stat the runit log directories
+      ansible.builtin.stat:
+        path: '{{ item }}'
+      loop:
+        - /var/log/gitlab/gitaly
+        - /var/log/gitlab/puma
+        - /var/log/gitlab/sidekiq
+        - /var/log/gitlab/nginx
+      register: log_dirs
+
+    - name: Assert the log directories are readable by the log group
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.gr_name == 'adm'
+          - item.stat.mode == '0750'
+        fail_msg: "{{ item.item }} is not readable by the log group"
+      loop: '{{ log_dirs.results }}'
+      loop_control:
+        label: '{{ item.item }}'
+
+    # The deployed script is copied with a failing test command, a test
+    # directory and a retention of one day, the rest stays unchanged
+    - name: Read the deployed backup script
+      ansible.builtin.slurp:
+        src: /usr/local/bin/gitlab-backup-run
+      register: backup_script
+
+    - name: Assert the backup timer runs the backup script
+      ansible.builtin.command: systemctl cat gitlab-backup.service
+      register: backup_unit
+      changed_when: false
+      failed_when: "'ExecStart=/usr/local/bin/gitlab-backup-run' not in backup_unit.stdout"
+
+    - name: Create the backup script test copy
+      ansible.builtin.copy:
+        content: >-
+          {{ backup_script.content | b64decode
+             | regex_replace('(?m)^backup_dir=.*$', 'backup_dir=/tmp/backup-test')
+             | regex_replace('(?m)^keep_time=.*$', 'keep_time=86400')
+             | regex_replace('(?m)^/opt/gitlab/bin/gitlab-backup create$',
+                             "sh -c 'touch /tmp/backup-test/$(date +%s)_2026_01_01_19.0.0-ee_gitlab_backup.tar; exit 1'") }}
+        dest: /tmp/gitlab-backup-run-test
+        mode: '0755'
+
+    - name: Get the current time
+      ansible.builtin.command: date +%s
+      register: test_now
+      changed_when: false
+
+    - name: Create the backup test directory
+      ansible.builtin.file:
+        path: /tmp/backup-test
+        state: directory
+        mode: '0700'
+
+    - name: Create expired backups and an unrelated file
+      ansible.builtin.file:
+        path: '/tmp/backup-test/{{ item }}'
+        state: touch
+        mode: '0644'
+      loop:
+        - "{{ test_now.stdout | int - 5 * 86400 }}_2026_01_01_19.0.0-ee_gitlab_backup.tar"
+        - "{{ test_now.stdout | int - 3 * 86400 }}_2026_01_01_19.0.0-ee_gitlab_backup.tar"
+        - unrelated.txt
+
+    - name: Run the backup script with the failing test command
+      ansible.builtin.command: /tmp/gitlab-backup-run-test
+      register: backup_run
+      changed_when: false
+      failed_when: backup_run.rc != 1
+
+    - name: List the test backup directory
+      ansible.builtin.find:
+        paths: /tmp/backup-test
+        patterns: '*'
+      register: backup_files
+
+    # the partial archive of the failed run and the older expired backup are
+    # gone, the newest backup stays although it is expired
+    - name: Assert only the newest backup and the unrelated file are left
+      ansible.builtin.assert:
+        that:
+          - backup_files.files | map(attribute='path') | map('basename') | sort | list ==
+            [(test_now.stdout | int - 3 * 86400) ~ '_2026_01_01_19.0.0-ee_gitlab_backup.tar', 'unrelated.txt']
+        fail_msg: "unexpected files after the failed run: {{ backup_files.files | map(attribute='path') | list }}"

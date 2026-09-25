@@ -34,6 +34,9 @@ gitlab_default_projects_features:
 gitlab_manage_backup_path: true
 gitlab_backup_path: /var/opt/gitlab/backups
 gitlab_backup_command: /opt/gitlab/bin/gitlab-backup create
+# Wrapper run by the timer: calls gitlab_backup_command and applies the
+# retention after failed runs too, which GitLab itself only does on success
+gitlab_backup_script: /usr/local/bin/gitlab-backup-run
 # every day at 2:30 (see systemd timer)
 gitlab_backup_on_calendar: '02:30'
 gitlab_backup_owner: "{{ backup_dir_owner | default('git') }}"
@@ -243,16 +246,11 @@ gitlab_postgresql_log_disconnections: "{{ postgresql_log_disconnections | defaul
 # puma['min_threads'] = 4
 # puma['max_threads'] = 4
 
-# Users that need read access to GitLab log directories via ACL
-# Default includes zabbix for log[] monitoring items
-gitlab_log_acl_users:
-  - zabbix
-
-gitlab_log_dirs:
-  - /var/log/gitlab/nginx
-  - /var/log/gitlab/puma
-  - /var/log/gitlab/sidekiq
-  - /var/log/gitlab/gitaly
+# Group of the runit managed log directories (nginx, puma, sidekiq, gitaly,
+# ...), which GitLab then creates with mode 0750 on every reconfigure. Its
+# members (zabbix, alloy) can read the logs. Empty keeps the GitLab default
+# of 0700. The group must exist.
+gitlab_log_group: adm
 
 # Zabbix agent2 Redis plugin session for Omnibus Unix socket
 gitlab_zabbix_redis_socket: /var/opt/gitlab/redis/redis.socket

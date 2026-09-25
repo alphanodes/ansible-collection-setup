@@ -42,24 +42,6 @@
           -addext "subjectAltName=DNS:*.pages.example.com,DNS:pages.example.com"
         creates: /etc/gitlab/ssl/pages-wildcard.crt
 
-    - name: Create zabbix user for ACL testing
-      ansible.builtin.user:
-        name: zabbix
-        shell: /usr/sbin/nologin
-        create_home: false
-
-    - name: Create GitLab log directories for ACL testing
-      ansible.builtin.file:
-        path: '{{ item }}'
-        state: directory
-        mode: '0700'
-      loop:
-        - /var/log/gitlab/nginx
-        - /var/log/gitlab/puma
-        - /var/log/gitlab/sidekiq
-        - /var/log/gitlab/gitaly
-      changed_when: false
-
   vars:
     # Use a valid FQDN for testing
     gitlab_vhost_server: gitlab-test.example.com
