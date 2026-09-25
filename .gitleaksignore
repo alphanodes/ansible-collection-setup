@@ -1,0 +1,25 @@
+# Reviewed gitleaks findings, none of them is a usable secret.
+# Format: <commit>:<file>:<rule>:<line>
+
+# SSH key pair generated only for the barman Molecule scenario. It was added
+# and removed on the same day, never part of a release and not authorized
+# on any system.
+33f1e64083bfbf12c95d54da0c86b0c1f3fcb320:molecule/barman/files/barman_id_rsa:private-key:1
+
+# Dummy credentials used inside Molecule test containers only
+51409b455cd6dc58d565c756914402ff4de36ef7:molecule/mail/vars/main.yml:generic-api-key:11
+527887fb788a18f173275a32e0e7d325a0291af3:molecule/roundcube/converge.yml:generic-api-key:44
+
+# Public GPG key fingerprints for the RVM installer, not a secret
+6eb3fbf3e87d4a46a02ecb0d9b121b591efc833e:molecule/gitlab/converge.yml:generic-api-key:53
+10e362600b63f132a05a123a2167e2962a489cb4:roles/rvm/defaults/main.yml:generic-api-key:41
+3b2de63e42d9a5759936f86cd11120ff41e860fc:roles/rvm/defaults/main.yml:generic-api-key:41
+
+# Name of the Dovecot password scheme (SHA512-CRYPT), not a secret
+0f01a4870c4d6d07bdc46df78458968752f25ddb:roles/roundcube/defaults/main.yml:generic-api-key:64
+
+# Public MapTiler key from the Element Web sample configuration
+22a1bf52dcdca07b04f7df2461898c2278a4d8e7:roles/element_web/defaults/main.yml:generic-api-key:50
+0c13001bba73df42df4e1e8fe8a785de8265c8dd:roles/element_web/defaults/main.yml:generic-api-key:50
+c3399b03eb8e5ecf91735a221896507163bb9d28:roles/element_web/templates/config.json.j2:generic-api-key:53
+d9e54267659d14dfd0d64eb07ee3f1ca30284abe:roles/element_web/templates/config.json.j2:generic-api-key:53

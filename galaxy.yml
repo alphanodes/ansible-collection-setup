@@ -45,7 +45,9 @@ build_ignore:
   # Development tooling, not needed by an installed collection
   - .ansible-lint
   - .github
+  - .githooks
   - .gitignore
+  - .gitleaksignore
   - .markdownlint.json
   - .markdownlintignore
   - .yamllint

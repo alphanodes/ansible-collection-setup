@@ -1,0 +1,12 @@
+#!/bin/sh
+# Block commits that add secrets to this public repository.
+# Enable once per clone: git config core.hooksPath .githooks
+# Known false positives are listed in .gitleaksignore.
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-commit: gitleaks is not installed (brew install gitleaks)." >&2
+  echo "pre-commit: commit aborted, use 'git commit --no-verify' to skip the secret scan." >&2
+  exit 1
+fi
+
+exec gitleaks git --pre-commit --staged --redact --no-banner --log-level warn
