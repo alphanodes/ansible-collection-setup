@@ -17,5 +17,20 @@
     # Disable API tasks for testing (no Zabbix server available)
     zabbix_agent_server_api: false
 
+    # The collection ships empty journal pattern lists, test with a minimal set
+    zabbix_agent_journalctl_keywords:
+      - error
+      - failed
+      - warning
+      - Connection refused
+    zabbix_agent_journalctl_ignore_all:
+      - RoutingError
+      - 'SASL (LOGIN|PLAIN|CRAM-MD5|DIGEST-MD5) authentication failed'
+      - 'status=deferred'
+    zabbix_agent_redmine_log_ignore_all:
+      - RoutingError
+    zabbix_agent_systemd_failed_ignore:
+      - 'sentinel-agent-task-.*\.service'
+
   roles:
     - role: alphanodes.setup.zabbix_agent
