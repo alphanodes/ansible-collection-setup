@@ -24,3 +24,17 @@
     - /etc/postfix/sender-canonical.db
   when: postfix_sender_canonicals | length == 0
   notify: Restart postfix
+
+- name: Install regexp sender-canonicals
+  ansible.builtin.template:
+    src: postfix/sender-canonical-regexp.j2
+    dest: /etc/postfix/sender-canonical-regexp
+    mode: '0644'
+  when: postfix_sender_canonical_regexp | length > 0
+  notify: Restart postfix
+
+- name: Remove regexp sender-canonicals (if unused)
+  ansible.builtin.file:
+    path: /etc/postfix/sender-canonical-regexp
+    state: absent
+  when: postfix_sender_canonical_regexp | length == 0

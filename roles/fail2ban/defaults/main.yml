@@ -49,6 +49,15 @@ fail2ban_login_maxretry: "{{ fail2ban_default_maxretry }}"
 fail2ban_nginx_botsearch: false
 fail2ban_nginx_scan: false
 
+# Ban IPs that submit a form repeatedly (bots abusing contact forms for spam).
+# Requires fail2ban_nginx_form_paths, e.g. ['/(de/)?kontakt', '/contact']
+# (extended regex, matched against the request path of POST requests).
+fail2ban_nginx_form: false
+fail2ban_nginx_form_paths: []
+fail2ban_nginx_form_maxretry: 3
+fail2ban_nginx_form_findtime: 3600
+fail2ban_nginx_form_bantime: 604800
+
 fail2ban_messenger_icon: 'https://dcah.files.wordpress.com/2013/09/adblock.png'
 fail2ban_messenger_with_start_message: false
 

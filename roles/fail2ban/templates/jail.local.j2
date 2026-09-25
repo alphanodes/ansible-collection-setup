@@ -211,6 +211,16 @@ logpath  = %(nginx_access_log)s
 maxretry = 5
 bantime  = {{ fail2ban_nginx_scan_bantime | default(fail2ban_default_bantime) }}
 
+[nginx-form]
+enabled = {{ 'true' if fail2ban_nginx_form and fail2ban_nginx_form_paths | length > 0 and nginx_access_log_file.stat.exists else 'false' }}
+port     = http,https
+backend = auto
+logpath  = %(nginx_access_log)s
+filter   = nginx-form[form_paths="{{ fail2ban_nginx_form_paths | join('|') }}"]
+maxretry = {{ fail2ban_nginx_form_maxretry }}
+findtime = {{ fail2ban_nginx_form_findtime }}
+bantime  = {{ fail2ban_nginx_form_bantime }}
+
 [roundcube-auth]
 enabled = {{ 'true' if fail2ban_roundcube_auth else 'false' }}
 port     = http,https

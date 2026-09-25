@@ -39,6 +39,12 @@
     real_postfix_relayhost: "{{ real_postfix_relayhost }}:{{ postfix_relayhost_port }}"
   when: postfix_relayhost_port is defined
 
+- name: Set real_sender_canonical_maps
+  ansible.builtin.set_fact:
+    real_sender_canonical_maps: >-
+      {{ (['hash:/etc/postfix/sender-canonical'] if postfix_sender_canonicals | length > 0 else [])
+         + (['regexp:/etc/postfix/sender-canonical-regexp'] if postfix_sender_canonical_regexp | length > 0 else []) }}
+
 - name: Set real_smtpd_relay_restrictions
   ansible.builtin.set_fact:
     real_smtpd_relay_restrictions: "{{ postfix_smtpd_relay_restrictions }}"

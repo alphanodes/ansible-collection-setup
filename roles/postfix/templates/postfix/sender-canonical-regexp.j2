@@ -1,0 +1,4 @@
+{{ managed_by_ansible | comment }}
+{% for item in postfix_sender_canonical_regexp %}
+{{ item }}
+{% endfor %}

@@ -11,6 +11,12 @@
       changed_when: false
 
   vars:
+    # Envelope senders outside the own domain go to a local bounce address
+    postfix_sender_canonical_classes:
+      - envelope_sender
+    postfix_sender_canonical_regexp:
+      - '/^(.+@example\.org)$/ ${1}'
+      - '/./ bounces@example.org'
     postfix_relayhost: smtp.gmail.com
     postfix_relayhost_port: 587
     postfix_sasl_auth_enable: true

@@ -10,6 +10,21 @@
         cache_valid_time: 600
       changed_when: false
 
+    # nginx is not installed here, the log based jails need an access log
+    - name: Create nginx log directory for the log based jails
+      ansible.builtin.file:
+        path: /var/log/nginx
+        state: directory
+        mode: '0755'
+
+    - name: Create empty nginx access log for the log based jails
+      ansible.builtin.file:
+        path: /var/log/nginx/access.log
+        state: touch
+        mode: '0640'
+        modification_time: preserve
+        access_time: preserve
+
   vars:
     # Disable SSL and complex features for testing
     nginx_with_ssl: false
@@ -22,6 +37,10 @@
     fail2ban_enabled: true
     fail2ban_sshd_ddos: true
     fail2ban_nginx_http_auth: true
+    fail2ban_nginx_form: true
+    fail2ban_nginx_form_paths:
+      - '/(de/)?kontakt'
+      - '/contact'
     fail2ban_default_bantime: 300  # Shorter for testing
     fail2ban_default_findtime: 300
     fail2ban_default_maxretry: 3

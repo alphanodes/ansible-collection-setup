@@ -62,6 +62,39 @@
       changed_when: false
       failed_when: false
 
+    - name: Check if nginx-form jail is enabled
+      ansible.builtin.command: fail2ban-client status nginx-form
+      register: nginx_form_jail
+      changed_when: false
+      failed_when: nginx_form_jail.rc != 0
+
+    - name: Write sample access log for the nginx-form filter
+      ansible.builtin.copy:
+        dest: /tmp/nginx-form-sample.log
+        mode: '0644'
+        content: |
+          192.0.2.10 - - [25/Sep/2026:10:00:00 +0200] "POST /de/kontakt HTTP/1.1" 200 512 "-" "bot"
+          192.0.2.11 - - [25/Sep/2026:10:00:01 +0200] "POST /contact?x=1 HTTP/2.0" 303 0 "-" "bot"
+          192.0.2.12 - - [25/Sep/2026:10:00:02 +0200] "GET /de/kontakt HTTP/1.1" 200 512 "-" "visitor"
+          192.0.2.13 - - [25/Sep/2026:10:00:03 +0200] "POST /de/kontakt-info HTTP/1.1" 200 512 "-" "visitor"
+          192.0.2.14 - - [25/Sep/2026:10:00:04 +0200] "POST /wp/ HTTP/1.1" 404 0 "-" "scanner"
+      changed_when: false
+
+    # Only POST requests to exactly the configured form paths may match
+    - name: Test nginx-form filter against sample lines
+      ansible.builtin.command: >-
+        fail2ban-regex /tmp/nginx-form-sample.log
+        nginx-form[form_paths="/(de/)?kontakt|/contact"]
+      register: nginx_form_regex
+      changed_when: false
+
+    - name: Verify nginx-form filter matches only form submissions
+      ansible.builtin.assert:
+        that:
+          - "'Lines: 5 lines, 0 ignored, 2 matched, 3 missed' in nginx_form_regex.stdout"
+        fail_msg: "{{ nginx_form_regex.stdout }}"
+        success_msg: "nginx-form filter matches POST requests to the form paths only"
+
     - name: Verify fail2ban log file exists
       ansible.builtin.stat:
         path: /var/log/fail2ban.log

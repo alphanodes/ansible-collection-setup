@@ -77,6 +77,15 @@ postfix_vimbadmin_packages:
 postfix_sender_access: []
 
 postfix_sender_canonicals: []
+# Regular expression sender rewriting, one "/pattern/ replacement" per entry,
+# first match wins. Example to route bounces of web form mails with forged
+# senders to a local address instead of third parties:
+#   - '/^(.+@example\.org)$/ ${1}'
+#   - '/./ bounces@example.org'
+postfix_sender_canonical_regexp: []
+# Address classes the sender canonical maps apply to (postfix default: both).
+# Use [envelope_sender] to keep the From header unchanged.
+postfix_sender_canonical_classes: []
 
 postfix_myhostname: '{{ mail_hostname | default(hostname) | default(ansible_host) }}'
 

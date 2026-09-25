@@ -78,8 +78,11 @@ relayhost = {{ real_postfix_relayhost }}
 {% if postfix_redirect_all_mails_to is defined %}
 recipient_canonical_maps = regexp:/etc/postfix/recipient-canonical
 {% endif %}
-{% if postfix_sender_canonicals | length > 0 %}
-sender_canonical_maps = hash:/etc/postfix/sender-canonical
+{% if real_sender_canonical_maps | length > 0 %}
+sender_canonical_maps = {{ real_sender_canonical_maps | join(' ') }}
+{% endif %}
+{% if postfix_sender_canonical_classes | length > 0 %}
+sender_canonical_classes = {{ postfix_sender_canonical_classes | join(', ') }}
 {% endif %}
 smtpd_relay_restrictions = {{ real_smtpd_relay_restrictions | join(',') }}
 

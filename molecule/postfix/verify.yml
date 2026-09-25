@@ -17,6 +17,8 @@
       - mydestination
       - mynetworks_style
       - relayhost
+      - sender_canonical_classes
+      - sender_canonical_maps
       - smtp_sasl_auth_enable
       - smtp_sasl_password_maps
       - smtp_sasl_security_options
@@ -114,6 +116,28 @@
         that:
           - postfix_conf['mynetworks_style'] == 'host'
         fail_msg: "mynetworks_style is '{{ postfix_conf['mynetworks_style'] }}', expected 'host'"
+
+    - name: Verify sender canonical rewriting is limited to the envelope
+      ansible.builtin.assert:
+        that:
+          - "'regexp:/etc/postfix/sender-canonical-regexp' in postfix_conf['sender_canonical_maps']"
+          - postfix_conf['sender_canonical_classes'] == 'envelope_sender'
+        fail_msg: "sender canonical settings not applied"
+
+    - name: Look up envelope senders in the regexp sender canonical map
+      ansible.builtin.command: "postmap -q {{ item }} regexp:/etc/postfix/sender-canonical-regexp"
+      loop:
+        - forged@icloud.example
+        - webmaster@example.org
+      register: sender_canonical_lookup
+      changed_when: false
+
+    - name: Verify foreign senders are rewritten and own senders are kept
+      ansible.builtin.assert:
+        that:
+          - sender_canonical_lookup.results[0].stdout == 'bounces@example.org'
+          - sender_canonical_lookup.results[1].stdout == 'webmaster@example.org'
+        fail_msg: "{{ sender_canonical_lookup.results | map(attribute='stdout') | list }}"
 
     - name: Verify SASL password map exists
       ansible.builtin.stat:
