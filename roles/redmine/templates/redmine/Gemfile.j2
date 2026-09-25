@@ -3,7 +3,8 @@
 {% if instance_logger != 'syslog' %}
 gem '{{ instance_logger }}'
 {% else %}
-# NOTE: Syslog::Logger without gem is used
+# Syslog::Logger, a bundled gem since Ruby 3.4 (loadable only via Gemfile)
+gem 'syslog'
 {% endif %}
 {% if redmine_instance.rails_env is undefined or (redmine_instance.rails_env != 'test') %}
 gem 'puma'
