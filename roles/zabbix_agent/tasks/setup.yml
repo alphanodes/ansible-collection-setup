@@ -7,7 +7,7 @@
   ansible.builtin.set_fact:
     nginx_installed: "{{ true if 'nginx-common' in ansible_facts.packages else false }}"
     php_installed: "{{ true if zabbix_agent_check_php_package in ansible_facts.packages else false }}"
-    redmine_installed: "{{ true if redmine_instances is defined else false }}"
+    redmine_installed: "{{ true if redmine_instances is defined and redmine_instances | length > 0 else false }}"
     postgres_installed: "{{ true if 'postgresql-common' in ansible_facts.packages else false }}"
     drupal_installed: "{{ True if drupal_instances is defined and drupal_instances | length > 0 else False }}"
 
@@ -100,12 +100,32 @@
       patterns: '{{ zabbix_agent_journalctl_keywords }}'
     - name: ignore
       patterns: '{{ zabbix_agent_journalctl_ignore_all + zabbix_agent_journalctl_ignore }}'
+  loop_control:
+    label: '{{ item.name }}'
+
+# Only read by the Redmine UserParameters, which exist on Redmine hosts only
+- name: Install Redmine journal pattern files
+  ansible.builtin.template:
+    src: etc/zabbix/journal/patterns.list.j2
+    dest: '{{ zabbix_agent_journal_patterns_dir }}/{{ item.name }}.list'
+    mode: '0644'
+  loop:
     - name: redmine_keywords
       patterns: '{{ zabbix_agent_redmine_log }}'
     - name: redmine_ignore
       patterns: '{{ zabbix_agent_journalctl_ignore_all + zabbix_agent_redmine_log_ignore_all + zabbix_agent_redmine_log_ignore }}'
   loop_control:
     label: '{{ item.name }}'
+  when: redmine_installed
+
+- name: Remove Redmine journal pattern files on hosts without Redmine
+  ansible.builtin.file:
+    path: '{{ zabbix_agent_journal_patterns_dir }}/{{ item }}.list'
+    state: absent
+  loop:
+    - redmine_keywords
+    - redmine_ignore
+  when: not redmine_installed
 
 - name: Update zabbix-agent configuration
   ansible.builtin.template:

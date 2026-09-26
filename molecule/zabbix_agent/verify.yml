@@ -141,9 +141,9 @@
       register: journal_service_item
       changed_when: false
 
-    # Redmine UserParameters only exist on Redmine hosts, call the script directly
-    - name: Run journal_check.sh in redmine mode
-      ansible.builtin.command: bash /usr/share/zabbix_addons/scripts/journal_check.sh redmine puma-molecule
+    # The converge defines a Redmine instance, so the Redmine UserParameter exists
+    - name: Run redmine_log item through the agent
+      ansible.builtin.command: zabbix_agent2 -c /etc/zabbix/zabbix_agent2.conf -t 'redmine_log[puma-molecule]'
       register: journal_redmine
       changed_when: false
 

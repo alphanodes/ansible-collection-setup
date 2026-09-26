@@ -29,6 +29,9 @@
       - 'status=deferred'
     zabbix_agent_redmine_log_ignore_all:
       - RoutingError
+    # A Redmine host, so the Redmine UserParameters and pattern files exist
+    redmine_instances:
+      molecule: {}
     zabbix_agent_systemd_failed_ignore:
       - 'sentinel-agent-task-.*\.service'
 
