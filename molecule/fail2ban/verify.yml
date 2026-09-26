@@ -95,6 +95,31 @@
         fail_msg: "{{ nginx_form_regex.stdout }}"
         success_msg: "nginx-form filter matches POST requests to the form paths only"
 
+    - name: Write sample access log for the nginx-scan filter
+      ansible.builtin.copy:
+        dest: /tmp/nginx-scan-sample.log
+        mode: '0644'
+        content: |
+          192.0.2.20 - - [25/Sep/2026:10:00:00 +0200] "POST /_next/static/chunks/react-flight HTTP/1.1" 500 0 "-" "scanner"
+          192.0.2.21 - - [25/Sep/2026:10:00:01 +0200] "POST /_react/flight HTTP/1.1" 404 0 "-" "scanner"
+          192.0.2.22 - - [25/Sep/2026:10:00:02 +0200] "GET /wp-login.php HTTP/1.1" 404 0 "-" "scanner"
+          192.0.2.23 - - [25/Sep/2026:10:00:03 +0200] "GET /issues/123 HTTP/1.1" 200 512 "-" "visitor"
+          192.0.2.24 - - [25/Sep/2026:10:00:04 +0200] "GET /assets/_next.css HTTP/1.1" 200 512 "-" "visitor"
+      changed_when: false
+
+    # Framework and exploit paths match, regular pages do not
+    - name: Test nginx-scan filter against sample lines
+      ansible.builtin.command: fail2ban-regex /tmp/nginx-scan-sample.log nginx-scan
+      register: nginx_scan_regex
+      changed_when: false
+
+    - name: Verify nginx-scan filter matches only scan requests
+      ansible.builtin.assert:
+        that:
+          - "'Lines: 5 lines, 0 ignored, 3 matched, 2 missed' in nginx_scan_regex.stdout"
+        fail_msg: "{{ nginx_scan_regex.stdout }}"
+        success_msg: "nginx-scan filter matches framework and exploit paths only"
+
     - name: Verify fail2ban log file exists
       ansible.builtin.stat:
         path: /var/log/fail2ban.log
