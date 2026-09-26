@@ -19,14 +19,24 @@ zabbix_export:
         - Zabbix agent with UserParameter journalctl[*] configured by the
           alphanodes.setup.zabbix_agent role
 
-        Keywords, the scanned time window and ignore patterns are defined in
-        the role defaults (zabbix_agent_journalctl_*). Add host-specific
-        ignore patterns with zabbix_agent_journalctl_ignore.
+        Keywords and ignore patterns are set in the inventory
+        (zabbix_agent_journalctl_keywords, zabbix_agent_journalctl_ignore_all
+        and the host-specific zabbix_agent_journalctl_ignore), the scanned
+        time window with zabbix_agent_journalctl_since.
+
+        Set the host macro {$JOURNAL.ALERT} to 0 to silence the trigger on a
+        host that cannot run the check (e.g. an unsupported distribution).
+        A host macro survives template imports, disabling the inherited
+        trigger does not.
       vendor:
         name: AlphaNodes
         version: 7.4-__DATE__
       groups:
         - name: 'Templates/Operating systems'
+      macros:
+        - macro: '{$JOURNAL.ALERT}'
+          value: '1'
+          description: 'Set to 0 on a host to silence the journal trigger.'
       items:
         - uuid: ab7889574439459280758aebb6032980
           name: 'Journal: Error messages'
@@ -44,11 +54,10 @@ zabbix_export:
               value: error
           triggers:
             - uuid: 85fc0aa2fef54492ac12e428e6390923
-              expression: 'last(/Journal/journalctl[])<>""'
+              expression: 'last(/Journal/journalctl[])<>"" and {$JOURNAL.ALERT}=1'
               name: 'Journal: Error messages found'
               priority: WARNING
               description: 'The journal contains error messages. Check the latest item value for details. The trigger resolves once no matching lines are left in the scanned time window. Harmless messages belong into zabbix_agent_journalctl_ignore (host-specific) or zabbix_agent_journalctl_ignore_all.'
-              status: DISABLED
               tags:
                 - tag: scope
                   value: notice
