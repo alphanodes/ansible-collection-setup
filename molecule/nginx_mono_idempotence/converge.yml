@@ -115,3 +115,24 @@
           proxy_location: "/"
           vhost_for_zabbix: false
           letsencrypt: false
+
+    # ==========================================================================
+    # Test 6: A change that only notifies "Restart nginx" must be applied
+    # ==========================================================================
+    # Run the pending handlers first, so the "Reload nginx" notifications of
+    # the calls above cannot apply this config by accident.
+    - name: "Test 6 - Flush handlers of the previous calls"
+      ansible.builtin.meta: flush_handlers
+
+    - name: "Test 6 - Add a server that only notifies Restart nginx"
+      ansible.builtin.copy:
+        dest: /etc/nginx/conf.d/restart_check.conf
+        content: |
+          server {
+              listen 127.0.0.1:8099;
+              location / {
+                  return 200 "restart-check";
+              }
+          }
+        mode: '0644'
+      notify: Restart nginx

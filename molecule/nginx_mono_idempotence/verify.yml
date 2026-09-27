@@ -19,6 +19,16 @@
       register: nginx_syntax
       changed_when: false
 
+    # The server on port 8099 only exists in a config file whose task notifies
+    # "Restart nginx" (converge Test 6). It only answers if the handler
+    # really restarted nginx.
+    - name: CRITICAL - Verify the Restart nginx handler applies the config
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:8099/"
+        return_content: true
+      register: restart_check
+      failed_when: restart_check.content | default('') != 'restart-check'
+
     # ==========================================================================
     # CRITICAL: protection.conf must exist after all calls
     # ==========================================================================

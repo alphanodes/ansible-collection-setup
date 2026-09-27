@@ -2,12 +2,15 @@
 # Handler to handle common notifications. Handlers are called by other plays.
 # See http://docs.ansible.com/playbooks_intro.html for more information about handlers.
 
-- name: Restart nginx
+# Notifying "Restart nginx" runs both handlers in the order defined here, so
+# a broken config fails the play before nginx is stopped. The check must not
+# notify the restart itself: a handler with changed_when false never notifies.
+- name: Validate nginx configuration
   ansible.builtin.command: nginx -t -c /etc/nginx/nginx.conf
   changed_when: false
-  notify: Real restart nginx
+  listen: Restart nginx
 
-- name: Real restart nginx
+- name: Restart nginx
   ansible.builtin.systemd_service:
     name: nginx
     state: restarted
