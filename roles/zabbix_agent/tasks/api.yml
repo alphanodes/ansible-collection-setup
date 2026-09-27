@@ -20,6 +20,9 @@
     ansible_user: '{{ zabbix_api_user }}'
     ansible_httpapi_pass: '{{ zabbix_api_pass }}'
   delegate_to: '{{ zabbix_server_vhost }}'
+  # All hosts share one persistent httpapi connection to the Zabbix server,
+  # parallel forks break its socket
+  throttle: 1
   tags:
     - api
 
@@ -101,6 +104,9 @@
     ansible_user: '{{ zabbix_api_user }}'
     ansible_httpapi_pass: '{{ zabbix_api_pass }}'
   delegate_to: '{{ zabbix_server_vhost }}'
+  # All hosts share one persistent httpapi connection to the Zabbix server,
+  # parallel forks break its socket
+  throttle: 1
   changed_when: false
   tags:
     - api
@@ -124,5 +130,8 @@
     ansible_user: '{{ zabbix_api_user }}'
     ansible_httpapi_pass: '{{ zabbix_api_pass }}'
   delegate_to: '{{ zabbix_server_vhost }}'
+  # All hosts share one persistent httpapi connection to the Zabbix server,
+  # parallel forks break its socket
+  throttle: 1
   tags:
     - api
