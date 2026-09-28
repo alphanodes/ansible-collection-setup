@@ -20,6 +20,9 @@
 {% if matomo_user is defined %}
     matomo_user: {{ matomo_user }}
 {% endif %}
+{% if matomo_group is defined %}
+    matomo_group: {{ matomo_group }}
+{% endif %}
     matomo_task_name: geoip-update
 
   roles:
