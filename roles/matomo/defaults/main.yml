@@ -68,10 +68,16 @@ matomo_multi_server_environment: false
 matomo_plugins: []
 #  - name: SecurityInfo
 
-# Bundled plugins to deactivate with matomo console plugin:deactivate, e.g.
-# Marketplace on hosts that install plugins with this role only. Removing a
-# name from this list does not activate the plugin again.
-matomo_deactivated_plugins: []
+# Bundled plugins to deactivate with matomo console plugin:deactivate.
+# Removing a name from this list does not activate the plugin again.
+# Set it to [] to keep all bundled plugins active.
+matomo_deactivated_plugins:
+  # Plugins are installed and updated by this role (matomo_plugins), so the
+  # Marketplace is not needed. Its hourly scheduled task warmCacheEntries
+  # requests plugins.matomo.org, which regularly times out. Matomo logs these
+  # timeouts as warnings, and core:archive exits with 1 on any warning, so the
+  # archiving runs fail although archiving itself succeeded.
+  - Marketplace
 
 matomo_cleanup_files: []
 

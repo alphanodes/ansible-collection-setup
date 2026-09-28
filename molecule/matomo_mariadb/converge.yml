@@ -52,10 +52,6 @@
         force_ssl: 1
         show_update_notification_to_superusers_only: 1
 
-    # Deactivated via matomo console plugin:deactivate
-    matomo_deactivated_plugins:
-      - Marketplace
-
     # Upgrade cleanup feature (tested only during actual upgrades)
     matomo_upgrade_cleanup_unexpected_files: true
 
