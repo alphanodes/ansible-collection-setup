@@ -267,6 +267,23 @@
           - "'matomo' in matomo_db.stdout"
         fail_msg: "matomo database not found"
 
+    # === DEACTIVATED PLUGINS CHECK ===
+
+    - name: Deactivate Marketplace again with matomo console
+      ansible.builtin.command:
+        cmd: php console --no-ansi -n plugin:deactivate Marketplace
+        chdir: /srv/matomo
+      become: true
+      become_user: www-data
+      register: marketplace_deactivate
+      changed_when: false
+
+    - name: Verify Marketplace plugin is deactivated
+      ansible.builtin.assert:
+        that:
+          - "'The plugin Marketplace is already deactivated.' in marketplace_deactivate.stdout"
+        fail_msg: "Marketplace plugin is still active: {{ marketplace_deactivate.stdout }}"
+
     # === SSL CONFIGURATION CHECK ===
 
     - name: Check SSL certificate configuration in vhost

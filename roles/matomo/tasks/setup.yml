@@ -212,3 +212,14 @@
     - matomo_console_config | length > 0
   tags:
     - config
+
+- name: Deactivate matomo plugins
+  ansible.builtin.command:
+    cmd: php console --no-ansi -n plugin:deactivate {{ item }}
+    chdir: '{{ matomo_dir }}'
+  become: true
+  become_user: '{{ matomo_user }}'
+  register: matomo_plugin_deactivate
+  changed_when: "'Deactivated plugin' in matomo_plugin_deactivate.stdout"
+  loop: '{{ matomo_deactivated_plugins }}'
+  when: matomo_config_file_exists.stat.exists

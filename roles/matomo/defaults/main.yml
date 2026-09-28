@@ -68,6 +68,11 @@ matomo_multi_server_environment: false
 matomo_plugins: []
 #  - name: SecurityInfo
 
+# Bundled plugins to deactivate with matomo console plugin:deactivate, e.g.
+# Marketplace on hosts that install plugins with this role only. Removing a
+# name from this list does not activate the plugin again.
+matomo_deactivated_plugins: []
+
 matomo_cleanup_files: []
 
 matomo_with_robots_txt: false

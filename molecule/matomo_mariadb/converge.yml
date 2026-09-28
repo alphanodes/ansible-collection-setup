@@ -52,6 +52,10 @@
         force_ssl: 1
         show_update_notification_to_superusers_only: 1
 
+    # Deactivated via matomo console plugin:deactivate
+    matomo_deactivated_plugins:
+      - Marketplace
+
     # Upgrade cleanup feature (tested only during actual upgrades)
     matomo_upgrade_cleanup_unexpected_files: true
 
@@ -225,6 +229,28 @@
         force: false
 
   tasks:
+    # plugin:deactivate writes to the option table, but the test database has
+    # no Matomo schema. Run the role once without deactivating plugins, create
+    # the core tables with Matomo's own schema code and run it again.
+    - name: Include matomo role without deactivating plugins
+      ansible.builtin.include_role:
+        name: alphanodes.setup.matomo
+      vars:
+        matomo_deactivated_plugins: []
+
+    - name: Create Matomo core tables required by plugin:deactivate
+      ansible.builtin.command:
+        cmd: >-
+          php -r "define('PIWIK_DOCUMENT_ROOT', '/srv/matomo');
+          define('PIWIK_INCLUDE_PATH', '/srv/matomo');
+          require_once PIWIK_INCLUDE_PATH . '/core/bootstrap.php';
+          (new Piwik\\Application\\Environment('cli'))->init();
+          Piwik\\DbHelper::createTables();"
+        chdir: /srv/matomo
+      become: true
+      become_user: www-data
+      changed_when: false
+
     - name: Include matomo role
       ansible.builtin.include_role:
         name: alphanodes.setup.matomo
