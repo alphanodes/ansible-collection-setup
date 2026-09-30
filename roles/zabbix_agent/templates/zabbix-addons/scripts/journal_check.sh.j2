@@ -34,8 +34,12 @@ require_unit(){
 
 case "$MODE" in
   global)
+    # Continuation lines of multiline entries (e.g. Rails backtraces) are
+    # indented without the unit, so they inherit the puma exclusion of the
+    # preceding entry line
     journalctl {{ zabbix_agent_journalctl_global_options }} --since "$SINCE" 2>&1 \
-      | grep -Evi -e ' puma-[^ ]+\.service\[' -f "$PATTERNS_DIR/ignore.list" \
+      | awk '/^[^ ]/ { skip = ($0 ~ / puma-[^ ]+\.service\[/) } !skip' \
+      | grep -Evi -f "$PATTERNS_DIR/ignore.list" \
       | grep -Ei -f "$PATTERNS_DIR/keywords.list" \
       | tail -n {{ zabbix_agent_journalctl_max_lines }}
     ;;

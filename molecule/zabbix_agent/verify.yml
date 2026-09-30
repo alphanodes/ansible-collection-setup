@@ -124,6 +124,29 @@
         echo "$MARK warning: unknown[192.0.2.1]: SASL LOGIN authentication failed" | systemd-cat -t molecule-smtpd
         systemd-run --unit=puma-molecule --wait --quiet --setenv=MARK="$MARK" /bin/sh -c 'echo "$MARK puma error"'
         systemctl reset-failed puma-molecule.service 2>/dev/null || true
+        # Rails logs a backtrace as one journal entry with embedded newlines,
+        # journalctl prints its continuation lines indented without the unit.
+        # systemd-cat would split it into single entries, so send it natively.
+        # The message is built from the environment, systemd logs the command
+        # line of systemd-run units, which must not contain the marker.
+        cat > /tmp/journal_multiline.py <<'EOF'
+        import os, socket, struct
+        mark = os.environ['MARK']
+        kind = os.environ['KIND']
+        lines = [f'{mark} {kind} multiline head', f'  {mark} {kind} multiline error']
+        if kind == 'puma':
+            lines += ['  ', f'{mark} {kind} multiline cause error']
+        msg = '\n'.join(lines).encode()
+        data = b'MESSAGE\n' + struct.pack('<Q', len(msg)) + msg + b'\n'
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        sock.sendto(data, '/run/systemd/journal/socket')
+        EOF
+        systemd-run --unit=puma-molecule-multiline --wait --quiet \
+          --setenv=MARK="$MARK" --setenv=KIND=puma /usr/bin/python3 /tmp/journal_multiline.py
+        systemd-run --unit=molecule-multiline --wait --quiet \
+          --setenv=MARK="$MARK" --setenv=KIND=other /usr/bin/python3 /tmp/journal_multiline.py
+        systemctl reset-failed puma-molecule-multiline.service molecule-multiline.service 2>/dev/null || true
+        rm -f /tmp/journal_multiline.py
         journalctl --flush
       args:
         executable: /bin/bash
@@ -147,6 +170,11 @@
       register: journal_redmine
       changed_when: false
 
+    - name: Run redmine_log item for the multiline puma unit through the agent
+      ansible.builtin.command: zabbix_agent2 -c /etc/zabbix/zabbix_agent2.conf -t 'redmine_log[puma-molecule-multiline]'
+      register: journal_redmine_multiline
+      changed_when: false
+
     - name: Verify journal checks detect errors and skip ignored lines
       ansible.builtin.assert:
         that:
@@ -159,6 +187,16 @@
           - "(journal_marker.stdout ~ ' puma error') in journal_redmine.stdout"
         fail_msg: "journal check result is wrong: {{ journal_item.stdout }}"
         success_msg: "journal checks report errors, ignore patterns and puma exclusion work"
+
+    - name: Verify the puma exclusion covers continuation lines of multiline entries
+      ansible.builtin.assert:
+        that:
+          - "(journal_marker.stdout ~ ' puma multiline') not in journal_item.stdout"
+          - "(journal_marker.stdout ~ ' other multiline error') in journal_item.stdout"
+          - "(journal_marker.stdout ~ ' puma multiline error') in journal_redmine_multiline.stdout"
+          - "(journal_marker.stdout ~ ' puma multiline cause error') in journal_redmine_multiline.stdout"
+        fail_msg: "multiline journal check result is wrong: {{ journal_item.stdout }} / {{ journal_redmine_multiline.stdout }}"
+        success_msg: "puma continuation lines stay out of journalctl[], other units and redmine_log keep them"
 
     - name: Read systemd global status before the test
       ansible.builtin.command: zabbix_agent2 -c /etc/zabbix/zabbix_agent2.conf -t systemctl.global_status
