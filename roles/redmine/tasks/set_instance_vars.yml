@@ -100,13 +100,6 @@
     # wants to be found keeps them, robots.txt limits them to those paths.
     active_block_ai_crawlers: "{{ redmine_instance.block_ai_crawlers | default(redmine_instance.robots_txt_allow | default([]) | length == 0) }}"
 
-- name: Fail on removed use_robots_txt_from_redmine - {{ redmine_instance_name }}
-  ansible.builtin.fail:
-    msg: >-
-      use_robots_txt_from_redmine has been removed ({{ redmine_instance_name }}).
-      Use robots_txt_allow with the paths search engines may crawl instead.
-  when: redmine_instance.use_robots_txt_from_redmine is defined
-
 - name: Set pgvector requirement (follows AI unless overridden) - {{ redmine_instance_name }}
   ansible.builtin.set_fact:
     # redmine_ai is PostgreSQL-only and needs pgvector, so AI implies it

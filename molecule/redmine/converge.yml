@@ -164,12 +164,6 @@
           adapter: mysql2
           with_pg_extras: true
         expect_msg: require the postgresql adapter
-      # Removed option: must not be ignored silently
-      - name: use_robots_txt_from_redmine -> fail
-        value:
-          plugins: []
-          use_robots_txt_from_redmine: true
-        expect_msg: use_robots_txt_from_redmine has been removed
 
   pre_tasks:
     - name: Update apt cache
