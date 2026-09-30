@@ -1,0 +1,14 @@
+---
+# Renders the real robots.txt template for one case to /tmp/robots_<name>.txt
+- name: "Derive facts - robots {{ tc.name }}"
+  ansible.builtin.include_tasks: "{{ redmine_set_instance_vars_file }}"
+  vars:
+    r_instance:
+      key: robotstest
+      value: "{{ tc.value }}"
+
+- name: "Render robots.txt - {{ tc.name }}"
+  ansible.builtin.template:
+    src: "{{ playbook_dir }}/../../roles/redmine/templates/redmine/robots.txt.j2"
+    dest: "/tmp/robots_{{ tc.name }}.txt"
+    mode: '0644'

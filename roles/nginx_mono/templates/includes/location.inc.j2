@@ -33,12 +33,10 @@
     access_log off;
   }
 
-{% if instance is defined and instance.use_robots_txt_from_redmine is undefined or not instance.use_robots_txt_from_redmine %}
   location = /robots.txt {
     log_not_found off;
     access_log off;
   }
-{% endif %}
 
   location = /humans.txt {
     log_not_found off;

@@ -1,0 +1,5 @@
+User-agent: *
+{% for path in active_robots_txt_allow %}
+Allow: {{ path }}
+{% endfor %}
+Disallow: /

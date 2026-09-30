@@ -172,6 +172,32 @@
           - pg_status.stdout == 'active'
         fail_msg: "PostgreSQL is not running"
 
+    - name: Read rendered robots.txt files
+      ansible.builtin.slurp:
+        src: "/tmp/robots_{{ item }}.txt"
+      loop:
+        - default
+        - allow
+      register: robots_files
+
+    - name: Assert robots.txt disallows everything by default
+      ansible.builtin.assert:
+        that:
+          - 'robots_files.results[0].content | b64decode == "User-agent: *\nDisallow: /\n"'
+        fail_msg: "unexpected default robots.txt: {{ robots_files.results[0].content | b64decode }}"
+
+    - name: Assert robots.txt allows robots_txt_allow paths before disallowing the rest
+      ansible.builtin.assert:
+        that:
+          - 'robots_files.results[1].content | b64decode == "User-agent: *\nAllow: /$\nAllow: /login\nDisallow: /\n"'
+        fail_msg: "unexpected robots.txt with allowed paths: {{ robots_files.results[1].content | b64decode }}"
+
+    - name: Assert nginx serves robots.txt statically
+      ansible.builtin.command: grep -qF 'location = /robots.txt' /etc/nginx/sites-available/redmine.conf
+      register: robots_location_check
+      changed_when: false
+      failed_when: robots_location_check.rc != 0
+
     - name: Display verification summary
       ansible.builtin.debug:
         msg: |

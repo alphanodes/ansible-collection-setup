@@ -118,21 +118,12 @@
   when: redmine_with_nginx
 
 - name: Install redmine robots.txt - {{ redmine_instance_name }}
-  ansible.builtin.copy:
-    src: public/robots.txt
+  ansible.builtin.template:
+    src: redmine/robots.txt.j2
     dest: '{{ redmine_app_dir }}/public/robots.txt'
     owner: '{{ redmine_user }}'
     group: '{{ redmine_group }}'
     mode: '0644'
-  when: redmine_instance.use_robots_txt_from_redmine is undefined or not redmine_instance.use_robots_txt_from_redmine
-
-- name: Cleanup redmine robots.txt - {{ redmine_instance_name }}
-  ansible.builtin.file:
-    path: '{{ redmine_app_dir }}/public/robots.txt'
-    state: absent
-  when:
-    - redmine_instance.use_robots_txt_from_redmine is defined
-    - redmine_instance.use_robots_txt_from_redmine
 
 - name: Include systemd tasks
   ansible.builtin.include_tasks: instance_systemd.yml
