@@ -130,7 +130,7 @@
         # The message is built from the environment, systemd logs the command
         # line of systemd-run units, which must not contain the marker.
         cat > /tmp/journal_multiline.py <<'EOF'
-        import os, socket, struct
+        import os, socket, struct, time
         mark = os.environ['MARK']
         kind = os.environ['KIND']
         lines = [f'{mark} {kind} multiline head', f'  {mark} {kind} multiline error']
@@ -140,6 +140,9 @@
         data = b'MESSAGE\n' + struct.pack('<Q', len(msg)) + msg + b'\n'
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
         sock.sendto(data, '/run/systemd/journal/socket')
+        # journald resolves the unit of a datagram via /proc/<pid>/cgroup,
+        # so the sender has to outlive the processing of its message
+        time.sleep(1)
         EOF
         systemd-run --unit=puma-molecule-multiline --wait --quiet \
           --setenv=MARK="$MARK" --setenv=KIND=puma /usr/bin/python3 /tmp/journal_multiline.py
