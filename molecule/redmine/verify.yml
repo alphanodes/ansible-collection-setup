@@ -198,6 +198,42 @@
       changed_when: false
       failed_when: robots_location_check.rc != 0
 
+    - name: Read effective ImageMagick resource limits
+      ansible.builtin.command: magick -list resource
+      register: imagemagick_resources
+      changed_when: false
+
+    - name: Count ImageMagick dimension policies
+      ansible.builtin.command: grep -cE 'name="(width|height)"' /etc/ImageMagick-7/policy.xml
+      register: imagemagick_dimension_lines
+      changed_when: false
+
+    - name: Assert ImageMagick dimension limits are raised once
+      ansible.builtin.assert:
+        that:
+          - imagemagick_resources.stdout is search('Width:\s+64000P')
+          - imagemagick_resources.stdout is search('Height:\s+64000P')
+          - imagemagick_dimension_lines.stdout == '2'
+        fail_msg: "unexpected ImageMagick limits: {{ imagemagick_resources.stdout }}"
+
+    # Same command as Redmine uses for thumbnails
+    - name: Create thumbnail of an image above the distribution height limit
+      ansible.builtin.shell: |
+        set -o pipefail
+        magick -size 100x40000 xc:white /tmp/molecule_tall.png
+        magick '/tmp/molecule_tall.png[0]' -thumbnail '250x250>' png:/tmp/molecule_tall.thumb
+      args:
+        executable: /bin/bash
+      register: imagemagick_tall
+      changed_when: false
+      failed_when: imagemagick_tall.rc != 0 or imagemagick_tall.stderr | length > 0
+
+    - name: Create image above the raised height limit
+      ansible.builtin.command: magick -size 100x70000 xc:white /tmp/molecule_too_tall.png
+      register: imagemagick_too_tall
+      changed_when: false
+      failed_when: imagemagick_too_tall.rc == 0 or 'height exceeds limit' not in imagemagick_too_tall.stderr
+
     - name: Display verification summary
       ansible.builtin.debug:
         msg: |

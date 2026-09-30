@@ -377,3 +377,12 @@
       loop_control:
         loop_var: tc
         label: "{{ tc.name }}"
+
+    # --- ImageMagick policy (imagemagick.yml), checked in verify.yml ---
+    - name: Install ImageMagick for policy tasks
+      ansible.builtin.apt:
+        name: imagemagick
+        state: present
+
+    - name: Apply ImageMagick policy tasks with role defaults
+      ansible.builtin.include_tasks: "{{ playbook_dir }}/../../roles/redmine/tasks/imagemagick.yml"

@@ -202,6 +202,13 @@ redmine_default_logger: syslog
 # if not set, all instances are used
 # redmine_setup_instance: redmine
 
+# Maximum image width and height ImageMagick accepts for thumbnails (system
+# wide policy). K is 1000, so the distribution default 32KP already rejects
+# long screenshots with a height of 32766 pixels. Memory usage stays capped by
+# the memory, map and disk limits of the policy.
+redmine_imagemagick_max_width: 64KP
+redmine_imagemagick_max_height: 64KP
+
 redmine_packages:
   - ghostscript
   - gnupg

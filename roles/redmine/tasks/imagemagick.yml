@@ -1,0 +1,21 @@
+---
+# The ImageMagick 7 policy already allows PDF and ships sufficient memory
+# and disk limits, only the image dimensions need to be raised.
+- name: Set ImageMagick image dimension limits
+  ansible.builtin.lineinfile:
+    path: /etc/ImageMagick-7/policy.xml
+    regexp: '^\s*<policy domain="resource" name="{{ item.name }}" value='
+    line: '  <policy domain="resource" name="{{ item.name }}" value="{{ item.value }}"/>'
+    insertbefore: '^</policymap>'
+  loop:
+    - name: width
+      value: '{{ redmine_imagemagick_max_width }}'
+    - name: height
+      value: '{{ redmine_imagemagick_max_height }}'
+  loop_control:
+    label: '{{ item.name }}'
+
+- name: Remove ImageMagick policy.xml.dpkg-dist
+  ansible.builtin.file:
+    path: /etc/ImageMagick-7/policy.xml.dpkg-dist
+    state: absent
