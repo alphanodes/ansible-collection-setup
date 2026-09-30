@@ -20,10 +20,12 @@
       - active_pg_extras | bool == tc.expect.pg_extras
       - blocked_pghero | bool == tc.expect.blocked_pghero
       - blocked_pg_extras | bool == tc.expect.blocked_pg_extras
+      - active_block_ai_crawlers | bool == tc.expect.block_ai_crawlers
     fail_msg: >-
       {{ tc.name }}: got
       agile={{ active_agile }} zenedit={{ active_zenedit }}
       dmsf={{ active_dmsf }} ai={{ active_ai }} pgvector={{ active_pgvector }}
       pghero={{ active_pghero }} pg_extras={{ active_pg_extras }}
       blocked_pghero={{ blocked_pghero }} blocked_pg_extras={{ blocked_pg_extras }}
+      block_ai_crawlers={{ active_block_ai_crawlers }}
     success_msg: "{{ tc.name }}: OK"

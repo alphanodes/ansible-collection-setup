@@ -120,6 +120,15 @@
     - not nginx_with_ssl
     - _nginx_mono_setup_done is not defined
 
+# Always installed like protection.conf, vhosts opt in per flag
+- name: Install user agent blocking maps
+  ansible.builtin.template:
+    src: ua_blocking.j2
+    dest: /etc/nginx/conf.d/ua_blocking.conf
+    mode: '0644'
+  notify: Reload nginx
+  when: _nginx_mono_setup_done is not defined
+
 - name: Setup rate limiting zones
   ansible.builtin.template:
     src: limit_req_zones.j2

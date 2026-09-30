@@ -12,7 +12,7 @@
     nginx_ssl_protocols: 'TLSv1.3'
     hoster: 'local'
 
-    # Test: Reverse proxy host forwarding (like SAKD setup)
+    # Test: Reverse proxy host forwarding behind an external proxy
     nginx_with_proxy_forwarded_hosts:
       - source: int.ssl.proxy.local
         target: proxy.local

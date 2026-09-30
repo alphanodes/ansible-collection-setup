@@ -1,0 +1,17 @@
+# User agent maps for blocking scanners and AI crawlers.
+# Only effective in vhosts with block_security_scanners or
+# block_ai_crawlers enabled, see includes/protection.inc.j2.
+
+map $http_user_agent $security_scanner {
+  default 0;
+{% for user_agent in nginx_security_scanner_user_agents %}
+  "~*{{ user_agent }}" 1;
+{% endfor %}
+}
+
+map $http_user_agent $ai_crawler {
+  default 0;
+{% for user_agent in nginx_ai_crawler_user_agents %}
+  "~*{{ user_agent }}" 1;
+{% endfor %}
+}

@@ -299,6 +299,55 @@
       changed_when: false
       failed_when: safe_get_response.stdout != '200'
 
+    # User agent blocking tests: 444 closes the connection without a
+    # response. curl reports http_code 000 with exit code 52 (empty reply)
+    # or 56 (connection reset) depending on timing. Checking the exit code
+    # keeps other connection errors, which also give 000, from passing.
+    - name: Test scanner user agent to safe.local gets no response (blocked by default)
+      ansible.builtin.command: >
+        curl -s -o /dev/null -w '%{http_code}' -H 'Host: safe.local'
+        -A 'Mozilla/5.0 (compatible; Infrawatch/1.0; +https://infrawat.ch/)'
+        http://127.0.0.1/
+      register: safe_scanner_response
+      changed_when: false
+      failed_when: safe_scanner_response.rc not in [52, 56] or safe_scanner_response.stdout != '000'
+
+    - name: Test AI crawler user agent to safe.local gets no response (block_ai_crawlers enabled)
+      ansible.builtin.command: >
+        curl -s -o /dev/null -w '%{http_code}' -H 'Host: safe.local'
+        -A 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GPTBot/1.3; +https://openai.com/gptbot)'
+        http://127.0.0.1/
+      register: safe_ai_response
+      changed_when: false
+      failed_when: safe_ai_response.rc not in [52, 56] or safe_ai_response.stdout != '000'
+
+    - name: Test browser user agent to safe.local works
+      ansible.builtin.command: >
+        curl -s -o /dev/null -w '%{http_code}' -H 'Host: safe.local'
+        -A 'Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0'
+        http://127.0.0.1/
+      register: safe_browser_response
+      changed_when: false
+      failed_when: safe_browser_response.stdout != '200'
+
+    - name: Test AI crawler user agent to open.local works (block_ai_crawlers off by default)
+      ansible.builtin.command: >
+        curl -s -o /dev/null -w '%{http_code}' -H 'Host: open.local'
+        -A 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GPTBot/1.3; +https://openai.com/gptbot)'
+        http://127.0.0.1/
+      register: open_ai_response
+      changed_when: false
+      failed_when: open_ai_response.stdout != '200'
+
+    - name: Test scanner user agent to open.local works (block_security_scanners disabled)
+      ansible.builtin.command: >
+        curl -s -o /dev/null -w '%{http_code}' -H 'Host: open.local'
+        -A 'Mozilla/5.0 (compatible; Infrawatch/1.0; +https://infrawat.ch/)'
+        http://127.0.0.1/
+      register: open_scanner_response
+      changed_when: false
+      failed_when: open_scanner_response.stdout != '200'
+
     # raw_actions tests (server-level raw nginx directives)
     - name: Check if raw_actions_test vhost exists
       ansible.builtin.stat:

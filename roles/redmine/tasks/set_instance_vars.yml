@@ -94,6 +94,9 @@
     htpasswd_file: "/etc/nginx/.htpasswd_redmine_{{ redmine_instance_name }}"
     access_protection: "{{ redmine_instance.access_protection | default(redmine_access_protection) }}"
     with_alphanodes_enterprise_support: "{{ redmine_instance.with_alphanodes_enterprise_support | default(redmine_with_alphanodes_enterprise_support) }}"
+    # An instance with the static Disallow-all robots.txt is a closed one,
+    # so nginx also turns away the AI crawlers that ignore robots.txt
+    active_block_ai_crawlers: "{{ redmine_instance.block_ai_crawlers | default(not (redmine_instance.use_robots_txt_from_redmine | default(false) | bool)) }}"
 
 - name: Set pgvector requirement (follows AI unless overridden) - {{ redmine_instance_name }}
   ansible.builtin.set_fact:

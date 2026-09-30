@@ -138,6 +138,8 @@
           root: /srv/static_safe
           index: index.html
           block_unsafe_methods: true
+          # block_security_scanners: true  # default
+          block_ai_crawlers: true
           vhost_for_zabbix: false
           letsencrypt: false
 
@@ -151,6 +153,8 @@
           root: /srv/static_open
           index: index.html
           # block_unsafe_methods: false  # default
+          # block_ai_crawlers: false  # default
+          block_security_scanners: false
           vhost_for_zabbix: false
           letsencrypt: false
 

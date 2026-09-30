@@ -120,6 +120,8 @@
         - "unix:{{ redmine_run_base_path }}/{{ redmine_instance_name }}/redmine.sock"
       limit_req: "{{ redmine_limit_req_list if redmine_limit_req_list | length > 0 else omit }}"
       limit_req_status: "{{ 422 if redmine_limit_req_list | length > 0 else omit }}"
+      block_security_scanners: "{{ redmine_instance.block_security_scanners | default(nginx_block_security_scanners) }}"
+      block_ai_crawlers: "{{ active_block_ai_crawlers }}"
       custom_protection_rules:
         - "if ($bad_redmine_locations) { return 404; }"
       locations: "{{ redmine_locations }}"

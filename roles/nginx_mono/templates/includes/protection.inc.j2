@@ -3,6 +3,20 @@
     return 444;
   }
 
+{% if instance.block_security_scanners | default(nginx_block_security_scanners) | bool %}
+  # Deny self-declared internet scanners
+  if ($security_scanner) {
+    return 444;
+  }
+
+{% endif %}
+{% if instance.block_ai_crawlers | default(nginx_block_ai_crawlers) | bool %}
+  # Deny AI crawlers and AI assistants
+  if ($ai_crawler) {
+    return 444;
+  }
+
+{% endif %}
   # Block unwanted url requests
   if ($bad_locations) {
     return 404;

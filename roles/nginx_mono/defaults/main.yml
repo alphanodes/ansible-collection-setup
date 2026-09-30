@@ -64,6 +64,137 @@ nginx_force_ssl: true
 
 # protect dot files and block spammers
 nginx_with_protection: true
+
+# User agent blocking (requires nginx_with_protection). Matching requests
+# get 444 (connection closed without response) before they reach the
+# upstream. Entries are case-insensitive regex fragments matched anywhere
+# in the User-Agent header, so escape dots and avoid double quotes.
+#
+# Self-declared internet scanners and security research crawlers. They
+# have no use on any site, so they are blocked on every vhost by default.
+# Disable per vhost with block_security_scanners: false, e.g. while a
+# commissioned penetration test or security rating service is running.
+# Scanners that fake a browser user agent are not covered here, the
+# fail2ban nginx-scan jail catches those by their request paths.
+nginx_block_security_scanners: true
+nginx_security_scanner_user_agents:
+  - BitSightBot
+  - CensysInspect
+  - CMS-Security-Auditor
+  - CT-WP-Scanner
+  - flowiq-labs\.com
+  - GenomeCrawlerd
+  - getodin\.com
+  - HighPerfScanner
+  - '^hunter/'
+  - iisec\.ac\.jp
+  - Infrawatch
+  - InternetMeasurement
+  - ip_scanner
+  - jscrawler
+  - l9explore
+  - l9scan
+  - l9tcpid
+  - masscan
+  - metabase-cve-
+  - ModatScanner
+  - Netscan/
+  - Nmap
+  - odin-scanner
+  - osint-scanner
+  - Palo Alto Networks
+  - RadarCapeResearch
+  - research-scan
+  - security\.ipip\.net
+  - SecurityScanner
+  - sh1kk-probe
+  - SmarterMail-Scanner
+  - Software Security Research
+  - tttx\.net
+  - visionheight\.com
+  - websecured\.io
+  - WP-Safe-Scanner
+  - zern-scanner
+  - zgrab
+
+# AI crawlers, AI search bots and AI assistants fetching on behalf of a
+# user. Off by default, because public sites may want to be found by AI
+# search. Enable per vhost with block_ai_crawlers: true (the redmine role
+# does that for instances that require a login). Generic crawlers with a
+# search engine purpose (Googlebot, bingbot, Applebot) and link previews
+# (facebookexternalhit) are deliberately not listed.
+# Source: https://github.com/ai-robots-txt/ai.robots.txt (curated, tokens
+# that would match regular clients like "Code" or "Operator" are left out)
+nginx_block_ai_crawlers: false
+nginx_ai_crawler_user_agents:
+  - AI2Bot
+  - Amazonbot
+  - Andibot
+  - anthropic-ai
+  - Bravebot
+  - Brightbot
+  - Bytespider
+  - CCBot
+  - ChatGLM-Spider
+  - ChatGPT Agent
+  - ChatGPT-User
+  - Claude-SearchBot
+  - Claude-User
+  - Claude-Web
+  - ClaudeBot
+  - cohere-ai
+  - cohere-training-data-crawler
+  - Cotoyogi
+  - Crawl4AI
+  - DeepSeekBot
+  - Diffbot
+  - DoubaoBot
+  - DuckAssistBot
+  - ERNIEBot
+  - ExaBot
+  - ExaSearchBot
+  - FacebookBot
+  - FirecrawlAgent
+  - Google-CloudVertexBot
+  - Google-Extended
+  - GoogleOther
+  - GPTBot
+  - GrokBot
+  - iaskspider
+  - ICC-Crawler
+  - ImagesiftBot
+  - img2dataset
+  - KeenableBot
+  - Kimi-SearchBot
+  - Kimi-User
+  - KimiBot
+  - LinerBot
+  - meta-externalagent
+  - meta-externalfetcher
+  - meta-webindexer
+  - MistralAI
+  - MoonshotBot
+  - OAI-SearchBot
+  - omgili
+  - PanguBot
+  - Perplexity-User
+  - PerplexityBot
+  - PetalBot
+  - PhindBot
+  - Poseidon Research Crawler
+  - QwenBot
+  - Reflectionbot
+  - SBIntuitionsBot
+  - Scrapy
+  - TavilyBot
+  - TikTokSpider
+  - Timpibot
+  - TongyiBot
+  - YandexAdditional
+  - YiBot
+  - YiyanBot
+  - YouBot
+
 # Set to false if an upstream reverse proxy sets X-Client-IP header.
 # When true (default), nginx sets X-Forwarded-For which can conflict
 # with X-Client-IP causing Rails ActionDispatch::RemoteIp::IpSpoofAttackError.
@@ -76,8 +207,8 @@ nginx_with_security_headers: true
 # be fixed with manual mapping
 # e.g.
 # nginx_with_proxy_forwarded_hosts:
-#  - source: int.ssl.projekte.sakd.de
-#    target: projekte.sakd.de
+#  - source: int.ssl.example.com
+#    target: example.com
 nginx_with_proxy_forwarded_hosts: []
 
 nginx_with_ipv6: false
