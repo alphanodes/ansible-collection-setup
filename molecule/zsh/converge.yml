@@ -16,6 +16,41 @@
         home: /srv/zshruby
         shell: /usr/bin/zsh
 
+    - name: Install ruby and php for the language prompt segments
+      ansible.builtin.apt:
+        name:
+          - php-cli
+          - ruby
+        state: present
+
+    - name: Create php project directory
+      ansible.builtin.file:
+        path: /srv/phpproject
+        state: directory
+        mode: '0755'
+
+    - name: Create index.php in php project
+      ansible.builtin.copy:
+        content: "<?php\n"
+        dest: /srv/phpproject/index.php
+        mode: '0644'
+
+    - name: Create ruby project directory of ruby test user
+      ansible.builtin.file:
+        path: /srv/zshruby/project
+        state: directory
+        owner: zshruby
+        group: zshruby
+        mode: '0755'
+
+    - name: Create Gemfile in ruby project of ruby test user
+      ansible.builtin.copy:
+        content: "source 'https://rubygems.org'\n"
+        dest: /srv/zshruby/project/Gemfile
+        owner: zshruby
+        group: zshruby
+        mode: '0644'
+
     - name: Check for starship from a previous converge
       ansible.builtin.stat:
         path: /usr/local/bin/starship

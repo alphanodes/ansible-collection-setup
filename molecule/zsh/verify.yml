@@ -77,8 +77,27 @@
           - root_prompt.stderr == ''
           - zsh_virtualization_type in root_prompt.stdout
 
-    - name: Render ruby user prompt
+    - name: Render root prompt in a php project
       ansible.builtin.command: /usr/local/bin/starship prompt
+      args:
+        chdir: /srv/phpproject
+      environment:
+        STARSHIP_CONFIG: /root/.starship.toml
+      register: php_prompt
+      changed_when: false
+
+    - name: Assert root prompt shows php in a php project
+      ansible.builtin.assert:
+        that:
+          - php_prompt.stderr == ''
+          - "'php v' in php_prompt.stdout"
+          - "'via' not in php_prompt.stdout"
+          - "'php v' not in root_prompt.stdout"
+
+    - name: Render ruby user prompt in a ruby project
+      ansible.builtin.command: /usr/local/bin/starship prompt
+      args:
+        chdir: /srv/zshruby/project
       environment:
         STARSHIP_CONFIG: /srv/zshruby/.starship.toml
       become: true
@@ -86,9 +105,11 @@
       register: ruby_prompt
       changed_when: false
 
-    - name: Assert ruby user prompt shows user and custom hostname
+    - name: Assert ruby user prompt shows ruby, user and custom hostname
       ansible.builtin.assert:
         that:
           - ruby_prompt.stderr == ''
+          - "'ruby v' in ruby_prompt.stdout"
+          - "'via' not in ruby_prompt.stdout"
           - "'zshruby' in ruby_prompt.stdout"
           - "'@ molecule-ruby-host' in ruby_prompt.stdout"

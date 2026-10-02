@@ -3,8 +3,9 @@
 
 "$schema" = 'https://starship.rs/config-schema.json'
 
-# Only the listed modules are shown, language modules stay out of server prompts
+# Only the listed modules are shown, language modules are limited to php and ruby
 format = """
+$php\
 {% if zsh_with_ruby %}
 $ruby\
 $username\
@@ -64,8 +65,19 @@ only_detached = false
 format = '([$tag]($style) )'
 
 [ruby]
+# ruby is a leading segment, so without the default 'via' prefix
+format = '[$symbol($version )]($style)'
 symbol = 'ruby '
 style = 'white'
+
+[php]
+# php is a leading segment, so without the default 'via' prefix
+format = '[$symbol($version )]($style)'
+symbol = 'php '
+style = 'white'
+detect_extensions = ['php']
+detect_files = ['composer.json', '.php-version']
+detect_folders = []
 
 [status]
 disabled = false
