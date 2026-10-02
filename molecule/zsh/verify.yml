@@ -76,6 +76,7 @@
         that:
           - root_prompt.stderr == ''
           - zsh_virtualization_type in root_prompt.stdout
+          - "('\uf306' if ansible_facts['distribution'] == 'Debian' else '\uf31b') in root_prompt.stdout"
 
     - name: Render root prompt in a php project
       ansible.builtin.command: /usr/local/bin/starship prompt

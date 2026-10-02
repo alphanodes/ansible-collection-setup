@@ -4,13 +4,18 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
 # Only the listed modules are shown, language modules are limited to php and ruby
+# The os icon is static, the starship os module runs lsb_release on each prompt (~40ms)
 format = """
 $php\
 {% if zsh_with_ruby %}
 $ruby\
 $username\
 {% else %}
-$os\
+{% if ansible_facts['distribution'] == 'Debian' %}
+[\uf306 ](bold white)\
+{% elif ansible_facts['distribution'] == 'Ubuntu' %}
+[\uf31b ](bold white)\
+{% endif %}
 {% if zsh_virtualization_type == 'kvm' %}
 [ kvm ](bold yellow bg:red) \
 {% else %}
@@ -30,14 +35,6 @@ $line_break\
 $character"""
 
 right_format = '$status$cmd_duration$jobs'
-
-[os]
-disabled = false
-format = '[$symbol]($style)'
-
-[os.symbols]
-Debian = " "
-Ubuntu = " "
 
 [username]
 show_always = true
