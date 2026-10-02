@@ -1,0 +1,79 @@
+---
+
+# powerlevel10k was replaced by starship,
+# /usr/share/powerlevel10k is removed in powerlevel10k_cleanup.yml
+- name: Remove fonts-powerline, which was only required by powerlevel10k
+  ansible.builtin.apt:
+    name: fonts-powerline
+    purge: true
+    state: absent
+
+- name: Install starship
+  when: zsh_with_starship
+  block:
+    - name: Fetch latest starship version from GitHub API
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/starship/starship/releases/latest
+        return_content: true
+      register: zsh_starship_latest_release
+      when: zsh_starship_version == 'latest'
+      check_mode: false
+      changed_when: false
+
+    - name: Set resolved starship version
+      ansible.builtin.set_fact:
+        zsh_starship_version_resolved: >-
+          {{ zsh_starship_latest_release.json.tag_name | regex_replace('^v', '')
+             if zsh_starship_version == 'latest' else zsh_starship_version }}
+
+    - name: Read installed starship version
+      ansible.builtin.command: '{{ zsh_starship_binary_path }} --version'
+      register: zsh_starship_installed_version
+      check_mode: false
+      changed_when: false
+      failed_when: false
+
+    - name: Download and install starship binary
+      when: >-
+        zsh_starship_installed_version.rc != 0
+        or zsh_starship_installed_version.stdout_lines[0] | default('') != 'starship ' + zsh_starship_version_resolved
+      vars:
+        zsh_starship_download_url: >-
+          https://github.com/starship/starship/releases/download/v{{ zsh_starship_version_resolved }}/starship-{{ zsh_starship_arch }}-unknown-linux-musl.tar.gz
+      block:
+        - name: Create temporary download directory
+          ansible.builtin.tempfile:
+            state: directory
+            suffix: starship
+          register: zsh_starship_temp_dir
+          changed_when: false
+
+        - name: Download starship release
+          ansible.builtin.get_url:
+            url: '{{ zsh_starship_download_url }}'
+            checksum: 'sha256:{{ zsh_starship_download_url }}.sha256'
+            dest: '{{ zsh_starship_temp_dir.path }}/starship.tar.gz'
+            mode: '0644'
+
+        - name: Install starship binary
+          ansible.builtin.unarchive:
+            src: '{{ zsh_starship_temp_dir.path }}/starship.tar.gz'
+            dest: '{{ zsh_starship_binary_path | dirname }}'
+            include:
+              - starship
+            owner: root
+            group: root
+            mode: '0755'
+            remote_src: true
+
+        - name: Remove temporary download directory
+          ansible.builtin.file:
+            path: '{{ zsh_starship_temp_dir.path }}'
+            state: absent
+          changed_when: false
+
+- name: Remove starship
+  ansible.builtin.file:
+    path: '{{ zsh_starship_binary_path }}'
+    state: absent
+  when: not zsh_with_starship

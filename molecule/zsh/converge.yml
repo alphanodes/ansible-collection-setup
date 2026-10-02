@@ -10,11 +10,84 @@
         cache_valid_time: 600
       changed_when: false
 
+    - name: Create ruby test user
+      ansible.builtin.user:
+        name: zshruby
+        home: /srv/zshruby
+        shell: /usr/bin/zsh
+
+    - name: Check for starship from a previous converge
+      ansible.builtin.stat:
+        path: /usr/local/bin/starship
+      register: starship_binary
+
+    # simulate a host with the former powerlevel10k setup (first converge only)
+    - name: Simulate powerlevel10k setup
+      when: not starship_binary.stat.exists
+      block:
+        - name: Install fonts-powerline
+          ansible.builtin.apt:
+            name: fonts-powerline
+            state: present
+
+        - name: Create powerlevel10k directories
+          ansible.builtin.file:
+            path: '{{ item.path }}'
+            state: directory
+            owner: '{{ item.owner }}'
+            group: '{{ item.owner }}'
+            mode: '0755'
+          loop:
+            - {path: /usr/share/powerlevel10k, owner: root}
+            - {path: /root/.cache/gitstatus, owner: root}
+            - {path: /root/.cache/p10k-root, owner: root}
+            - {path: /srv/zshruby/.cache, owner: zshruby}
+            - {path: /srv/zshruby/.cache/gitstatus, owner: zshruby}
+
+        - name: Create powerlevel10k cache files
+          ansible.builtin.copy:
+            content: "# p10k\n"
+            dest: '{{ item.path }}'
+            owner: '{{ item.owner }}'
+            group: '{{ item.owner }}'
+            mode: '0600'
+          loop:
+            - {path: /root/.cache/gitstatus/gitstatusd-linux-x86_64, owner: root}
+            - {path: /root/.cache/p10k-dump-root.zsh, owner: root}
+            - {path: /root/.cache/p10k-instant-prompt-root.zsh, owner: root}
+            - {path: /srv/zshruby/.cache/p10k-dump-zshruby.zsh, owner: zshruby}
+
+        - name: Create powerlevel10k .zshrc for ruby test user
+          ansible.builtin.copy:
+            content: "source /usr/share/powerlevel10k/powerlevel10k.zsh-theme\n"
+            dest: /srv/zshruby/.zshrc
+            owner: zshruby
+            group: zshruby
+            mode: '0644'
+
   roles:
     - role: alphanodes.setup.common
     - role: alphanodes.setup.zsh
 
   post_tasks:
-    - name: Verify zsh is installed
-      ansible.builtin.command: zsh --version
-      changed_when: false
+    - name: Check powerlevel10k is kept while a .zshrc still uses it
+      ansible.builtin.stat:
+        path: /usr/share/powerlevel10k
+      register: powerlevel10k_dir
+      when: not starship_binary.stat.exists
+
+    - name: Assert powerlevel10k is kept while a .zshrc still uses it
+      ansible.builtin.assert:
+        that:
+          - powerlevel10k_dir.stat.exists
+      when: not starship_binary.stat.exists
+
+    - name: Configure zsh for ruby test user (like the redmine role does)
+      ansible.builtin.include_role:
+        name: alphanodes.setup.zsh
+      vars:
+        zsh_user: zshruby
+        zsh_user_home: /srv/zshruby
+        zsh_with_setup: false
+        zsh_with_ruby: true
+        prompt_hostname: molecule-ruby-host

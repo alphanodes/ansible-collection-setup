@@ -1,0 +1,71 @@
+{{ managed_by_ansible | comment }}
+# see https://starship.rs/config/
+
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# Only the listed modules are shown, language modules stay out of server prompts
+format = """
+{% if zsh_with_ruby %}
+$ruby\
+$username\
+{% else %}
+$os\
+{% if zsh_virtualization_type == 'kvm' %}
+[ kvm ](bold yellow bg:red) \
+{% else %}
+[{{ zsh_virtualization_type }}](cyan) \
+{% endif %}
+{% endif %}
+{% if prompt_hostname is defined %}
+[{{ '@ ' if zsh_with_ruby else '' }}{{ prompt_hostname }}](bold yellow) \
+{% else %}
+$hostname\
+{% endif %}
+$directory\
+$git_branch\
+$git_commit\
+$git_status\
+$line_break\
+$character"""
+
+right_format = '$status$cmd_duration$jobs'
+
+[os]
+disabled = false
+format = '[$symbol]($style)'
+
+[os.symbols]
+Debian = " "
+Ubuntu = " "
+
+[username]
+show_always = true
+format = '[$user]($style) '
+
+[hostname]
+ssh_only = false
+format = '[{{ '@ ' if zsh_with_ruby else '' }}$hostname]($style) '
+style = 'bold yellow'
+
+[directory]
+style = 'bold 136'
+truncation_length = 6
+truncate_to_repo = false
+read_only = " \U000f033e"
+
+[git_status]
+format = '([\[$all_status$ahead_behind\]]($style) )'
+
+[git_commit]
+# show tag if the current commit is tagged
+tag_disabled = false
+tag_symbol = '🏷️ '
+only_detached = false
+format = '([$tag]($style) )'
+
+[ruby]
+symbol = 'ruby '
+style = 'white'
+
+[status]
+disabled = false

@@ -5,9 +5,8 @@
     name: '{{ zsh_packages }}'
     state: present
 
-- name: Include powerlevel10k tasks
-  ansible.builtin.import_tasks: powerlevel10k.yml
-  when: zsh_with_powerlevel10k
+- name: Include starship tasks
+  ansible.builtin.import_tasks: starship.yml
   tags:
     - zsh
 

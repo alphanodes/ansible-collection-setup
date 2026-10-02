@@ -1,0 +1,94 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+
+  vars:
+    zsh_virtualization_type: "{{ ansible_facts['virtualization_type'] }}"
+
+  tasks:
+    - name: Verify zsh is installed
+      ansible.builtin.command: zsh --version
+      changed_when: false
+
+    - name: Read installed starship version
+      ansible.builtin.command: /usr/local/bin/starship --version
+      register: starship_version
+      changed_when: false
+
+    - name: Assert starship is installed
+      ansible.builtin.assert:
+        that:
+          - starship_version.stdout_lines[0] is match('starship [0-9]+\.[0-9]+\.[0-9]+$')
+
+    - name: Check powerlevel10k files are removed
+      ansible.builtin.stat:
+        path: '{{ item }}'
+      register: powerlevel10k_files
+      loop:
+        - /usr/share/powerlevel10k
+        - /root/.cache/gitstatus
+        - /root/.cache/p10k-root
+        - /root/.cache/p10k-dump-root.zsh
+        - /root/.cache/p10k-instant-prompt-root.zsh
+        - /srv/zshruby/.cache/gitstatus
+        - /srv/zshruby/.cache/p10k-dump-zshruby.zsh
+
+    - name: Assert powerlevel10k files are removed
+      ansible.builtin.assert:
+        that:
+          - powerlevel10k_files.results | selectattr('stat.exists') | list | length == 0
+
+    - name: Gather package facts
+      ansible.builtin.package_facts:
+
+    - name: Assert fonts-powerline is removed
+      ansible.builtin.assert:
+        that:
+          - "'fonts-powerline' not in ansible_facts.packages"
+
+    - name: Check zshrc syntax
+      ansible.builtin.command: zsh -n {{ item }}
+      changed_when: false
+      loop:
+        - /root/.zshrc
+        - /srv/zshruby/.zshrc
+
+    - name: Read starship init in root zshrc
+      ansible.builtin.slurp:
+        path: /root/.zshrc
+      register: root_zshrc
+
+    - name: Assert root zshrc activates starship
+      ansible.builtin.assert:
+        that:
+          - "'eval \"$(starship init zsh)\"' in (root_zshrc.content | b64decode)"
+
+    - name: Render root prompt
+      ansible.builtin.command: /usr/local/bin/starship prompt
+      environment:
+        STARSHIP_CONFIG: /root/.starship.toml
+      register: root_prompt
+      changed_when: false
+
+    - name: Assert root prompt renders without config warnings
+      ansible.builtin.assert:
+        that:
+          - root_prompt.stderr == ''
+          - zsh_virtualization_type in root_prompt.stdout
+
+    - name: Render ruby user prompt
+      ansible.builtin.command: /usr/local/bin/starship prompt
+      environment:
+        STARSHIP_CONFIG: /srv/zshruby/.starship.toml
+      become: true
+      become_user: zshruby
+      register: ruby_prompt
+      changed_when: false
+
+    - name: Assert ruby user prompt shows user and custom hostname
+      ansible.builtin.assert:
+        that:
+          - ruby_prompt.stderr == ''
+          - "'zshruby' in ruby_prompt.stdout"
+          - "'@ molecule-ruby-host' in ruby_prompt.stdout"

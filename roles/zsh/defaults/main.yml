@@ -15,10 +15,15 @@ zsh_with_rvm: false
 # for composer vendor suport (drupal)
 zsh_with_composer: false
 zsh_with_completions: true
-zsh_with_powerlevel10k: true
-zsh_powerlevel10k_packages:
-  - fonts-powerline
-zsh_powerlevel10k_update: true
+
+# Prompt with starship, see https://starship.rs
+# The static linked musl binary is installed from the upstream GitHub release.
+# Version to install - can be specific version (e.g. '1.26.0') or 'latest'
+# When set to 'latest', the role fetches the latest release from GitHub API
+zsh_with_starship: true
+zsh_starship_version: latest
+zsh_starship_arch: "{{ 'aarch64' if ansible_facts['architecture'] == 'aarch64' else 'x86_64' }}"
+zsh_starship_binary_path: /usr/local/bin/starship
 
 zsh_user: root
 

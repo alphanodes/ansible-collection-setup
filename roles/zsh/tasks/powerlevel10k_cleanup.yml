@@ -1,0 +1,43 @@
+---
+
+# powerlevel10k was replaced by starship, remove its cache files
+# (instant prompt, dump and gitstatusd binary)
+- name: Find powerlevel10k cache files of user {{ zsh_user }}
+  ansible.builtin.find:
+    paths: '{{ zsh_cleanup_home }}/.cache'
+    patterns:
+      - p10k-*
+      - gitstatus
+    file_type: any
+  register: zsh_powerlevel10k_cache_files
+
+- name: Remove powerlevel10k cache files of user {{ zsh_user }}
+  ansible.builtin.file:
+    path: '{{ item.path }}'
+    state: absent
+  loop: '{{ zsh_powerlevel10k_cache_files.files }}'
+  loop_control:
+    label: '{{ item.path }}'
+
+# A .zshrc which is not managed by this role call yet (e.g. other redmine
+# instances) still sources powerlevel10k, keep it until all are migrated
+- name: Get passwd entries
+  ansible.builtin.getent:
+    database: passwd
+
+- name: Find .zshrc files which still use powerlevel10k
+  ansible.builtin.find:
+    paths: >-
+      {{ ansible_facts['getent_passwd'] | dict2items
+         | selectattr('value.5', 'search', 'zsh$')
+         | map(attribute='value.4') | unique | list }}
+    patterns: .zshrc
+    hidden: true
+    contains: '.*powerlevel10k.*'
+  register: zsh_powerlevel10k_zshrc_files
+
+- name: Remove powerlevel10k
+  ansible.builtin.file:
+    path: /usr/share/powerlevel10k
+    state: absent
+  when: zsh_powerlevel10k_zshrc_files.matched == 0

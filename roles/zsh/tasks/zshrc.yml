@@ -7,15 +7,41 @@
     mode: '0644'
   when: zsh_user == 'root'
 
+- name: Configure /root/.starship.toml
+  ansible.builtin.template:
+    src: starship.toml.j2
+    dest: /root/.starship.toml
+    mode: '0644'
+  when:
+    - zsh_user == 'root'
+    - zsh_with_starship
+
 - name: Configure .zshrc for user {{ zsh_user }}
   ansible.builtin.template:
     src: zshrc.j2
-    dest: '{{ zsh_user_home | default("/home" + zsh_user) }}/.zshrc'
+    dest: '{{ zsh_user_home | default("/home/" + zsh_user) }}/.zshrc'
     mode: '0644'
   when: zsh_user != 'root'
   ignore_errors: true
   become: true
   become_user: '{{ zsh_user }}'
+
+- name: Configure .starship.toml for user {{ zsh_user }}
+  ansible.builtin.template:
+    src: starship.toml.j2
+    dest: '{{ zsh_user_home | default("/home/" + zsh_user) }}/.starship.toml'
+    mode: '0644'
+  when:
+    - zsh_user != 'root'
+    - zsh_with_starship
+  ignore_errors: true
+  become: true
+  become_user: '{{ zsh_user }}'
+
+- name: Include powerlevel10k cleanup tasks
+  ansible.builtin.include_tasks: powerlevel10k_cleanup.yml
+  vars:
+    zsh_cleanup_home: '{{ "/root" if zsh_user == "root" else zsh_user_home | default("/home/" + zsh_user) }}'
 
 - name: Set zsh as default shell
   ansible.builtin.user:
