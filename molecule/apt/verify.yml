@@ -76,6 +76,35 @@
           - kernel_purge_verify.rc == 0
         fail_msg: "apt-kernel-purge.service has errors: {{ kernel_purge_verify.stderr }}"
 
+    - name: Check apt-kernel-purge script
+      ansible.builtin.stat:
+        path: /usr/local/sbin/apt-kernel-purge
+      register: kernel_purge_script
+
+    - name: Assert apt-kernel-purge script is executable
+      ansible.builtin.assert:
+        that:
+          - kernel_purge_script.stat.exists
+          - kernel_purge_script.stat.executable
+        fail_msg: "/usr/local/sbin/apt-kernel-purge is missing or not executable"
+
+    - name: Run apt-kernel-purge.service
+      ansible.builtin.systemd_service:
+        name: apt-kernel-purge.service
+        state: started
+      changed_when: false
+
+    - name: Check apt-kernel-purge.service result
+      ansible.builtin.systemd_service:
+        name: apt-kernel-purge.service
+      register: kernel_purge_service
+
+    - name: Assert apt-kernel-purge.service ran successfully
+      ansible.builtin.assert:
+        that:
+          - kernel_purge_service.status.Result == 'success'
+        fail_msg: "apt-kernel-purge.service failed: {{ kernel_purge_service.status.Result }}"
+
     - name: Read 50unattended-upgrades config
       ansible.builtin.slurp:
         src: /etc/apt/apt.conf.d/50unattended-upgrades

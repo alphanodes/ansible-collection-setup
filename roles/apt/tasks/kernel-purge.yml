@@ -1,10 +1,17 @@
 ---
 
-# Weekly maintenance cleanup of leftover linux-* packages that are in
-# dpkg "deinstall" state (removed but with config files still around).
-# This is independent of the unattended-upgrades schedule because it
-# only touches already-removed packages and never interferes with a
-# running upgrade flow.
+# Weekly removal of unused kernel packages. The script removes installed
+# kernels apt considers autoremovable (booted and newest kernels stay) and
+# purges leftover config files of removed kernels. This is independent of
+# the unattended-upgrades schedule, because unattended-upgrades does not
+# detect the kernel package naming of Debian trixie.
+
+- name: Manage apt-kernel-purge script
+  ansible.builtin.template:
+    src: apt-kernel-purge.sh.j2
+    dest: /usr/local/sbin/apt-kernel-purge
+    mode: '0755'
+  when: apt_kernel_purge_enabled | bool
 
 - name: Manage apt-kernel-purge timer
   ansible.builtin.include_role:
@@ -13,7 +20,13 @@
     timers:
       apt-kernel-purge:
         state: "{{ 'present' if apt_kernel_purge_enabled else 'absent' }}"
-        exec_start: "/bin/bash -c 'dpkg --get-selections \"linux-*\" | grep deinstall | cut -f1 | xargs --no-run-if-empty dpkg --purge'"
+        exec_start: /usr/local/sbin/apt-kernel-purge
         on_calendar: '{{ apt_kernel_purge_on_calendar }}'
         persistent: true
         after_service: network.target
+
+- name: Remove apt-kernel-purge script
+  ansible.builtin.file:
+    path: /usr/local/sbin/apt-kernel-purge
+    state: absent
+  when: not apt_kernel_purge_enabled | bool

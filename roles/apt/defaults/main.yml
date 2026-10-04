@@ -46,7 +46,9 @@ unattended_upgrade_dpkg_options:
   - "--force-confdef"
   - "--force-confold"
 
-# Kernel purge timer - removes old kernels with purge (including config files)
-# Runs weekly, uses apt-get --purge autoremove
+# Kernel purge timer - purges installed kernels apt considers autoremovable
+# (the booted and the newest kernel stay) and config files of removed kernels.
+# Runs weekly, needed because unattended-upgrades does not detect the kernel
+# package naming of Debian trixie (e.g. linux-image-6.12.57+deb13-cloud-amd64)
 apt_kernel_purge_enabled: true
 apt_kernel_purge_on_calendar: 'Sun *-*-* 06:00'

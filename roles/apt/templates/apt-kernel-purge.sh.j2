@@ -1,0 +1,28 @@
+#!/bin/bash
+{{ managed_by_ansible | comment }}
+#
+# Removes installed kernel packages that apt itself considers autoremovable
+# and purges the config files of already removed kernel packages.
+#
+# apt always keeps the booted kernel plus the newest kernels up to
+# APT::NeverAutoRemove::KernelCount (default 2), so the selection is left to
+# apt instead of comparing versions here. unattended-upgrades cannot take
+# over this job on Debian trixie: its kernel regex expects the old ABI naming
+# (6.1.0-28-cloud-amd64) and never matches names like
+# 6.12.57+deb13-cloud-amd64, so old kernels would stay installed forever.
+
+set -euo pipefail
+
+export DEBIAN_FRONTEND=noninteractive
+
+mapfile -t kernels < <(apt-get -s autoremove | awk '/^Remv linux-[a-z-]+-[0-9]+\.[0-9]+/ {print $2}')
+if [ -n "${kernels[*]}" ]; then
+  echo "Removing unused kernel packages: ${kernels[*]}"
+  apt-get -y -o DPkg::Lock::Timeout=600 purge "${kernels[@]}"
+fi
+
+mapfile -t leftovers < <(dpkg --get-selections 'linux-*' | awk '$2 == "deinstall" {print $1}')
+if [ -n "${leftovers[*]}" ]; then
+  echo "Purging config files of removed kernel packages: ${leftovers[*]}"
+  dpkg --purge "${leftovers[@]}"
+fi
