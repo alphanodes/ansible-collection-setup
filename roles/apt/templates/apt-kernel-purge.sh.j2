@@ -15,13 +15,17 @@ set -euo pipefail
 
 export DEBIAN_FRONTEND=noninteractive
 
-mapfile -t kernels < <(apt-get -s autoremove | awk '/^Remv linux-[a-z-]+-[0-9]+\.[0-9]+/ {print $2}')
+# Capture command output first: set -e ignores failures inside a process
+# substitution, which would turn e.g. an interrupted dpkg into a silent no-op.
+simulation=$(apt-get -s autoremove)
+mapfile -t kernels < <(awk '/^Remv linux-[a-z-]+-[0-9]+\.[0-9]+/ {print $2}' <<< "$simulation")
 if [ -n "${kernels[*]}" ]; then
   echo "Removing unused kernel packages: ${kernels[*]}"
   apt-get -y -o DPkg::Lock::Timeout=600 purge "${kernels[@]}"
 fi
 
-mapfile -t leftovers < <(dpkg --get-selections 'linux-*' | awk '$2 == "deinstall" {print $1}')
+selections=$(dpkg --get-selections 'linux-*')
+mapfile -t leftovers < <(awk '$2 == "deinstall" {print $1}' <<< "$selections")
 if [ -n "${leftovers[*]}" ]; then
   echo "Purging config files of removed kernel packages: ${leftovers[*]}"
   dpkg --purge "${leftovers[@]}"
