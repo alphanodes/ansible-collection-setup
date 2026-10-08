@@ -80,8 +80,3 @@ if defined? Bullet
   Bullet.enable = {{ redmine_instance.with_bullet | bool | lower }}
 end
 {% endif %}
-{% if active_ai %}
-# redmine_ai requires ruby_llm with the new acts_as API
-require 'ruby_llm'
-RubyLLM.configure { |config| config.use_new_acts_as = true }
-{% endif %}
