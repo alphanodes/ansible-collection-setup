@@ -1,0 +1,12 @@
+diff --git a/plugins/redmine_dmsf/lib/redmine_dmsf/webdav/dmsf_resource.rb b/plugins/redmine_dmsf/lib/redmine_dmsf/webdav/dmsf_resource.rb
+--- a/plugins/redmine_dmsf/lib/redmine_dmsf/webdav/dmsf_resource.rb
++++ b/plugins/redmine_dmsf/lib/redmine_dmsf/webdav/dmsf_resource.rb
+@@ -787,7 +787,7 @@
+           end
+           if r.save(validate: false) # Skip validation due to invalid characters in the filename
+             r.shared_file.attach(
+-              io: File.new(DmsfHelper.temp_filename(basename), File::CREAT),
++              io: StringIO.new,
+               filename: basename,
+               content_type: 'application/octet-stream',
+               identify: false
