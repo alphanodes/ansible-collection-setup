@@ -191,6 +191,20 @@
           redirects:
             - alias.test.local
 
+    # A vhost that only redirects to a foreign site, like a host name that
+    # must not show the application on the standard ports
+    - name: "Phase 2: Include nginx_mono role for static redirect vhost"
+      ansible.builtin.include_role:
+        name: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: static_redirect_test
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: static.test.local
+          vhost_for_zabbix: false
+          letsencrypt: false
+          vhost_redirect_to_static: https://www.example.com
+
     # Phase 3: certbot runs again (must not recreate temp ACME config)
     - name: "Phase 3: Include certbot role again (subsequent run)"
       ansible.builtin.include_role:

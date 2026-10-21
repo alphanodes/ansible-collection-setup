@@ -182,6 +182,29 @@
           - redirect_other_response.location == 'https://test.local/some/page'
         fail_msg: "Redirect names must answer the ACME challenge and redirect all other requests"
 
+    # A static redirect vhost must serve the ACME challenge as well. robots.txt
+    # and friends are no longer redirected, they hit the default locations.
+    - name: Request paths on static redirect vhost
+      ansible.builtin.uri:
+        url: "http://127.0.0.1{{ item.path }}"
+        headers:
+          Host: static.test.local
+        follow_redirects: none
+        return_content: true
+        status_code: "{{ item.status }}"
+      loop:
+        - {path: /.well-known/acme-challenge/redirect-test, status: 200}
+        - {path: /some/page, status: 301}
+        - {path: /robots.txt, status: 404}
+      register: static_redirect_responses
+
+    - name: Verify static redirect vhost serves ACME challenge and redirects the rest
+      ansible.builtin.assert:
+        that:
+          - static_redirect_responses.results[0].content == 'redirect-test-token'
+          - static_redirect_responses.results[1].location == 'https://www.example.com'
+        fail_msg: "Static redirect vhosts must answer the ACME challenge and redirect all other requests"
+
     - name: Display test results
       ansible.builtin.debug:
         msg:

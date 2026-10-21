@@ -153,7 +153,14 @@ server {
 
 {% endif %}
 {% if instance.vhost_redirect_to_static is defined %}
-  return 301 {{ instance.vhost_redirect_to_static }};
+{# The host name of this vhost can be part of a certificate, so it must answer
+   the ACME challenge itself instead of redirecting it to a foreign site. A
+   server level "return" would swallow the challenge requests, so the
+   redirect lives inside "location /". See includes/port_redirect.inc.j2. #}
+  include /etc/nginx/acme-challenge*.conf;
+  location / {
+    return 301 {{ instance.vhost_redirect_to_static }};
+  }
 
 {% endif %}
 {% include 'includes/location.inc.j2' %}
