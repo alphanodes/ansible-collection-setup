@@ -1,0 +1,63 @@
+---
+# Switch certificates that still renew with standalone to webroot, so nginx
+# does not have to be stopped during renewal. certbot reconfigure tests the
+# new settings with a dry run against the staging server and only saves them
+# on success, so a failed switch leaves the certificate as it was.
+#
+# The empty hooks override the stop/start hooks stored in the renewal config,
+# --no-directory-hooks keeps the dry run from running renewal-hooks/pre.
+- name: Check renewal config folder for migration
+  ansible.builtin.stat:
+    path: /etc/letsencrypt/renewal
+  register: certbot_migrate_renewal_dir
+
+- name: Find certificates to switch to webroot
+  ansible.builtin.find:
+    paths: /etc/letsencrypt/renewal
+    patterns: '*.conf'
+    contains: '^authenticator = standalone$'
+  register: certbot_migrate_candidates
+  when: certbot_migrate_renewal_dir.stat.exists
+
+- name: Get certbot version
+  ansible.builtin.command: "{{ certbot_script }} --version"
+  register: certbot_version_output
+  changed_when: false
+  when: certbot_migrate_candidates.matched | default(0) > 0
+
+# certbot reconfigure exists since certbot 2.3
+- name: Switch standalone certificates to webroot
+  ansible.builtin.command: >-
+    {{ certbot_script }} reconfigure --non-interactive
+    --cert-name {{ item.path | basename | regex_replace('\.conf$', '') }}
+    --webroot --webroot-path {{ certbot_webroot }}
+    --pre-hook "" --post-hook "" --no-directory-hooks
+  loop: "{{ certbot_migrate_candidates.files | default([]) }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  register: certbot_migrate_results
+  changed_when: certbot_migrate_results.rc == 0
+  failed_when: false
+  when:
+    - certbot_migrate_candidates.matched | default(0) > 0
+    - certbot_version_output.stdout.split() | last is version('2.3', '>=')
+
+- name: Warn about certificates that could not be switched
+  ansible.builtin.debug:
+    msg: >-
+      WARNING: {{ item.item.path | basename }} could not be switched to webroot
+      and keeps renewing with standalone:
+      {{ (item.stderr | default('') ~ ' ' ~ item.stdout | default('')) | trim | truncate(500) }}
+  loop: "{{ certbot_migrate_results.results | default([]) | selectattr('rc', 'defined') | rejectattr('rc', 'equalto', 0) }}"
+  loop_control:
+    label: "{{ item.item.path | basename }}"
+
+- name: Warn about certbot being too old for the switch
+  ansible.builtin.debug:
+    msg: >-
+      WARNING: {{ certbot_version_output.stdout }} has no reconfigure command
+      (needs 2.3 or newer), the standalone certificates are not switched to
+      webroot.
+  when:
+    - certbot_migrate_candidates.matched | default(0) > 0
+    - certbot_version_output.stdout.split() | last is version('2.3', '<')

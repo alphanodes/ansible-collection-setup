@@ -34,7 +34,7 @@ Renewal uses Debian's built-in `certbot.timer` instead of cron (`systemctl list-
 
 ## Switching from standalone
 
-Existing certificates keep their authenticator and any `pre_hook`/`post_hook` in `/etc/letsencrypt/renewal/<name>.conf`, the role does not issue them again when `certbot_create_method` changes. certbot runs the stop/start hooks in `/etc/letsencrypt/renewal-hooks/` on every renewal, whatever the authenticator. So the role keeps them as long as any certificate still renews with standalone, and removes them once none does. A host with standalone and webroot certificates gets a warning, because the hooks stop nginx during the webroot validation as well. Issue the standalone certificates again with the new method to finish the switch.
+Existing certificates keep their authenticator and any `pre_hook`/`post_hook` in `/etc/letsencrypt/renewal/<name>.conf`, the role does not issue them again when `certbot_create_method` changes. certbot runs the stop/start hooks in `/etc/letsencrypt/renewal-hooks/` on every renewal, whatever the authenticator. So the role keeps them as long as any certificate still renews with standalone, and removes them once none does. A host with standalone and webroot certificates gets a warning, because the hooks stop nginx during the webroot validation as well. With `certbot_create_method: webroot` the role switches such certificates to webroot via `certbot reconfigure` (certbot 2.3 or newer). certbot only saves the change after a successful dry run, so a certificate whose names do not serve `/.well-known/acme-challenge/` on port 80 keeps renewing with standalone and the role prints a warning.
 
 ## Migration from geerlingguy.certbot
 

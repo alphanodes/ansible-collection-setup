@@ -26,6 +26,13 @@
     - certbot_nginx_integration
     - certbot_create_method == 'webroot'
 
+- name: Include standalone migration tasks
+  ansible.builtin.include_tasks: migrate-standalone.yml
+  when:
+    - certbot_migrate_standalone
+    - certbot_create_method == 'webroot'
+    - certbot_nginx_integration
+
 - name: Include standalone hook tasks
   ansible.builtin.include_tasks: standalone-hooks.yml
 

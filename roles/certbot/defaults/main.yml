@@ -28,6 +28,12 @@ certbot_expand: false
 # Default webroot for acme-challenge, can be overwritten per cert.
 certbot_webroot: /var/www/letsencrypt
 
+# Switch certificates that still renew with standalone to webroot (with
+# certbot_create_method: webroot and certbot_nginx_integration). Uses
+# certbot reconfigure (certbot 2.3 or newer), which only saves the change
+# after a successful dry run against the staging server.
+certbot_migrate_standalone: true
+
 # DNS-01 challenge (certbot_create_method: dns).
 # Required for wildcard certificates - Let's Encrypt does not accept HTTP-01
 # for those.
