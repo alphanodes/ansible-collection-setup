@@ -50,6 +50,17 @@
           - cron
         state: present
 
+    # The Debian test images install ansible-core with pip, which puts a new
+    # cryptography into /usr/local. It shadows the Debian package and breaks
+    # the pyOpenSSL that the Debian certbot imports, so certbot crashes on
+    # start. Servers do not have it, so remove it to test the real certbot.
+    - name: Remove cryptography installed by pip
+      ansible.builtin.pip:
+        name: cryptography
+        state: absent
+        extra_args: --break-system-packages
+      when: ansible_facts['distribution'] == 'Debian'
+
     - name: Create test document root
       ansible.builtin.file:
         path: /srv/certbot_test
@@ -132,14 +143,28 @@
         src: /etc/letsencrypt/renewal/standalone.test.local.conf
       register: standalone_renewal_conf
 
-    - name: "Phase 1: Verify failed switch to webroot left everything as it was"
+    - name: "Phase 1: Verify standalone config and hooks are unchanged"
+      ansible.builtin.assert:
+        that:
+          - "'authenticator = standalone' in (standalone_renewal_conf.content | b64decode)"
+          - standalone_hooks_kept.results | selectattr('stat.exists') | list | length == 2
+        fail_msg: "A failed or skipped switch must keep the standalone config and its hooks"
+
+    - name: "Phase 1: Verify switch to webroot was tried and failed"
       ansible.builtin.assert:
         that:
           - certbot_migrate_results.results | length == 1
           - certbot_migrate_results.results[0].rc != 0
-          - "'authenticator = standalone' in (standalone_renewal_conf.content | b64decode)"
-          - standalone_hooks_kept.results | selectattr('stat.exists') | list | length == 2
-        fail_msg: "A failed switch must keep the standalone config and its hooks"
+        fail_msg: "certbot reconfigure must be tried and fail without a certificate"
+      when: certbot_version_output.stdout.split() | last is version('2.3', '>=')
+
+    # Debian 12 ships certbot 2.1 without reconfigure
+    - name: "Phase 1: Verify switch to webroot was skipped for old certbot"
+      ansible.builtin.assert:
+        that:
+          - certbot_migrate_results.results | selectattr('skipped', 'defined') | list | length == 1
+        fail_msg: "certbot reconfigure must not run with certbot older than 2.3"
+      when: certbot_version_output.stdout.split() | last is version('2.3', '<')
 
     # Once the standalone certificate is gone, phase 3 removes the hooks
     - name: "Phase 1: Remove standalone renewal config"
