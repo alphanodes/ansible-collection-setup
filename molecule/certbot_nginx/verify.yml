@@ -142,6 +142,46 @@
           - standalone_hooks.results | selectattr('stat.exists') | list | length == 0
         fail_msg: "Standalone hooks must be removed for webroot mode"
 
+    # A redirect name must serve the ACME challenge from the webroot and
+    # redirect everything else
+    - name: Create ACME challenge folder
+      ansible.builtin.file:
+        path: /var/www/letsencrypt/.well-known/acme-challenge
+        state: directory
+        mode: '0755'
+
+    - name: Create ACME challenge test file
+      ansible.builtin.copy:
+        dest: /var/www/letsencrypt/.well-known/acme-challenge/redirect-test
+        content: redirect-test-token
+        mode: '0644'
+
+    - name: Request ACME challenge on redirect name
+      ansible.builtin.uri:
+        url: http://127.0.0.1/.well-known/acme-challenge/redirect-test
+        headers:
+          Host: alias.test.local
+        follow_redirects: none
+        return_content: true
+      register: redirect_acme_response
+
+    - name: Request other path on redirect name
+      ansible.builtin.uri:
+        url: http://127.0.0.1/some/page
+        headers:
+          Host: alias.test.local
+        follow_redirects: none
+        status_code: 301
+      register: redirect_other_response
+
+    - name: Verify redirect name serves ACME challenge and redirects the rest
+      ansible.builtin.assert:
+        that:
+          - redirect_acme_response.status == 200
+          - redirect_acme_response.content == 'redirect-test-token'
+          - redirect_other_response.location == 'https://test.local/some/page'
+        fail_msg: "Redirect names must answer the ACME challenge and redirect all other requests"
+
     - name: Display test results
       ansible.builtin.debug:
         msg:

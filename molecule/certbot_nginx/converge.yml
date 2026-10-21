@@ -186,6 +186,10 @@
           vhost_default: true
           vhost_for_zabbix: false
           letsencrypt: false
+          # Redirect names are part of the certificate, so they must answer
+          # the ACME challenge themselves instead of redirecting it
+          redirects:
+            - alias.test.local
 
     # Phase 3: certbot runs again (must not recreate temp ACME config)
     - name: "Phase 3: Include certbot role again (subsequent run)"
@@ -211,3 +215,7 @@
           vhost_default: true
           vhost_for_zabbix: false
           letsencrypt: false
+          # Redirect names are part of the certificate, so they must answer
+          # the ACME challenge themselves instead of redirecting it
+          redirects:
+            - alias.test.local
