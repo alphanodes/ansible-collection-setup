@@ -1,5 +1,18 @@
 ---
 
+- name: Pinning php phpdbg packages
+  ansible.builtin.template:
+    src: phpdbg-pinning.j2
+    dest: /etc/apt/preferences.d/phpdbg
+    mode: '0644'
+  when: php_cli_block_phpdbg
+
+- name: Remove php phpdbg pinning
+  ansible.builtin.file:
+    path: /etc/apt/preferences.d/phpdbg
+    state: absent
+  when: not php_cli_block_phpdbg
+
 - name: Be sure php-cli is installed
   ansible.builtin.apt:
     name: '{{ php_cli_packages }}'

@@ -18,3 +18,19 @@
     - name: Verify PHP CLI is installed
       ansible.builtin.command: php --version
       changed_when: false
+
+    - name: Get apt policy of phpdbg packages
+      ansible.builtin.shell: |
+        set -o pipefail
+        apt-cache policy $(apt-cache pkgnames php | grep -E '^php[0-9.]+-phpdbg$')
+      args:
+        executable: /bin/bash
+      register: phpdbg_policy
+      changed_when: false
+
+    - name: Verify phpdbg cannot be installed
+      ansible.builtin.assert:
+        that:
+          - "'Candidate: (none)' in phpdbg_policy.stdout"
+          - "phpdbg_policy.stdout is not search('Candidate: [0-9]')"
+        fail_msg: "phpdbg is installable, pinning does not work"

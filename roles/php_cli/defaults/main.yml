@@ -3,5 +3,12 @@
 
 php_extra_modules: []
 
+# Pin php*-phpdbg to priority -1, so apt never installs it. Otherwise apt can
+# pick phpdbg to satisfy the phpapi-* dependency of unversioned extension
+# packages (e.g. php-redis) on a distribution upgrade, before php-fpm is
+# installed. Purge an installed phpdbg before enabling this, because a pinned
+# phpdbg blocks all php upgrades (it depends on the exact php-common version).
+php_cli_block_phpdbg: true
+
 php_cli_error_log: syslog
 php_cli_date_timezone: "{{ ntp_timezone | default('Europe/Berlin') }}"
