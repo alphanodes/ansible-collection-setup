@@ -150,6 +150,10 @@ server {
   {% endif %}
 }
 
+{# The ACME challenge must be answered here and not be redirected to the
+   other port, where no vhost serves the challenge location. A server level
+   "return" would swallow the challenge requests, so the redirect lives
+   inside "location /". See includes/port_redirect.inc.j2. #}
 # Mapping for opposite port
 server {
   listen {{ '443 ' + nginx_ssl_listen_option if m.port == 80 else '80' }};
@@ -175,7 +179,10 @@ server {
   {% endif -%}
   {% endif -%}
 
-  return 301 {{ 'http' if m.port == 80 else 'https' }}://{{ m.server }}$request_uri;
+  include /etc/nginx/acme-challenge*.conf;
+  location / {
+    return 301 {{ 'http' if m.port == 80 else 'https' }}://{{ m.server }}$request_uri;
+  }
 }
 
 {% if m.redirects is defined -%}
@@ -194,7 +201,10 @@ server {
   ssl_certificate_key /etc/ssl/private/{{ m.ssl_cert | default(vhost_ssl_cert) }}.key;
   {% endif %}
 
-  return 301 $scheme://{{ m.server }}$request_uri;
+  include /etc/nginx/acme-challenge*.conf;
+  location / {
+    return 301 $scheme://{{ m.server }}$request_uri;
+  }
 }
 {% endif %}
 

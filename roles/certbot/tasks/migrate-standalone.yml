@@ -19,10 +19,12 @@
   register: certbot_migrate_candidates
   when: certbot_migrate_renewal_dir.stat.exists
 
+# Read only, so it also runs in check mode - the version checks below need it
 - name: Get certbot version
   ansible.builtin.command: "{{ certbot_script }} --version"
   register: certbot_version_output
   changed_when: false
+  check_mode: false
   when: certbot_migrate_candidates.matched | default(0) > 0
 
 # certbot reconfigure exists since certbot 2.3

@@ -60,9 +60,20 @@
               - server: app.local
                 server_alias: app2.local
                 port: 443
+                # Specified mapping redirects get their own server block
+                redirects:
+                  - redirect.local
                 proxy_pass: 'http://127.0.0.1:3000'
                 locations:
                   - location: = /api/health
                     proxy_pass: 'http://127.0.0.1:3001'
                   - location: /
                     proxy_pass: 'http://127.0.0.1:3000'
+
+    # certbot provides the ACME challenge include, like on hosts with
+    # mappings and Let's Encrypt certificates
+    - role: alphanodes.setup.certbot
+      vars:
+        certbot_create_method: webroot
+        certbot_create_if_missing: false
+        certbot_nginx_integration: true

@@ -79,6 +79,53 @@
         fail_msg: "Missing 'http3 on' directive"
         success_msg: "http3 on directive present"
 
+    # The opposite port block and the mapping redirects block must answer the
+    # ACME challenge themselves and redirect everything else
+    - name: Create ACME challenge folder
+      ansible.builtin.file:
+        path: /var/www/letsencrypt/.well-known/acme-challenge
+        state: directory
+        mode: '0755'
+
+    - name: Create ACME challenge test file
+      ansible.builtin.copy:
+        dest: /var/www/letsencrypt/.well-known/acme-challenge/mapping-test
+        content: mapping-test-token
+        mode: '0644'
+
+    - name: Request ACME challenge on port 80
+      ansible.builtin.uri:
+        url: http://127.0.0.1/.well-known/acme-challenge/mapping-test
+        headers:
+          Host: "{{ item }}"
+        follow_redirects: none
+        return_content: true
+      loop:
+        - app.local
+        - redirect.local
+      register: mapping_acme_responses
+
+    - name: Request other path on port 80
+      ansible.builtin.uri:
+        url: http://127.0.0.1/some/page
+        headers:
+          Host: "{{ item }}"
+        follow_redirects: none
+        status_code: 301
+      loop:
+        - app.local
+        - redirect.local
+      register: mapping_other_responses
+
+    - name: Verify mapping blocks serve ACME challenge and redirect the rest
+      ansible.builtin.assert:
+        that:
+          - mapping_acme_responses.results | map(attribute='status') | list == [200, 200]
+          - mapping_acme_responses.results | map(attribute='content') | unique | list == ['mapping-test-token']
+          - mapping_other_responses.results[0].location == 'https://app.local/some/page'
+          - mapping_other_responses.results[1].location == 'http://app.local/some/page'
+        fail_msg: "Mapping blocks on port 80 must answer the ACME challenge and redirect all other requests"
+
     # Verify nginx configuration is valid
     - name: Test nginx configuration syntax
       ansible.builtin.command:
