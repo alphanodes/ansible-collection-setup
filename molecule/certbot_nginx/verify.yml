@@ -126,6 +126,22 @@
       changed_when: false
       failed_when: default_server_check.rc != 0
 
+    # Stale standalone hooks from converge must be gone, otherwise nginx is
+    # stopped before every webroot validation
+    - name: Check standalone hooks are absent
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - /etc/letsencrypt/renewal-hooks/pre/stop_services
+        - /etc/letsencrypt/renewal-hooks/post/start_services
+      register: standalone_hooks
+
+    - name: Verify standalone hooks were removed
+      ansible.builtin.assert:
+        that:
+          - standalone_hooks.results | selectattr('stat.exists') | list | length == 0
+        fail_msg: "Standalone hooks must be removed for webroot mode"
+
     - name: Display test results
       ansible.builtin.debug:
         msg:

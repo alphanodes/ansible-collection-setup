@@ -51,6 +51,28 @@
         state: directory
         mode: '0755'
 
+    # Leftovers of a host that switched from standalone to webroot. certbot
+    # runs them on every renew, so nginx would be stopped during validation.
+    - name: Create renewal hook folders
+      ansible.builtin.file:
+        path: /etc/letsencrypt/renewal-hooks/{{ item }}
+        state: directory
+        mode: '0755'
+      loop:
+        - pre
+        - post
+
+    - name: Create stale standalone hooks
+      ansible.builtin.copy:
+        dest: /etc/letsencrypt/renewal-hooks/{{ item.dir }}/{{ item.name }}
+        content: |
+          #!/bin/bash
+          systemctl {{ item.action }} nginx
+        mode: '0750'
+      loop:
+        - {dir: pre, name: stop_services, action: stop}
+        - {dir: post, name: start_services, action: start}
+
   tasks:
     # Phase 1: certbot on fresh server (Debian default nginx config active)
     - name: "Phase 1: Include certbot role on fresh server"

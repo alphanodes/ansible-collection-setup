@@ -26,6 +26,9 @@
     - certbot_nginx_integration
     - certbot_create_method == 'webroot'
 
+- name: Include standalone hook tasks
+  ansible.builtin.include_tasks: standalone-hooks.yml
+
 - name: Include standalone certificate tasks
   ansible.builtin.include_tasks: cert-standalone.yml
   loop: "{{ certbot_certs }}"
