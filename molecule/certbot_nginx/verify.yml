@@ -126,8 +126,8 @@
       changed_when: false
       failed_when: default_server_check.rc != 0
 
-    # Stale standalone hooks from converge must be gone, otherwise nginx is
-    # stopped before every webroot validation
+    # The standalone hooks of converge phase 0 must be gone after the switch
+    # to webroot, otherwise nginx is stopped before every validation
     - name: Check standalone hooks are absent
       ansible.builtin.stat:
         path: "{{ item }}"

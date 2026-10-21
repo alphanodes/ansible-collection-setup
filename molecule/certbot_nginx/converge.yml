@@ -8,6 +8,11 @@
 #
 # This catches the chicken-and-egg problem where certbot needs ACME challenge
 # support on port 80, but nginx_mono hasn't created its vhost yet.
+#
+# Phase 0 runs certbot in standalone mode first, so the host switches from
+# standalone to webroot. The stop/start hooks created there must stay while a
+# certificate still renews with standalone (phase 1) and be removed once none
+# does (phase 3), otherwise nginx is stopped before every validation.
 
 - name: Converge
   hosts: all
@@ -51,33 +56,86 @@
         state: directory
         mode: '0755'
 
-    # Leftovers of a host that switched from standalone to webroot. certbot
-    # runs them on every renew, so nginx would be stopped during validation.
-    - name: Create renewal hook folders
+  tasks:
+    # Phase 0: standalone mode creates the stop/start renewal hooks
+    - name: "Phase 0: Include certbot role in standalone mode"
+      ansible.builtin.include_role:
+        name: alphanodes.setup.certbot
+      vars:
+        certbot_create_method: standalone
+        certbot_create_standalone_stop_services:
+          - nginx
+
+    - name: "Phase 0: Check standalone hooks"
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - /etc/letsencrypt/renewal-hooks/pre/stop_services
+        - /etc/letsencrypt/renewal-hooks/post/start_services
+      register: standalone_hooks
+
+    - name: "Phase 0: Read standalone hooks"
+      ansible.builtin.slurp:
+        src: "{{ item }}"
+      loop:
+        - /etc/letsencrypt/renewal-hooks/pre/stop_services
+        - /etc/letsencrypt/renewal-hooks/post/start_services
+      register: standalone_hooks_content
+
+    - name: "Phase 0: Verify standalone hooks were created"
+      ansible.builtin.assert:
+        that:
+          - standalone_hooks.results | selectattr('stat.exists') | list | length == 2
+          - standalone_hooks.results | map(attribute='stat.mode') | unique | list == ['0750']
+          - "'systemctl stop nginx' in (standalone_hooks_content.results[0].content | b64decode)"
+          - "'systemctl start nginx' in (standalone_hooks_content.results[1].content | b64decode)"
+        fail_msg: "Standalone mode must create executable stop/start hooks for nginx"
+
+    # A certificate issued in standalone mode keeps renewing with standalone
+    # after the switch to webroot, together with a webroot certificate. Its
+    # renewal config may call the hook files, so the webroot run in phase 1
+    # must keep them.
+    - name: "Phase 0: Create renewal config folder"
       ansible.builtin.file:
-        path: /etc/letsencrypt/renewal-hooks/{{ item }}
+        path: /etc/letsencrypt/renewal
         state: directory
         mode: '0755'
-      loop:
-        - pre
-        - post
 
-    - name: Create stale standalone hooks
+    - name: "Phase 0: Create renewal configs of both authenticators"
       ansible.builtin.copy:
-        dest: /etc/letsencrypt/renewal-hooks/{{ item.dir }}/{{ item.name }}
+        dest: /etc/letsencrypt/renewal/{{ item.name }}.conf
         content: |
-          #!/bin/bash
-          systemctl {{ item.action }} nginx
-        mode: '0750'
+          [renewalparams]
+          authenticator = {{ item.authenticator }}
+        mode: '0644'
       loop:
-        - {dir: pre, name: stop_services, action: stop}
-        - {dir: post, name: start_services, action: start}
+        - {name: standalone.test.local, authenticator: standalone}
+        - {name: webroot.test.local, authenticator: webroot}
 
-  tasks:
     # Phase 1: certbot on fresh server (Debian default nginx config active)
     - name: "Phase 1: Include certbot role on fresh server"
       ansible.builtin.include_role:
         name: alphanodes.setup.certbot
+
+    - name: "Phase 1: Check standalone hooks"
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - /etc/letsencrypt/renewal-hooks/pre/stop_services
+        - /etc/letsencrypt/renewal-hooks/post/start_services
+      register: standalone_hooks_kept
+
+    - name: "Phase 1: Verify standalone hooks were kept"
+      ansible.builtin.assert:
+        that:
+          - standalone_hooks_kept.results | selectattr('stat.exists') | list | length == 2
+        fail_msg: "Hooks must stay while a certificate still renews with standalone"
+
+    # Once the standalone certificate is gone, phase 3 removes the hooks
+    - name: "Phase 1: Remove standalone renewal config"
+      ansible.builtin.file:
+        path: /etc/letsencrypt/renewal/standalone.test.local.conf
+        state: absent
 
     # Phase 2: nginx_mono creates vhost (must remove temp ACME config)
     - name: "Phase 2: Include nginx_mono role to create vhost"

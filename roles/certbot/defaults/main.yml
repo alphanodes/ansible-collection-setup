@@ -68,7 +68,8 @@ certbot_venv_upgrade: false
 certbot_certs: []
 
 # Services to stop/start for standalone mode.
-# Only used when certbot_create_method == 'standalone'.
+# Only used when certbot_create_method == 'standalone'. For any other method
+# the hooks are removed once no certificate renews with standalone anymore.
 # Example: [nginx] if nginx is running but standalone mode is needed.
 certbot_create_standalone_stop_services: []
 

@@ -32,6 +32,10 @@ With `certbot_nginx_integration: true` (default) the role creates `/etc/nginx/ac
 
 Renewal uses Debian's built-in `certbot.timer` instead of cron (`systemctl list-timers certbot.timer`). Certificates are stored in the standard locations `/etc/letsencrypt/live/<domain>/fullchain.pem` and `privkey.pem`.
 
+## Switching from standalone
+
+Existing certificates keep their authenticator and any `pre_hook`/`post_hook` in `/etc/letsencrypt/renewal/<name>.conf`, the role does not issue them again when `certbot_create_method` changes. certbot runs the stop/start hooks in `/etc/letsencrypt/renewal-hooks/` on every renewal, whatever the authenticator. So the role keeps them as long as any certificate still renews with standalone, and removes them once none does. A host with standalone and webroot certificates gets a warning, because the hooks stop nginx during the webroot validation as well. Issue the standalone certificates again with the new method to finish the switch.
+
 ## Migration from geerlingguy.certbot
 
 The role is a drop-in replacement for `geerlingguy.certbot`, reduced to apt packages and systemd. Change the role reference to `alphanodes.setup.certbot` and remove these variables from your inventory, they are no longer supported:

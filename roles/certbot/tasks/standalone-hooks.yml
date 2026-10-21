@@ -3,11 +3,38 @@
 # each renew, whatever authenticator a certificate uses. A stop hook left
 # over from standalone mode would stop nginx right before a webroot
 # validation, so the hooks are removed as soon as they are not needed.
+#
+# Certificates keep their authenticator from the time they were issued, the
+# role does not issue them again when certbot_create_method changes. Their
+# renewal config may also call the hook files via pre_hook/post_hook, so the
+# hooks stay as long as any certificate still renews with standalone.
+- name: Check renewal config folder
+  ansible.builtin.stat:
+    path: /etc/letsencrypt/renewal
+  register: certbot_renewal_dir
+
+- name: Find certificates renewing with standalone
+  ansible.builtin.find:
+    paths: /etc/letsencrypt/renewal
+    patterns: '*.conf'
+    contains: '^authenticator = standalone$'
+  register: certbot_standalone_renewals
+  when: certbot_renewal_dir.stat.exists
+
+- name: Find certificates renewing with other authenticators
+  ansible.builtin.find:
+    paths: /etc/letsencrypt/renewal
+    patterns: '*.conf'
+    contains: '^authenticator = (?!standalone$)'
+  register: certbot_other_renewals
+  when: certbot_renewal_dir.stat.exists
+
 - name: Set standalone hooks state
   ansible.builtin.set_fact:
     certbot_standalone_hooks_enabled: >-
       {{ certbot_create_method == 'standalone'
          and certbot_create_standalone_stop_services | length > 0 }}
+    certbot_standalone_hooks_needed: "{{ certbot_standalone_renewals.matched | default(0) > 0 }}"
 
 - name: Ensure pre and post hook folders exist
   ansible.builtin.file:
@@ -46,4 +73,21 @@
   loop:
     - /etc/letsencrypt/renewal-hooks/pre/stop_services
     - /etc/letsencrypt/renewal-hooks/post/start_services
-  when: not certbot_standalone_hooks_enabled
+  when:
+    - not certbot_standalone_hooks_enabled
+    - not certbot_standalone_hooks_needed
+
+# The hooks are global, they cannot serve both kinds of certificates. Only
+# warn, failing would block the whole rollout of a host.
+- name: Warn about mixed authenticators
+  ansible.builtin.debug:
+    msg: >-
+      WARNING: {{ certbot_standalone_renewals.files | map(attribute='path') | join(', ') }}
+      still renew with standalone, so the stop/start hooks are kept. They also
+      stop services during the renewal of
+      {{ certbot_other_renewals.files | map(attribute='path') | join(', ') }},
+      which breaks webroot validation. Issue the standalone certificates
+      again with the method used for the others.
+  when:
+    - certbot_standalone_hooks_needed
+    - certbot_other_renewals.matched | default(0) > 0
