@@ -160,6 +160,41 @@
           - protection_check.rc == 0
         fail_msg: "bad_redmine_locations protection rule not found"
 
+    # Scanner paths get 404 from nginx, everything else reaches the
+    # upstream, which does not run in this scenario (502)
+    - name: Request scanner and regular paths on redmine.local
+      ansible.builtin.command: >
+        curl -sk -o /dev/null -w '%{http_code}'
+        --resolve redmine.local:443:127.0.0.1
+        'https://redmine.local{{ item }}'
+      loop:
+        - /api/v1
+        - /api-docs/swagger.json
+        - /swagger-ui.html
+        - /openapi.json
+        - /graphql
+        - /v2/
+        - /jasperserver-pro/login.html
+        - /assets/rails-ujs-3de06f48.js/favicon.ico
+        - /.svn/entries
+        - /.bzr/README
+        - /admin
+        - /issues.json
+        - /attachments/download/1/report.pdf
+        - /restricted
+        - /mcp
+      register: scanner_path_responses
+      changed_when: false
+
+    - name: Assert scanner paths are blocked and regular paths pass through
+      ansible.builtin.assert:
+        that:
+          - scanner_path_responses.results | map(attribute='stdout') | list ==
+            ['404'] * 10 + ['502'] * 5
+        fail_msg: >-
+          Unexpected status codes:
+          {{ scanner_path_responses.results | map(attribute='item') | zip(scanner_path_responses.results | map(attribute='stdout')) | list }}
+
     - name: Check PostgreSQL is running
       ansible.builtin.command: systemctl is-active postgresql
       register: pg_status
