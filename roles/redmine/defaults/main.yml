@@ -29,6 +29,7 @@ redmine_instances: {}
 #   The list is nginx_ai_crawler_user_agents from the nginx_mono role.
 #
 # - block_security_scanners (default: nginx_block_security_scanners):
+#   Drops scanner user agents and injection probes in request headers.
 #   Set false while a commissioned penetration test is running.
 
 # If not set all instances from redmine_instances are used

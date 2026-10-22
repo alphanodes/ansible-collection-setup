@@ -1,4 +1,4 @@
-# User agent maps for blocking scanners and AI crawlers.
+# Request header maps for blocking scanners and AI crawlers.
 # Only effective in vhosts with block_security_scanners or
 # block_ai_crawlers enabled, see includes/protection.inc.j2.
 
@@ -6,6 +6,15 @@ map $http_user_agent $security_scanner {
   default 0;
 {% for user_agent in nginx_security_scanner_user_agents %}
   "~*{{ user_agent }}" 1;
+{% endfor %}
+}
+
+# Injection payloads in headers that browsers fill with fixed values.
+# Referer is left out, its query string may legitimately contain them.
+map "$http_accept|$http_user_agent" $security_probe {
+  default 0;
+{% for pattern in nginx_security_probe_patterns %}
+  "~{{ pattern }}" 1;
 {% endfor %}
 }
 

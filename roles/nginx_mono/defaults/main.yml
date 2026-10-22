@@ -117,6 +117,17 @@ nginx_security_scanner_user_agents:
   - zern-scanner
   - zgrab
 
+# Injection probes in request headers, blocked together with the scanner
+# user agents (same block_security_scanners switch). Scanners that fake a
+# browser user agent hide Log4Shell or path traversal payloads in the
+# Accept or User-Agent header. Rails answers a broken Accept header with
+# an InvalidMimeType backtrace in the log, so they are dropped in nginx.
+# Entries are case sensitive regex fragments, matched anywhere in both
+# headers. Browsers never send them there.
+nginx_security_probe_patterns:
+  - '\$\{'
+  - '\.\./'
+
 # AI crawlers, AI search bots and AI assistants fetching on behalf of a
 # user. Off by default, because public sites may want to be found by AI
 # search. Enable per vhost with block_ai_crawlers: true (the redmine role

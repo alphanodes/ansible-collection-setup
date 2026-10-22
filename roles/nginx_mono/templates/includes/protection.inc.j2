@@ -9,6 +9,11 @@
     return 444;
   }
 
+  # Deny injection probes hidden in request headers
+  if ($security_probe) {
+    return 444;
+  }
+
 {% endif %}
 {% if instance.block_ai_crawlers | default(nginx_block_ai_crawlers) | bool %}
   # Deny AI crawlers and AI assistants
