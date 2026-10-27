@@ -21,7 +21,7 @@
     matomo_dir: {{ matomo_dir }}
 {% endif %}
 {% if matomo_domain is defined %}
-    matomo_domain: {{ matomo_domain }}
+    matomo_domain: '{{ matomo_domain }}'
 {% endif %}
     matomo_console_name: queuedtracking:process
 

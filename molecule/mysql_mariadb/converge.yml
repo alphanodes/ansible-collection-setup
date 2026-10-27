@@ -8,8 +8,8 @@
     # This enables ARM64 compatibility for local testing on Apple Silicon
     mysql_backend: mariadb
 
-    # Test settings
-    mysql_root_password: 'test_root_password'
+    # No mysql_root_password: root logs in over the unix socket, as on a
+    # fresh server without .my.cnf (the mysql scenario covers the password)
     mysql_server_tmpdir: /tmp
 
   pre_tasks:

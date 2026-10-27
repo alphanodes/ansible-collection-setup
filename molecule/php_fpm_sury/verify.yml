@@ -56,3 +56,17 @@
       loop:
         - php7.4-fpm
         - php-common
+
+    # The role updates the apt cache again if these lists are missing, so the
+    # pattern has to match the real file names
+    - name: Find sury package lists
+      ansible.builtin.find:
+        paths: /var/lib/apt/lists
+        patterns: 'packages.sury.org_*_Packages*'
+      register: sury_lists
+
+    - name: Assert sury package lists exist
+      ansible.builtin.assert:
+        that:
+          - sury_lists.matched > 0
+        fail_msg: "No sury package lists found in /var/lib/apt/lists"

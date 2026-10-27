@@ -28,10 +28,17 @@
         state: present
       register: php_sury_repo
 
+    # An aborted first run leaves the repository without package lists
+    - name: Find sury package lists
+      ansible.builtin.find:
+        paths: /var/lib/apt/lists
+        patterns: 'packages.sury.org_*_Packages*'
+      register: php_sury_lists
+
     - name: Update apt cache
       ansible.builtin.apt:
         update_cache: true
-      when: php_sury_repo.changed
+      when: php_sury_repo.changed or php_sury_lists.matched == 0
       tags:
         - skip_ansible_lint
 
