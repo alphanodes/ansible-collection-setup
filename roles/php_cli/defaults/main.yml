@@ -10,5 +10,15 @@ php_extra_modules: []
 # phpdbg blocks all php upgrades (it depends on the exact php-common version).
 php_cli_block_phpdbg: true
 
+# Install PHP from packages.sury.org (Debian only), e.g. to run a php_version
+# the distribution does not ship. Only php<php_version>* and php-common are
+# taken from sury, all other sury packages are pinned to priority 1, so
+# libraries keep coming from Debian.
+# Add 'origin=deb.sury.org,codename=${distro_codename}' to
+# unattended_extra_origins_patterns to install PHP security updates automatically.
+php_sury_enabled: false
+php_sury_apt_url: https://packages.sury.org/php/
+php_sury_apt_signed_by: https://packages.sury.org/php/apt.gpg
+
 php_cli_error_log: syslog
 php_cli_date_timezone: "{{ ntp_timezone | default('Europe/Berlin') }}"

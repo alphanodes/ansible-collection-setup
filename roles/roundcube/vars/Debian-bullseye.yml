@@ -7,5 +7,5 @@ roundcube_packages:
   - aspell-es
   - aspell-it
   - php-pear
-  - php7.4-enchant
-  - php7.4-intl
+  - php{{ php_version }}-enchant
+  - php{{ php_version }}-intl

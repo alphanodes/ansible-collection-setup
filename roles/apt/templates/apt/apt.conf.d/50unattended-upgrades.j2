@@ -12,6 +12,9 @@ Unattended-Upgrade::Origins-Pattern {
    "{{ origin }}";
   {% endfor %}
 {% endif %}
+{% for origin in unattended_extra_origins_patterns %}
+    "{{ origin }}";
+{% endfor %}
 };
 
 // List of packages to not update (regexp are supported)

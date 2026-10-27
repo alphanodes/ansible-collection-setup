@@ -2,7 +2,7 @@
 
 drupal_packages:
   - imagemagick-7.q16
-  - php-memcache
-  - php8.4-zip
+  - "{{ php_extension_prefix }}memcache"
+  - php{{ php_version }}-zip
   # composer prefers unzip over the PHP zip extension for dist packages
   - unzip

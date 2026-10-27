@@ -1,0 +1,9 @@
+{{ managed_by_ansible | comment }}
+Package: *
+Pin: release o=deb.sury.org
+Pin-Priority: 1
+
+# php-common from Debian breaks older PHP versions
+Package: php-common php{{ php_version }} php{{ php_version }}-*
+Pin: release o=deb.sury.org
+Pin-Priority: 500

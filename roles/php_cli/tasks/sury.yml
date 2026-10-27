@@ -1,0 +1,49 @@
+---
+
+- name: Sury repository block
+  when: php_sury_enabled
+  block:
+    - name: Ensure sury is only used on Debian
+      ansible.builtin.assert:
+        that: ansible_facts.distribution == 'Debian'
+        fail_msg: packages.sury.org only provides PHP for Debian
+
+    # Pinning has to exist before the first apt update with the repository,
+    # otherwise sury libraries would become installation candidates
+    - name: Pinning sury packages
+      ansible.builtin.template:
+        src: sury-pinning.j2
+        dest: /etc/apt/preferences.d/sury-php
+        mode: '0644'
+
+    # see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/deb822_repository_module.html
+    - name: Add sury apt repository
+      ansible.builtin.deb822_repository:
+        name: sury-php
+        uris: '{{ php_sury_apt_url }}'
+        types: deb
+        suites: '{{ ansible_facts.distribution_release }}'
+        components: main
+        signed_by: '{{ php_sury_apt_signed_by }}'
+        state: present
+      register: php_sury_repo
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+      when: php_sury_repo.changed
+      tags:
+        - skip_ansible_lint
+
+- name: Remove sury apt repository
+  when: not php_sury_enabled
+  block:
+    - name: Remove sury apt repository
+      ansible.builtin.deb822_repository:
+        name: sury-php
+        state: absent
+
+    - name: Remove sury pinning
+      ansible.builtin.file:
+        path: /etc/apt/preferences.d/sury-php
+        state: absent

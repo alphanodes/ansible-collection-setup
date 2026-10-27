@@ -1,5 +1,8 @@
 ---
 
+- name: Include sury tasks
+  ansible.builtin.include_tasks: sury.yml
+
 - name: Pinning php phpdbg packages
   ansible.builtin.template:
     src: phpdbg-pinning.j2
@@ -18,9 +21,10 @@
     name: '{{ php_cli_packages }}'
     state: present
 
-- name: Ensure unwanted php-fpm packages are removed
+# never purge the configured php_version, the lists name all other versions
+- name: Ensure unwanted php-cli packages are removed
   ansible.builtin.apt:
-    name: '{{ php_cli_remove_packages }}'
+    name: "{{ php_cli_remove_packages | reject('match', 'php' ~ php_version | regex_escape ~ '-') }}"
     purge: true
     state: absent
 

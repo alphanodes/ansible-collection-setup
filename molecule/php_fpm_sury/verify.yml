@@ -1,0 +1,58 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Check PHP-FPM 7.4 is running
+      ansible.builtin.command: systemctl is-active php7.4-fpm
+      register: fpm_status
+      changed_when: false
+
+    - name: Assert PHP-FPM 7.4 is active
+      ansible.builtin.assert:
+        that:
+          - fpm_status.stdout == 'active'
+        fail_msg: "php7.4-fpm is not running"
+
+    - name: Get PHP CLI version and modules
+      ansible.builtin.command:
+        argv:
+          - php
+          - -r
+          - 'echo PHP_VERSION, " ", extension_loaded("memcache") ? "memcache" : "-";'
+      register: php_cli_info
+      changed_when: false
+
+    - name: Assert PHP CLI is 7.4 with memcache extension
+      ansible.builtin.assert:
+        that:
+          - php_cli_info.stdout is match('7\.4\.')
+          - php_cli_info.stdout is search(' memcache$')
+        fail_msg: "Unexpected PHP CLI: {{ php_cli_info.stdout }}"
+
+    - name: Gather the package facts
+      ansible.builtin.package_facts:
+        manager: auto
+
+    - name: Assert no distribution PHP 8 packages were pulled in
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.packages.keys() | select('match', 'php8') | list == []
+        fail_msg: "PHP 8 packages installed: {{ ansible_facts.packages.keys() | select('match', 'php8') | list }}"
+
+    # sury versions contain '+0~', Debian versions do not
+    - name: Assert libraries come from Debian
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.packages['libgd3'][0].version is not search('\+0~')
+        fail_msg: "libgd3 {{ ansible_facts.packages['libgd3'][0].version }} comes from sury"
+
+    - name: Assert PHP 7.4 and php-common come from sury
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.packages[item][0].version is search('\+0~')
+        fail_msg: "{{ item }} {{ ansible_facts.packages[item][0].version }} does not come from sury"
+      loop:
+        - php7.4-fpm
+        - php-common

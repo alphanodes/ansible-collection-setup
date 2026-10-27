@@ -31,6 +31,9 @@ apt_daily_upgrade_timer_randomized_delay_sec: '1m'
 apt_automatic_reboot: true
 apt_automatic_reboot_time: '05:45'
 
+# Additional origins for unattended-upgrades, appended to the distribution
+# defaults (unattended_origins_patterns replaces them)
+unattended_extra_origins_patterns: []
 unattended_package_blacklist: []
 unattended_autofix_interrupted_dpkg: true
 unattended_upgrade_minimal_steps: true

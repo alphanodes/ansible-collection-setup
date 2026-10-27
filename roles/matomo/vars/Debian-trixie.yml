@@ -2,13 +2,13 @@
 
 matomo_packages:
   - libmaxminddb-dev
-  - php8.4-gd
-  - php8.4-ldap
-  - php8.4-maxminddb
-  - php8.4-mbstring
-  - php8.4-xml
-matomo_php_mods_available: /etc/php/8.4/mods-available
+  - php{{ php_version }}-gd
+  - php{{ php_version }}-ldap
+  - php{{ php_version }}-maxminddb
+  - php{{ php_version }}-mbstring
+  - php{{ php_version }}-xml
+matomo_php_mods_available: /etc/php/{{ php_version }}/mods-available
 
 matomo_redis_php_packages:
-  - php8.4-redis
-  - php8.4-igbinary
+  - php{{ php_version }}-redis
+  - php{{ php_version }}-igbinary
