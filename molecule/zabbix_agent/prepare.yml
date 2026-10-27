@@ -1,0 +1,49 @@
+---
+# On real hosts the zabbix-agent2 package creates its user with the home
+# directory /var/lib/zabbix/ (trailing slash) and starts the agent right away.
+# Containers do not start services from package scripts, so recreate that
+# state: the role must not modify a user that is busy.
+- name: Prepare
+  hosts: all
+  become: true
+  tasks:
+    - name: Create zabbix group like the package does
+      ansible.builtin.group:
+        name: zabbix
+        system: true
+
+    - name: Create zabbix user like the package does
+      ansible.builtin.user:
+        name: zabbix
+        group: zabbix
+        system: true
+        home: /var/lib/zabbix/
+        create_home: false
+        shell: /usr/sbin/nologin
+
+    - name: Keep a process running as zabbix user (like the started agent)
+      ansible.builtin.shell: setsid runuser -u zabbix -- sleep infinity > /dev/null 2>&1 &
+      changed_when: true
+
+    # A vhost written by an older nginx_mono still includes the status file of
+    # zabbix_agent, so the role must keep it
+    - name: Create directories for old nginx status include
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: directory
+        mode: '0755'
+      loop:
+        - /etc/nginx/sites-available
+        - /usr/share/zabbix_addons/conf
+
+    - name: Create old nginx status file
+      ansible.builtin.copy:
+        content: "location = /basic_status { stub_status on; }\n"
+        dest: /usr/share/zabbix_addons/conf/nginx-server-status.conf
+        mode: '0644'
+
+    - name: Create vhost including old nginx status file
+      ansible.builtin.copy:
+        content: "server { include /usr/share/zabbix_addons/conf/nginx-server-status.conf; }\n"
+        dest: /etc/nginx/sites-available/old.conf
+        mode: '0644'

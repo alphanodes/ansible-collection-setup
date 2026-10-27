@@ -27,6 +27,10 @@
 - name: Calculate listen configuration for instance
   ansible.builtin.include_tasks: calculate_listen_config.yml
 
+- name: Include monitoring tasks for instance
+  ansible.builtin.include_tasks: monitoring.yml
+  when: instance.vhost_for_zabbix | default(false) | bool
+
 - name: Configure vhosts - {{ instance.name }}
   ansible.builtin.template:
     src: vhost.j2

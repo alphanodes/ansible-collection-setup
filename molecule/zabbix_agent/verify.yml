@@ -47,6 +47,23 @@
         key: zabbix
       register: zabbix_user
 
+    - name: Check old nginx status file still included by a vhost
+      ansible.builtin.stat:
+        path: /usr/share/zabbix_addons/conf/nginx-server-status.conf
+      register: old_nginx_status
+      failed_when: not old_nginx_status.stat.exists
+
+    - name: Get group memberships of zabbix user
+      ansible.builtin.command: id -nG zabbix
+      register: zabbix_groups
+      changed_when: false
+
+    - name: Verify zabbix user is member of adm and www-data
+      ansible.builtin.assert:
+        that:
+          - "'adm' in zabbix_groups.stdout.split()"
+          - "'www-data' in zabbix_groups.stdout.split()"
+
     - name: Verify zabbix agent is listening on port 10050
       ansible.builtin.wait_for:
         port: 10050

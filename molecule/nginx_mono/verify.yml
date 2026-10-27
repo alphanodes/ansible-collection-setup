@@ -16,6 +16,27 @@
       register: nginx_syntax
       changed_when: false
 
+    # The monitoring server block works without zabbix_agent files (nginx -t
+    # above) and has no PHP locations, because PHP-FPM is not installed
+    - name: Request locations of monitoring server block
+      ansible.builtin.uri:
+        url: 'http://127.0.0.1{{ item.path }}'
+        headers:
+          Host: localhost
+        return_content: true
+        status_code: '{{ item.status }}'
+      register: monitoring_request
+      failed_when: >-
+        monitoring_request.status != item.status
+        or item.content not in monitoring_request.content
+      loop:
+        - path: /basic_status
+          status: 200
+          content: Active connections
+        - path: /php_ping
+          status: 404
+          content: ''
+
     - name: Verify action normalization (no double semicolons)
       ansible.builtin.shell: |
         set -euo pipefail

@@ -35,8 +35,6 @@ zabbix_agent_control_socket: /run/zabbix/agent.sock
 zabbix_agent_plugin_socket: /run/zabbix/agent.plugin.sock
 zabbix_agent_deny_key: 'system.run[*]'
 
-zabbix_addons_dir: /usr/share/zabbix_addons
-
 zabbix_agent_packages:
   - libxml2-utils
   - sudo

@@ -185,7 +185,8 @@
             server_name: parking.local
             root: /srv/parking
             index: index.html
-            vhost_for_zabbix: false
+            # monitoring server block without zabbix_agent and without PHP
+            vhost_for_zabbix: true
           - name: static_site
             server_name: static.local
             root: /srv/static

@@ -43,6 +43,24 @@
           - fpm_status.stdout == 'active'
         fail_msg: "PHP-FPM is not running"
 
+    # PHP-FPM is installed before the vhost is written, so the monitoring
+    # server block has the PHP locations after the first run
+    - name: Request locations of monitoring server block
+      ansible.builtin.uri:
+        url: 'http://127.0.0.1{{ item.path }}'
+        headers:
+          Host: localhost
+        return_content: true
+      register: monitoring_request
+      failed_when: item.content not in monitoring_request.content
+      loop:
+        - path: /basic_status
+          content: Active connections
+        - path: /php_ping
+          content: pong
+        - path: /php_status
+          content: accepted conn
+
     - name: Check unzip is installed
       ansible.builtin.command: unzip -v
       register: unzip_check

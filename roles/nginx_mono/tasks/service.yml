@@ -69,6 +69,10 @@
 - name: Full vhost mode
   when: not nginx_mono_include_mode
   block:
+    - name: Include monitoring tasks for service
+      ansible.builtin.include_tasks: monitoring.yml
+      when: nginx_mono_instance.vhost_for_zabbix | default(false) | bool
+
     - name: Create service vhost configuration
       tags: nginx
       ansible.builtin.template:

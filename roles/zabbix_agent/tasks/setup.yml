@@ -5,7 +5,6 @@
 
 - name: Set installed software
   ansible.builtin.set_fact:
-    nginx_installed: "{{ true if 'nginx-common' in ansible_facts.packages else false }}"
     php_installed: "{{ true if zabbix_agent_check_php_package in ansible_facts.packages else false }}"
     redmine_installed: "{{ true if redmine_instances is defined and redmine_instances | length > 0 else false }}"
     postgres_installed: "{{ true if 'postgresql-common' in ansible_facts.packages else false }}"
@@ -147,15 +146,20 @@
     path: /usr/share/alphanodes/zabbix/conf/mysql_query.list
     state: absent
 
-# nginx is not always used, handler cannot be use for all hosts!
-- name: Configuration for nginx monitoring
-  ansible.builtin.template:
-    src: zabbix-addons/conf/nginx-server-status.conf.j2
-    dest: '{{ zabbix_addons_dir }}/conf/nginx-server-status.conf'
-    mode: '0644'
-  # notify: "{{ 'Restart nginx' if nginx_installed else '[]' }}"
-  when: nginx_installed | bool
-  ignore_errors: true
+# nginx_mono renders the monitoring server block itself now. Vhosts written
+# by older versions still include this file, so keep it until none does.
+- name: Find nginx configurations including the old status file
+  ansible.builtin.find:
+    paths: /etc/nginx
+    recurse: true
+    contains: '.*nginx-server-status\.conf'
+  register: zabbix_agent_old_nginx_status
+
+- name: Remove old nginx status file
+  ansible.builtin.file:
+    path: '{{ zabbix_addons_dir }}/conf/nginx-server-status.conf'
+    state: absent
+  when: zabbix_agent_old_nginx_status.matched == 0
 
 - name: Install zabbix scripts
   ansible.builtin.template:
@@ -187,11 +191,11 @@
     state: absent
   when: not drupal_installed | bool
 
+# The package sets home and shell. usermod refuses to change the home
+# directory while the agent runs, so only add the groups here.
 - name: Set zabbix user settings
   ansible.builtin.user:
     name: zabbix
-    home: '{{ zabbix_agent_home }}'
-    shell: /usr/sbin/nologin
     groups:
       - adm
       - www-data

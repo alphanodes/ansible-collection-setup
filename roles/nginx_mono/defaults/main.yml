@@ -324,3 +324,9 @@ nginx_mono_instance_defaults:
 
 # Debug: show rendered vhost on demand
 nginx_mono_show_vhost: false
+
+# Monitoring server block (vhost_for_zabbix): the PHP-FPM status, ping and
+# check script locations are added when this package is installed at the time
+# the vhost is written
+nginx_mono_monitoring_php_fpm_package: 'php{{ php_version }}-fpm'
+nginx_mono_monitoring_php_fpm_socket: '/run/php/php{{ php_version }}-fpm.sock'

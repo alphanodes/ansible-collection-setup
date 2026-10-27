@@ -62,6 +62,9 @@ nginx_ssl_listen_option: "ssl{{ ' http2' if ansible_facts.distribution != 'Debia
 # enable/disable zabbix monitoring
 zabbix_monitoring: false
 zabbix_agent_home: /var/lib/zabbix
+# zabbix_agent installs its scripts here, nginx_mono serves the PHP check
+# scripts below conf/php in the monitoring server block
+zabbix_addons_dir: /usr/share/zabbix_addons
 
 # PostgreSQL extensions - used by multiple roles (redmine, drupal, zabbix_server)
 postgresql_with_pg_buffercache: true

@@ -6,5 +6,66 @@ server {
   listen [::]:80;
 {% endif %}
   server_name localhost;
-  include {{ zabbix_addons_dir }}/conf/nginx-server-status.conf;
+
+  location = /basic_status {
+    access_log off;
+    stub_status on;
+    server_tokens on;
+    allow 127.0.0.1;
+    allow ::1;
+    deny all;
+  }
+{% if _nginx_mono_monitoring_with_php | default(false) %}
+
+  location = /php_status {
+    access_log off;
+    allow 127.0.0.1;
+    allow ::1;
+    deny all;
+    # see https://www.zabbix.com/forum/zabbix-help/416476-php-fpm-php-fpm_ping-wrong-value-always-down
+    chunked_transfer_encoding off;
+    fastcgi_split_path_info ^(.+\.php)(/.+)$;
+    include fastcgi_params;
+    fastcgi_param SCRIPT_FILENAME $fastcgi_script_name;
+    fastcgi_param SERVER_NAME $host;
+    fastcgi_intercept_errors on;
+    fastcgi_pass unix:{{ nginx_mono_monitoring_php_fpm_socket }};
+  }
+
+  location = /php_ping {
+    access_log off;
+    allow 127.0.0.1;
+    allow ::1;
+    deny all;
+    chunked_transfer_encoding off;
+    fastcgi_split_path_info ^(.+\.php)(/.+)$;
+    include fastcgi_params;
+    fastcgi_param SCRIPT_FILENAME $fastcgi_script_name;
+    fastcgi_param SERVER_NAME $host;
+    fastcgi_intercept_errors on;
+    fastcgi_pass unix:{{ nginx_mono_monitoring_php_fpm_socket }};
+  }
+
+  # php check scripts of zabbix_agent
+  location ^~ /php/ {
+    access_log off;
+    allow 127.0.0.1;
+    allow ::1;
+    deny all;
+    root {{ zabbix_addons_dir }}/conf;
+
+    location ~ \.php$ {
+      fastcgi_split_path_info ^(.+\.php)(/.+)$;
+      include fastcgi_params;
+      fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+      fastcgi_param SERVER_NAME $host;
+      fastcgi_intercept_errors on;
+      fastcgi_pass unix:{{ nginx_mono_monitoring_php_fpm_socket }};
+    }
+
+    location ~ \..*/.*\.php$ {
+      deny all;
+    }
+  }
+{% endif %}
 }

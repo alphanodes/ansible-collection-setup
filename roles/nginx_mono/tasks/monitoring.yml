@@ -1,0 +1,10 @@
+---
+# Service roles install PHP-FPM before they write their vhost, so check it
+# right before rendering and not at the start of the play
+- name: Gather package facts for monitoring server block
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Set PHP-FPM locations for monitoring server block
+  ansible.builtin.set_fact:
+    _nginx_mono_monitoring_with_php: "{{ nginx_mono_monitoring_php_fpm_package in ansible_facts.packages }}"
