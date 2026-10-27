@@ -86,6 +86,17 @@
     mode: '0644'
   when: ansible_facts.distribution == 'Ubuntu'
 
+# A fresh installation only allows root over the unix socket (auth_socket),
+# secure-installation.yml sets the password and writes the .my.cnf
+- name: Check for .my.cnf of the MySQL admin user
+  ansible.builtin.stat:
+    path: "{{ mysql_root_home }}/.my.cnf"
+  register: _mysql_root_mycnf
+
+- name: Login over the unix socket until the .my.cnf exists
+  ansible.builtin.set_fact:
+    _mysql_root_mycnf_missing: "{{ not _mysql_root_mycnf.stat.exists }}"
+
 - name: Include configure tasks
   ansible.builtin.include_tasks: configure.yml
 

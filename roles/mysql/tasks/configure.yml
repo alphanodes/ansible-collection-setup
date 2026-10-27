@@ -200,7 +200,7 @@
 
 - name: Ensure MySQL databases are present
   ansible.mysql.mysql_db:
-    login_unix_socket: "{{ mysql_socket if (mysql_root_plugin == 'auth_socket' or mysql_socket_force) else omit }}"
+    login_unix_socket: "{{ mysql_login_unix_socket }}"
     name: "{{ item.name }}"
     collation: "{{ item.collation | default('utf8mb4_general_ci') }}"
     encoding: "{{ item.encoding | default('utf8mb4') }}"
@@ -210,7 +210,7 @@
 
 - name: Update debian-sys-maint mysql account for debian maintenance
   ansible.mysql.mysql_user:
-    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' or mysql_socket_force else omit }}"
+    login_unix_socket: "{{ mysql_login_unix_socket }}"
     name: debian-sys-maint
     # For MySQL 8+ use plugin with plugin_auth_string, for MariaDB use password
     plugin: "{{ mysql_default_auth_plugin if mysql_default_auth_plugin != 'mysql_native_password' else omit }}"
@@ -226,7 +226,7 @@
 
 - name: Ensure MySQL users are present
   ansible.mysql.mysql_user:
-    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' or mysql_socket_force else omit }}"
+    login_unix_socket: "{{ mysql_login_unix_socket }}"
     name: "{{ item.name }}"
     host: "{{ item.host | default('localhost') }}"
     # For MySQL 8+ use plugin with plugin_auth_string, for MariaDB use password

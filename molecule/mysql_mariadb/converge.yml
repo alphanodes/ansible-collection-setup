@@ -10,7 +10,6 @@
 
     # Test settings
     mysql_root_password: 'test_root_password'
-    mysql_socket_force: true
     mysql_server_tmpdir: /tmp
 
   pre_tasks:

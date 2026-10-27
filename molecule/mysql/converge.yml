@@ -13,8 +13,7 @@
   roles:
     - role: alphanodes.setup.mysql
       vars:
-        # Bootstrap over the unix socket and set a root password for the tests
-        mysql_socket_force: true
+        # Bootstrap without mysql_socket_force tests the first run login over the socket
         mysql_root_password: root
         # Use /tmp as tmpdir in CI to avoid permission and mount issues in /run.
         # The role leaves a world writable directory alone, see roles/mysql.

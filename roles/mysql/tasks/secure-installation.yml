@@ -1,7 +1,7 @@
 ---
 - name: Ensure default user is present
   ansible.mysql.mysql_user:
-    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' or mysql_socket_force else omit }}"
+    login_unix_socket: "{{ mysql_login_unix_socket }}"
     name: "{{ mysql_user_name }}"
     host: 'localhost'
     # For MySQL 8+ use plugin with plugin_auth_string, for MariaDB use password
@@ -41,7 +41,7 @@
   block:
     - name: Get list of hosts for the root user
       ansible.mysql.mysql_query:
-        login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' or mysql_socket_force else omit }}"
+        login_unix_socket: "{{ mysql_login_unix_socket }}"
         query: "SELECT Host FROM mysql.user WHERE User = %s ORDER BY Host"
         positional_args:
           - "{{ mysql_root_username }}"
@@ -55,7 +55,7 @@
         with_password: "{{ item.Host | string != 'localhost' or mysql_root_plugin != 'auth_socket' }}"
         effective_plugin: "{{ mysql_root_plugin if item.Host | string == 'localhost' else mysql_default_auth_plugin }}"
       ansible.mysql.mysql_user:
-        login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' or mysql_socket_force else omit }}"
+        login_unix_socket: "{{ mysql_login_unix_socket }}"
         name: "{{ mysql_root_username }}"
         host: "{{ item.Host | default('localhost') }}"
         # For MySQL 8+ use plugin with plugin_auth_string, for MariaDB use password
@@ -96,7 +96,7 @@
 
 - name: Remove anonymous MySQL users
   ansible.mysql.mysql_user:
-    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' or mysql_socket_force else omit }}"
+    login_unix_socket: "{{ mysql_login_unix_socket }}"
     name: ""
     host: "{{ item.Host }}"
     state: absent
@@ -104,6 +104,6 @@
 
 - name: Remove MySQL test database
   ansible.mysql.mysql_db:
-    login_unix_socket: "{{ mysql_socket if mysql_root_plugin == 'auth_socket' or mysql_socket_force else omit }}"
+    login_unix_socket: "{{ mysql_login_unix_socket }}"
     name: 'test'
     state: absent

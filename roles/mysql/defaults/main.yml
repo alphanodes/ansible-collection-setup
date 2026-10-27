@@ -43,6 +43,9 @@ mysql_pid_file: /run/mysqld/mysqld.pid
 mysql_socket: /run/mysqld/mysqld.sock
 
 mysql_socket_force: false
+# Login over the unix socket with auth_socket, if forced, or on the first run
+# before the role has written the .my.cnf with the root password
+mysql_login_unix_socket: "{{ mysql_socket if (mysql_root_plugin == 'auth_socket' or mysql_socket_force or _mysql_root_mycnf_missing | default(false)) else omit }}"
 
 mysql_character_set_server: utf8mb4
 mysql_collation_server: utf8mb4_unicode_ci
