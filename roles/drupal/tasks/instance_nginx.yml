@@ -9,6 +9,14 @@
          if drupal_instance.with_fpm is defined and drupal_instance.with_fpm != 'www'
          else php_fpm_custom_listen | default(php_fpm_listen) }}
 
+# nginx_mono installs nginx later in this file, on fresh servers the directory
+# does not exist yet
+- name: Ensure nginx conf.d directory exists
+  ansible.builtin.file:
+    path: /etc/nginx/conf.d
+    state: directory
+    mode: '0755'
+
 - name: Deploy Drupal cache map configuration
   ansible.builtin.copy:
     src: nginx/map_cache_drupal.conf
