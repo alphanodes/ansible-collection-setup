@@ -6,7 +6,7 @@
 
 - name: Set if managing_user or not
   ansible.builtin.set_fact:
-    managing_user: "{{ true if user.name == 'root' or ansible_user | default(ansible_facts['env']['USER']) == user.name else false }}"
+    managing_user: "{{ true if user.name == 'root' or ansible_user | default(ansible_facts['env']['USER'] | default('')) == user.name else false }}"
 
 - name: Set/Reset user_home
   ansible.builtin.set_fact:
@@ -101,6 +101,15 @@
             {% endfor %}
         state: present
       when: user_access | length > 0
+
+    # authorized_key only creates it for users with access keys
+    - name: Ensure .ssh directory exists - {{ user.name }}
+      ansible.builtin.file:
+        path: '{{ user_home }}/.ssh'
+        state: directory
+        owner: '{{ user.name }}'
+        group: '{{ user_group }}'
+        mode: '0700'
 
     - name: Setup .ssh/known_hosts only (if provided) - {{ user.name }}
       ansible.builtin.known_hosts:

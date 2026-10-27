@@ -4,6 +4,15 @@
 
   vars:
     ssh_server_port: 2222
+    ssh_users:
+      - name: root
+      # user without access keys, its .ssh directory is created by the role
+      - name: app
+        home: /srv/app
+        shell: /bin/bash
+    ssh_all_known_hosts:
+      - host: github.com
+        key: github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
 
   pre_tasks:
     - name: Update apt cache.
@@ -19,3 +28,15 @@
     - name: Test ssh configuration
       ansible.builtin.command: sshd -T
       changed_when: false
+
+    - name: Stat .ssh directory of user without access keys
+      ansible.builtin.stat:
+        path: /srv/app/.ssh/known_hosts
+      register: app_known_hosts
+
+    - name: Verify known_hosts of user without access keys
+      ansible.builtin.assert:
+        that:
+          - app_known_hosts.stat.exists
+          - app_known_hosts.stat.pw_name == 'app'
+        fail_msg: "/srv/app/.ssh/known_hosts is missing or not owned by app"
