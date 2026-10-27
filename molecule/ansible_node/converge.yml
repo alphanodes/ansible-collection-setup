@@ -21,6 +21,11 @@
         # A timer depending on a service, to verify the unit dependencies
         ansible_node_playbooks:
           - name: redmine_automation
+          - name: backup
+        # Host settings have to reach the generated playbook
+        backup_with_borg: true
+        backup_borg_excludes:
+          - 'sh:/srv/backups/*.tar.gz'
 
   post_tasks:
     - name: Verify ansible is installed

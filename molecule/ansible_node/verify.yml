@@ -23,3 +23,19 @@
           - "'Requires=' not in automation_unit_decoded"
         fail_msg: "redmine-automation.service must use Wants= and After=, not Requires=: {{ automation_unit_decoded }}"
         success_msg: "redmine-automation.service uses Wants= and After="
+
+    - name: Read generated backup playbook
+      ansible.builtin.slurp:
+        src: /etc/ansible/playbooks/backup.yml
+      register: backup_playbook
+
+    - name: Parse generated backup playbook
+      ansible.builtin.set_fact:
+        backup_playbook_vars: "{{ (backup_playbook.content | b64decode | from_yaml)[0].vars }}"
+
+    - name: Verify borg excludes reach the backup playbook
+      ansible.builtin.assert:
+        that:
+          - backup_playbook_vars.backup_borg_excludes == ['sh:/srv/backups/*.tar.gz']
+        fail_msg: "backup_borg_excludes missing in backup playbook: {{ backup_playbook_vars }}"
+        success_msg: "backup_borg_excludes is passed to the backup playbook"

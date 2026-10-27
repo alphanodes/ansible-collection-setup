@@ -9,6 +9,10 @@
     ansible_python_interpreter: {{ playbook_ansible_python_interpreter }}
 {% endif %}
     system_watch_repo: {{ system_watch_repo }}
+{% if system_watch_rsync_opts_more is defined and system_watch_rsync_opts_more | length > 0 %}
+    system_watch_rsync_opts_more:
+      {{ system_watch_rsync_opts_more | to_nice_yaml(indent=2) | trim | indent(6) }}
+{% endif %}
 {% if https_user is defined and https_user != '' %}
     https_user: {{ https_user }}
 {% endif %}

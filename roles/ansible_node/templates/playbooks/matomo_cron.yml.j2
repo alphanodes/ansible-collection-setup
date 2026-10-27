@@ -17,6 +17,12 @@
 {% if matomo_user is defined %}
     matomo_user: {{ matomo_user }}
 {% endif %}
+{% if matomo_dir is defined %}
+    matomo_dir: {{ matomo_dir }}
+{% endif %}
+{% if matomo_domain is defined %}
+    matomo_domain: {{ matomo_domain }}
+{% endif %}
     matomo_console_name: core:archive
 
   roles:

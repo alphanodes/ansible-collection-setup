@@ -81,6 +81,10 @@
     backup_borg_directories:
       {{ backup_borg_directories | to_nice_yaml(indent=2) | trim | indent(6) }}
 {% endif %}
+{% if backup_borg_excludes is defined and backup_borg_excludes | length > 0 %}
+    backup_borg_excludes:
+      {{ backup_borg_excludes | to_nice_yaml(indent=2) | trim | indent(6) }}
+{% endif %}
 {% if backup_remote_transfer is defined and backup_remote_transfer | length > 0 %}
     backup_remote_transfer: {{ backup_remote_transfer }}
 {% if backup_lftp_mirror_options is defined %}
