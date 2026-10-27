@@ -224,7 +224,7 @@ redmine_packages:
 # ! this also requires Redmine 4.2 or newer (because of ruby 2.7)
 redmine_use_rvm_as_default: false
 
-# see for ubuntu packages: https://packages.ubuntu.com/focal/ruby
+# see for ubuntu packages: https://packages.ubuntu.com/noble/ruby
 # this is required, if redmine_use_rvm_as_default is true and
 # instance.use_rvm: false (system ruby requires ruby-dev)
 redmine_with_ruby_dev: false

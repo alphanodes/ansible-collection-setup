@@ -52,9 +52,7 @@
     state: absent
   loop: '{{ nginx_disable_modules | default([]) }}'
   notify: Restart nginx
-  when: >
-    ansible_facts.distribution == 'Debian'
-    or ansible_facts.distribution == 'Ubuntu' and ansible_facts.distribution_major_version == '18'
+  when: ansible_facts.distribution == 'Debian'
 
 - name: Remove default nginx vhost config file (if configured).
   ansible.builtin.file:

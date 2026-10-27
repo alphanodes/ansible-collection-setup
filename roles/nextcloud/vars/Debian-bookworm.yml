@@ -1,9 +1,0 @@
----
-
-nextcloud_packages:
-  - "{{ php_extension_prefix }}imagick"
-  - "{{ php_extension_prefix }}redis"
-  - php{{ php_version }}-intl
-  - php{{ php_version }}-mbstring
-  - php{{ php_version }}-zip
-  - libmagickcore-6.q16-6-extra

@@ -33,7 +33,6 @@ jobs:
           # the role on that release, not of this scenario - add the distro
           # back once it is fixed.
           - ubuntu2404
-          - debian12
           - debian13
 
     steps:

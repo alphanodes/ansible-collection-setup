@@ -25,7 +25,6 @@ jobs:
     strategy:
       matrix:
         distro:
-          - debian12
           - debian13
 
     steps:

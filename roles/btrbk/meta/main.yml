@@ -16,5 +16,4 @@ galaxy_info:
         - resolute
     - name: Debian
       versions:
-        - bookworm
         - trixie

@@ -1,2 +1,0 @@
----
-zabbix_agent_check_php_package: php{{ php_version }}-common

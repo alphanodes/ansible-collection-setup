@@ -1,8 +1,0 @@
----
-
-drupal_packages:
-  - imagemagick-6.q16
-  - "{{ php_extension_prefix }}memcache"
-  - php{{ php_version }}-zip
-  # composer prefers unzip over the PHP zip extension for dist packages
-  - unzip

@@ -17,5 +17,4 @@ galaxy_info:
   platforms:
     - name: Debian
       versions:
-        - bookworm
         - trixie

@@ -39,8 +39,6 @@ mysql_backend: mysql
 
 # PHP version shipped by the distribution release
 php_distribution_versions:
-  bullseye: '7.4'
-  bookworm: '8.2'
   trixie: '8.4'
   noble: '8.3'
   resolute: '8.5'
@@ -57,7 +55,7 @@ php_extension_prefix: "{{ 'php-' if php_version == php_distribution_version else
 # dhparams is only needed for TLSv1.2, not for TLSv1.3 only
 nginx_ssl_protocols: 'TLSv1.2 TLSv1.3'
 
-nginx_ssl_listen_option: "ssl{{ ' http2' if ansible_facts.distribution != 'Debian' or ansible_facts.distribution_major_version != '13' else '' }}"
+nginx_ssl_listen_option: "ssl{{ ' http2' if ansible_facts.distribution != 'Debian' else '' }}"
 
 # enable/disable zabbix monitoring
 zabbix_monitoring: false

@@ -31,7 +31,6 @@ jobs:
         distro:
           - ubuntu2404
           - ubuntu2604
-          - debian12
           - debian13
 
     steps:

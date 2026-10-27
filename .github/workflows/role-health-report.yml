@@ -126,7 +126,6 @@ jobs:
           if [ -f "$WORKFLOW_FILE" ]; then
             echo "ci_workflow=true" >> $GITHUB_OUTPUT
             DISTROS=$(grep -A 5 "distro:" "$WORKFLOW_FILE" | grep -E "^\s*-\s+[a-z0-9]+$" | sed 's/.*- //' | \
-              sed 's/debian12/bookworm/g' | \
               sed 's/debian13/trixie/g' | \
               sed 's/ubuntu2404/noble/g' | \
               sed 's/ubuntu2604/resolute/g' | \

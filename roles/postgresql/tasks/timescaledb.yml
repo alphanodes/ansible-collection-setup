@@ -6,7 +6,7 @@
     state: absent
 
 # see https://docs.ansible.com/ansible/latest/collections/ansible/builtin/deb822_repository_module.html
-# deb https://packagecloud.io/timescale/timescaledb/debian/ bookworm main
+# deb https://packagecloud.io/timescale/timescaledb/debian/ trixie main
 - name: Add TimescaleDB apt repository
   ansible.builtin.deb822_repository:
     name: timescaledb

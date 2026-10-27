@@ -18,7 +18,6 @@ galaxy_info:
         - resolute
     - name: Debian
       versions:
-        - bookworm
         - trixie
   galaxy_tags:
     - mail

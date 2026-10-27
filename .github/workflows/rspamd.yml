@@ -28,7 +28,6 @@ jobs:
           # only ships bullseye, bookworm, trixie, jammy and noble, so apt
           # update fails on a release the upstream repository does not know.
           # Add it back once resolute appears there.
-          - debian12
           - debian13
 
     steps:

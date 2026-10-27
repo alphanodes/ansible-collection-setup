@@ -1,3 +1,0 @@
----
-redis_server_check_php_package: php{{ php_version }}-common
-redis_server_php_package: "{{ php_extension_prefix }}redis"

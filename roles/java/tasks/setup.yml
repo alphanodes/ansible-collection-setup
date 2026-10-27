@@ -8,9 +8,7 @@
     state: directory
     mode: '0755'
     recurse: true
-  when:
-    - ansible_facts.distribution == 'Ubuntu'
-    - ansible_facts.distribution_major_version | int >= 18
+  when: ansible_facts.distribution == 'Ubuntu'
 
 - name: Ensure Java is installed.
   ansible.builtin.apt:
