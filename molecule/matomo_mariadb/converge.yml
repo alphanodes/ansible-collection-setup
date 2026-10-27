@@ -17,9 +17,6 @@
         provider: selfsigned
         subject_common_name: matomo.local
 
-    # PHP-FPM settings
-    php_fpm_listen: /run/php/php-fpm.sock
-
     # MariaDB backend (Debian native packages)
     mysql_backend: mariadb
     mysql_root_password: 'test_root_password'

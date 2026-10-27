@@ -16,9 +16,6 @@
         provider: selfsigned
         subject_common_name: roundcube.local
 
-    # PHP-FPM settings
-    php_fpm_listen: /run/php/php-fpm.sock
-
     # MySQL settings for testing
     # Use Debian native packages (MariaDB) for ARM64 compatibility
     mysql_backend: mariadb

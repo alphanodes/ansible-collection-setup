@@ -11,9 +11,6 @@
     zabbix_link_templates:
       - Linux by Zabbix agent
 
-    # PHP-FPM settings (dependency)
-    php_fpm_listen: /run/php/php-fpm.sock
-
     # nginx_mono configuration
     nginx_with_ipv6: false
     nginx_with_http3: false

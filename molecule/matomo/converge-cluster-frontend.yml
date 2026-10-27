@@ -18,9 +18,6 @@
         provider: selfsigned
         subject_common_name: matomo.local
 
-    # PHP-FPM settings
-    php_fpm_listen: /run/php/php-fpm.sock
-
     # Matomo configuration - Cluster Frontend mode (nginx, NO MySQL)
     matomo_with_nginx: true
     matomo_with_mysql: false

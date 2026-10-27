@@ -20,10 +20,6 @@
     state: absent
   loop: '{{ zabbix_cleanup_files }}'
 
-- name: Set php_fpm_listen socket
-  ansible.builtin.set_fact:
-    php_fpm_listen: "/run/php/{{ zabbix_agent_php_fpm_listen }}.sock"
-
 - name: Include setup apt tasks
   ansible.builtin.import_tasks: setup_apt.yml
 

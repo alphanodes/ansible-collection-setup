@@ -17,9 +17,6 @@
         provider: selfsigned
         subject_common_name: vimbadmin.local
 
-    # PHP-FPM settings
-    php_fpm_listen: /run/php/php-fpm.sock
-
     # MySQL/MariaDB settings for testing
     mysql_backend: mariadb
     mysql_root_password: 'test_root_password'
