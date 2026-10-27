@@ -10,6 +10,46 @@
         cache_valid_time: 600
       changed_when: false
 
+    # A running service with a preloaded library, verify replaces the
+    # library like a security update and checks the nightly restart
+    - name: Create directory for needrestart test library
+      ansible.builtin.file:
+        path: /usr/lib/molecule
+        state: directory
+        mode: '0755'
+
+    - name: Find zlib for needrestart test library
+      ansible.builtin.shell: set -o pipefail && ldconfig -p | awk '/libz\.so\.1 / {print $NF; exit}'
+      args:
+        executable: /bin/bash
+      register: molecule_zlib
+      changed_when: false
+
+    - name: Create needrestart test library
+      ansible.builtin.copy:
+        src: '{{ molecule_zlib.stdout }}'
+        dest: /usr/lib/molecule/libmoleculetest.so.1
+        remote_src: true
+        mode: '0644'
+
+    - name: Create needrestart test service
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/molecule-stale.service
+        content: |
+          [Service]
+          Environment=LD_PRELOAD=/usr/lib/molecule/libmoleculetest.so.1
+          ExecStart=/usr/bin/sleep infinity
+
+          [Install]
+          WantedBy=multi-user.target
+        mode: '0644'
+
+    - name: Start needrestart test service
+      ansible.builtin.systemd_service:
+        name: molecule-stale.service
+        state: started
+        daemon_reload: true
+
   roles:
     - role: alphanodes.setup.common
     - role: alphanodes.setup.apt

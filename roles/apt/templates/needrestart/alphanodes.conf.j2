@@ -1,0 +1,12 @@
+{{ managed_by_ansible | comment }}
+
+# Only list outdated services when apt runs (also unattended-upgrades),
+# the apt-needrestart timer restarts them at night
+$nrconf{restart} = 'l';
+
+# Reboots for new kernels and microcode are handled by unattended-upgrades
+$nrconf{kernelhints} = 0;
+$nrconf{ucodehints} = 0;
+{% for pattern in apt_needrestart_exclude %}
+$nrconf{override_rc}{qr({{ pattern }})} = 0;
+{% endfor %}

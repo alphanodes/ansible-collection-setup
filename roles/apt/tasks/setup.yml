@@ -15,3 +15,6 @@
 
 - name: Include kernel-purge tasks
   ansible.builtin.include_tasks: kernel-purge.yml
+
+- name: Include needrestart tasks
+  ansible.builtin.include_tasks: needrestart.yml

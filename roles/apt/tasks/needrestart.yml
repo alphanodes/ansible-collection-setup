@@ -1,0 +1,35 @@
+---
+
+# needrestart finds services that still use replaced libraries. apt only
+# lists them, the timer restarts them in the nightly maintenance window.
+
+- name: Manage needrestart package
+  ansible.builtin.apt:
+    name: needrestart
+    state: "{{ 'present' if apt_needrestart_enabled else 'absent' }}"
+
+- name: Manage needrestart configuration
+  ansible.builtin.template:
+    src: needrestart/alphanodes.conf.j2
+    dest: /etc/needrestart/conf.d/alphanodes.conf
+    mode: '0644'
+  when: apt_needrestart_enabled | bool
+
+- name: Remove needrestart configuration
+  ansible.builtin.file:
+    path: /etc/needrestart/conf.d/alphanodes.conf
+    state: absent
+  when: not apt_needrestart_enabled | bool
+
+- name: Manage apt-needrestart timer
+  ansible.builtin.include_role:
+    name: alphanodes.setup.systemd_timer
+  vars:
+    timers:
+      apt-needrestart:
+        state: "{{ 'present' if apt_needrestart_enabled else 'absent' }}"
+        exec_start: /usr/sbin/needrestart -r a
+        on_calendar: '{{ apt_needrestart_on_calendar }}'
+        randomized_delay_sec: '{{ apt_needrestart_randomized_delay_sec }}'
+        # after a downtime the services run with current libraries anyway
+        persistent: false

@@ -176,3 +176,43 @@
         that:
           - "'OnCalendar=*-*-* 0,6,12,18:20' in (timer_overrides.results[1].content | b64decode)"
         fail_msg: "apt-daily-upgrade.timer override does not match expected 4x/day schedule"
+
+    - name: Read needrestart configuration
+      ansible.builtin.slurp:
+        src: /etc/needrestart/conf.d/alphanodes.conf
+      register: needrestart_conf
+
+    - name: Assert apt only lists outdated services
+      ansible.builtin.assert:
+        that:
+          - "\"$nrconf{restart} = 'l';\" in (needrestart_conf.content | b64decode)"
+
+    - name: Get PID of service with outdated library
+      ansible.builtin.command: systemctl show -P MainPID molecule-stale.service
+      register: stale_pid_before
+      changed_when: false
+
+    # rm + cp creates a new inode, like dpkg does on package upgrades
+    - name: Replace library of running service
+      ansible.builtin.shell: |
+        cp /usr/lib/molecule/libmoleculetest.so.1 /tmp/libmoleculetest.so.1
+        rm /usr/lib/molecule/libmoleculetest.so.1
+        cp /tmp/libmoleculetest.so.1 /usr/lib/molecule/libmoleculetest.so.1
+      changed_when: true
+
+    - name: Run nightly needrestart service
+      ansible.builtin.systemd_service:
+        name: apt-needrestart.service
+        state: started
+
+    - name: Get PID of service after needrestart
+      ansible.builtin.command: systemctl show -P MainPID molecule-stale.service
+      register: stale_pid_after
+      changed_when: false
+
+    - name: Assert needrestart restarted the service
+      ansible.builtin.assert:
+        that:
+          - stale_pid_after.stdout | int > 0
+          - stale_pid_after.stdout != stale_pid_before.stdout
+        fail_msg: "molecule-stale.service was not restarted ({{ stale_pid_before.stdout }} -> {{ stale_pid_after.stdout }})"

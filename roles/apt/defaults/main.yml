@@ -55,3 +55,16 @@ unattended_upgrade_dpkg_options:
 # package naming of Debian trixie (e.g. linux-image-6.12.57+deb13-cloud-amd64)
 apt_kernel_purge_enabled: true
 apt_kernel_purge_on_calendar: 'Sun *-*-* 06:00'
+
+# needrestart: services that still use replaced libraries (e.g. after a
+# security update of openssl or libbrotli) keep running the old code until
+# they are restarted. apt and unattended-upgrades only list them, a nightly
+# timer restarts them before the automatic reboot window, so restarts of
+# databases or app servers never happen during the day.
+apt_needrestart_enabled: true
+apt_needrestart_on_calendar: '*-*-* 05:30:00'
+apt_needrestart_randomized_delay_sec: 10min
+# Additional systemd units the timer must not restart (regex), in addition
+# to the needrestart defaults (dbus, networking, docker, lxc, ...)
+# Example: ['^gitlab-runsvdir\.service$']
+apt_needrestart_exclude: []
