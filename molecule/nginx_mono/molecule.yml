@@ -15,7 +15,7 @@ platforms:
     published_ports:
       - "8080:80"
       - "8443:443"
-      - "8000:8000"  # ethercalc port
+      - "8000:8000"  # full_vhost_test proxy port
 provisioner:
   name: ansible
   options:

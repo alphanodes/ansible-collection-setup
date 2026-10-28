@@ -63,15 +63,10 @@
     php_fpm_listen: /run/php/php-fpm.sock
     php_fpm_base: /run/php/php-fpm
 
-    # ethercalc configuration
-    ethercalc_enabled: true
-    ethercalc_vhost_server: test.local
-    ethercalc_ip: 127.0.0.1
-    ethercalc_port: 8000
-    ethercalc_redis_enabled: false  # Disable Redis for testing
-    ethercalc_vhost_users: []  # No auth for testing
-    ethercalc_vhost_for_zabbix: false
-    ethercalc_vhost_letsencrypt: false
+    # Proxy service used to test the full vhost mode
+    full_vhost_test_server: test.local
+    full_vhost_test_ip: 127.0.0.1
+    full_vhost_test_port: 8000
 
     # No SSL certs needed for testing
     ssl_certs: []
@@ -80,13 +75,13 @@
     # Test 1: Full vhost mode (default behavior)
     - role: alphanodes.setup.nginx_mono
       vars:
-        nginx_mono_service_name: ethercalc
+        nginx_mono_service_name: full_vhost_test
         nginx_mono_service_enabled: true
         nginx_mono_service_config:
-          server_name: "{{ ethercalc_vhost_server }}"
-          root: "/srv/ethercalc"
+          server_name: "{{ full_vhost_test_server }}"
+          root: "/srv/full_vhost_test"
           index: "index.html"
-          proxy_pass: "http://{{ ethercalc_ip }}:{{ ethercalc_port }}"
+          proxy_pass: "http://{{ full_vhost_test_ip }}:{{ full_vhost_test_port }}"
           proxy_location: "/"
           proxy_websocket: true
           proxy_headers:
