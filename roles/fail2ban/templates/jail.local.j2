@@ -183,11 +183,6 @@ port = {{ named_ssh_server_port }}
 banaction = {{ fail2ban_sshd_banaction }}
 bantime = {{ fail2ban_sshd_bantime | default(fail2ban_default_bantime) }}
 
-[sshd-ddos]
-enabled = {{ 'true' if fail2ban_sshd_ddos else 'false' }}
-port    = {{ named_ssh_server_port }}
-bantime = {{ fail2ban_sshd_ddos_bantime | default(fail2ban_default_bantime) }}
-
 [nginx-http-auth]
 enabled = {{ 'true' if fail2ban_nginx_http_auth and nginx_error_log_file.stat.exists else 'false' }}
 port    = http,https
@@ -275,11 +270,3 @@ action  = {{ fail2ban_drupal_action | default(login_action) }}
 maxretry = {{ fail2ban_drupal_honeypot_maxretry }}
 findtime = {{ fail2ban_drupal_honeypot_findtime }}
 bantime  = {{ fail2ban_drupal_honeypot_bantime | default(fail2ban_default_bantime) }}
-
-[nextcloud-login]
-enabled = {{ 'true' if fail2ban_nextcloud_login else 'false' }}
-port    = http,https
-backend = auto
-action  = {{ fail2ban_nextcloud_action | default(login_action) }}
-maxretry = {{ fail2ban_login_maxretry }}
-bantime  = {{ fail2ban_nextcloud_login_bantime | default(fail2ban_default_bantime) }}

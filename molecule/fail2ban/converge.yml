@@ -35,7 +35,6 @@
 
     # fail2ban configuration for testing (without Matrix notification)
     fail2ban_enabled: true
-    fail2ban_sshd_ddos: true
     fail2ban_nginx_http_auth: true
     fail2ban_nginx_form: true
     fail2ban_nginx_form_paths:

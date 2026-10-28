@@ -61,6 +61,16 @@
     mode: '0644'
   notify: Restart fail2ban
 
+- name: Remove obsolete filters
+  ansible.builtin.file:
+    path: '{{ fail2ban_filter_path }}/{{ item }}.conf'
+    state: absent
+  loop:
+    - drupal-spam
+    - nextcloud-login
+    - sshd-ddos
+  notify: Restart fail2ban
+
 - name: Install sudoer access for zabbix
   ansible.builtin.copy:
     src: sudoers.d/fail2ban

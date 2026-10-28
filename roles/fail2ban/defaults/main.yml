@@ -13,14 +13,9 @@ fail2ban_dovecot: false
 fail2ban_drupal_auth: false
 fail2ban_drupal_honeypot: false
 fail2ban_drupal_login: false
-fail2ban_drupal_spam: false
-fail2ban_nextcloud_login: false
 fail2ban_nginx_http_auth: false
-fail2ban_owncloud_login: false
 fail2ban_postfix: false
-fail2ban_proftpd: false
 fail2ban_redmine_login: false
-fail2ban_sshd_ddos: false
 
 fail2ban_roundcube_auth: false
 fail2ban_roundcube_auth_log: '{{ srv_path }}/roundcube/logs/errors.log'
