@@ -120,6 +120,65 @@
         fail_msg: "{{ nginx_scan_regex.stdout }}"
         success_msg: "nginx-scan filter matches framework and exploit paths only"
 
+    - name: Get journalmatch of the drupal-honeypot jail
+      ansible.builtin.command: fail2ban-client get drupal-honeypot journalmatch
+      register: drupal_honeypot_journalmatch
+      changed_when: false
+
+    - name: Verify drupal-honeypot jail reads the drupal journal entries
+      ansible.builtin.assert:
+        that:
+          - "'SYSLOG_IDENTIFIER=drupal' in drupal_honeypot_journalmatch.stdout"
+        fail_msg: "{{ drupal_honeypot_journalmatch.stdout }}"
+
+    # Only entries of this run count, verify may run repeatedly
+    - name: Get current journal cursor
+      ansible.builtin.command: journalctl -n 0 --show-cursor --no-pager
+      register: journal_cursor
+      changed_when: false
+
+    # Lines in the format of the Drupal core module syslog
+    - name: Write sample drupal entries to the journal
+      ansible.builtin.command: logger -t drupal -- {{ item }}
+      loop:
+        - 'https://example.com|1793171605|honeypot|192.0.2.30|https://example.com/de/kontakt|https://example.com/de/kontakt|0||Blocked submission of webform_submission_contact_add_form due to Das Formular wurde zu schnell abgeschickt.'
+        - 'https://example.com|1793171606|user|192.0.2.31|https://example.com/user/login|https://example.com/user/login|0||Login attempt failed for admin.'
+        - 'https://example.com|1793171607|cron|127.0.0.1|https://example.com/||0||Cron run completed.'
+      changed_when: false
+
+    # The running jail has to ban from the journal (maxretry 1)
+    - name: Wait until drupal-honeypot banned the sample address
+      ansible.builtin.command: fail2ban-client get drupal-honeypot banip
+      register: drupal_honeypot_banned
+      until: "'192.0.2.30' in drupal_honeypot_banned.stdout"
+      retries: 10
+      delay: 2
+      changed_when: false
+
+    - name: Export drupal journal entries in syslog format
+      ansible.builtin.shell: >-
+        journalctl -t drupal -o short --no-pager
+        --after-cursor={{ journal_cursor.stdout_lines | last | regex_replace('^-- cursor: ', '') | quote }}
+        > /tmp/drupal-journal.log
+      changed_when: false
+
+    - name: Test drupal filters against the journal entries
+      ansible.builtin.command: fail2ban-regex /tmp/drupal-journal.log {{ item }}
+      loop:
+        - drupal-honeypot
+        - drupal-login
+      register: drupal_regex
+      changed_when: false
+
+    - name: Verify each drupal filter matches only its own entry
+      ansible.builtin.assert:
+        that:
+          - "'Lines: 3 lines, 0 ignored, 1 matched, 2 missed' in item.stdout"
+        fail_msg: "{{ item.stdout }}"
+      loop: '{{ drupal_regex.results }}'
+      loop_control:
+        label: '{{ item.item }}'
+
     - name: Verify fail2ban log file exists
       ansible.builtin.stat:
         path: /var/log/fail2ban.log

@@ -8,6 +8,8 @@ fail2ban_packages:
   - whois
 
 fail2ban_dovecot: false
+# drupal-auth (upstream filter) and drupal-login match the same failed
+# logins, enable only one of them
 fail2ban_drupal_auth: false
 fail2ban_drupal_honeypot: false
 fail2ban_drupal_login: false
@@ -57,6 +59,12 @@ fail2ban_nginx_form_paths: []
 fail2ban_nginx_form_maxretry: 3
 fail2ban_nginx_form_findtime: 3600
 fail2ban_nginx_form_bantime: 604800
+
+# The drupal jails read the journal, so Drupal has to log with the core module
+# syslog. Honeypot rejects submissions faster than its time limit, which
+# humans hardly do, so the first rejection already bans.
+fail2ban_drupal_honeypot_maxretry: 1
+fail2ban_drupal_honeypot_findtime: "{{ fail2ban_default_findtime }}"
 
 fail2ban_messenger_icon: 'https://dcah.files.wordpress.com/2013/09/adblock.png'
 fail2ban_messenger_with_start_message: false

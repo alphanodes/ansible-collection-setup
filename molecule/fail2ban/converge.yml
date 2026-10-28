@@ -41,6 +41,8 @@
     fail2ban_nginx_form_paths:
       - '/(de/)?kontakt'
       - '/contact'
+    fail2ban_drupal_login: true
+    fail2ban_drupal_honeypot: true
     fail2ban_default_bantime: 300  # Shorter for testing
     fail2ban_default_findtime: 300
     fail2ban_default_maxretry: 3

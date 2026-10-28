@@ -244,36 +244,42 @@ enabled = {{ 'true' if fail2ban_redmine_login and nginx_access_log_file.stat.exi
 port    = http,https
 backend = auto
 logpath  = %(nginx_access_log)s
-action  = {{ fail2ban_redmine_action | default(fail2ban_login_action) }}
+action  = {{ fail2ban_redmine_action | default(login_action) }}
 maxretry = {{ fail2ban_redmine_maxretry | default(fail2ban_login_maxretry) }}
 bantime  = {{ fail2ban_redmine_login_bantime | default(fail2ban_default_bantime) }}
 
+# Drupal jails read the journal, Drupal needs the core module syslog
 [drupal-auth]
 enabled = {{ 'true' if fail2ban_drupal_auth else 'false' }}
 port     = http,https
-backend = auto
+backend = systemd
+journalmatch = SYSLOG_IDENTIFIER=drupal
 bantime  = {{ fail2ban_drupal_auth_bantime | default(fail2ban_default_bantime) }}
-action  = {{ fail2ban_drupal_action | default(fail2ban_login_action) }}
+action  = {{ fail2ban_drupal_action | default(login_action) }}
 
 [drupal-login]
 enabled = {{ 'true' if fail2ban_drupal_login else 'false' }}
 port    = http,https
-backend = auto
-action  = {{ fail2ban_drupal_action | default(fail2ban_login_action) }}
+backend = systemd
+journalmatch = SYSLOG_IDENTIFIER=drupal
+action  = {{ fail2ban_drupal_action | default(login_action) }}
 maxretry = {{ fail2ban_drupal_maxretry | default(fail2ban_login_maxretry) }}
 bantime  = {{ fail2ban_drupal_login_bantime | default(fail2ban_default_bantime) }}
 
 [drupal-honeypot]
 enabled = {{ 'true' if fail2ban_drupal_honeypot else 'false' }}
 port    = http,https
-backend = auto
-action  = {{ fail2ban_drupal_action | default(fail2ban_login_action) }}
+backend = systemd
+journalmatch = SYSLOG_IDENTIFIER=drupal
+action  = {{ fail2ban_drupal_action | default(login_action) }}
+maxretry = {{ fail2ban_drupal_honeypot_maxretry }}
+findtime = {{ fail2ban_drupal_honeypot_findtime }}
 bantime  = {{ fail2ban_drupal_honeypot_bantime | default(fail2ban_default_bantime) }}
 
 [nextcloud-login]
 enabled = {{ 'true' if fail2ban_nextcloud_login else 'false' }}
 port    = http,https
 backend = auto
-action  = {{ fail2ban_nextcloud_action | default(fail2ban_login_action) }}
+action  = {{ fail2ban_nextcloud_action | default(login_action) }}
 maxretry = {{ fail2ban_login_maxretry }}
 bantime  = {{ fail2ban_nextcloud_login_bantime | default(fail2ban_default_bantime) }}
