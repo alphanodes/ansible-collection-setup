@@ -179,6 +179,32 @@
       loop_control:
         label: '{{ item.item }}'
 
+    # Dovecot 2.4 and 2.3 failures match, successful logins do not
+    - name: Write sample dovecot log
+      ansible.builtin.copy:
+        dest: /tmp/dovecot-sample.log
+        mode: '0644'
+        content: |
+          Oct 28 08:36:22 instance dovecot[8094]: imap-login: Login aborted: Logged out (auth failed, 1 attempts in 3 secs) (auth_failed): user=<nobody@example.com>, method=PLAIN, rip=192.0.2.40, lip=192.0.2.1, secured, session=<3K0DdeJeqMt/AAAB>
+          Oct 28 08:36:23 instance dovecot[8094]: imap-login: Disconnected (auth failed, 2 attempts in 9 secs): user=<nobody@example.com>, method=PLAIN, rip=192.0.2.41, lip=192.0.2.1, TLS, session=<abc>
+          Oct 28 08:36:24 instance dovecot[8094]: imap-login: Login: user=<user@example.com>, method=PLAIN, rip=192.0.2.42, lip=192.0.2.1, mpid=123, TLS, session=<def>
+      changed_when: false
+
+    - name: Test dovecot filter against sample lines
+      ansible.builtin.command: fail2ban-regex /tmp/dovecot-sample.log dovecot
+      register: dovecot_regex
+      changed_when: false
+
+    - name: Verify dovecot filter matches failed logins of 2.4 and 2.3
+      ansible.builtin.assert:
+        that:
+          - "'Lines: 3 lines, 0 ignored, 2 matched, 1 missed' in dovecot_regex.stdout"
+        fail_msg: "{{ dovecot_regex.stdout }}"
+
+    - name: Verify recidive jail is running
+      ansible.builtin.command: fail2ban-client status recidive
+      changed_when: false
+
     - name: Verify fail2ban log file exists
       ansible.builtin.stat:
         path: /var/log/fail2ban.log

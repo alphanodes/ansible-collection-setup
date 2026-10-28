@@ -1,0 +1,10 @@
+# Fail2Ban configuration file
+#
+# Dovecot 2.4 logs failed logins as "Login aborted: <reason> (auth failed, ...)
+# (auth_failed): user=<...>, method=..., rip=...", which the upstream filter
+# of fail2ban 1.1 does not match yet
+
+[Definition]
+
+failregex = %(known/failregex)s
+            ^Login aborted%(_bypass_reject_reason)s \((?:auth failed, \d+ attempts(?: in \d+ secs)?|tried to use (?:disabled|disallowed) \S+ auth|proxy dest auth failed)\)(?: \(\w+\))?:(?: user=<<F-USER>[^>]*</F-USER>>,)?(?: method=\S+,)? rip=<HOST>(?:[^>]*(?:, session=<\S+>)?)\s*$

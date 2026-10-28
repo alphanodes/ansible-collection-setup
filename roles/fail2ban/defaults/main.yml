@@ -61,6 +61,13 @@ fail2ban_nginx_form_bantime: 604800
 fail2ban_drupal_honeypot_maxretry: 1
 fail2ban_drupal_honeypot_findtime: "{{ fail2ban_default_findtime }}"
 
+# Ban addresses on all ports for a week, if other jails banned them at least
+# maxretry times within findtime (ignored addresses are never banned)
+fail2ban_recidive: false
+fail2ban_recidive_maxretry: 5
+fail2ban_recidive_findtime: 86400
+fail2ban_recidive_bantime: 604800
+
 fail2ban_messenger_icon: 'https://dcah.files.wordpress.com/2013/09/adblock.png'
 fail2ban_messenger_with_start_message: false
 

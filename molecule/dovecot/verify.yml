@@ -110,6 +110,18 @@
       register: dovecot_config_check
       changed_when: false
 
+    # fail2ban needs the remote address in the login log lines
+    - name: Get login log format elements
+      ansible.builtin.command: doveconf login_log_format_elements
+      register: dovecot_login_log_format
+      changed_when: false
+
+    - name: Verify login log lines contain the remote address
+      ansible.builtin.assert:
+        that:
+          - "'rip=%{remote_ip}' in dovecot_login_log_format.stdout"
+        fail_msg: "{{ dovecot_login_log_format.stdout }}"
+
     - name: Verify dovecot service is running
       ansible.builtin.systemd:
         name: dovecot

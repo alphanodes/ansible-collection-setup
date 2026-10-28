@@ -270,3 +270,13 @@ action  = {{ fail2ban_drupal_action | default(login_action) }}
 maxretry = {{ fail2ban_drupal_honeypot_maxretry }}
 findtime = {{ fail2ban_drupal_honeypot_findtime }}
 bantime  = {{ fail2ban_drupal_honeypot_bantime | default(fail2ban_default_bantime) }}
+
+# Bans addresses for a long time that other jails banned repeatedly
+[recidive]
+enabled = {{ 'true' if fail2ban_recidive else 'false' }}
+backend = auto
+logpath = /var/log/fail2ban.log
+banaction = %(banaction_allports)s
+maxretry = {{ fail2ban_recidive_maxretry }}
+findtime = {{ fail2ban_recidive_findtime }}
+bantime  = {{ fail2ban_recidive_bantime }}

@@ -5,7 +5,6 @@ dovecot_storage_version = 2.4.0
 
 auth_mechanisms = plain login
 auth_allow_cleartext = no
-login_log_format_elements = "user=<%u> method=%m rip=%r lip=%l mpid=%e %c %k"
 mail_home = {{ dovecot_mail_home }}
 mail_driver = maildir
 mail_path = ~/Maildir
