@@ -1,112 +1,183 @@
 ---
 - name: Verify
   hosts: all
-  gather_facts: true
+  gather_facts: false
+  vars_files:
+    - vars/main.yml
+  module_defaults:
+    community.postgresql.postgresql_query:
+      login_port: '{{ postgresql_port }}'
   tasks:
-    - name: Check if PostgreSQL is running
-      ansible.builtin.service:
-        name: postgresql
-        state: started
-      check_mode: true
-      register: postgresql_service
-      failed_when: postgresql_service.changed
-
-    - name: Check PostgreSQL process is running
-      ansible.builtin.command: pgrep -f postgres
-      register: postgresql_process
+    - name: Check the configured PostgreSQL cluster is running
+      ansible.builtin.command: systemctl is-active postgresql@{{ postgresql_version }}-main
       changed_when: false
 
-    - name: Verify PostgreSQL is listening on port 5432
+    - name: Check PostgreSQL is listening on the configured port
       ansible.builtin.wait_for:
-        port: 5432
+        port: '{{ postgresql_port }}'
         host: localhost
-        delay: 1
         timeout: 10
-      register: postgresql_connection
 
-    - name: Check PostgreSQL configuration file exists
+    - name: Inspect PostgreSQL configuration and data paths
       ansible.builtin.stat:
-        path: "/etc/postgresql/{{ postgresql_version | default('17') }}/main/postgresql.conf"
-      register: postgresql_config
+        path: '{{ item }}'
+      loop:
+        - '/etc/postgresql/{{ postgresql_version }}/main/postgresql.conf'
+        - '/etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf'
+        - '/var/lib/postgresql/{{ postgresql_version }}/main/PG_VERSION'
+      register: postgresql_paths
 
-    - name: Check pg_hba.conf file exists
-      ansible.builtin.stat:
-        path: "/etc/postgresql/{{ postgresql_version | default('17') }}/main/pg_hba.conf"
-      register: pg_hba_config
+    - name: Assert PostgreSQL configuration and data paths exist
+      ansible.builtin.assert:
+        that: item.stat.exists
+        fail_msg: 'Missing PostgreSQL path: {{ item.item }}'
+      loop: '{{ postgresql_paths.results }}'
+      loop_control:
+        label: '{{ item.item }}'
 
-    - name: Test PostgreSQL connectivity as postgres user
-      ansible.builtin.command: sudo -u postgres psql -c "SELECT version();"
-      register: postgresql_version_check
-      changed_when: false
+    - name: Read active server settings
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_query:
+        query: >-
+          SELECT current_setting('server_version_num')::integer / 10000 AS major,
+          current_setting('port')::integer AS port,
+          current_setting('max_connections')::integer AS max_connections,
+          current_setting('shared_buffers') AS shared_buffers,
+          current_setting('autovacuum_vacuum_threshold')::integer AS vacuum_threshold,
+          current_setting('autovacuum_analyze_threshold')::integer AS analyze_threshold,
+          current_setting('shared_preload_libraries') AS preload,
+          current_setting('auto_explain.log_min_duration') AS explain_duration
+      register: postgresql_settings
 
-    - name: Check if pg_stat_statements extension is available
-      ansible.builtin.command: sudo -u postgres psql -c "SELECT * FROM pg_available_extensions WHERE name = 'pg_stat_statements';"
-      register: pg_stat_statements_check
-      changed_when: false
+    - name: Assert configuration was applied to the expected server
+      ansible.builtin.assert:
+        that:
+          - postgresql_settings.query_result[0].major == postgresql_version | int
+          - postgresql_settings.query_result[0].port == postgresql_port
+          - postgresql_settings.query_result[0].max_connections == postgresql_max_connections
+          - postgresql_settings.query_result[0].shared_buffers == postgresql_shared_buffers
+          - postgresql_settings.query_result[0].vacuum_threshold == postgresql_autovacuum_vacuum_threshold
+          - postgresql_settings.query_result[0].analyze_threshold == postgresql_autovacuum_analyze_threshold
+          - "'pg_stat_statements' in postgresql_settings.query_result[0].preload.split(',')"
+          - "'auto_explain' in postgresql_settings.query_result[0].preload.split(',')"
+          - postgresql_settings.query_result[0].explain_duration == '200ms'
 
-    - name: Verify postgresql data directory exists
-      ansible.builtin.stat:
-        path: "/var/lib/postgresql/{{ postgresql_version | default('17') }}/main"
-      register: postgresql_data_dir
+    - name: Read the configured database and owner
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_query:
+        query: SELECT pg_get_userbyid(datdba) AS owner FROM pg_database WHERE datname = 'molecule_test'
+      register: postgresql_database
 
-    - name: Check PostgreSQL log directory
-      ansible.builtin.stat:
-        path: "/var/log/postgresql"
-      register: postgresql_log_dir
+    - name: Assert the configured database belongs to the configured user
+      ansible.builtin.assert:
+        that:
+          - postgresql_database.query_result | length == 1
+          - postgresql_database.query_result[0].owner == 'molecule_user'
 
-    - name: Test basic database operations
-      block:
-        - name: Create test database
-          ansible.builtin.command: sudo -u postgres createdb molecule_test_db
-          register: create_db_result
-          changed_when: true
+    - name: Read installed extensions in template1 and the configured database
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_query:
+        login_db: '{{ item }}'
+        query: SELECT extname FROM pg_extension WHERE extname = 'pg_stat_statements'
+      loop:
+        - template1
+        - molecule_test
+      register: postgresql_extensions
 
-        - name: Connect to test database
-          ansible.builtin.command: sudo -u postgres psql -d molecule_test_db -c "SELECT 1 as test;"
-          register: test_connection
-          changed_when: false
+    - name: Assert pg_stat_statements is installed and inherited
+      ansible.builtin.assert:
+        that: item.query_result | length == 1
+      loop: '{{ postgresql_extensions.results }}'
+      loop_control:
+        label: '{{ item.item }}'
 
-        - name: Drop test database
-          ansible.builtin.command: sudo -u postgres dropdb molecule_test_db
-          register: drop_db_result
-          changed_when: true
+    - name: Read configured reader privileges
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_query:
+        query: >-
+          SELECT rolsuper, rolcreatedb, has_database_privilege(rolname, 'molecule_test', 'CREATE') AS can_create
+          FROM pg_roles WHERE rolname = 'molecule_reader'
+      register: postgresql_reader
 
-    - name: Check PostgreSQL system user exists
-      ansible.builtin.user:
-        name: postgres
+    - name: Assert configured user attributes and privileges
+      ansible.builtin.assert:
+        that:
+          - postgresql_reader.query_result | length == 1
+          - not postgresql_reader.query_result[0].rolsuper
+          - not postgresql_reader.query_result[0].rolcreatedb
+          - postgresql_reader.query_result[0].can_create
+
+    - name: Test password authentication and database writes as the configured owner
+      community.postgresql.postgresql_query:
+        login_host: 127.0.0.1
+        login_user: molecule_user
+        login_password: molecule_password
+        login_db: molecule_test
+        query:
+          - CREATE TEMP TABLE molecule_check (value integer)
+          - INSERT INTO molecule_check VALUES (42)
+          - SELECT value FROM molecule_check
+      register: postgresql_operations
+
+    - name: Assert database writes and reads succeeded
+      ansible.builtin.assert:
+        that: postgresql_operations.query_result[0].value == 42
+
+    - name: Grant monitoring permissions to the test user
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_membership:
+        login_port: '{{ postgresql_port }}'
+        group: pg_monitor
+        target_roles: molecule_user
         state: present
-      check_mode: true
-      register: postgres_user
-      failed_when: postgres_user.changed
 
-    - name: Verify PostgreSQL can handle connections
-      ansible.builtin.command: sudo -u postgres psql -c "SHOW max_connections;"
-      register: max_connections_check
+    - name: Install the monitoring SQL for verification
+      ansible.builtin.copy:
+        src: ../../roles/postgresql/files/zabbix/postgresql/pgsql.bgwriter.sql
+        dest: /tmp/molecule-pgsql.bgwriter.sql
+        mode: '0644'
+
+    - name: Execute monitoring SQL as an unprivileged monitoring role
+      ansible.builtin.command:
+        argv:
+          - psql
+          - -h
+          - 127.0.0.1
+          - -p
+          - '{{ postgresql_port | string }}'
+          - -U
+          - molecule_user
+          - -d
+          - molecule_test
+          - -qtAX
+          - -v
+          - ON_ERROR_STOP=1
+          - -f
+          - /tmp/molecule-pgsql.bgwriter.sql
+      environment:
+        PGPASSWORD: molecule_password
       changed_when: false
+      register: postgresql_bgwriter
 
-    - name: Check shared_preload_libraries configuration
-      ansible.builtin.command: sudo -u postgres psql -c "SHOW shared_preload_libraries;"
-      register: shared_preload_check
-      changed_when: false
-
-    - name: Display comprehensive test results
-      ansible.builtin.debug:
-        msg:
-          - "PostgreSQL Service: {{ 'OK' if not postgresql_service.changed else 'FAILED' }}"
-          - "PostgreSQL Process: {{ 'OK' if postgresql_process.rc == 0 else 'FAILED' }}"
-          - "PostgreSQL Connectivity: {{ 'OK' if postgresql_connection is succeeded else 'FAILED' }}"
-          - "Config File: {{ 'OK' if postgresql_config.stat.exists else 'FAILED' }}"
-          - "pg_hba.conf: {{ 'OK' if pg_hba_config.stat.exists else 'FAILED' }}"
-          - "PostgreSQL Version: {{ 'OK' if postgresql_version_check.rc == 0 else 'FAILED' }}"
-          - "pg_stat_statements: {{ 'OK' if pg_stat_statements_check.rc == 0 else 'FAILED' }}"
-          - "Data Directory: {{ 'OK' if postgresql_data_dir.stat.exists else 'FAILED' }}"
-          - "Log Directory: {{ 'OK' if postgresql_log_dir.stat.exists else 'FAILED' }}"
-          - "Database Operations: {{ 'OK' if (create_db_result.rc == 0 and test_connection.rc == 0 and drop_db_result.rc == 0) else 'FAILED' }}"
-          - "PostgreSQL User: {{ 'OK' if not postgres_user.changed else 'FAILED' }}"
-          - "Max Connections: {{ 'OK' if max_connections_check.rc == 0 else 'FAILED' }}"
-          - "Shared Preload Libraries: {{ 'OK' if shared_preload_check.rc == 0 else 'FAILED' }}"
-
-    - name: Display PostgreSQL version information
-      ansible.builtin.debug:
-        msg: "{{ postgresql_version_check.stdout }}"
-      when: postgresql_version_check.rc == 0
+    - name: Assert monitoring JSON contains every expected numeric metric
+      ansible.builtin.assert:
+        that:
+          - item in (postgresql_bgwriter.stdout | from_json)
+          - (postgresql_bgwriter.stdout | from_json)[item] is number
+          - (postgresql_bgwriter.stdout | from_json)[item] >= 0
+      loop:
+        - checkpoints_timed
+        - checkpoints_req
+        - checkpoint_write_time
+        - checkpoint_sync_time
+        - buffers_checkpoint
+        - buffers_clean
+        - maxwritten_clean
+        - buffers_backend
+        - buffers_backend_fsync
+        - buffers_alloc

@@ -3,10 +3,6 @@
   ansible.builtin.include_tasks: setup.yml
   tags: postgresql
 
-- name: Include locales tasks
-  ansible.builtin.include_tasks: locales.yml
-  tags: postgresql
-
 - name: Include users tasks
   ansible.builtin.include_tasks: users.yml
   tags: postgresql

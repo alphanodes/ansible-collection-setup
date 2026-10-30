@@ -27,6 +27,9 @@ jobs:
 
     strategy:
       matrix:
+        postgresql_version:
+          - '17'
+          - '18'
         distro:
           - ubuntu2404
           - ubuntu2604
@@ -54,3 +57,4 @@ jobs:
           molecule test -s postgresql
         env:
           MOLECULE_DISTRO: ${{ matrix.distro }}
+          MOLECULE_POSTGRESQL_VERSION: ${{ matrix.postgresql_version }}

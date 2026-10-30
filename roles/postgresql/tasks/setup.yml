@@ -72,10 +72,34 @@
   vars:
     ansible_ssh_pipelining: true
 
+- name: Include locales tasks
+  ansible.builtin.include_tasks: locales.yml
+
+# Apply port, preload library and locale changes before connecting to the database.
+- name: Apply pending PostgreSQL configuration changes
+  ansible.builtin.meta: flush_handlers
+
+- name: Wait for the configured PostgreSQL cluster
+  become: true
+  become_user: '{{ postgresql_user }}'
+  ansible.builtin.command:
+    argv:
+      - '{{ postgresql_bin_path }}/pg_isready'
+      - -h
+      - /run/postgresql
+      - -p
+      - '{{ postgresql_port | string }}'
+  register: postgresql_ready
+  changed_when: false
+  until: postgresql_ready.rc == 0
+  retries: 10
+  delay: 2
+
 - name: Add pg_stat_statements to template1
   become_user: postgres
   become: true
   community.postgresql.postgresql_ext:
+    login_port: "{{ postgresql_port }}"
     name: pg_stat_statements
     login_db: template1
   when: postgresql_with_pg_stat_statements
@@ -84,6 +108,7 @@
   become_user: postgres
   become: true
   community.postgresql.postgresql_ext:
+    login_port: "{{ postgresql_port }}"
     name: vector
     login_db: template1
   when: postgresql_with_pgvector

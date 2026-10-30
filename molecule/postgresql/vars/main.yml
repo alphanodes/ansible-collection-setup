@@ -1,0 +1,25 @@
+---
+postgresql_version: "{{ lookup('ansible.builtin.env', 'MOLECULE_POSTGRESQL_VERSION', default='18') }}"
+postgresql_port: 5543
+postgresql_shared_buffers: 128MB
+postgresql_effective_cache_size: 512MB
+postgresql_max_connections: 100
+postgresql_listen_addresses: localhost
+postgresql_log_destination: stderr
+postgresql_with_auto_explain: true
+postgresql_autovacuum_vacuum_threshold: 1000
+postgresql_autovacuum_analyze_threshold: 50
+postgresql_databases:
+  - name: molecule_test
+    owner: molecule_user
+postgresql_users:
+  - name: molecule_user
+    password: molecule_password
+  - name: molecule_reader
+    password: molecule_reader_password
+    role_attr_flags: NOSUPERUSER,NOCREATEDB
+postgresql_privileges:
+  - database: molecule_test
+    roles: molecule_reader
+    type: database
+    privs: CREATE

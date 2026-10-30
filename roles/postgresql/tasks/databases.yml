@@ -3,6 +3,7 @@
   become_user: postgres
   become: true
   community.postgresql.postgresql_db:
+    login_port: "{{ postgresql_port }}"
     name: "{{ item.name }}"
     owner: "{{ item.owner }}"
     state: present

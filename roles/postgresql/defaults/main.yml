@@ -93,11 +93,12 @@ postgresql_timescaledb_apt_components: main
 postgresql_timescaledb_apt_signed_by: https://packagecloud.io/timescale/timescaledb/gpgkey
 
 postgresql_timescaledb_packages:
-  - timescaledb-2-postgresql-18
+  - timescaledb-2-postgresql-{{ postgresql_version }}
 
 # e.g. for shared_preload_libraries = 'pg_stat_statements'
 postgresql_shared_preload_libraries: 'pg_stat_statements'
 
+# Automatically adds auto_explain to shared_preload_libraries when enabled.
 # https://www.postgresql.org/docs/current/auto-explain.html
 postgresql_with_auto_explain: false
 postgresql_auto_explain_log_analyze: true

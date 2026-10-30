@@ -3,6 +3,7 @@
   become_user: postgres
   become: true
   community.postgresql.postgresql_privs:
+    login_port: "{{ postgresql_port }}"
     database: "{{ item.database }}"
     privs: "{{ item.privs | default(omit) }}"
     objs: "{{ item.objs | default(omit) }}"
