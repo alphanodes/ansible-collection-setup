@@ -27,7 +27,9 @@ BEGIN
                 )), 0) AS buffers_backend,
                     coalesce(sum(i.fsyncs), 0) AS buffers_backend_fsync
                 FROM pg_stat_io i
-                WHERE i.backend_type = 'client backend' AND i.object = 'relation'
+                -- Legacy backend counters exclude only the background writer and checkpointer.
+                WHERE i.backend_type NOT IN ('background writer', 'checkpointer')
+                    AND i.object = 'relation'
             ) io
         ) t;
     ELSE

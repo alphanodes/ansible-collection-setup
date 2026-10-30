@@ -181,3 +181,56 @@
         - buffers_backend
         - buffers_backend_fsync
         - buffers_alloc
+
+    - name: Test monitoring aggregation with controlled worker statistics
+      ansible.builtin.command:
+        argv:
+          - psql
+          - -h
+          - 127.0.0.1
+          - -p
+          - '{{ postgresql_port | string }}'
+          - -U
+          - molecule_user
+          - -d
+          - molecule_test
+          - -qtAX
+          - -v
+          - ON_ERROR_STOP=1
+        stdin: |
+          {{ lookup('ansible.builtin.template', 'templates/bgwriter-fixture.sql.j2') }}
+          {{ lookup('ansible.builtin.file', '../../roles/postgresql/files/zabbix/postgresql/pgsql.bgwriter.sql') }}
+      environment:
+        PGPASSWORD: molecule_password
+      changed_when: false
+      register: postgresql_bgwriter_fixture
+
+    - name: Assert worker writes are included and background writes are excluded
+      ansible.builtin.assert:
+        that:
+          # Client (2), autovacuum (3) and parallel worker (5), each writing 8192-byte blocks.
+          - (postgresql_bgwriter_fixture.stdout | from_json).buffers_backend == 81920
+          - (postgresql_bgwriter_fixture.stdout | from_json).buffers_backend_fsync == 10
+
+    - name: Read the baseline recorded before the CLI check step
+      ansible.builtin.slurp:
+        src: /tmp/molecule-postgresql-before-check.json
+      register: postgresql_check_baseline
+
+    - name: Read server identity after the port change dry run
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_query:
+        query: SELECT current_setting('port')::integer AS port, pg_postmaster_start_time()::text AS started
+      register: postgresql_after_check
+
+    - name: Read configuration checksum after the port change dry run
+      ansible.builtin.stat:
+        path: '/etc/postgresql/{{ postgresql_version }}/main/postgresql.conf'
+      register: postgresql_config_after_check
+
+    - name: Assert the CLI check step preserved the original server and configuration
+      ansible.builtin.assert:
+        that:
+          - postgresql_after_check.query_result == (postgresql_check_baseline.content | b64decode | from_json).server
+          - postgresql_config_after_check.stat.checksum == (postgresql_check_baseline.content | b64decode | from_json).checksum

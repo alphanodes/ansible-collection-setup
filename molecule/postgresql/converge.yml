@@ -14,3 +14,35 @@
 
   roles:
     - role: alphanodes.setup.postgresql
+
+  post_tasks:
+    - name: Assert the CLI check step uses the original port for database checks
+      ansible.builtin.assert:
+        that:
+          - postgresql_port | int == 5544
+          - _postgresql_login_port | int == 5543
+      when: ansible_check_mode
+
+    - name: Record server state before the CLI check step
+      when: not ansible_check_mode
+      block:
+        - name: Read the server identity
+          become: true
+          become_user: postgres
+          community.postgresql.postgresql_query:
+            login_port: '{{ postgresql_port }}'
+            query: SELECT current_setting('port')::integer AS port, pg_postmaster_start_time()::text AS started
+          register: postgresql_before_check
+
+        - name: Read the configuration checksum
+          ansible.builtin.stat:
+            path: '/etc/postgresql/{{ postgresql_version }}/main/postgresql.conf'
+          register: postgresql_config_before_check
+
+        - name: Save the baseline for verification after the CLI check step
+          ansible.builtin.copy:
+            content: >-
+              {{ {'server': postgresql_before_check.query_result,
+                  'checksum': postgresql_config_before_check.stat.checksum} | to_json }}
+            dest: /tmp/molecule-postgresql-before-check.json
+            mode: '0644'

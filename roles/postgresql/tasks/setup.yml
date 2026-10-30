@@ -79,6 +79,29 @@
 - name: Apply pending PostgreSQL configuration changes
   ansible.builtin.meta: flush_handlers
 
+# A dry run does not restart the server after rendering a changed port.
+# postmaster.pid belongs to this data directory and records the running port on line 4.
+- name: Check for a running PostgreSQL cluster in check mode
+  ansible.builtin.stat:
+    path: '{{ postgresql_data_dir }}/postmaster.pid'
+  register: postgresql_pid_stat
+  when: ansible_check_mode
+
+- name: Read the running PostgreSQL cluster in check mode
+  ansible.builtin.slurp:
+    src: '{{ postgresql_data_dir }}/postmaster.pid'
+  register: postgresql_pid_file
+  when:
+    - ansible_check_mode
+    - postgresql_pid_stat.stat.exists
+
+- name: Select the PostgreSQL connection port
+  ansible.builtin.set_fact:
+    _postgresql_login_port: >-
+      {{ (postgresql_pid_file.content | b64decode).splitlines()[3] | int
+         if ansible_check_mode and postgresql_pid_file.content is defined
+         else postgresql_port | int }}
+
 - name: Wait for the configured PostgreSQL cluster
   become: true
   become_user: '{{ postgresql_user }}'
@@ -88,7 +111,8 @@
       - -h
       - /run/postgresql
       - -p
-      - '{{ postgresql_port | string }}'
+      - '{{ _postgresql_login_port | string }}'
+  check_mode: false
   register: postgresql_ready
   changed_when: false
   until: postgresql_ready.rc == 0
@@ -99,7 +123,7 @@
   become_user: postgres
   become: true
   community.postgresql.postgresql_ext:
-    login_port: "{{ postgresql_port }}"
+    login_port: "{{ _postgresql_login_port | default(postgresql_port) }}"
     name: pg_stat_statements
     login_db: template1
   when: postgresql_with_pg_stat_statements
@@ -108,7 +132,7 @@
   become_user: postgres
   become: true
   community.postgresql.postgresql_ext:
-    login_port: "{{ postgresql_port }}"
+    login_port: "{{ _postgresql_login_port | default(postgresql_port) }}"
     name: vector
     login_db: template1
   when: postgresql_with_pgvector

@@ -4,7 +4,7 @@
   become_user: postgres
   become: true
   community.postgresql.postgresql_user:
-    login_port: "{{ postgresql_port }}"
+    login_port: "{{ _postgresql_login_port | default(postgresql_port) }}"
     name: "{{ item.name }}"
     password: "{{ item.password | default(omit) }}"
     role_attr_flags: "{{ item.role_attr_flags | default('NOSUPERUSER,CREATEDB') }}"

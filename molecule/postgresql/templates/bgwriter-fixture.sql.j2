@@ -1,0 +1,26 @@
+-- Temporary relations shadow the statistics views in this test session only.
+CREATE TEMP TABLE pg_stat_bgwriter (
+    buffers_clean bigint, maxwritten_clean bigint, buffers_alloc bigint
+);
+INSERT INTO pg_stat_bgwriter VALUES (1, 2, 3);
+CREATE TEMP TABLE pg_stat_checkpointer (
+    num_timed bigint, num_requested bigint, write_time double precision,
+    sync_time double precision, buffers_written bigint
+);
+INSERT INTO pg_stat_checkpointer VALUES (4, 5, 6, 7, 8);
+CREATE TEMP TABLE pg_stat_io (
+    backend_type text, object text, writes bigint, fsyncs bigint
+);
+INSERT INTO pg_stat_io VALUES
+    ('client backend', 'relation', 2, 2),
+    ('autovacuum worker', 'relation', 3, 3),
+    ('parallel worker', 'relation', 5, 5),
+    ('background writer', 'relation', 7, 7),
+    ('checkpointer', 'relation', 11, 11),
+    ('client backend', 'temp relation', 13, 13);
+{% if postgresql_version | int >= 18 %}
+ALTER TABLE pg_stat_io ADD COLUMN write_bytes numeric;
+UPDATE pg_stat_io SET write_bytes = writes * 8192;
+{% else %}
+ALTER TABLE pg_stat_io ADD COLUMN op_bytes bigint DEFAULT 8192;
+{% endif %}

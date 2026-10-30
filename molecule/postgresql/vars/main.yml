@@ -1,6 +1,7 @@
 ---
 postgresql_version: "{{ lookup('ansible.builtin.env', 'MOLECULE_POSTGRESQL_VERSION', default='18') }}"
-postgresql_port: 5543
+# Exercise a planned port change during Molecule's CLI check step.
+postgresql_port: '{{ 5544 if ansible_check_mode else 5543 }}'
 postgresql_shared_buffers: 128MB
 postgresql_effective_cache_size: 512MB
 postgresql_max_connections: 100
