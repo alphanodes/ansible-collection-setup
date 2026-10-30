@@ -202,7 +202,7 @@
   ansible.mysql.mysql_db:
     login_unix_socket: "{{ mysql_login_unix_socket }}"
     name: "{{ item.name }}"
-    collation: "{{ item.collation | default('utf8mb4_general_ci') }}"
+    collation: "{{ item.collation | default(omit) }}"
     encoding: "{{ item.encoding | default('utf8mb4') }}"
     state: "{{ item.state | default('present') }}"
     target: "{{ item.target | default(omit) }}"

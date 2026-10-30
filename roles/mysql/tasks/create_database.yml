@@ -8,7 +8,7 @@
 #       tasks_from: create_database.yml
 #     vars:
 #       mysql_setup_db_name: myapp
-#       mysql_setup_db_collation: utf8mb4_general_ci  # optional
+#       mysql_setup_db_collation: utf8mb4_0900_ai_ci  # optional
 #       mysql_setup_db_encoding: utf8mb4              # optional
 #
 # Required variables:

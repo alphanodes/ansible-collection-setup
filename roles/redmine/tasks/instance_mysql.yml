@@ -11,7 +11,7 @@
     tasks_from: create_database.yml
   vars:
     mysql_setup_db_name: '{{ redmine_db_name }}'
-    mysql_setup_db_collation: utf8mb4_general_ci
+    mysql_setup_db_collation: '{{ redmine_instance.db_collation | default(omit) }}'
     mysql_setup_db_encoding: utf8mb4
 
 - name: Create redmine mysql database user - {{ redmine_instance_name }}

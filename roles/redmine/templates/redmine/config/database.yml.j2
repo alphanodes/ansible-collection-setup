@@ -21,6 +21,9 @@
     username: {{ redmine_db_user }}
     password: "{{ redmine_instance.db_password | default(redmine_db_password) }}"
     encoding: {{ active_db_encoding }}
+{% if redmine_instance.db_collation is defined %}
+    collation: {{ redmine_instance.db_collation }}
+{% endif %}
 {% if active_db_adapter == 'postgresql' %}
     schema_search_path: public
     variables:
@@ -49,6 +52,9 @@
     username: {{ redmine_db_user }}
     password: "{{ redmine_instance.db_password | default(redmine_db_password) }}"
     encoding: {{ active_db_encoding }}
+{% if redmine_instance.db_collation is defined %}
+    collation: {{ redmine_instance.db_collation }}
+{% endif %}
 {% if active_db_adapter == 'postgresql' %}
     schema_search_path: public
 {% endif %}
@@ -70,6 +76,9 @@
   username: {{ redmine_db_user }}
   password: "{{ redmine_instance.db_password | default(redmine_db_password) }}"
   encoding: {{ active_db_encoding }}
+{% if redmine_instance.db_collation is defined %}
+  collation: {{ redmine_instance.db_collation }}
+{% endif %}
 {% if active_db_adapter == 'postgresql' %}
   schema_search_path: public
   variables:

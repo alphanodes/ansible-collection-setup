@@ -48,7 +48,10 @@ mysql_socket_force: false
 mysql_login_unix_socket: "{{ mysql_socket if (mysql_root_plugin == 'auth_socket' or mysql_socket_force or _mysql_root_mycnf_missing | default(false)) else omit }}"
 
 mysql_character_set_server: utf8mb4
-mysql_collation_server: utf8mb4_unicode_ci
+# Empty uses the default of the server for utf8mb4 (MySQL 8.4: utf8mb4_0900_ai_ci),
+# the collation clients like Rails get with SET NAMES utf8mb4. Another value makes
+# new databases differ from the connection (Illegal mix of collations).
+mysql_collation_server: ''
 
 # Config directories (set by backend, can be overridden)
 mysql_config_include_dir: "{{ _mysql_config_include_dir | default('/etc/mysql/conf.d') }}"
@@ -126,7 +129,7 @@ mysql_slow_query_log_file: /var/log/mysql/mysql-slow.log
 # Databases.
 mysql_databases: []
 #   - name: example
-#     collation: utf8mb4_general_ci
+#     collation: utf8mb4_0900_ai_ci  # optional, default of the server
 #     encoding: utf8mb4
 #     replicate: 1
 
