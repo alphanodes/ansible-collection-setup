@@ -14,7 +14,7 @@
     port: {{ redmine_instance.db_port }}
 {% endif %}
 {% else %}
-{% if active_db_adapter == 'mysql' and active_mysql_socket != '' %}
+{% if active_db_adapter == 'mysql2' and active_mysql_socket != '' %}
     socket: {{ active_mysql_socket }}
 {% endif %}
 {% endif %}
@@ -45,7 +45,7 @@
     port: {{ redmine_instance.db_port }}
 {% endif %}
 {% else %}
-{% if active_db_adapter == 'mysql' and active_mysql_socket != '' %}
+{% if active_db_adapter == 'mysql2' and active_mysql_socket != '' %}
     socket: {{ active_mysql_socket }}
 {% endif %}
 {% endif %}
@@ -69,7 +69,7 @@
   port: {{ redmine_instance.db_port }}
 {% endif %}
 {% else %}
-{% if active_db_adapter == 'mysql' and active_mysql_socket != '' %}
+{% if active_db_adapter == 'mysql2' and active_mysql_socket != '' %}
   socket: {{ active_mysql_socket }}
 {% endif %}
 {% endif %}
