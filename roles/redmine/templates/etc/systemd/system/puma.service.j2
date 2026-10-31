@@ -18,6 +18,9 @@ Environment="MALLOC_CONF={{ redmine_jemalloc_conf }}"
 {% else %}
 Environment=MALLOC_ARENA_MAX=2
 {% endif %}
+{% if redmine_with_yjit and ruby_source | default('package') == 'ruby_build' %}
+Environment="RUBY_YJIT_ENABLE=1"
+{% endif %}
 Environment="RAILS_ROOT={{ redmine_app_dir }}"
 Environment="RAILS_ENV={{ redmine_rails_env }}"
 Environment="HOME={{ redmine_home }}"

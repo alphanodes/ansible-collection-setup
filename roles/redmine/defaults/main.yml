@@ -137,6 +137,10 @@ redmine_with_jemalloc: true
 # @see https://jemalloc.net/jemalloc.3.html
 redmine_jemalloc_conf: 'dirty_decay_ms:1000,muzzy_decay_ms:1000,narenas:2,background_thread:true'
 
+# Enable YJIT for puma and solid_queue (only effective with ruby_source: ruby_build,
+# the distribution ruby is built without YJIT)
+redmine_with_yjit: true
+
 # Hour (0-23) for daily Puma phased restart to prevent worker memory bloat.
 # Empty string disables the cron job.
 # Phased restart (SIGUSR1) gracefully restarts workers one by one without downtime.
