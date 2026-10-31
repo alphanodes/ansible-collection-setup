@@ -1,0 +1,4 @@
+# {{ ansible_managed }}
+# Executables get "#!/usr/bin/env ruby", so they keep working after an update
+# to another ruby version in {{ ruby_install_base }} (same as distribution rubygems)
+gem: --env-shebang

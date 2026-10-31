@@ -62,6 +62,25 @@
           version={{ ruby_path_version.stdout }}
         quiet: true
 
+    # bundler, as installed by the redmine role with gem install
+    - name: Install gem with executable as user
+      ansible.builtin.command: /opt/ruby/4.0.9/bin/gem install --user-install --no-document bundler
+      environment:
+        HOME: /tmp/gemtest
+      changed_when: false
+
+    - name: Read shebang of installed bundle executable
+      ansible.builtin.command: head -1 /tmp/gemtest/.local/share/gem/ruby/4.0.0/bin/bundle
+      register: gem_bundle_shebang
+      changed_when: false
+
+    - name: Verify executables are installed with env shebang
+      ansible.builtin.assert:
+        that:
+          - gem_bundle_shebang.stdout == '#!/usr/bin/env ruby'
+        fail_msg: "shebang={{ gem_bundle_shebang.stdout }}"
+        quiet: true
+
     - name: Verify compiled ruby
       ansible.builtin.assert:
         that:
@@ -114,4 +133,48 @@
         fail_msg: >-
           failed={{ ruby_guard_failed }} message={{ ruby_guard_message | default('') }}
           packages={{ ruby_guard_packages.stdout }}
+        quiet: true
+
+    # redmine defers the removal to the end of its rollout, so the guard is
+    # not reached here and the distribution ruby stays installed
+    - name: Include ruby role with deferred removal of the distribution ruby
+      ansible.builtin.include_role:
+        name: alphanodes.setup.ruby
+      vars:
+        ruby_source: ruby_build
+        ruby_version: 4.0.9
+        ruby_defer_system_ruby_removal: true
+
+    - name: Check distribution ruby after deferred removal
+      ansible.builtin.command: dpkg-query -W -f='${db:Status-Status}' ruby
+      register: ruby_deferred_package
+      changed_when: false
+
+    - name: Verify distribution ruby is kept with deferred removal
+      ansible.builtin.assert:
+        that:
+          - ruby_deferred_package.stdout == 'installed'
+        quiet: true
+
+    - name: Remove package depending on the distribution ruby
+      ansible.builtin.apt:
+        name: asciidoctor
+        state: absent
+        purge: true
+
+    # as called by the redmine role at the end of its rollout
+    - name: Remove distribution ruby with tasks_from
+      ansible.builtin.include_role:
+        name: alphanodes.setup.ruby
+        tasks_from: system_ruby_remove
+
+    - name: Gather installed packages after deferred removal
+      ansible.builtin.package_facts:
+        manager: apt
+
+    - name: Verify deferred removal removed the distribution ruby
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.packages.keys() | select('match', '^(ruby|libruby)') | list == []
+        fail_msg: "packages={{ ansible_facts.packages.keys() | select('match', '^(ruby|libruby)') | list }}"
         quiet: true

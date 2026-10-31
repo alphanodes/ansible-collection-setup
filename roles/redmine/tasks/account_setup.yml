@@ -24,3 +24,6 @@
   vars:
     ruby_build: true
     ruby_dev: true
+    # removed at the end of this role, after puma has been restarted with the
+    # compiled ruby (until then, existing services still use the distribution ruby)
+    ruby_defer_system_ruby_removal: true
