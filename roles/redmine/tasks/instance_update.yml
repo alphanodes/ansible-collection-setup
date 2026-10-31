@@ -11,13 +11,33 @@
     RAILS_ENV: '{{ redmine_rails_env }}'
     DB_STATEMENT_TIMEOUT: '0'
   block:
+    # gem executables with an absolute ruby path break, after the compiled ruby
+    # version they point to has been removed (e.g. with a patch update). Only the
+    # shebang differs from an executable installed with --env-shebang.
+    - name: Rewrite gem executables with absolute ruby path - {{ redmine_instance_name }}
+      ansible.builtin.shell: |
+        set -o pipefail
+        bin_dir="$({{ ruby_bin_dir }}/ruby -e 'print Gem.user_dir')/bin"
+        [ -d "$bin_dir" ] || exit 0
+        files=$(grep -lE '^#!/[^ ]*/ruby[0-9.]*$' "$bin_dir"/* || true)
+        [ -n "$files" ] || exit 0
+        echo "$files"
+        sed -i -E '1s|^#!/[^ ]*/ruby[0-9.]*$|#!/usr/bin/env ruby|' $files
+      args:
+        executable: /bin/bash
+      register: redmine_gem_shebang_result
+      changed_when: redmine_gem_shebang_result.stdout | length > 0
+      when: ruby_source | default('package') == 'ruby_build'
+
     # NOTE: this do not install latest version of bundler for user!
     # NOTE2: but used as fallback (first installation fails, if this is not used)
+    # env_shebang: the module runs gem with --norc, so the gemrc of the ruby role is ignored
     - name: Manual install latest bundler
       community.general.gem:
         name: bundler
         state: latest
         executable: '{{ ruby_bin_dir }}/gem'
+        env_shebang: true
       ignore_errors: true
 
     - name: Manual update latest bundler

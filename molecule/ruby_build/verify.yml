@@ -135,25 +135,37 @@
           packages={{ ruby_guard_packages.stdout }}
         quiet: true
 
-    # redmine defers the removal to the end of its rollout, so the guard is
-    # not reached here and the distribution ruby stays installed
-    - name: Include ruby role with deferred removal of the distribution ruby
+    # redmine defers the cleanup to the end of its rollout, so the guard is
+    # not reached here, the distribution ruby and other versions stay installed
+    - name: Create outdated ruby version for deferred cleanup
+      ansible.builtin.file:
+        path: /opt/ruby/3.4.11/bin
+        state: directory
+        mode: '0755'
+
+    - name: Include ruby role with deferred cleanup
       ansible.builtin.include_role:
         name: alphanodes.setup.ruby
       vars:
         ruby_source: ruby_build
         ruby_version: 4.0.9
-        ruby_defer_system_ruby_removal: true
+        ruby_defer_cleanup: true
 
-    - name: Check distribution ruby after deferred removal
+    - name: Check distribution ruby after deferred cleanup
       ansible.builtin.command: dpkg-query -W -f='${db:Status-Status}' ruby
       register: ruby_deferred_package
       changed_when: false
 
-    - name: Verify distribution ruby is kept with deferred removal
+    - name: Check outdated ruby version after deferred cleanup
+      ansible.builtin.stat:
+        path: /opt/ruby/3.4.11
+      register: ruby_deferred_outdated
+
+    - name: Verify distribution ruby and outdated version are kept with deferred cleanup
       ansible.builtin.assert:
         that:
           - ruby_deferred_package.stdout == 'installed'
+          - ruby_deferred_outdated.stat.exists
         quiet: true
 
     - name: Remove package depending on the distribution ruby
@@ -163,18 +175,27 @@
         purge: true
 
     # as called by the redmine role at the end of its rollout
-    - name: Remove distribution ruby with tasks_from
+    - name: Run deferred cleanup with tasks_from
       ansible.builtin.include_role:
         name: alphanodes.setup.ruby
-        tasks_from: system_ruby_remove
+        tasks_from: cleanup
+      vars:
+        ruby_source: ruby_build
+        ruby_version: 4.0.9
 
-    - name: Gather installed packages after deferred removal
+    - name: Gather installed packages after deferred cleanup
       ansible.builtin.package_facts:
         manager: apt
 
-    - name: Verify deferred removal removed the distribution ruby
+    - name: Check outdated ruby version after cleanup
+      ansible.builtin.stat:
+        path: /opt/ruby/3.4.11
+      register: ruby_cleanup_outdated
+
+    - name: Verify deferred cleanup removed the distribution ruby and outdated version
       ansible.builtin.assert:
         that:
           - ansible_facts.packages.keys() | select('match', '^(ruby|libruby)') | list == []
+          - not ruby_cleanup_outdated.stat.exists
         fail_msg: "packages={{ ansible_facts.packages.keys() | select('match', '^(ruby|libruby)') | list }}"
         quiet: true

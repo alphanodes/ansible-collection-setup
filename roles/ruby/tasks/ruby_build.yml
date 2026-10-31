@@ -6,7 +6,7 @@
   ansible.builtin.import_tasks: system_ruby_remove.yml
   when:
     - ruby_remove_system_ruby
-    - not ruby_defer_system_ruby_removal
+    - not ruby_defer_cleanup
 
 - name: Ensure packages for ruby-build are present
   ansible.builtin.apt:
@@ -72,20 +72,8 @@
     state: link
   loop: '{{ ruby_bin_links }}'
 
-- name: Find compiled ruby versions
-  ansible.builtin.find:
-    paths: '{{ ruby_install_base }}'
-    file_type: directory
-    patterns: '^[0-9]+\.[0-9]+\.[0-9]+.*$'
-    use_regex: true
-  register: ruby_installed_versions
-  when: ruby_remove_other_versions
-
 - name: Remove other compiled ruby versions
-  ansible.builtin.file:
-    path: '{{ item.path }}'
-    state: absent
-  loop: "{{ ruby_installed_versions.files | default([]) | rejectattr('path', 'equalto', ruby_install_base ~ '/' ~ ruby_version) | list }}"
-  loop_control:
-    label: '{{ item.path }}'
-  when: ruby_remove_other_versions
+  ansible.builtin.import_tasks: remove_other_versions.yml
+  when:
+    - ruby_remove_other_versions
+    - not ruby_defer_cleanup

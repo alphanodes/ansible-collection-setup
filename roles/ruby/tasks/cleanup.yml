@@ -1,0 +1,13 @@
+---
+
+# Cleanup deferred with ruby_defer_cleanup, called by other roles with
+# tasks_from: cleanup after their services run with the compiled ruby.
+# Other versions first, the distribution ruby removal can fail on purpose.
+
+- name: Remove other compiled ruby versions
+  ansible.builtin.import_tasks: remove_other_versions.yml
+  when: ruby_remove_other_versions
+
+- name: Remove distribution ruby
+  ansible.builtin.import_tasks: system_ruby_remove.yml
+  when: ruby_remove_system_ruby

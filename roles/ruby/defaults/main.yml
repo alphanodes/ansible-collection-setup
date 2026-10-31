@@ -33,10 +33,11 @@ ruby_build_tool_dir: /usr/local/share/ruby-build
 # to keep the distribution ruby on such hosts.
 ruby_remove_system_ruby: true
 
-# Skip the removal of the distribution ruby in this role, because the calling
-# role removes it later with tasks_from: system_ruby_remove (e.g. redmine, after
-# its services have been restarted with the compiled ruby)
-ruby_defer_system_ruby_removal: false
+# Skip the removal of the distribution ruby and of other compiled versions in
+# this role, because the calling role does it later with tasks_from: cleanup
+# (e.g. redmine, after its services have been restarted with the compiled ruby,
+# so a restart in between never runs an old unit without its ruby)
+ruby_defer_cleanup: false
 
 # Executables of the compiled ruby, which are linked to /usr/local/bin with
 # ruby_source: ruby_build (has precedence over /usr/bin in PATH)

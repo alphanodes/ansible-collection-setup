@@ -1,0 +1,17 @@
+---
+
+- name: Find compiled ruby versions
+  ansible.builtin.find:
+    paths: '{{ ruby_install_base }}'
+    file_type: directory
+    patterns: '^[0-9]+\.[0-9]+\.[0-9]+.*$'
+    use_regex: true
+  register: ruby_installed_versions
+
+- name: Remove other compiled ruby versions
+  ansible.builtin.file:
+    path: '{{ item.path }}'
+    state: absent
+  loop: "{{ ruby_installed_versions.files | rejectattr('path', 'equalto', ruby_install_base ~ '/' ~ ruby_version) | list }}"
+  loop_control:
+    label: '{{ item.path }}'

@@ -75,17 +75,15 @@
     - redmine_run_instance is defined and redmine_run_instance == r_instance.key or redmine_run_instance is undefined
     - r_instance.value.state is defined and r_instance.value.state == 'absent'
 
-# Deferred from the ruby role (ruby_defer_system_ruby_removal), so puma never
-# gets restarted with an old unit pointing to the removed distribution ruby
-- name: Remove distribution ruby after switching to a compiled ruby
+# Deferred from the ruby role (ruby_defer_cleanup), so puma never gets
+# restarted with an old unit pointing to a removed ruby
+- name: Remove unused rubies after switching to a compiled ruby
   ansible.builtin.include_role:
     name: alphanodes.setup.ruby
-    tasks_from: system_ruby_remove
+    tasks_from: cleanup
     apply:
       become: true
       become_user: root
-  when:
-    - ruby_source | default('package') == 'ruby_build'
-    - ruby_remove_system_ruby | default(true)
+  when: ruby_source | default('package') == 'ruby_build'
   tags:
     - redmine
