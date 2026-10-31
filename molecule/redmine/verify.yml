@@ -269,6 +269,26 @@
       changed_when: false
       failed_when: imagemagick_too_tall.rc == 0 or 'height exceeds limit' not in imagemagick_too_tall.stderr
 
+    - name: Get Gem.user_dir of the redmine user
+      ansible.builtin.command: ruby -e 'print Gem.user_dir'
+      become: true
+      become_user: redmine
+      register: redmine_gem_user_dir
+      changed_when: false
+
+    - name: Find remaining gem directories
+      ansible.builtin.find:
+        paths: "{{ redmine_gem_user_dir.stdout | dirname }}"
+        file_type: directory
+      register: redmine_gem_dirs
+
+    - name: Assert only gem directories of unused ruby versions are removed
+      ansible.builtin.assert:
+        that:
+          - redmine_gem_dirs.files | map(attribute='path') | map('basename') | sort ==
+            [redmine_gem_user_dir.stdout | basename, 'custom'] | sort
+        fail_msg: "unexpected gem directories: {{ redmine_gem_dirs.files | map(attribute='path') | list }}"
+
     - name: Display verification summary
       ansible.builtin.debug:
         msg: |
@@ -278,3 +298,4 @@
           - redmine_agile vhost configured with ActionCable WebSocket
           - Custom protection rules applied
           - PostgreSQL database running
+          - Gem directories of unused ruby versions removed

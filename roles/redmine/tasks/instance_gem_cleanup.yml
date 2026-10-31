@@ -1,0 +1,30 @@
+---
+
+# Gems are installed per ruby ABI version (e.g. ~/.local/share/gem/ruby/3.3.0).
+# After a ruby change (ruby_source, ruby version or distribution upgrade) the
+# directories of former versions are unused. They are removed after puma has
+# been restarted with the current ruby. Switching back to a former ruby
+# reinstalls its gems with the next bundle install.
+
+- name: Get Gem.user_dir for cleanup - {{ redmine_instance_name }}
+  ansible.builtin.command: "{{ ruby_bin_dir }}/ruby -e 'print Gem.user_dir'"
+  become: true
+  become_user: '{{ redmine_user }}'
+  register: redmine_gem_user_dir
+  changed_when: false
+
+- name: Find gem directories of all ruby versions - {{ redmine_instance_name }}
+  ansible.builtin.find:
+    paths: '{{ redmine_gem_user_dir.stdout | dirname }}'
+    file_type: directory
+    patterns: '^[0-9]+\.[0-9]+\.[0-9]+$'
+    use_regex: true
+  register: redmine_gem_version_dirs
+
+- name: Remove gem directories of unused ruby versions - {{ redmine_instance_name }}
+  ansible.builtin.file:
+    path: '{{ item.path }}'
+    state: absent
+  loop: "{{ redmine_gem_version_dirs.files | rejectattr('path', 'equalto', redmine_gem_user_dir.stdout) | list }}"
+  loop_control:
+    label: '{{ item.path }}'

@@ -12,6 +12,14 @@
     state: restarted
   when: redmine_instance.state is undefined or redmine_instance.state == 'active'
 
+- name: Include gem cleanup tasks - {{ redmine_instance_name }}
+  ansible.builtin.include_tasks: instance_gem_cleanup.yml
+  when:
+    - redmine_remove_unused_gem_dirs
+    # undefined if the ruby role was skipped (e.g. --tags activate), never guess it
+    - ruby_bin_dir is defined
+    - redmine_instance.state is undefined or redmine_instance.state == 'active'
+
 - name: Shutdown puma via systemd - {{ redmine_instance_name }}
   ansible.builtin.systemd_service:
     name: puma-{{ redmine_instance_name }}

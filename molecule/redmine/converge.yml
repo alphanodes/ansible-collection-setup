@@ -385,3 +385,36 @@
 
     - name: Apply ImageMagick policy tasks with role defaults
       ansible.builtin.include_tasks: "{{ playbook_dir }}/../../roles/redmine/tasks/imagemagick.yml"
+
+    # --- Gem directory cleanup (instance_gem_cleanup.yml), checked in verify.yml ---
+    - name: Install distribution ruby for gem cleanup tasks
+      ansible.builtin.apt:
+        name: ruby
+        state: present
+
+    - name: Get Gem.user_dir of the redmine user
+      ansible.builtin.command: ruby -e 'print Gem.user_dir'
+      become: true
+      become_user: redmine
+      register: redmine_test_gem_user_dir
+      changed_when: false
+
+    # current ruby version (kept), a former one (removed) and a foreign directory (kept)
+    - name: Create gem directories for cleanup
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: redmine
+        group: redmine
+        mode: '0755'
+      loop:
+        - "{{ redmine_test_gem_user_dir.stdout }}"
+        - "{{ redmine_test_gem_user_dir.stdout | dirname }}/2.7.0"
+        - "{{ redmine_test_gem_user_dir.stdout | dirname }}/custom"
+
+    - name: Apply gem cleanup tasks
+      ansible.builtin.include_tasks: "{{ playbook_dir }}/../../roles/redmine/tasks/instance_gem_cleanup.yml"
+      vars:
+        redmine_instance_name: redmine
+        redmine_user: redmine
+        ruby_bin_dir: /usr/bin

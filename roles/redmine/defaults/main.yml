@@ -141,6 +141,11 @@ redmine_jemalloc_conf: 'dirty_decay_ms:1000,muzzy_decay_ms:1000,narenas:2,backgr
 # the distribution ruby is built without YJIT)
 redmine_with_yjit: true
 
+# Remove gem directories of former ruby versions (e.g. ~/.local/share/gem/ruby/3.3.0)
+# after puma has been restarted. Switching back to such a ruby reinstalls its gems
+# with the next bundle install, set this to false to keep them for a quick rollback.
+redmine_remove_unused_gem_dirs: true
+
 # Hour (0-23) for daily Puma phased restart to prevent worker memory bloat.
 # Empty string disables the cron job.
 # Phased restart (SIGUSR1) gracefully restarts workers one by one without downtime.
