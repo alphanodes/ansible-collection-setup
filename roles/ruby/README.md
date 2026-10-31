@@ -27,4 +27,6 @@ Compiled ruby with [ruby-build](https://github.com/rbenv/ruby-build) and YJIT, i
         - alphanodes.setup.ruby
 ```
 
-Switching back to `ruby_source: package` removes the compiled versions and ruby-build. Packages installed for the build (e.g. `rustc`) are kept, because other software could depend on them.
+The distribution ruby is removed and `ruby`, `gem`, `bundle` etc. are linked to `/usr/local/bin`. If another package depends on the distribution ruby, the role fails instead of removing it, see `ruby_remove_system_ruby`.
+
+Switching back to `ruby_source: package` removes the compiled versions, the links and ruby-build, and installs the distribution ruby again. Packages installed for the build (e.g. `rustc`) are kept, because other software could depend on them.

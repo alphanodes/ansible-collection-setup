@@ -35,6 +35,33 @@
         path: /opt/ruby/4.0.9
       register: ruby_install_dir
 
+    - name: Gather installed packages
+      ansible.builtin.package_facts:
+        manager: apt
+
+    - name: Check ruby in PATH
+      ansible.builtin.command: ruby --version
+      register: ruby_path_version
+      changed_when: false
+
+    - name: Check ruby executable links
+      ansible.builtin.stat:
+        path: /usr/local/bin/{{ item }}
+      loop: [bundle, bundler, erb, gem, irb, rake, ruby]
+      register: ruby_links
+
+    - name: Verify distribution ruby is replaced by the compiled ruby
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.packages.keys() | select('match', '^(ruby|libruby)') | list == []
+          - ruby_path_version.stdout is search('^ruby 4\.0\.9 ')
+          - ruby_links.results | map(attribute='stat.lnk_source') | list ==
+            ['bundle', 'bundler', 'erb', 'gem', 'irb', 'rake', 'ruby'] | map('regex_replace', '^', '/opt/ruby/4.0.9/bin/') | list
+        fail_msg: >-
+          packages={{ ansible_facts.packages.keys() | select('match', '^(ruby|libruby)') | list }}
+          version={{ ruby_path_version.stdout }}
+        quiet: true
+
     - name: Verify compiled ruby
       ansible.builtin.assert:
         that:
@@ -47,4 +74,44 @@
         fail_msg: >-
           version={{ ruby_compiled_version.stdout }} yjit_rc={{ ruby_yjit.rc }}
           extensions={{ ruby_extensions.stdout }}{{ ruby_extensions.stderr }}
+        quiet: true
+
+    # asciidoctor depends on ruby, so the distribution ruby must not be removed
+    - name: Install package depending on the distribution ruby
+      ansible.builtin.apt:
+        name: asciidoctor
+        state: present
+
+    - name: Run role with a package depending on the distribution ruby
+      block:
+        - name: Include ruby role
+          ansible.builtin.include_role:
+            name: alphanodes.setup.ruby
+          vars:
+            ruby_source: ruby_build
+            ruby_version: 4.0.9
+
+        - name: Role has to fail
+          ansible.builtin.set_fact:
+            ruby_guard_failed: false
+      rescue:
+        - name: Role failed
+          ansible.builtin.set_fact:
+            ruby_guard_failed: true
+            ruby_guard_message: '{{ ansible_failed_result.msg | default("") }}'
+
+    - name: Check asciidoctor after failed removal
+      ansible.builtin.command: dpkg-query -W -f='${db:Status-Status}' asciidoctor ruby
+      register: ruby_guard_packages
+      changed_when: false
+
+    - name: Verify distribution ruby is kept for asciidoctor
+      ansible.builtin.assert:
+        that:
+          - ruby_guard_failed
+          - ruby_guard_message is search('would also remove asciidoctor')
+          - ruby_guard_packages.stdout == 'installedinstalled'
+        fail_msg: >-
+          failed={{ ruby_guard_failed }} message={{ ruby_guard_message | default('') }}
+          packages={{ ruby_guard_packages.stdout }}
         quiet: true

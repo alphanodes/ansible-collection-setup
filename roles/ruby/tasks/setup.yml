@@ -28,7 +28,9 @@
   ansible.builtin.apt:
     name: '{{ ruby_required_packages }}'
     state: present
-  when: not ruby_without_required_packages
+  when:
+    - ruby_source == 'package'
+    - not ruby_without_required_packages
 
 - name: Ensure ruby packages are absent
   ansible.builtin.apt:
@@ -41,7 +43,9 @@
   ansible.builtin.apt:
     name: '{{ ruby_dev_packages }}'
     state: present
-  when: ruby_dev
+  when:
+    - ruby_source == 'package'
+    - ruby_dev
 
 - name: Ensure dev packages are absent
   ansible.builtin.apt:

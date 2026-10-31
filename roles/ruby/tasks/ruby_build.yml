@@ -1,5 +1,11 @@
 ---
 
+# Before the build, so a ruby version is never built with help of the
+# distribution ruby, which would fail as soon as it is removed
+- name: Remove distribution ruby
+  ansible.builtin.import_tasks: system_ruby_remove.yml
+  when: ruby_remove_system_ruby
+
 - name: Ensure packages for ruby-build are present
   ansible.builtin.apt:
     name: '{{ ruby_build_packages + ruby_build_tool_packages }}'
@@ -38,6 +44,13 @@
     creates: '{{ ruby_install_base }}/{{ ruby_version }}/bin/ruby'
   environment:
     RUBY_CONFIGURE_OPTS: '{{ ruby_configure_opts }}'
+
+- name: Link ruby executables to /usr/local/bin
+  ansible.builtin.file:
+    src: '{{ ruby_install_base }}/{{ ruby_version }}/bin/{{ item }}'
+    dest: '/usr/local/bin/{{ item }}'
+    state: link
+  loop: '{{ ruby_bin_links }}'
 
 - name: Find compiled ruby versions
   ansible.builtin.find:

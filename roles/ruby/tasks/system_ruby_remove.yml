@@ -1,0 +1,52 @@
+---
+
+# Removes the distribution ruby, including its libraries (ruby-*, rake, ...).
+# apt removes packages depending on ruby silently, so the removal is simulated
+# first and the role fails if a package outside of ruby would be removed.
+
+- name: Gather installed packages
+  ansible.builtin.package_facts:
+    manager: apt
+
+- name: Set installed distribution ruby packages
+  ansible.builtin.set_fact:
+    ruby_system_packages: "{{ ansible_facts.packages.keys() | select('match', ruby_system_packages_regex) | sort }}"
+  vars:
+    ruby_system_packages_regex: '^(ruby.*|libruby.*|rake|rubygems-integration)$'
+
+- name: Remove distribution ruby packages
+  when: ruby_system_packages | length > 0
+  block:
+    - name: Simulate removal of distribution ruby packages
+      ansible.builtin.command:
+        argv: "{{ ['apt-get', '--simulate', 'remove'] + ruby_system_packages }}"
+      environment:
+        LC_ALL: C
+      register: ruby_system_remove_simulation
+      changed_when: false
+      check_mode: false
+
+    - name: Set packages, which would be removed in addition
+      ansible.builtin.set_fact:
+        ruby_system_remove_foreign: "{{ ruby_system_remove_simulation.stdout_lines
+          | select('match', '^Remv ')
+          | map('split')
+          | map(attribute=1)
+          | map('regex_replace', ':.*$', '')
+          | reject('in', ruby_system_packages)
+          | list }}"
+
+    - name: Assert no other packages depend on the distribution ruby
+      ansible.builtin.assert:
+        that:
+          - ruby_system_remove_foreign | length == 0
+        fail_msg: >-
+          Removing the distribution ruby would also remove {{ ruby_system_remove_foreign | join(', ') }}.
+          Remove these packages first or set ruby_remove_system_ruby: false to keep the distribution ruby.
+        quiet: true
+
+    - name: Remove distribution ruby packages
+      ansible.builtin.apt:
+        name: '{{ ruby_system_packages }}'
+        state: absent
+        purge: true

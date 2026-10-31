@@ -4,6 +4,24 @@
 # deleted if they are recognizable as managed by this role, so a customized
 # ruby_install_base or ruby_build_tool_dir never removes foreign data.
 
+- name: Check ruby executable links
+  ansible.builtin.stat:
+    path: '/usr/local/bin/{{ item }}'
+  loop: '{{ ruby_bin_links }}'
+  register: ruby_bin_link_stats
+
+# Only links into ruby_install_base, never files or links of someone else
+- name: Remove ruby executable links
+  ansible.builtin.file:
+    path: '{{ item.stat.path }}'
+    state: absent
+  loop: '{{ ruby_bin_link_stats.results }}'
+  loop_control:
+    label: '{{ item.item }}'
+  when:
+    - item.stat.islnk | default(false)
+    - item.stat.lnk_source.startswith(ruby_install_base ~ '/')
+
 - name: Check for managed ruby install base
   ansible.builtin.stat:
     path: '{{ ruby_install_base }}/.managed-by-ansible'

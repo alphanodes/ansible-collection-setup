@@ -3,7 +3,8 @@
 # Where ruby comes from:
 #   package:    distribution packages (ruby, ruby-dev)
 #   ruby_build: compiled with ruby-build (including YJIT) to
-#               ruby_install_base/ruby_version. Nothing of this is installed
+#               ruby_install_base/ruby_version, ruby_required_packages and
+#               ruby_dev_packages are not installed. Nothing of this is installed
 #               with package, and leftovers of a former ruby_build setup are removed.
 ruby_source: package
 
@@ -24,6 +25,24 @@ ruby_configure_opts: '--enable-yjit --disable-install-doc'
 ruby_build_tool_version: v20261023
 ruby_build_tool_repo: https://github.com/rbenv/ruby-build.git
 ruby_build_tool_dir: /usr/local/share/ruby-build
+
+# With ruby_source: ruby_build, distribution ruby packages are removed, so
+# nothing uses the outdated distribution ruby by accident. Before removal, apt
+# simulates it, and the role fails if any package without ruby in its name
+# would be removed as well (e.g. a tool depending on ruby). Set this to false
+# to keep the distribution ruby on such hosts.
+ruby_remove_system_ruby: true
+
+# Executables of the compiled ruby, which are linked to /usr/local/bin with
+# ruby_source: ruby_build (has precedence over /usr/bin in PATH)
+ruby_bin_links:
+  - bundle
+  - bundler
+  - erb
+  - gem
+  - irb
+  - rake
+  - ruby
 
 # Additional packages for ruby_source: ruby_build (rustc is required for YJIT)
 ruby_build_tool_packages:

@@ -11,3 +11,12 @@
         path: /opt/ruby/3.4.11/bin
         state: directory
         mode: '0755'
+
+    # distribution ruby, which has to be removed with ruby_source: ruby_build
+    - name: Install distribution ruby
+      ansible.builtin.apt:
+        name:
+          - ruby
+          - ruby-dev
+        state: present
+        update_cache: true
