@@ -56,7 +56,3 @@
   loop_control:
     label: '{{ item.path }}'
   when: ruby_remove_other_versions
-
-- name: Set ruby_bin_dir for compiled ruby
-  ansible.builtin.set_fact:
-    ruby_bin_dir: '{{ ruby_install_base }}/{{ ruby_version }}/bin'

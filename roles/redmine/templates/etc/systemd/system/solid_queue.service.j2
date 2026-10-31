@@ -31,8 +31,11 @@ Environment="SOLID_QUEUE_SKIP_RECURRING=true"
 Environment="{{ env_var.name }}={{ env_var.value }}"
 {% endfor %}
 {% endif %}
-Environment="GEM_HOME={{ redmine_ruby_system_gem_home }}"
-ExecStart={{ redmine_ruby_system_gem_home }}/bin/bundle exec rake solid_queue:start
+Environment="GEM_HOME={{ redmine_ruby_gem_home }}"
+{% if ruby_bin_dir != '/usr/bin' %}
+Environment="PATH={{ redmine_ruby_gem_home }}/bin:{{ ruby_bin_dir }}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+{% endif %}
+ExecStart={{ redmine_ruby_gem_home }}/bin/bundle exec rake solid_queue:start
 SyslogIdentifier={{ solid_queue_service_name }}
 {% if redmine_instance.solid_queue_low_priority | default(redmine_solid_queue_low_priority) %}
 Nice=19

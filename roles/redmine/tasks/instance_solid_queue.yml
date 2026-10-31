@@ -3,7 +3,7 @@
 # active_solid_queue (= queue_adapter == 'solid_queue'). Bundled in one file so
 # the teardown order is correct: stop the worker before dropping its database.
 # Runs after instance_systemd.yml, so the solid_queue gem is bundled and
-# redmine_ruby_system_gem_home is set.
+# redmine_ruby_gem_home is set.
 
 # ---------------------------------------------------------------------------
 # Teardown: adapter switched away from solid_queue -> remove everything.

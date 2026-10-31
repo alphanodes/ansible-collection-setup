@@ -10,3 +10,11 @@
   become_user: root
   tags:
     - ruby
+
+# Used by other roles (e.g. redmine) to find the active ruby, set always,
+# so it is also available with --tags
+- name: Set ruby_bin_dir
+  ansible.builtin.set_fact:
+    ruby_bin_dir: "{{ ruby_install_base ~ '/' ~ ruby_version ~ '/bin' if ruby_source == 'ruby_build' else '/usr/bin' }}"
+  tags:
+    - always

@@ -25,7 +25,3 @@
     path: '{{ ruby_build_tool_dir }}'
     state: absent
   when: ruby_build_tool_git.stat.exists
-
-- name: Set ruby_bin_dir for package ruby
-  ansible.builtin.set_fact:
-    ruby_bin_dir: /usr/bin

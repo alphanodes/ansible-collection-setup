@@ -1,4 +1,8 @@
 {{ managed_by_ansible | comment }}
 
+{% if ruby_bin_dir != '/usr/bin' %}
+# compiled ruby (ruby_source: ruby_build)
+export PATH="{{ ruby_bin_dir }}:$PATH"
+{% endif %}
 export GEM_HOME=$(ruby -e 'print Gem.user_dir')
 export PATH="$GEM_HOME/bin:$PATH"

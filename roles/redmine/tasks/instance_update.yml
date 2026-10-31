@@ -17,6 +17,7 @@
       community.general.gem:
         name: bundler
         state: latest
+        executable: '{{ ruby_bin_dir }}/gem'
       ignore_errors: true
 
     - name: Manual update latest bundler

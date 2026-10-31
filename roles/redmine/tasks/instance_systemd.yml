@@ -1,15 +1,15 @@
 ---
 
 - name: Get Gem.user_dir - {{ redmine_instance_name }}
-  ansible.builtin.command: ruby -e 'print Gem.user_dir'
+  ansible.builtin.command: "{{ ruby_bin_dir }}/ruby -e 'print Gem.user_dir'"
   become: true
   become_user: '{{ redmine_user }}'
   register: gem_info
   changed_when: false
 
-- name: Set redmine_ruby_system_gem_home - {{ redmine_instance_name }}
+- name: Set redmine_ruby_gem_home - {{ redmine_instance_name }}
   ansible.builtin.set_fact:
-    redmine_ruby_system_gem_home: '{{ gem_info.stdout }}'
+    redmine_ruby_gem_home: '{{ gem_info.stdout }}'
 
 - name: Set redmine_ruby_opt - {{ redmine_instance_name }}
   ansible.builtin.set_fact:
