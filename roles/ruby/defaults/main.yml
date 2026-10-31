@@ -1,5 +1,36 @@
 ---
 
+# Where ruby comes from:
+#   package:    distribution packages (ruby, ruby-dev)
+#   ruby_build: compiled with ruby-build (including YJIT) to
+#               ruby_install_base/ruby_version. Nothing of this is installed
+#               with package, and leftovers of a former ruby_build setup are removed.
+ruby_source: package
+
+# Ruby version to compile with ruby_source: ruby_build, e.g. 4.0.9
+# (has to be a definition known by ruby_build_tool_version)
+ruby_version: ''
+
+# Directory for compiled ruby versions, each version gets its own sub directory
+ruby_install_base: /opt/ruby
+
+# Remove compiled ruby versions in ruby_install_base other than ruby_version
+ruby_remove_other_versions: true
+
+# Configure options for compiling ruby
+ruby_configure_opts: '--enable-yjit --disable-install-doc'
+
+# ruby-build release (git tag), see https://github.com/rbenv/ruby-build/releases
+ruby_build_tool_version: v20261023
+ruby_build_tool_repo: https://github.com/rbenv/ruby-build.git
+ruby_build_tool_dir: /usr/local/share/ruby-build
+
+# Additional packages for ruby_source: ruby_build (rustc is required for YJIT)
+ruby_build_tool_packages:
+  - git
+  - rustc
+  - zlib1g-dev
+
 ruby_required_packages:
   - ruby
 

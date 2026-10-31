@@ -1,0 +1,36 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Check package ruby
+      ansible.builtin.command: /usr/bin/ruby --version
+      register: ruby_package_version
+      changed_when: false
+
+    - name: Verify package ruby works
+      ansible.builtin.assert:
+        that:
+          - ruby_package_version.stdout is search('^ruby ')
+        quiet: true
+
+    - name: Gather package facts
+      ansible.builtin.package_facts:
+
+    - name: Check ruby-build directories
+      ansible.builtin.stat:
+        path: '{{ item }}'
+      loop:
+        - /opt/ruby
+        - /usr/local/share/ruby-build
+      register: ruby_build_paths
+
+    - name: Verify nothing of ruby-build is installed with ruby_source package
+      ansible.builtin.assert:
+        that:
+          - "'rustc' not in ansible_facts.packages"
+          - ruby_build_paths.results | selectattr('stat.exists') | list | length == 0
+        fail_msg: ruby_source package must not install rustc, /opt/ruby or ruby-build
+        quiet: true

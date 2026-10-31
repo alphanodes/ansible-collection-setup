@@ -1,0 +1,62 @@
+---
+
+- name: Ensure packages for ruby-build are present
+  ansible.builtin.apt:
+    name: '{{ ruby_build_packages + ruby_build_tool_packages }}'
+    state: present
+
+- name: Checkout ruby-build {{ ruby_build_tool_version }}
+  ansible.builtin.git:
+    repo: '{{ ruby_build_tool_repo }}'
+    dest: '{{ ruby_build_tool_dir }}'
+    version: '{{ ruby_build_tool_version }}'
+    depth: 1
+    force: true
+
+- name: Ensure ruby install base exists
+  ansible.builtin.file:
+    path: '{{ ruby_install_base }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+# Marker for ruby_build_remove.yml, which only deletes a managed install base
+- name: Mark ruby install base as managed by ansible
+  ansible.builtin.file:
+    path: '{{ ruby_install_base }}/.managed-by-ansible'
+    state: touch
+    owner: root
+    group: root
+    mode: '0644'
+    modification_time: preserve
+    access_time: preserve
+
+- name: Build ruby {{ ruby_version }}
+  ansible.builtin.command:
+    cmd: '{{ ruby_build_tool_dir }}/bin/ruby-build {{ ruby_version }} {{ ruby_install_base }}/{{ ruby_version }}'
+    creates: '{{ ruby_install_base }}/{{ ruby_version }}/bin/ruby'
+  environment:
+    RUBY_CONFIGURE_OPTS: '{{ ruby_configure_opts }}'
+
+- name: Find compiled ruby versions
+  ansible.builtin.find:
+    paths: '{{ ruby_install_base }}'
+    file_type: directory
+    patterns: '^[0-9]+\.[0-9]+\.[0-9]+.*$'
+    use_regex: true
+  register: ruby_installed_versions
+  when: ruby_remove_other_versions
+
+- name: Remove other compiled ruby versions
+  ansible.builtin.file:
+    path: '{{ item.path }}'
+    state: absent
+  loop: "{{ ruby_installed_versions.files | default([]) | rejectattr('path', 'equalto', ruby_install_base ~ '/' ~ ruby_version) | list }}"
+  loop_control:
+    label: '{{ item.path }}'
+  when: ruby_remove_other_versions
+
+- name: Set ruby_bin_dir for compiled ruby
+  ansible.builtin.set_fact:
+    ruby_bin_dir: '{{ ruby_install_base }}/{{ ruby_version }}/bin'

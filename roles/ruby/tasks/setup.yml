@@ -1,5 +1,13 @@
 ---
 
+- name: Validate ruby_source
+  ansible.builtin.assert:
+    that:
+      - ruby_source in ['package', 'ruby_build']
+      - ruby_source == 'package' or ruby_version | length > 0
+    fail_msg: "ruby_source has to be package or ruby_build, ruby_build requires ruby_version"
+    quiet: true
+
 - name: Pinning ruby backport packages
   ansible.builtin.template:
     src: backports-pin.j2
@@ -53,4 +61,15 @@
     name: '{{ ruby_build_packages }}'
     state: absent
     purge: true
-  when: not ruby_build and ruby_without_build_packages
+  when:
+    - ruby_source == 'package'
+    - not ruby_build
+    - ruby_without_build_packages
+
+- name: Setup ruby with ruby-build
+  ansible.builtin.import_tasks: ruby_build.yml
+  when: ruby_source == 'ruby_build'
+
+- name: Remove ruby-build setup
+  ansible.builtin.import_tasks: ruby_build_remove.yml
+  when: ruby_source == 'package'

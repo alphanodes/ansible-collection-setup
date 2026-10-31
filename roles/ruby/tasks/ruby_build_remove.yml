@@ -1,0 +1,31 @@
+---
+
+# Removes leftovers of a former ruby_source: ruby_build setup. Paths are only
+# deleted if they are recognizable as managed by this role, so a customized
+# ruby_install_base or ruby_build_tool_dir never removes foreign data.
+
+- name: Check for managed ruby install base
+  ansible.builtin.stat:
+    path: '{{ ruby_install_base }}/.managed-by-ansible'
+  register: ruby_install_base_marker
+
+- name: Remove compiled ruby versions
+  ansible.builtin.file:
+    path: '{{ ruby_install_base }}'
+    state: absent
+  when: ruby_install_base_marker.stat.exists
+
+- name: Check for ruby-build checkout
+  ansible.builtin.stat:
+    path: '{{ ruby_build_tool_dir }}/.git'
+  register: ruby_build_tool_git
+
+- name: Remove ruby-build
+  ansible.builtin.file:
+    path: '{{ ruby_build_tool_dir }}'
+    state: absent
+  when: ruby_build_tool_git.stat.exists
+
+- name: Set ruby_bin_dir for package ruby
+  ansible.builtin.set_fact:
+    ruby_bin_dir: /usr/bin

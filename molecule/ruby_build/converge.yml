@@ -1,0 +1,26 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  vars:
+    ruby_source: ruby_build
+    ruby_version: 4.0.9
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  roles:
+    - role: alphanodes.setup.common
+    - role: alphanodes.setup.ruby
+
+  post_tasks:
+    - name: Verify ruby_bin_dir fact
+      ansible.builtin.assert:
+        that:
+          - ruby_bin_dir == '/opt/ruby/4.0.9/bin'
+        quiet: true

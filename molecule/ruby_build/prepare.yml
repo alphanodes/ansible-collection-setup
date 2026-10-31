@@ -1,0 +1,13 @@
+---
+- name: Prepare
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    # an outdated version, which has to be removed by ruby_remove_other_versions
+    - name: Create fake outdated ruby version
+      ansible.builtin.file:
+        path: /opt/ruby/3.4.11/bin
+        state: directory
+        mode: '0755'

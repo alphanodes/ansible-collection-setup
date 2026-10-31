@@ -1,0 +1,50 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+
+  vars:
+    ruby_bin: /opt/ruby/4.0.9/bin/ruby
+
+  tasks:
+    - name: Check compiled ruby version
+      ansible.builtin.command: '{{ ruby_bin }} --version'
+      register: ruby_compiled_version
+      changed_when: false
+
+    - name: Check YJIT support
+      ansible.builtin.command: "{{ ruby_bin }} --yjit -e 'exit(RubyVM::YJIT.enabled? ? 0 : 1)'"
+      register: ruby_yjit
+      changed_when: false
+      failed_when: false
+
+    - name: Check native extensions required by Redmine
+      ansible.builtin.command: "{{ ruby_bin }} -ropenssl -rzlib -rpsych -rreadline -e 'print OpenSSL::OPENSSL_VERSION'"
+      register: ruby_extensions
+      changed_when: false
+      failed_when: false
+
+    - name: Check outdated ruby version
+      ansible.builtin.stat:
+        path: /opt/ruby/3.4.11
+      register: ruby_outdated
+
+    - name: Check install base permissions
+      ansible.builtin.stat:
+        path: /opt/ruby/4.0.9
+      register: ruby_install_dir
+
+    - name: Verify compiled ruby
+      ansible.builtin.assert:
+        that:
+          - ruby_compiled_version.stdout is search('^ruby 4\.0\.9 ')
+          - ruby_yjit.rc == 0
+          - ruby_extensions.rc == 0
+          - not ruby_outdated.stat.exists
+          - ruby_install_dir.stat.pw_name == 'root'
+          - not ruby_install_dir.stat.woth
+        fail_msg: >-
+          version={{ ruby_compiled_version.stdout }} yjit_rc={{ ruby_yjit.rc }}
+          extensions={{ ruby_extensions.stdout }}{{ ruby_extensions.stderr }}
+        quiet: true
