@@ -1,32 +1,19 @@
 ---
 
-- name: Calc redmine_ruby_system_gem_home - {{ redmine_instance_name }}
-  when: not redmine_use_rvm
+- name: Get Gem.user_dir - {{ redmine_instance_name }}
+  ansible.builtin.command: ruby -e 'print Gem.user_dir'
   become: true
   become_user: '{{ redmine_user }}'
-  block:
-    - name: Get Gem.user_dir
-      ansible.builtin.command: ruby -e 'print Gem.user_dir'
-      register: gem_info
-      changed_when: false
+  register: gem_info
+  changed_when: false
 
-    - name: Set redmine_ruby_system_gem_home
-      ansible.builtin.set_fact:
-        redmine_ruby_system_gem_home: '{{ gem_info.stdout }}'
-
-    - name: Set redmine_ruby_opt
-      ansible.builtin.set_fact:
-        redmine_ruby_opt: "{{ redmine_instance.ruby_opt | default(redmine_systemd_ruby_opt) }}"
-
-    - name: Make sure redmine_ruby_opt value is set always for system ruby
-      ansible.builtin.set_fact:
-        redmine_ruby_opt: '-W:no-deprecated -W:no-experimental'
-      when: redmine_ruby_opt | length == 0
-
-- name: Set redmine_ruby_opt
+- name: Set redmine_ruby_system_gem_home - {{ redmine_instance_name }}
   ansible.builtin.set_fact:
-    redmine_ruby_opt: "{{ redmine_instance.ruby_opt | default(redmine_systemd_ruby_opt) }}"
-  when: redmine_use_rvm
+    redmine_ruby_system_gem_home: '{{ gem_info.stdout }}'
+
+- name: Set redmine_ruby_opt - {{ redmine_instance_name }}
+  ansible.builtin.set_fact:
+    redmine_ruby_opt: "{{ redmine_instance.ruby_opt | default(redmine_systemd_ruby_opt) | default('-W:no-deprecated -W:no-experimental', true) }}"
 
 - name: Ensure run directory exists after reboot - {{ redmine_instance_name }}
   ansible.builtin.include_role:

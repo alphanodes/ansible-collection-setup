@@ -44,10 +44,6 @@
   ansible.builtin.set_fact:
     redmine_db_user: '{{ redmine_instance.db_user | default(redmine_user) | replace("-", "_") }}'
 
-- name: Set redmine_use_rvm - {{ redmine_instance_name }}
-  ansible.builtin.set_fact:
-    redmine_use_rvm: '{{ redmine_instance.use_rvm | default(redmine_use_rvm_as_default) }}'
-
 - name: Set active_system_infos_vars - {{ redmine_instance_name }}
   ansible.builtin.set_fact:
     active_system_infos_vars: '{{ redmine_instance.system_infos_vars | default(redmine_system_infos_vars) }}'

@@ -47,7 +47,6 @@
   vars:
     zsh_user: '{{ redmine_user }}'
     zsh_with_setup: false
-    zsh_with_rvm: '{{ redmine_use_rvm }}'
     zsh_with_ruby: true
     zsh_user_home: '{{ redmine_home }}'
     zsh_local_exports:
@@ -122,40 +121,3 @@
     mode: '0775'
     state: directory
   when: redmine_rails_env != 'development'
-
-- name: RVM Mode
-  when: redmine_use_rvm
-  block:
-    - name: RVM missing gpg key - {{ redmine_instance_name }}
-      ansible.builtin.command: 'gpg2 --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB'
-      become: true
-      become_user: '{{ redmine_user }}'
-      when: >
-        rvm_gpg_fix is defined and rvm_gpg_fix
-        or redmine_instance.rvm_gpg_fix is defined and redmine_instance.rvm_gpg_fix
-
-    - name: RVM setup - {{ redmine_user }}
-      ansible.builtin.include_role:
-        name: alphanodes.setup.rvm
-        allow_duplicates: true
-      vars:
-        rvm1_rubies: '{{ redmine_instance.rvm_rubies | default(rvm_rubies) }}'
-        rvm1_user: '{{ redmine_instance_name }}'
-        rvm1_install_path: '{{ redmine_home }}/.rvm'
-        # see https://github.com/ansible/ansible/issues/29159#issuecomment-380862971
-        ansible_become: true
-      tags:
-        - rvm
-        - ruby
-        - update
-
-    - name: Remove system user gems, which are not used with rvm - {{ redmine_instance_name }}
-      ansible.builtin.file:
-        path: '{{ redmine_home }}/.gem/ruby'
-        state: absent
-
-- name: Remove rvm if not used - {{ redmine_instance_name }}
-  ansible.builtin.file:
-    path: '{{ redmine_home }}/.rvm'
-    state: absent
-  when: not redmine_use_rvm

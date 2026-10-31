@@ -24,12 +24,5 @@ if [ -d "$HOME/bin" ] ; then
   PATH="$HOME/bin:$PATH"
 fi
 
-{% if redmine_use_rvm %}
-# Add RVM to PATH for scripting.
-export PATH="$PATH:$HOME/.rvm/bin"
-# Load RVM into a shell session *as a function*
-[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"
-{% else %}
 export GEM_HOME=$(ruby -e 'print Gem.user_dir')
 export PATH="$GEM_HOME/bin:$PATH"
-{% endif %}

@@ -29,8 +29,4 @@ jekyll_default_locations:
     raw_actions:
       - "try_files $uri $uri.html $uri/ =404;"
 
-# use rvm_rubies default versions
-# jekyll_rvm_rubies:
-#  - 2.4.10
-
 jekyll_env: development

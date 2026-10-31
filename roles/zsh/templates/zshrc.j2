@@ -37,10 +37,6 @@ alias u="apt update && apt upgrade"
 
 export HISTORY_IGNORE="{{ zsh_history_ignore }}"
 
-{% if zsh_with_rvm %}
-# Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
-export PATH="$PATH:$HOME/.rvm/bin"
-{% endif %}
 {% if zsh_with_composer %}
 # Add vendor bin directory with composer usage.
 export PATH="$PATH:$HOME/vendor/bin"

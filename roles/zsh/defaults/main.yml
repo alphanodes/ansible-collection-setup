@@ -10,8 +10,6 @@ zsh_with_zshrc: true
 
 # show ruby prompt with user info
 zsh_with_ruby: false
-# with active rvm
-zsh_with_rvm: false
 # for composer vendor suport (drupal)
 zsh_with_composer: false
 zsh_with_completions: true

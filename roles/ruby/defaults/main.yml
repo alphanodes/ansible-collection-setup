@@ -38,5 +38,5 @@ ruby_build: false
 # ruby_build_packages will be removed
 ruby_without_build_packages: false
 
-# use git from backports, if backports is enabled with debian_backports
-git_use_backports: true
+# use ruby from backports, if backports is enabled with debian_backports
+ruby_use_backports: true

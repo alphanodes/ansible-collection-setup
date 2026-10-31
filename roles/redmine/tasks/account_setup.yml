@@ -17,26 +17,10 @@
     state: present
   when: redmine_with_jemalloc
 
-# we always need ruby build packages - for rvm and gems
-- name: Install ruby build packages
+# build packages and ruby-dev are required to compile native gem extensions
+- name: Install ruby with build and dev packages
   ansible.builtin.include_role:
     name: alphanodes.setup.ruby
   vars:
     ruby_build: true
-
-- name: Install ruby-dev if required
-  ansible.builtin.include_role:
-    name: alphanodes.setup.ruby
-  vars:
     ruby_dev: true
-  when: redmine_with_ruby_dev or not redmine_use_rvm_as_default
-
-- name: Remove ruby-dev if not required
-  ansible.builtin.include_role:
-    name: alphanodes.setup.ruby
-  vars:
-    ruby_dev: false
-    ruby_without_dev_packages: true
-  when:
-    - not redmine_with_ruby_dev
-    - redmine_use_rvm_as_default

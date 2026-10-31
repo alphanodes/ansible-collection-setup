@@ -27,12 +27,8 @@ Environment="USER={{ redmine_instance_name }}"
 Environment="{{ env_var.name }}={{ env_var.value }}"
 {% endfor %}
 {% endif %}
-{% if redmine_use_rvm %}
-ExecStart={{ redmine_home }}/.rvm/wrappers/default/bundle exec puma --config {{ redmine_config_dir }}/puma.rb
-{% else %}
 Environment="GEM_HOME={{ redmine_ruby_system_gem_home }}"
 ExecStart={{ redmine_ruby_system_gem_home }}/bin/bundle exec puma --config {{ redmine_config_dir }}/puma.rb
-{% endif %}
 ExecReload=/usr/bin/kill -USR2 $MAINPID
 SyslogIdentifier={{ puma_service_name }}
 LimitNOFILE=65536
