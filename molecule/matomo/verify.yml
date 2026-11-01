@@ -323,6 +323,29 @@
       ansible.builtin.debug:
         msg: "DBIP database status: Archive={{ dbip_archive.stat.exists | default(false) }}, Deployed={{ dbip_deployed.stat.exists | default(false) }}"
 
+    # === ARCHIVE CLEANUP CHECK ===
+
+    - name: Find remaining matomo archives
+      ansible.builtin.find:
+        paths: /srv/software
+        patterns: 'matomo-*.tar.gz'
+      register: matomo_archives
+
+    - name: Check plugin archive
+      ansible.builtin.stat:
+        path: /srv/software/LoginLdap_5.0.0.tar.gz
+      register: plugin_archive
+
+    - name: Verify only the archive of the current version is kept
+      ansible.builtin.assert:
+        that:
+          - matomo_archives.matched == 1
+          - matomo_archives.files[0].path != '/srv/software/matomo-5.0.0.tar.gz'
+          - plugin_archive.stat.exists
+        fail_msg: >-
+          Archive cleanup failed: matomo archives {{ matomo_archives.files | map(attribute='path') | list }},
+          plugin archive kept: {{ plugin_archive.stat.exists }}
+
     # === DISPLAY RESULTS ===
 
     - name: Display test results

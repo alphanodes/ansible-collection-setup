@@ -86,6 +86,24 @@
     - matomo_exists.stat.exists
     - not matomo_archive_file_exists.stat.exists
 
+# Keep the archive of matomo_version: its presence marks the installed
+# version, without it the next run downloads and upgrades again.
+# Runs after install/upgrade, so a failed upgrade keeps the old archives.
+- name: Find archives of previous matomo versions
+  ansible.builtin.find:
+    paths: '{{ software_path }}'
+    patterns: '^matomo-\d+\.\d+\.\d+.*\.tar\.gz$'
+    use_regex: true
+  register: matomo_previous_archives
+
+- name: Remove archives of previous matomo versions
+  ansible.builtin.file:
+    path: '{{ item.path }}'
+    state: absent
+  loop: "{{ matomo_previous_archives.files | rejectattr('path', 'equalto', matomo_archive_filename) | list }}"
+  loop_control:
+    label: '{{ item.path }}'
+
 - name: Include geolocation tasks
   ansible.builtin.include_tasks: geolocation.yml
   when: matomo_geolocation_enabled

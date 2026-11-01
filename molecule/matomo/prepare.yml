@@ -1,0 +1,24 @@
+---
+# Runs once after create, not on the idempotence run: converge must find
+# these archives only on its first run.
+- name: Prepare
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    # Archive cleanup: the archive of a previous version must be removed,
+    # plugin archives in the same directory must be kept
+    - name: Create software directory for archive cleanup testing
+      ansible.builtin.file:
+        path: /srv/software
+        state: directory
+        mode: '0755'
+
+    - name: Create dummy archives for archive cleanup testing
+      ansible.builtin.copy:
+        content: 'dummy'
+        dest: '/srv/software/{{ item }}'
+        mode: '0644'
+      loop:
+        - matomo-5.0.0.tar.gz
+        - LoginLdap_5.0.0.tar.gz
