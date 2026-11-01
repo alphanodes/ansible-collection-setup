@@ -46,6 +46,7 @@
     creates: '{{ ruby_install_base }}/{{ ruby_version }}/bin/ruby'
   environment:
     RUBY_CONFIGURE_OPTS: '{{ ruby_configure_opts }}'
+    TMPDIR: '{{ ruby_build_tmp_dir }}'
 
 # Without it, gem install writes the absolute path of this ruby version into
 # executables (e.g. bundle), which breaks them after removing this version

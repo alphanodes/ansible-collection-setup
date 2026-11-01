@@ -20,3 +20,13 @@
           - ruby-dev
         state: present
         update_cache: true
+
+    # Like small hosts, where /tmp is a tmpfs too small for the build. The
+    # build only succeeds, if ruby-build uses ruby_build_tmp_dir.
+    - name: Mount small tmpfs on /tmp
+      ansible.posix.mount:
+        path: /tmp
+        src: tmpfs
+        fstype: tmpfs
+        opts: size=100m,mode=1777
+        state: ephemeral

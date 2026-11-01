@@ -81,6 +81,18 @@
         fail_msg: "shebang={{ gem_bundle_shebang.stdout }}"
         quiet: true
 
+    # The build only proves ruby_build_tmp_dir, if /tmp was too small for it
+    - name: Check size of /tmp
+      ansible.builtin.command: findmnt -no SIZE /tmp
+      register: ruby_tmp_size
+      changed_when: false
+
+    - name: Verify /tmp is the small tmpfs from prepare
+      ansible.builtin.assert:
+        that:
+          - ruby_tmp_size.stdout | trim == '100M'
+        fail_msg: "size of /tmp={{ ruby_tmp_size.stdout }}"
+
     - name: Verify compiled ruby
       ansible.builtin.assert:
         that:

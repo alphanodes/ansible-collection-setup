@@ -26,6 +26,11 @@ ruby_build_tool_version: v20261023
 ruby_build_tool_repo: https://github.com/rbenv/ruby-build.git
 ruby_build_tool_dir: /usr/local/share/ruby-build
 
+# Build directory of ruby-build (TMPDIR). /tmp is a tmpfs in RAM on Debian 13
+# and Ubuntu, often too small for the build (around 650 MB) on small hosts.
+# A failed build leaves its directory behind for inspection.
+ruby_build_tmp_dir: /var/tmp
+
 # With ruby_source: ruby_build, distribution ruby packages are removed, so
 # nothing uses the outdated distribution ruby by accident. Before removal, apt
 # simulates it, and the role fails if any package without ruby in its name
