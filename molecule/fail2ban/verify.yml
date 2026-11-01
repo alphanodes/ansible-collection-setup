@@ -142,15 +142,19 @@
       ansible.builtin.command: logger -t drupal -- {{ item }}
       loop:
         - 'https://example.com|1793171605|honeypot|192.0.2.30|https://example.com/de/kontakt|https://example.com/de/kontakt|0||Blocked submission of webform_submission_contact_add_form due to Das Formular wurde zu schnell abgeschickt.'
+        # Honeypot translates its message into the site language
+        - 'https://example.com|1793171608|honeypot|192.0.2.32|https://example.com/de/kontakt||0||Die Eingabe von webform_submission_contact_add_form wurde aufgrund von Eingabe eines Wertes im Honeypot-Feld blockiert.'
         - 'https://example.com|1793171606|user|192.0.2.31|https://example.com/user/login|https://example.com/user/login|0||Login attempt failed for admin.'
         - 'https://example.com|1793171607|cron|127.0.0.1|https://example.com/||0||Cron run completed.'
       changed_when: false
 
     # The running jail has to ban from the journal (maxretry 1)
-    - name: Wait until drupal-honeypot banned the sample address
+    - name: Wait until drupal-honeypot banned both sample addresses
       ansible.builtin.command: fail2ban-client get drupal-honeypot banip
       register: drupal_honeypot_banned
-      until: "'192.0.2.30' in drupal_honeypot_banned.stdout"
+      until:
+        - "'192.0.2.30' in drupal_honeypot_banned.stdout"
+        - "'192.0.2.32' in drupal_honeypot_banned.stdout"
       retries: 10
       delay: 2
       changed_when: false
@@ -163,21 +167,23 @@
       changed_when: false
 
     - name: Test drupal filters against the journal entries
-      ansible.builtin.command: fail2ban-regex /tmp/drupal-journal.log {{ item }}
+      ansible.builtin.command: fail2ban-regex /tmp/drupal-journal.log {{ item.filter }}
       loop:
-        - drupal-honeypot
-        - drupal-login
+        - filter: drupal-honeypot
+          matched: 2
+        - filter: drupal-login
+          matched: 1
       register: drupal_regex
       changed_when: false
 
-    - name: Verify each drupal filter matches only its own entry
+    - name: Verify each drupal filter matches only its own entries
       ansible.builtin.assert:
         that:
-          - "'Lines: 3 lines, 0 ignored, 1 matched, 2 missed' in item.stdout"
+          - "('Lines: 4 lines, 0 ignored, ' ~ item.item.matched ~ ' matched, ' ~ (4 - item.item.matched) ~ ' missed') in item.stdout"
         fail_msg: "{{ item.stdout }}"
       loop: '{{ drupal_regex.results }}'
       loop_control:
-        label: '{{ item.item }}'
+        label: '{{ item.item.filter }}'
 
     # Dovecot 2.4 and 2.3 failures match, successful logins do not
     - name: Write sample dovecot log
