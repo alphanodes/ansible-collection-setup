@@ -128,6 +128,12 @@ nginx_security_probe_patterns:
   - '\$\{'
   - '\.\./'
 
+# Same for the Content-Type and X-Forwarded-For headers. Rails also answers
+# a broken Content-Type with an InvalidMimeType backtrace. Path traversal
+# is left out, because a multipart boundary may contain "../".
+nginx_security_probe_parsed_patterns:
+  - '\$\{'
+
 # AI crawlers, AI search bots and AI assistants fetching on behalf of a
 # user. Off by default, because public sites may want to be found by AI
 # search. Enable per vhost with block_ai_crawlers: true (the redmine role
