@@ -22,3 +22,8 @@ resolver_systemd_resolved_filename: ansible.conf
 
 # Search domains
 resolver_search_domains: []
+
+# Hook directory of isc-dhcp-client. In static mode the role places a hook
+# there that keeps dhclient from overwriting /etc/resolv.conf on every
+# lease renewal. Hosts without isc-dhcp-client are not touched.
+resolver_dhclient_enter_hooks_dir: /etc/dhcp/dhclient-enter-hooks.d

@@ -28,6 +28,13 @@
     state: started
     enabled: true
 
+# Left over from resolver_mode static, the distro hook resolved-enter
+# handles dhclient with systemd-resolved
+- name: Remove dhclient hook of static mode
+  ansible.builtin.file:
+    path: '{{ resolver_dhclient_enter_hooks_dir }}/resolver-static'
+    state: absent
+
 - name: Symlink /etc/resolv.conf to systemd-resolved stub
   ansible.builtin.file:
     path: /etc/resolv.conf

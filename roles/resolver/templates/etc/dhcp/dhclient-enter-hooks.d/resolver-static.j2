@@ -1,0 +1,5 @@
+{{ managed_by_ansible | comment }}
+# resolver_mode static: /etc/resolv.conf is managed by Ansible.
+# Replace make_resolv_conf of dhclient-script, otherwise every DHCP lease
+# renewal overwrites /etc/resolv.conf with the DHCP nameservers.
+make_resolv_conf() { : ; }

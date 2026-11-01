@@ -10,6 +10,13 @@
         cache_valid_time: 600
       changed_when: false
 
+    # Hetzner cloud hosts get their IPv4 address via isc-dhcp-client
+    - name: Install isc-dhcp-client (not on instance-nodhcp)
+      ansible.builtin.apt:
+        name: isc-dhcp-client
+        state: present
+      when: inventory_hostname != 'instance-nodhcp'
+
   vars:
     resolver_mode: static
     resolver_with_unbound: true

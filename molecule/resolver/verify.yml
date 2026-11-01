@@ -1,0 +1,104 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+  vars:
+    hook_path: /etc/dhcp/dhclient-enter-hooks.d/resolver-static
+    # Calls the real dhclient-script like dhclient does on a lease renewal.
+    # The interface does not exist, so the ip commands fail without touching
+    # the container network, make_resolv_conf runs anyway.
+    dhclient_renew_cmd: /sbin/dhclient-script
+    dhclient_renew_env:
+      reason: RENEW
+      interface: molecule0
+      new_ip_address: 192.0.2.10
+      new_subnet_mask: 255.255.255.0
+      new_domain_name: example.test
+      new_domain_name_servers: 192.0.2.53
+  tasks:
+    - name: Check dhclient hook
+      ansible.builtin.stat:
+        path: '{{ hook_path }}'
+      register: hook
+
+    - name: Verify no hook without isc-dhcp-client
+      ansible.builtin.assert:
+        that:
+          - not hook.stat.exists
+        fail_msg: 'Hook must not be created on hosts without isc-dhcp-client'
+      when: inventory_hostname == 'instance-nodhcp'
+
+    - name: Verify dhclient keeps /etc/resolv.conf on lease renewal
+      when: inventory_hostname != 'instance-nodhcp'
+      block:
+        - name: Verify hook exists with mode 0644
+          ansible.builtin.assert:
+            that:
+              - hook.stat.exists
+              - hook.stat.mode == '0644'
+            fail_msg: 'dhclient hook missing or wrong mode: {{ hook.stat }}'
+
+        - name: Read /etc/resolv.conf before renewal
+          ansible.builtin.slurp:
+            src: /etc/resolv.conf
+          register: resolv_before
+
+        - name: Run dhclient-script with hook (renewal)
+          ansible.builtin.command: '{{ dhclient_renew_cmd }}'
+          environment: '{{ dhclient_renew_env }}'
+          register: renew_with_hook
+          changed_when: false
+          failed_when: false
+
+        - name: Read /etc/resolv.conf after renewal
+          ansible.builtin.slurp:
+            src: /etc/resolv.conf
+          register: resolv_after
+
+        - name: Verify /etc/resolv.conf is unchanged
+          ansible.builtin.assert:
+            that:
+              - resolv_after.content == resolv_before.content
+            fail_msg: >-
+              dhclient-script changed /etc/resolv.conf despite the hook:
+              {{ resolv_after.content | b64decode }}
+
+        # Control: without the hook the same call must overwrite the file,
+        # otherwise the test above would pass for the wrong reason
+        - name: Control run without hook
+          block:
+            - name: Move hook away
+              ansible.builtin.command: mv {{ hook_path }} /root/resolver-static.bak
+              changed_when: false
+
+            - name: Run dhclient-script without hook (renewal)
+              ansible.builtin.command: '{{ dhclient_renew_cmd }}'
+              environment: '{{ dhclient_renew_env }}'
+              changed_when: false
+              failed_when: false
+
+            - name: Read /etc/resolv.conf after renewal without hook
+              ansible.builtin.slurp:
+                src: /etc/resolv.conf
+              register: resolv_control
+
+            - name: Verify dhclient-script overwrites /etc/resolv.conf without hook
+              ansible.builtin.assert:
+                that:
+                  - "'nameserver 192.0.2.53' in (resolv_control.content | b64decode)"
+                fail_msg: >-
+                  Control failed, dhclient-script did not write /etc/resolv.conf:
+                  {{ resolv_control.content | b64decode }}
+          always:
+            - name: Restore hook
+              ansible.builtin.command: mv /root/resolver-static.bak {{ hook_path }}
+              changed_when: false
+
+            - name: Restore /etc/resolv.conf
+              ansible.builtin.copy:
+                content: '{{ resolv_before.content | b64decode }}'
+                dest: /etc/resolv.conf
+                mode: '0644'
+                unsafe_writes: true
+              changed_when: false
