@@ -82,15 +82,16 @@
         quiet: true
 
     # The build only proves ruby_build_tmp_dir, if /tmp was too small for it
+    # df reports the topmost mount, findmnt lists stacked mounts as well
     - name: Check size of /tmp
-      ansible.builtin.command: findmnt -no SIZE /tmp
+      ansible.builtin.command: df --block-size=1M --output=size /tmp
       register: ruby_tmp_size
       changed_when: false
 
     - name: Verify /tmp is the small tmpfs from prepare
       ansible.builtin.assert:
         that:
-          - ruby_tmp_size.stdout | trim == '100M'
+          - ruby_tmp_size.stdout_lines[-1] | trim == '100'
         fail_msg: "size of /tmp={{ ruby_tmp_size.stdout }}"
 
     - name: Verify compiled ruby

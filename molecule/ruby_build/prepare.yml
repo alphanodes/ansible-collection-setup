@@ -23,10 +23,11 @@
 
     # Like small hosts, where /tmp is a tmpfs too small for the build. The
     # build only succeeds, if ruby-build uses ruby_build_tmp_dir.
+    # Some images already have a mount on /tmp, which ansible.posix.mount
+    # refuses to replace, so the tmpfs is mounted on top of it. The module
+    # itself must not run from /tmp, which the mount would hide.
     - name: Mount small tmpfs on /tmp
-      ansible.posix.mount:
-        path: /tmp
-        src: tmpfs
-        fstype: tmpfs
-        opts: size=100m,mode=1777
-        state: ephemeral
+      ansible.builtin.command: mount -t tmpfs -o size=100m,mode=1777 tmpfs /tmp
+      environment:
+        TMPDIR: /var/tmp
+      changed_when: true
