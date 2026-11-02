@@ -50,10 +50,10 @@
         geoip_timer_decoded: "{{ geoip_timer.content | b64decode }}"
 
     # db-ip.com publishes the new month during the 1st, earlier runs get a 404
-    - name: Verify geoip timer runs monthly after the database release
+    - name: Verify geoip timer runs after the monthly database release
       ansible.builtin.assert:
         that:
-          - "'OnCalendar=*-*-03 3:00' in geoip_timer_decoded"
+          - "'OnCalendar=*-*-03,17 3:00' in geoip_timer_decoded"
           - "'Persistent=yes' in geoip_timer_decoded"
-        fail_msg: "matomo-geoip-update.timer must run monthly on the 3rd and catch up missed runs: {{ geoip_timer_decoded }}"
-        success_msg: "matomo-geoip-update.timer runs monthly on the 3rd with Persistent=yes"
+        fail_msg: "matomo-geoip-update.timer must run on the 3rd and 17th and catch up missed runs: {{ geoip_timer_decoded }}"
+        success_msg: "matomo-geoip-update.timer runs on the 3rd and 17th with Persistent=yes"
