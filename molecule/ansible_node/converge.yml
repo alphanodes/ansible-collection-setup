@@ -22,6 +22,8 @@
         ansible_node_playbooks:
           - name: redmine_automation
           - name: backup
+          # Monthly timer which has to catch up missed runs
+          - name: matomo_geoip_update
         # Host settings have to reach the generated playbook
         backup_with_borg: true
         backup_borg_excludes:

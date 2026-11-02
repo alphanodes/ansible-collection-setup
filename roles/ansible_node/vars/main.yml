@@ -35,9 +35,12 @@ ansible_node_available_playbooks:
     randomized_delay_sec: 10min
   matomo_geoip_update:
     playbook: matomo_geoip.yml
-    timer_comment: every week
-    on_calendar: 'Sun 3:00'
+    # db-ip.com publishes the free database once a month, sometime during the
+    # 1st, so an earlier run gets a 404 for the current month
+    timer_comment: every month on the 3rd
+    on_calendar: '*-*-03 3:00'
     randomized_delay_sec: 2hours
+    persistent: true
   matomo_queuedtracking:
     playbook: matomo_queuedtracking.yml
     timer_comment: every 2 minutes
