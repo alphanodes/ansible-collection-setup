@@ -28,8 +28,10 @@
     state: absent
 
 # Protection maps are always installed - they define nginx map variables
-# ($bad_bot, $bad_locations, $not_allowed_method, $private_network)
-# These maps have no effect unless a vhost explicitly uses them.
+# ($bad_bot, $bad_locations, $not_allowed_method, $private_network,
+#  $trusted_proxy, $proxy_forwarded)
+# These maps have no effect unless a vhost explicitly uses them,
+# except $proxy_forwarded, which every proxy location uses.
 # Per-vhost usage is controlled by nginx_with_protection in vhost.j2
 - name: Install maps configuration for protection
   ansible.builtin.copy:

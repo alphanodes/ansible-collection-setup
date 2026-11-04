@@ -905,3 +905,48 @@
           - "proxy_realm has custom auth_basic: {{ 'OK' if proxy_realm_has_custom_auth.rc == 0 else 'FAILED' }}"
           - "proxy_realm has auth_basic_user_file: {{ 'OK' if proxy_realm_has_userfile.rc == 0 else 'FAILED' }}"
           - "proxy_realm only ONE auth_basic: {{ 'OK' if proxy_realm_single_auth.rc == 0 else 'FAILED' }}"
+
+# Forwarded header: dropped for direct clients, passed on from upstream proxies
+- name: Verify Forwarded header handling
+  hosts: all
+  gather_facts: true
+  gather_subset:
+    - '!all'
+    - network
+  tasks:
+    - name: Test Forwarded header from a direct client is dropped
+      ansible.builtin.command: >
+        curl -s --interface 192.0.2.1 -H 'Host: forwarded.local' -H 'Forwarded: for=192.0.2.10'
+        http://127.0.0.1/
+      register: forwarded_direct
+      changed_when: false
+      failed_when: forwarded_direct.stdout != 'forwarded=[]'
+
+    - name: Verify the test instance has a private address
+      ansible.builtin.assert:
+        that:
+          - ansible_facts['default_ipv4']['address'] is match('^(10\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|192\\.168\\.)')
+
+    - name: Test Forwarded header from an upstream proxy in a private network is passed on
+      ansible.builtin.command: >
+        curl -s -H 'Host: forwarded.local' -H 'Forwarded: for=192.0.2.10'
+        http://{{ ansible_facts['default_ipv4']['address'] }}/
+      register: forwarded_proxy
+      changed_when: false
+      failed_when: forwarded_proxy.stdout != 'forwarded=[for=192.0.2.10]'
+
+    - name: Test Forwarded header from a local proxy on the loopback interface is passed on
+      ansible.builtin.command: >
+        curl -s -H 'Host: forwarded.local' -H 'Forwarded: for=192.0.2.10'
+        http://127.0.0.1/
+      register: forwarded_loopback
+      changed_when: false
+      failed_when: forwarded_loopback.stdout != 'forwarded=[for=192.0.2.10]'
+
+    - name: Verify location based proxies set the Forwarded header
+      ansible.builtin.command: >
+        grep -F 'proxy_set_header Forwarded $proxy_forwarded;'
+        /etc/nginx/sites-available/named_location_test.conf
+      register: forwarded_location
+      changed_when: false
+      failed_when: forwarded_location.rc != 0

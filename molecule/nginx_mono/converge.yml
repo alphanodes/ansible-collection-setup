@@ -41,6 +41,36 @@
         - { name: "safe", path: "/srv/static_safe" }
         - { name: "open", path: "/srv/static_open" }
 
+    # Backend for the Forwarded header tests, it returns the Forwarded header it received
+    - name: Create nginx conf.d directory for the Forwarded echo backend
+      ansible.builtin.file:
+        path: /etc/nginx/conf.d
+        state: directory
+        mode: '0755'
+
+    # Requests from this address count as direct clients (not a trusted proxy)
+    - name: Add an untrusted address to the loopback interface
+      ansible.builtin.shell: |
+        set -o pipefail
+        ip -4 addr show dev lo | grep -qF 192.0.2.1/32 && exit 0
+        ip addr add 192.0.2.1/32 dev lo
+        echo added
+      args:
+        executable: /bin/bash
+      register: forwarded_untrusted_ip
+      changed_when: "'added' in forwarded_untrusted_ip.stdout"
+
+    - name: Create Forwarded echo backend
+      ansible.builtin.copy:
+        content: |
+          server {
+            listen 127.0.0.1:8099;
+            default_type text/plain;
+            return 200 "forwarded=[$http_forwarded]";
+          }
+        dest: /etc/nginx/conf.d/zz_forwarded_echo.conf
+        mode: '0644'
+
   vars:
     # nodejs configuration (fix for Docker container)
     nodejs_install_npm_user: root
@@ -200,6 +230,12 @@
           - name: proxy_app
             server_name: proxy.local
             proxy_pass: "http://127.0.0.1:3000"
+            proxy_location: "/"
+            vhost_for_zabbix: false
+          # Forwarded header only from private networks (upstream proxies)
+          - name: forwarded_app
+            server_name: forwarded.local
+            proxy_pass: "http://127.0.0.1:8099"
             proxy_location: "/"
             vhost_for_zabbix: false
 

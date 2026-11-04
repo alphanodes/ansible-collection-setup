@@ -216,6 +216,9 @@ nginx_ai_crawler_user_agents:
 # When true (default), nginx sets X-Forwarded-For which can conflict
 # with X-Client-IP causing Rails ActionDispatch::RemoteIp::IpSpoofAttackError.
 # Proper fix: configure upstream proxy to set X-Forwarded-For instead of X-Client-IP.
+# The Forwarded header is passed on only from trusted proxies (see protection.conf).
+# An upstream proxy must not pass on a Forwarded header sent by the client, if it only
+# sets X-Forwarded-For, otherwise Rails raises IpSpoofAttackError for these requests.
 nginx_with_proxy_forwarded_for: true
 # security headers (X-Frame-Options, X-Content-Type-Options, X-XSS-Protection)
 # disable if application sets these headers itself to avoid duplicates
