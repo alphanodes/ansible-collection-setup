@@ -9,6 +9,7 @@ name: "alphanodes.setup.nodejs"
       - 'roles/nodejs/**'
       - 'roles/common/**'
       - 'molecule/nodejs/**'
+      - 'molecule/nodejs_nodesource/**'
       - '.github/workflows/nodejs.yml'
 
 defaults:
@@ -51,3 +52,33 @@ jobs:
           molecule test -s nodejs
         env:
           MOLECULE_DISTRO: ${{ matrix.distro }}
+
+  nodesource:
+    runs-on: ubuntu-latest
+    env:
+      PY_COLORS: 1
+      ANSIBLE_FORCE_COLOR: 1
+
+    steps:
+      - name: Check out the codebase.
+        uses: actions/checkout@v5
+        with:
+          path: 'nodejs'
+
+      - name: Set up Python 3.
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install test dependencies.
+        run: |
+          python -m pip install --no-cache-dir --upgrade pip
+          python -m pip install -r requirements.txt
+
+      # Debian 13 switching from the distribution packages to NodeSource
+      - name: Run Molecule tests.
+        run: |
+          molecule --version
+          molecule test -s nodejs_nodesource
+        env:
+          MOLECULE_DISTRO: debian13

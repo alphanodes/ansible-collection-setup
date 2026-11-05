@@ -1,0 +1,48 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Get the installed node version
+      ansible.builtin.command: node --version
+      register: node_version
+      changed_when: false
+
+    - name: Verify node comes from the requested NodeSource release
+      ansible.builtin.assert:
+        that:
+          - node_version.stdout is match('^v24\.')
+        fail_msg: "node {{ node_version.stdout }} is installed, expected the 24.x release from NodeSource"
+
+    - name: Get the nodejs package version
+      ansible.builtin.command: dpkg-query -W -f '${Version}' nodejs
+      register: nodejs_package
+      changed_when: false
+
+    - name: Verify the nodejs package is the NodeSource build
+      ansible.builtin.assert:
+        that:
+          - "'nodesource' in nodejs_package.stdout"
+        fail_msg: "nodejs package {{ nodejs_package.stdout }} is not from NodeSource"
+
+    - name: Get the state of the distribution npm package
+      ansible.builtin.command: dpkg-query -W -f '${db:Status-Abbrev}' npm
+      register: npm_package
+      changed_when: false
+      failed_when: false
+
+    # NodeSource nodejs bundles npm and conflicts with the distribution package
+    - name: Verify the distribution npm was removed
+      ansible.builtin.assert:
+        that:
+          - npm_package.rc != 0 or npm_package.stdout is not match('^ii')
+        fail_msg: "distribution npm is still installed: {{ npm_package.stdout }}"
+
+    - name: Check that the bundled npm works
+      ansible.builtin.command: npm --version
+      changed_when: false
+
+    - name: Check that the global package installed with npm works
+      ansible.builtin.command: /root/.npm-global/bin/yarn --version
+      changed_when: false

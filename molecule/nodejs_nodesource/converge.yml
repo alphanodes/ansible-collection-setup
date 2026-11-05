@@ -1,0 +1,42 @@
+---
+# Debian 13 installs the distribution Node.js 20 by default, this scenario
+# switches a host set up that way to a newer release from NodeSource, like a
+# hedgedoc host that needs a current Node.js
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+    - name: Check whether nodejs is already installed
+      ansible.builtin.command: dpkg-query -W nodejs
+      register: nodejs_installed
+      changed_when: false
+      failed_when: false
+
+    # State of a host that ran the role with its defaults before. Only on the
+    # first run, the distribution npm conflicts with the NodeSource nodejs.
+    - name: Install the distribution nodejs and npm first
+      ansible.builtin.apt:
+        name:
+          - nodejs
+          - npm
+        state: present
+      when: nodejs_installed.rc != 0
+
+  vars:
+    nodejs_use_distribution_packages: false
+    nodejs_version: '24.x'
+    nodejs_install_npm_user: root
+    npm_config_prefix: /root/.npm-global
+    npm_config_unsafe_perm: "true"
+    nodejs_npm_global_packages:
+      - name: yarn
+
+  roles:
+    - role: alphanodes.setup.nodejs

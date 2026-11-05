@@ -103,11 +103,34 @@
       tags:
         - skip_ansible_lint
 
+# Mirror of the migration above: the NodeSource nodejs package conflicts
+# with the npm package of the distribution
+- name: Check if the distribution npm is installed
+  ansible.builtin.shell:
+    cmd: set -o pipefail && dpkg -l npm 2>/dev/null | grep -q '^ii' && echo "installed" || echo "absent"
+    executable: /bin/bash
+  register: nodejs_npm_check
+  changed_when: false
+  failed_when: false
+  when: nodejs_apt_source_update | bool
+
+- name: Remove the distribution npm before installing NodeSource nodejs
+  ansible.builtin.apt:
+    name: npm
+    state: absent
+    purge: true
+  when:
+    - nodejs_apt_source_update | bool
+    - nodejs_npm_check.stdout | default('') == 'installed'
+
+# With NodeSource the pinned repository has to win over an installed
+# distribution package or an older NodeSource release, which state present
+# would leave untouched
 - name: Ensure Node.js and npm are installed.
   ansible.builtin.apt:
     name: "{{ nodejs_packages }}"
     allow_downgrades: true
-    state: present
+    state: "{{ 'latest' if nodejs_apt_source_update | bool else 'present' }}"
 
 - name: Set prefix for npm (root)
   ansible.builtin.command: npm config set prefix {{ npm_config_prefix_root }}

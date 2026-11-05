@@ -1,14 +1,25 @@
 ---
-# Set the version of Node.js to install ("12.x", "13.x", "14.x", "15.x", etc.).
-# Version numbers from Nodesource: https://github.com/nodesource/distributions
+# Set the version of Node.js to install ("20.x", "22.x", "24.x", "26.x").
+# Version numbers from NodeSource: https://github.com/nodesource/distributions
+# Only used with the NodeSource repository, see nodejs_use_distribution_packages
 nodejs_version: '20.x'
+
+# Debian 13 ships a maintained Node.js 20 and installs it by default, older
+# releases and Ubuntu use the NodeSource repository. Set to false to install
+# nodejs_version from NodeSource on Debian 13 as well, e.g. for applications
+# that need a newer release. Switching in either direction replaces the
+# installed packages, NodeSource nodejs conflicts with the distribution npm.
+nodejs_use_distribution_packages: "{{ ansible_facts['distribution'] == 'Debian' and ansible_facts['distribution_major_version'] | int >= 13 }}"
+
+# Debian 13 splits nodejs and npm into separate packages, NodeSource bundles npm
+nodejs_packages: "{{ ['nodejs', 'npm'] if nodejs_use_distribution_packages else ['nodejs'] }}"
 
 nodejs_apt_url: https://deb.nodesource.com/node_{{ nodejs_version }}
 nodejs_apt_key_host: deb.nodesource.com
 nodejs_apt_signed_by: https://{{ nodejs_apt_key_host }}/gpgkey/nodesource-repo.gpg.key
 nodejs_apt_suites: nodistro
 nodejs_apt_components: main
-nodejs_apt_source_update: true
+nodejs_apt_source_update: "{{ not nodejs_use_distribution_packages }}"
 
 # The user for whom the npm packages will be installed.
 # nodejs_install_npm_user: username
