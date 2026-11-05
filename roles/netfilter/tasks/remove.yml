@@ -1,0 +1,7 @@
+---
+
+- name: Remove the rules of this role
+  ansible.builtin.include_tasks: deactivate.yml
+
+- name: Include iptables cleanup tasks
+  ansible.builtin.include_tasks: cleanup_iptables.yml

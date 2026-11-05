@@ -1,0 +1,34 @@
+---
+
+- name: Be sure nftables is installed
+  ansible.builtin.apt:
+    name: '{{ netfilter_packages }}'
+    state: present
+
+- name: Activate rules
+  when: netfilter_state == 'active'
+  block:
+    # Only the tables of this role are replaced, the table of fail2ban stays
+    - name: Generate nftables rules
+      ansible.builtin.template:
+        src: nftables.conf.j2
+        dest: '{{ netfilter_config_file }}'
+        mode: '0755'
+        validate: nft --check --file %s
+      notify: Reload nftables
+
+    - name: Ensure nftables is running and starts at boot
+      ansible.builtin.systemd_service:
+        name: nftables
+        state: started
+        enabled: true
+
+    - name: Flush handlers to load the rules before the iptables cleanup
+      ansible.builtin.meta: flush_handlers
+
+- name: Deactivate rules
+  when: netfilter_state != 'active'
+  ansible.builtin.include_tasks: deactivate.yml
+
+- name: Include iptables cleanup tasks
+  ansible.builtin.include_tasks: cleanup_iptables.yml

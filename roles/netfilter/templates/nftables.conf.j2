@@ -1,125 +1,201 @@
 #!/usr/sbin/nft -f
 {{ managed_by_ansible | comment }}
 
-flush ruleset
+# Only the tables of this role are replaced. A flush ruleset would also remove
+# the table of fail2ban (inet f2b-table), the tables ip filter and ip nat belong
+# to iptables-nft.
+table inet netfilter
+delete table inet netfilter
 
-table inet filter {
-	chain input {
-		type filter hook input priority 0; policy {{ netfilter_filter_input_policy | lower }};
+table inet netfilter {
+{% if netfilter_honeypot_tcp_ports | length > 0 or netfilter_honeypot_udp_ports | length > 0 %}
+  # sources probing the honeypot ports, every packet renews the timeout
+  set honeypot {
+    type ipv4_addr
+    flags dynamic, timeout
+    timeout {{ netfilter_honeypot_timeout }}
+  }
 
-    # established/related connections
-		ct state established,related accept
+  set honeypot6 {
+    type ipv6_addr
+    flags dynamic, timeout
+    timeout {{ netfilter_honeypot_timeout }}
+  }
 
-		# invalid connections
-		ct state invalid drop
+{% endif %}
+  chain input {
+    type filter hook input priority filter; policy {{ netfilter_filter_input_policy | lower }};
 
-		# loopback interface
-		iif lo accept
+    iif lo accept
+    ct state established,related accept
+    ct state invalid drop
+    meta l4proto { icmp, icmpv6 } accept
 
-		# ICMP & IGMP
-		ip6 nexthdr icmpv6 icmpv6 type { destination-unreachable, packet-too-big, time-exceeded, parameter-problem, mld-listener-query, mld-listener-report, mld-listener-reduction, nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert, ind-neighbor-solicit, ind-neighbor-advert, mld2-listener-report } accept
-		ip protocol icmp icmp type { destination-unreachable, router-solicitation, router-advertisement, time-exceeded, parameter-problem } accept
-		ip protocol igmp accept
+    # remote packets claiming to come from a loopback address
+    iif != lo ip daddr 127.0.0.0/8 reject
+    iif != lo ip6 saddr ::1 drop
 
-    udp saddr 127.0.0.1 dport 123 accept
+    # packets to broadcast, multicast or anycast addresses
+    meta nfproto ipv4 fib daddr type { broadcast, multicast, anycast } drop
+    ip daddr 224.0.0.0/4 drop
 
-    {% for allowed_network in netfilter_allowed_networks %}
+{% for blocked_address in netfilter_blocked_addresses %}
+    ip saddr {{ blocked_address }} drop
+{% endfor %}
+{% for blocked_address in netfilter_blocked_addresses_v6 %}
+    ip6 saddr {{ blocked_address }} drop
+{% endfor %}
+{% if netfilter_honeypot_tcp_ports | length > 0 or netfilter_honeypot_udp_ports | length > 0 %}
+
+    # honeypot: drop known scanners on all ports and renew their timeout
+    ip saddr @honeypot update @honeypot { ip saddr } drop
+    ip6 saddr @honeypot6 update @honeypot6 { ip6 saddr } drop
+{% if netfilter_honeypot_tcp_ports | length > 0 %}
+    tcp dport { {{ netfilter_honeypot_tcp_ports | join(', ') }} } update @honeypot { ip saddr } log prefix "HONEYPOT: " level info drop
+    tcp dport { {{ netfilter_honeypot_tcp_ports | join(', ') }} } update @honeypot6 { ip6 saddr } log prefix "HONEYPOT: " level info drop
+{% endif %}
+{% if netfilter_honeypot_udp_ports | length > 0 %}
+    udp dport { {{ netfilter_honeypot_udp_ports | join(', ') }} } update @honeypot { ip saddr } log prefix "HONEYPOT: " level info drop
+    udp dport { {{ netfilter_honeypot_udp_ports | join(', ') }} } update @honeypot6 { ip6 saddr } log prefix "HONEYPOT: " level info drop
+{% endif %}
+{% endif %}
+
+{% for allowed_network in netfilter_allowed_networks %}
     ip saddr {{ allowed_network }} accept
-    {% endfor %}
+{% endfor %}
+{% for allowed_network in netfilter_allowed_networks_v6 %}
+    ip6 saddr {{ allowed_network }} accept
+{% endfor %}
+    # local mail submission and ntp
+    ip saddr 127.0.0.0/8 tcp dport 25 accept
+    ip6 saddr ::1 tcp dport 25 accept
+    ip saddr 127.0.0.0/8 udp dport 123 accept
+    ip6 saddr ::1 udp dport 123 accept
 
-    # SSH
-    {% if netfilter_ssh_sources | length > 0 %}
-    {% for ssh_source in netfilter_ssh_sources %}
-    tcp saddr {{ ssh_source }} dport {{ ssh_server_port | default('22') }} accept
-    {% endfor %}
-    {% else %}
-    tcp dport {{ ssh_server_port | default('22') }} accept
-    {% endif %}
+{% for allowed_tcp_port in netfilter_allowed_tcp_ports %}
+    tcp dport {{ allowed_tcp_port | string | replace(':', '-') }} accept
+{% endfor %}
+{% for allowed_udp_port in netfilter_allowed_udp_ports %}
+    udp dport {{ allowed_udp_port | string | replace(':', '-') }} accept
+{% endfor %}
+{% for allowed_tcp in netfilter_allowed_tcp_ports_with_saddr %}
+    ip saddr {{ allowed_tcp.saddr }} tcp dport {{ allowed_tcp.port | string | replace(':', '-') }} accept
+{% endfor %}
+{% for allowed_udp in netfilter_allowed_udp_ports_with_saddr %}
+    ip saddr {{ allowed_udp.saddr }} udp dport {{ allowed_udp.port | string | replace(':', '-') }} accept
+{% endfor %}
+{% for allowed_tcp in netfilter_allowed_tcp_ports_with_saddr_v6 %}
+    ip6 saddr {{ allowed_tcp.saddr }} tcp dport {{ allowed_tcp.port | string | replace(':', '-') }} accept
+{% endfor %}
+{% for allowed_udp in netfilter_allowed_udp_ports_with_saddr_v6 %}
+    ip6 saddr {{ allowed_udp.saddr }} udp dport {{ allowed_udp.port | string | replace(':', '-') }} accept
+{% endfor %}
 
-    {% if netfilter_allow_zabbix_server and netfilter_zabbix_server_address != '' %}
-    tcp saddr {{ netfilter_zabbix_server_address }} dport {{ netfilter_zabbix_server_port }} accept
-    {% endif %}
-    {% for active_zabbix_address in netfilter_allowed_active_zabbix_addresses %}
-    tcp saddr {{ active_zabbix_address }} dport 10051 accept
-    {% endfor %}
+    # ssh
+{% if netfilter_ssh_sources | length > 0 %}
+{% for ssh_source in netfilter_ssh_sources %}
+    ip saddr {{ ssh_source }} tcp dport {{ ssh_server_port | default('22') }} accept
+{% endfor %}
+{% else %}
+    meta nfproto ipv4 tcp dport {{ ssh_server_port | default('22') }} accept
+{% endif %}
+{% if netfilter_ssh_sources_v6 | length > 0 %}
+{% for ssh_source in netfilter_ssh_sources_v6 %}
+    ip6 saddr {{ ssh_source }} tcp dport {{ ssh_server_port | default('22') }} accept
+{% endfor %}
+{% else %}
+    meta nfproto ipv6 tcp dport {{ ssh_server_port | default('22') }} accept
+{% endif %}
 
-    {% for allowed_nameserver in netfilter_allowed_nameservers %}
-    ip saddr {{ allowed_nameserver }}/32 udp sport 53 udp dport 1024-65535 counter packets 0 bytes 0 accept
-    {% endfor %}
+    # zabbix
+{% if netfilter_allow_zabbix_server and netfilter_zabbix_server_address != '' %}
+    ip saddr {{ netfilter_zabbix_server_address }} tcp dport {{ netfilter_zabbix_server_port }} accept
+{% endif %}
+{% if netfilter_allow_zabbix_server and netfilter_zabbix_server_address_v6 != '' %}
+    ip6 saddr {{ netfilter_zabbix_server_address_v6 }} tcp dport {{ netfilter_zabbix_server_port }} accept
+{% endif %}
+{% for active_zabbix_address in netfilter_allowed_active_zabbix_addresses %}
+    ip saddr {{ active_zabbix_address }} tcp dport 10051 accept
+{% endfor %}
+{% if netfilter_allowed_active_zabbix_addresses_v6_all %}
+    meta nfproto ipv6 tcp dport 10051 accept
+{% else %}
+{% for active_zabbix_address in netfilter_allowed_active_zabbix_addresses_v6 %}
+    ip6 saddr {{ active_zabbix_address }} tcp dport 10051 accept
+{% endfor %}
+{% endif %}
 
-    {% if '25' not in netfilter_allowed_tcp_ports or 25 not in netfilter_allowed_tcp_ports %}
-    tcp saddr 127.0.0.0/8 dport 25 accept
-    {% endif %}
+{% for allowed_nameserver in netfilter_allowed_nameservers %}
+    ip saddr {{ allowed_nameserver }} udp sport 53 udp dport 1024-65535 accept
+{% endfor %}
+{% for allowed_nameserver in netfilter_allowed_nameservers_v6 %}
+    ip6 saddr {{ allowed_nameserver }} udp sport 53 udp dport 1024-65535 accept
+{% endfor %}
+{% if netfilter_log_dropped_packets %}
 
-    {% for allowed_tcp_port in netfilter_allowed_tcp_ports %}
-    tcp dport {{ allowed_tcp_port }} accept
-    {% endfor %}
-    {% for allowed_udp_port in netfilter_allowed_udp_ports %}
-    udp dport {{ allowed_tcp_port }} accept
-    {% endfor %}
+    # everything else is dropped by the policy, log a sample
+    limit rate 15/minute log prefix "netfilter-dropped: " level debug
+{% endif %}
+  }
 
-    {% for allowed_tcp in netfilter_allowed_tcp_ports_with_saddr %}
-    tcp saddr {{ allowed_tcp.saddr }} dport {{ allowed_tcp.port }} accept
-    {% endfor %}
-    {% for allowed_udp in netfilter_allowed_udp_ports_with_saddr %}
-    udp saddr {{ allowed_udp.saddr }} dport {{ allowed_udp.port }} accept
-    {% endfor %}
+  chain forward {
+    type filter hook forward priority filter; policy {{ netfilter_filter_forward_policy | lower }};
+{% if netfilter_filter_forward_policy | lower != 'accept' %}
 
-    counter packets 0 bytes 0 jump LOGGING
-	}
+    oif lo accept
+    ct state established,related accept
+{% for allowed_network in netfilter_allowed_networks %}
+    ip saddr {{ allowed_network }} accept
+{% endfor %}
+{% for allowed_network in netfilter_allowed_networks_v6 %}
+    ip6 saddr {{ allowed_network }} accept
+{% endfor %}
+{% for forward in netfilter_forward %}
+    {{ 'ip saddr ' ~ forward.saddr ~ ' ' if forward.saddr is defined else '' }}ip daddr {{ forward.daddr }} {{ forward.prot | default('tcp') }}{{ ' dport ' ~ forward.dport if forward.dport is defined else '' }} accept
+{% if forward.saddr_v6 is defined and forward.daddr_v6 is defined %}
+    ip6 saddr {{ forward.saddr_v6 }} ip6 daddr {{ forward.daddr_v6 }} {{ forward.prot | default('tcp') }}{{ ' dport ' ~ forward.dport if forward.dport is defined else '' }} accept
+{% endif %}
+{% endfor %}
+{% endif %}
+  }
 
-	chain forward {
-		type filter hook forward priority 0; policy {{ netfilter_filter_forward_policy | lower }};
-    {% for forward in netfilter_forward %}
-    ip{{ ' saddr ' + forward.saddr if forward.saddr is defined else '' }} ip daddr {{ forward.daddr }} {{ forward.prot | default('tcp') }} dport {{ forward.dport }} ct state new counter packets 0 bytes 0 accept'
-    {% endfor %}
-	}
+  chain output {
+    type filter hook output priority filter; policy {{ netfilter_filter_output_policy | lower }};
+{% if netfilter_filter_output_policy | lower != 'accept' %}
 
-	chain output {
-		type filter hook output priority 0; policy {{ netfilter_filter_output_policy | lower }};
-    {% for output in netfilter_nftables_filter_output %}
-    {{ output }}
-    {% endfor %}
-	}
-
-  chain LOGGING {
-    limit rate 2/minute burst 5 packets counter packets 0 bytes 0 log prefix "nftables-Dropped: "
-    counter packets 0 bytes 0 drop
+    oif lo accept
+    ct state established,related accept
+{% for allowed_network in netfilter_allowed_networks_output %}
+    ip daddr {{ allowed_network }} accept
+{% endfor %}
+{% for allowed_network in netfilter_allowed_networks_output_v6 %}
+    ip6 daddr {{ allowed_network }} accept
+{% endfor %}
+{% endif %}
   }
 }
+{% if netfilter_prerouting | length > 0 or netfilter_postrouting | length > 0 %}
 
-{% if nftables_nat_prerouting | length > 0 %}
-table ip nat {
-	chain PREROUTING {
-		type nat hook prerouting priority 0; policy {{ netfilter_nat_prerouting_policy | lower }};
-    {% for prerouting in netfilter_prerouting %}
-    {% if prerouting.prot is defined and prerouting.prot == 'icmp' %}
-    ip daddr {{ prerouting.daddr }} counter packets 0 bytes 0 dnat to {{ prerouting.dest }}
-    {% else %}
-    ip{{ 'saddr' + prerouting.saddr if prerouting.saddr is defined else '' }} daddr {{ prerouting.daddr }} {{ prerouting.prot | default('tcp') }} dport {{ prerouting.dport }} counter packets 0 bytes 0 dnat to {{ prerouting.dest }}
-    {% endif %}
-    {% endfor %}
-	}
+table ip netfilter-nat
+delete table ip netfilter-nat
 
-	chain INPUT {
-		type nat hook input priority 0; policy {{ netfilter_nat_postrouting_policy | lower }};
-    {% for input in netfilter_nftables_nat_input %}
-    {{ input }}
-    {% endfor %}
-	}
+table ip netfilter-nat {
+  chain prerouting {
+    type nat hook prerouting priority dstnat; policy {{ netfilter_nat_prerouting_policy | lower }};
+{% for prerouting in netfilter_prerouting %}
+{% if prerouting.prot is defined and prerouting.prot == 'icmp' %}
+    ip daddr {{ prerouting.daddr }} ip protocol icmp dnat to {{ prerouting.dest }}
+{% else %}
+    {{ 'ip saddr ' ~ prerouting.saddr ~ ' ' if prerouting.saddr is defined else '' }}ip daddr {{ prerouting.daddr }} {{ prerouting.prot | default('tcp') }} dport {{ prerouting.dport }} dnat to {{ prerouting.dest }}
+{% endif %}
+{% endfor %}
+  }
 
-	chain OUTPUT {
-		type nat hook output priority 0; policy {{ netfilter_nat_input_policy | lower }};
-    {% for output in netfilter_nftables_nat_output %}
-    {{ output }}
-    {% endfor %}
-	}
-
-	chain POSTROUTING {
-		type nat hook postrouting priority 0; policy {{ netfilter_nat_output_policy | lower }};
-    {% for postrouting in netfilter_postrouting %}
-    oifname "{{ postrouting.oifname }}" ip saddr {{ postrouting.saddr }} counter packets 0 bytes 0 snat to {{ postrouting.snat_to }}
-    {% endfor %}
-	}
+  chain postrouting {
+    type nat hook postrouting priority srcnat; policy {{ netfilter_nat_postrouting_policy | lower }};
+{% for postrouting in netfilter_postrouting %}
+    oifname "{{ postrouting.oifname }}" ip saddr {{ postrouting.saddr }} snat to {{ postrouting.snat_to }}
+{% endfor %}
+  }
 }
 {% endif %}

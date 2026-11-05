@@ -1,0 +1,43 @@
+---
+
+# Hosts set up before the switch to nftables still carry the rules of
+# iptables-persistent in the kernel (tables ip filter and ip6 filter) next to
+# the nftables rules. They are flushed once and the packages removed.
+- name: Check if iptables-persistent is installed
+  ansible.builtin.command: dpkg-query -W -f '${db:Status-Abbrev}' iptables-persistent
+  register: netfilter_iptables_persistent
+  changed_when: false
+  failed_when: false
+
+- name: Clean up iptables-persistent
+  when: netfilter_iptables_persistent.stdout is match('^ii')
+  block:
+    - name: Flush the iptables rules
+      ansible.builtin.command: netfilter-persistent flush
+      changed_when: true
+
+    - name: Remove iptables-persistent
+      ansible.builtin.apt:
+        name: '{{ netfilter_iptables_cleanup_packages }}'
+        state: absent
+        purge: true
+
+    - name: List the nftables tables
+      ansible.builtin.command: nft list tables
+      register: netfilter_tables_after_flush
+      changed_when: false
+
+    # the flush leaves the empty tables of iptables-nft behind
+    - name: Remove the empty tables of iptables-nft
+      ansible.builtin.command: nft delete table {{ item }}
+      loop:
+        - ip filter
+        - ip6 filter
+        - ip nat
+        - ip6 nat
+        - ip mangle
+        - ip6 mangle
+        - ip raw
+        - ip6 raw
+      when: ('table ' ~ item) in netfilter_tables_after_flush.stdout_lines
+      changed_when: true

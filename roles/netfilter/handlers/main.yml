@@ -1,15 +1,8 @@
 ---
-# handlers file for iptables
 
-- name: Flush iptables
-  ansible.builtin.command: /etc/init.d/netfilter-persistent flush
-
-- name: Restart iptables-persistent
-  ansible.builtin.systemd_service:
-    name: netfilter-persistent
-    state: restarted
-
-- name: Reloaded nftables
+# nft -f with the table replace idiom in the config, does not touch other
+# tables (fail2ban)
+- name: Reload nftables
   ansible.builtin.systemd_service:
     name: nftables
     state: reloaded

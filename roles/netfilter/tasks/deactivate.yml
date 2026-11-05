@@ -1,0 +1,21 @@
+---
+
+- name: List the nftables tables
+  ansible.builtin.command: nft list tables
+  register: netfilter_tables
+  changed_when: false
+
+# Stopping nftables.service would flush the whole ruleset including the table
+# of fail2ban, so only the tables of this role are removed
+- name: Remove the rules of this role
+  ansible.builtin.command: nft delete table {{ item }}
+  loop:
+    - inet netfilter
+    - ip netfilter-nat
+  when: ('table ' ~ item) in netfilter_tables.stdout_lines
+  changed_when: true
+
+- name: Ensure nftables does not load rules at boot
+  ansible.builtin.systemd_service:
+    name: nftables
+    enabled: false

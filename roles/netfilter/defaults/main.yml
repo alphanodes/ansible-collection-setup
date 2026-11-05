@@ -1,28 +1,24 @@
 ---
 # defaults file for netfilter
 
-# iptables or nftables
-netfilter_engine: iptables
-
 # possible states:
-# - active = active firewall
-# - setup = same as active, but rules are not activate (only written to /etc/iptables) - only with iptables
-# - reset = reset all rules (flush), disabled firewall
-# - disabled = installed, disabled firewall
-# - remove = firewall will be uninstalled
+# - active = rules from this role are loaded and reloaded on changes
+# - disabled = nftables installed, the rules of this role are removed and the
+#   service is not started at boot
+# - reset = same as disabled
+# - remove = like disabled, nothing else is uninstalled, fail2ban needs nftables
 netfilter_state: disabled
 
-netfilter_iptables_packages:
-  - iptables-persistent
-
-netfilter_iptables_remove_packages: []
-
-netfilter_nftables_packages:
+netfilter_packages:
   - nftables
 
-netfilter_nftables_remove_packages:
-  - iptables
+# Rules of the former iptables engine are flushed and these packages removed
+# once the nftables rules are active
+netfilter_iptables_cleanup_packages:
   - iptables-persistent
+  - netfilter-persistent
+
+netfilter_config_file: /etc/nftables.conf
 
 netfilter_allowed_nameservers: '{{ hetzner_nameserver_v4 | default([]) }}'
 netfilter_allowed_nameservers_v6: '{{ hetzner_nameserver_v6 | default([]) }}'
@@ -30,16 +26,20 @@ netfilter_allowed_nameservers_v6: '{{ hetzner_nameserver_v6 | default([]) }}'
 netfilter_blocked_addresses: []
 netfilter_blocked_addresses_v6: []
 
+# e.g. [80, 443] or ['8000-8080']
 netfilter_allowed_tcp_ports: []
 netfilter_allowed_udp_ports: []
+# e.g. [{port: 3306, saddr: '192.0.2.10/32'}]
 netfilter_allowed_tcp_ports_with_saddr: []
 netfilter_allowed_udp_ports_with_saddr: []
 
 netfilter_allowed_tcp_ports_with_saddr_v6: []
 netfilter_allowed_udp_ports_with_saddr_v6: []
 
+# sources accepted on all ports
 netfilter_allowed_networks: []
 netfilter_allowed_networks_v6: []
+# only used with netfilter_filter_output_policy other than accept
 netfilter_allowed_networks_output: []
 netfilter_allowed_networks_output_v6: []
 
@@ -52,9 +52,16 @@ netfilter_allowed_active_zabbix_addresses_v6: []
 # if yes, all ipv6 addresses are allowed as source (netfilter_allowed_active_zabbix_addresses_v6 is not used)
 netfilter_allowed_active_zabbix_addresses_v6_all: false
 
+# NAT (IPv4 only), e.g.
+# netfilter_prerouting:
+#   - {daddr: 192.0.2.1, dport: 80, dest: 10.0.0.2, saddr: 198.51.100.1, prot: tcp}
+#   - {daddr: 192.0.2.1, prot: icmp, dest: 10.0.0.2}
+# netfilter_postrouting:
+#   - {saddr: 10.0.0.2, oifname: eth0, snat_to: 192.0.2.1}
 netfilter_postrouting: []
-netfilter_forward: []
 netfilter_prerouting: []
+# e.g. [{saddr: 198.51.100.1, daddr: 10.0.0.2, dport: 80, prot: tcp, saddr_v6: ..., daddr_v6: ...}]
+netfilter_forward: []
 
 # if not specified, all sources are allowed
 netfilter_ssh_sources: []
@@ -62,24 +69,20 @@ netfilter_ssh_sources_v6: []
 
 netfilter_log_dropped_packets: true
 
-netfilter_filter_input_policy: DROP
-netfilter_filter_forward_policy: DROP
-netfilter_filter_output_policy: ACCEPT
+# accept or drop
+netfilter_filter_input_policy: drop
+netfilter_filter_forward_policy: drop
+netfilter_filter_output_policy: accept
 
-netfilter_nftables_filter_output: []
+netfilter_nat_prerouting_policy: accept
+netfilter_nat_postrouting_policy: accept
 
-netfilter_nftables_nat_prerouting: []
-netfilter_nftables_nat_input: []
-netfilter_nftables_nat_output: []
-
-netfilter_nat_prerouting_policy: ACCEPT
-netfilter_nat_input_policy: ACCEPT
-netfilter_nat_output_policy: ACCEPT
-netfilter_nat_postrouting_policy: ACCEPT
-
+# Sources probing these ports are dropped on all ports for the timeout,
+# every further packet renews it. Empty lists disable the honeypot.
 netfilter_honeypot_tcp_ports:
   - 139
   - 445
 netfilter_honeypot_udp_ports:
   - 137
   - 138
+netfilter_honeypot_timeout: 10m

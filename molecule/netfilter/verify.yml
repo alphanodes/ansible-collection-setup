@@ -1,0 +1,126 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Check the nftables service
+      ansible.builtin.systemd_service:
+        name: nftables
+        state: started
+        enabled: true
+      check_mode: true
+      register: nftables_service
+      failed_when: nftables_service.changed
+
+    - name: Validate the written configuration
+      ansible.builtin.command: nft --check --file /etc/nftables.conf
+      changed_when: false
+
+    - name: Read the ruleset
+      ansible.builtin.command: nft list ruleset
+      register: ruleset
+      changed_when: false
+
+    - name: Verify the filter chains and their policies
+      ansible.builtin.assert:
+        that:
+          - "'table inet netfilter' in ruleset.stdout"
+          - ruleset.stdout is search('hook input priority filter; policy drop;')
+          - ruleset.stdout is search('hook forward priority filter; policy drop;')
+          - ruleset.stdout is search('hook output priority filter; policy accept;')
+        fail_msg: "{{ ruleset.stdout }}"
+
+    # ssh only from the configured sources, no unrestricted ssh rule
+    - name: Verify the input rules
+      ansible.builtin.assert:
+        that:
+          - "'ip saddr 192.0.2.0/24 tcp dport 22 accept' in ruleset.stdout"
+          - "'ip saddr 198.51.100.7 tcp dport 22 accept' in ruleset.stdout"
+          - "'ip6 saddr 2001:db8:1::/64 tcp dport 22 accept' in ruleset.stdout"
+          - ruleset.stdout is not search('\\n\\s*meta nfproto ipv[46] tcp dport 22 accept')
+          - "'tcp dport 80 accept' in ruleset.stdout"
+          - "'tcp dport 8000-8010 accept' in ruleset.stdout"
+          - "'udp dport 443 accept' in ruleset.stdout"
+          - "'ip saddr 192.0.2.20 tcp dport 3306 accept' in ruleset.stdout"
+          - "'ip6 saddr 2001:db8:2::20 tcp dport 3306 accept' in ruleset.stdout"
+          - "'ip saddr 192.0.2.21 udp dport 514 accept' in ruleset.stdout"
+          - "'ip saddr 10.10.0.0/16 accept' in ruleset.stdout"
+          - "'ip saddr 203.0.113.9 drop' in ruleset.stdout"
+          - "'ip6 saddr 2001:db8:bad::/48 drop' in ruleset.stdout"
+          - "'ip saddr 192.0.2.53 udp sport 53 udp dport 1024-65535 accept' in ruleset.stdout"
+          - "'ip6 saddr 2001:db8::53 udp sport 53 udp dport 1024-65535 accept' in ruleset.stdout"
+          - "'ip saddr 192.0.2.100 tcp dport 10050 accept' in ruleset.stdout"
+          - "'ip6 saddr 2001:db8::100 tcp dport 10050 accept' in ruleset.stdout"
+          - "'ip saddr 192.0.2.101 tcp dport 10051 accept' in ruleset.stdout"
+          - "'limit rate 15/minute burst 5 packets log prefix \"netfilter-dropped: \" level debug' in ruleset.stdout"
+        fail_msg: "{{ ruleset.stdout }}"
+
+    - name: Verify the honeypot
+      ansible.builtin.assert:
+        that:
+          - ruleset.stdout is search('set honeypot \\{\\s+type ipv4_addr\\s+(size \\d+\\s+)?flags dynamic,timeout\\s+timeout 10m')
+          - "'tcp dport { 139, 445 } update @honeypot { ip saddr } log prefix \"HONEYPOT: \" level info drop' in ruleset.stdout"
+          - "'udp dport { 137, 138 } update @honeypot6 { ip6 saddr } log prefix \"HONEYPOT: \" level info drop' in ruleset.stdout"
+          - "'ip saddr @honeypot update @honeypot { ip saddr } drop' in ruleset.stdout"
+        fail_msg: "{{ ruleset.stdout }}"
+
+    - name: Verify forward and nat rules
+      ansible.builtin.assert:
+        that:
+          - "'ip saddr 198.51.100.1 ip daddr 10.10.0.2 tcp dport 80 accept' in ruleset.stdout"
+          - "'table ip netfilter-nat' in ruleset.stdout"
+          - "'ip daddr 192.0.2.1 tcp dport 80 dnat to 10.10.0.2' in ruleset.stdout"
+          - "'ip daddr 192.0.2.1 ip protocol icmp dnat to 10.10.0.2' in ruleset.stdout"
+          - ruleset.stdout is search('oifname "eth0" ip saddr 10.10.0.2 snat to 192.0.2.1')
+        fail_msg: "{{ ruleset.stdout }}"
+
+    # fail2ban is a dependency of the role and keeps its own table, which its
+    # nftables action creates with the first ban (actionstart_on_demand)
+    - name: Ban a sample address in the sshd jail
+      ansible.builtin.command: fail2ban-client set sshd banip 192.0.2.40
+      changed_when: false
+
+    - name: Reload nftables
+      ansible.builtin.systemd_service:
+        name: nftables
+        state: reloaded
+      changed_when: false
+
+    - name: Read the ruleset after the reload
+      ansible.builtin.command: nft list ruleset
+      register: ruleset_reloaded
+      changed_when: false
+
+    - name: Unban the sample address again
+      ansible.builtin.command: fail2ban-client set sshd unbanip 192.0.2.40
+      changed_when: false
+
+    - name: Verify the reload keeps the table and the ban of fail2ban
+      ansible.builtin.assert:
+        that:
+          - "'table inet f2b-table' in ruleset_reloaded.stdout"
+          - "'192.0.2.40' in ruleset_reloaded.stdout"
+          - "'table inet netfilter' in ruleset_reloaded.stdout"
+        fail_msg: "{{ ruleset_reloaded.stdout }}"
+
+    # the legacy iptables rules of the converge are gone with their package
+    - name: Verify the iptables rules and packages were removed
+      ansible.builtin.assert:
+        that:
+          - "'table ip filter' not in ruleset.stdout"
+          - "'table ip6 filter' not in ruleset.stdout"
+          - "'table ip nat' not in ruleset.stdout"
+        fail_msg: "{{ ruleset.stdout }}"
+
+    - name: Get the state of iptables-persistent
+      ansible.builtin.command: dpkg-query -W -f '${db:Status-Abbrev}' iptables-persistent
+      register: iptables_persistent
+      changed_when: false
+      failed_when: false
+
+    - name: Verify iptables-persistent is not installed
+      ansible.builtin.assert:
+        that:
+          - iptables_persistent.rc != 0 or iptables_persistent.stdout is not match('^ii')
+        fail_msg: "iptables-persistent is still installed: {{ iptables_persistent.stdout }}"

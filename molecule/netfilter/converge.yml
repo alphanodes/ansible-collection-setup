@@ -10,12 +10,100 @@
         cache_valid_time: 600
       changed_when: false
 
+    # State of a host set up with the former iptables engine of this role,
+    # created only on the first run so the second run stays idempotent
+    - name: Check for the migration marker
+      ansible.builtin.stat:
+        path: /var/lib/molecule-netfilter-iptables-migrated
+      register: netfilter_migration_marker
+
+    - name: Install iptables-persistent with a legacy ruleset
+      when: not netfilter_migration_marker.stat.exists
+      block:
+        - name: Install iptables-persistent
+          ansible.builtin.apt:
+            name: iptables-persistent
+            state: present
+          environment:
+            DEBIAN_FRONTEND: noninteractive
+
+        - name: Write legacy iptables rules
+          ansible.builtin.copy:
+            dest: /etc/iptables/rules.v4
+            mode: '0644'
+            content: |
+              *filter
+              :INPUT DROP [0:0]
+              :FORWARD DROP [0:0]
+              :OUTPUT ACCEPT [0:0]
+              -A INPUT -i lo -j ACCEPT
+              -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+              -A INPUT -p tcp -m tcp --dport 22 -j ACCEPT
+              COMMIT
+
+        - name: Load the legacy iptables rules
+          ansible.builtin.command: netfilter-persistent start
+          changed_when: true
+
+        - name: Set the migration marker
+          ansible.builtin.file:
+            path: /var/lib/molecule-netfilter-iptables-migrated
+            state: touch
+            mode: '0644'
+
+  vars:
+    netfilter_state: active
+    # molecule works with docker exec, ssh restrictions cannot lock it out
+    netfilter_ssh_sources:
+      - 192.0.2.0/24
+      - 198.51.100.7/32
+    netfilter_ssh_sources_v6:
+      - 2001:db8:1::/64
+    netfilter_allowed_tcp_ports:
+      - 80
+      - 443
+      - '8000:8010'
+    netfilter_allowed_udp_ports:
+      - 443
+    netfilter_allowed_tcp_ports_with_saddr:
+      - port: 3306
+        saddr: 192.0.2.20/32
+    netfilter_allowed_tcp_ports_with_saddr_v6:
+      - port: 3306
+        saddr: 2001:db8:2::20
+    netfilter_allowed_udp_ports_with_saddr:
+      - port: 514
+        saddr: 192.0.2.21/32
+    netfilter_allowed_networks:
+      - 10.10.0.0/16
+    netfilter_blocked_addresses:
+      - 203.0.113.9
+    netfilter_blocked_addresses_v6:
+      - 2001:db8:bad::/48
+    netfilter_allowed_nameservers:
+      - 192.0.2.53
+    netfilter_allowed_nameservers_v6:
+      - 2001:db8::53
+    netfilter_zabbix_server_address: 192.0.2.100
+    netfilter_zabbix_server_address_v6: 2001:db8::100
+    netfilter_allowed_active_zabbix_addresses:
+      - 192.0.2.101
+    netfilter_forward:
+      - saddr: 198.51.100.1
+        daddr: 10.10.0.2
+        dport: 80
+    netfilter_prerouting:
+      - daddr: 192.0.2.1
+        dport: 80
+        dest: 10.10.0.2
+      - daddr: 192.0.2.1
+        prot: icmp
+        dest: 10.10.0.2
+    netfilter_postrouting:
+      - saddr: 10.10.0.2
+        oifname: eth0
+        snat_to: 192.0.2.1
+
   roles:
     - role: alphanodes.setup.common
     - role: alphanodes.setup.netfilter
-
-  post_tasks:
-    - name: Check netfilter role completed
-      ansible.builtin.debug:
-        msg: "Netfilter role executed successfully"
-    # TODO: Firewall configuration requires careful testing to avoid lockouts
