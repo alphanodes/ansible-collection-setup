@@ -26,14 +26,22 @@
         access_time: preserve
 
     # journald splits the journal by user only with persistent storage, the
-    # drupal jails are verified against entries in a user journal
-    - name: Store the journal persistently
+    # drupal jails are verified against entries in a user journal. Storage=auto
+    # is not enough in some images: when /run is no tmpfs, journald keeps the
+    # runtime journal after the flush and never splits.
+    - name: Create the journald drop-in directory
       ansible.builtin.file:
-        path: /var/log/journal
+        path: /etc/systemd/journald.conf.d
         state: directory
-        owner: root
-        group: systemd-journal
-        mode: '2755'
+        mode: '0755'
+
+    - name: Store the journal persistently
+      ansible.builtin.copy:
+        dest: /etc/systemd/journald.conf.d/molecule.conf
+        content: |
+          [Journal]
+          Storage=persistent
+        mode: '0644'
       notify: Restart journald
 
   handlers:
