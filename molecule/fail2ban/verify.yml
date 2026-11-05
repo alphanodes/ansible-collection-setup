@@ -137,9 +137,18 @@
       register: journal_cursor
       changed_when: false
 
+    # PHP-FPM logs as the site user, journald files entries of regular users
+    # (UID 1000 or above) in a separate user journal
+    - name: Create a regular user like the one PHP-FPM runs as
+      ansible.builtin.user:
+        name: drupaltest
+        system: false
+        shell: /usr/sbin/nologin
+        create_home: false
+
     # Lines in the format of the Drupal core module syslog
-    - name: Write sample drupal entries to the journal
-      ansible.builtin.command: logger -t drupal -- {{ item }}
+    - name: Write sample drupal entries to the journal as the regular user
+      ansible.builtin.command: runuser -u drupaltest -- logger -t drupal -- {{ item }}
       loop:
         - 'https://example.com|1793171605|honeypot|192.0.2.30|https://example.com/de/kontakt|https://example.com/de/kontakt|0||Blocked submission of webform_submission_contact_add_form due to Das Formular wurde zu schnell abgeschickt.'
         # Honeypot translates its message into the site language
@@ -148,7 +157,23 @@
         - 'https://example.com|1793171607|cron|127.0.0.1|https://example.com/||0||Cron run completed.'
       changed_when: false
 
-    # The running jail has to ban from the journal (maxretry 1)
+    - name: Read the sample entries from the system journal only
+      ansible.builtin.command: >-
+        journalctl --system -t drupal -q --no-pager -o cat
+        --after-cursor={{ journal_cursor.stdout_lines | last | regex_replace('^-- cursor: ', '') | quote }}
+      register: drupal_system_journal
+      changed_when: false
+
+    # Otherwise the ban below would not prove that the jail reads user journals
+    - name: Verify the sample entries landed in the user journal like on real hosts
+      ansible.builtin.assert:
+        that:
+          - drupal_system_journal.stdout_lines | length == 0
+        fail_msg: >-
+          {{ drupal_system_journal.stdout_lines | length }} sample entries are in
+          the system journal, the test does not reproduce entries of a regular user
+
+    # The running jail has to ban from the user journal (maxretry 1)
     - name: Wait until drupal-honeypot banned both sample addresses
       ansible.builtin.command: fail2ban-client get drupal-honeypot banip
       register: drupal_honeypot_banned

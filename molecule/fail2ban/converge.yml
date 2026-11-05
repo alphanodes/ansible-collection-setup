@@ -25,6 +25,23 @@
         modification_time: preserve
         access_time: preserve
 
+    # journald splits the journal by user only with persistent storage, the
+    # drupal jails are verified against entries in a user journal
+    - name: Store the journal persistently
+      ansible.builtin.file:
+        path: /var/log/journal
+        state: directory
+        owner: root
+        group: systemd-journal
+        mode: '2755'
+      notify: Restart journald
+
+  handlers:
+    - name: Restart journald
+      ansible.builtin.systemd_service:
+        name: systemd-journald
+        state: restarted
+
   vars:
     # Disable SSL and complex features for testing
     nginx_with_ssl: false

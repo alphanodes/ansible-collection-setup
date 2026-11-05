@@ -243,11 +243,14 @@ action  = {{ fail2ban_redmine_action | default(login_action) }}
 maxretry = {{ fail2ban_redmine_maxretry | default(fail2ban_login_maxretry) }}
 bantime  = {{ fail2ban_redmine_login_bantime | default(fail2ban_default_bantime) }}
 
-# Drupal jails read the journal, Drupal needs the core module syslog
+# Drupal jails read the journal, Drupal needs the core module syslog. PHP-FPM
+# logs as the site user (UID 1000 or above), so journald files these entries in
+# the user journal, which the default journal flags (SYSTEM_ONLY) never read.
+# journalflags=1 (LOCAL_ONLY) opens the system and the user journals.
 [drupal-auth]
 enabled = {{ 'true' if fail2ban_drupal_auth else 'false' }}
 port     = http,https
-backend = systemd
+backend = systemd[journalflags=1]
 journalmatch = SYSLOG_IDENTIFIER=drupal
 bantime  = {{ fail2ban_drupal_auth_bantime | default(fail2ban_default_bantime) }}
 action  = {{ fail2ban_drupal_action | default(login_action) }}
@@ -255,7 +258,7 @@ action  = {{ fail2ban_drupal_action | default(login_action) }}
 [drupal-login]
 enabled = {{ 'true' if fail2ban_drupal_login else 'false' }}
 port    = http,https
-backend = systemd
+backend = systemd[journalflags=1]
 journalmatch = SYSLOG_IDENTIFIER=drupal
 action  = {{ fail2ban_drupal_action | default(login_action) }}
 maxretry = {{ fail2ban_drupal_maxretry | default(fail2ban_login_maxretry) }}
@@ -264,7 +267,7 @@ bantime  = {{ fail2ban_drupal_login_bantime | default(fail2ban_default_bantime) 
 [drupal-honeypot]
 enabled = {{ 'true' if fail2ban_drupal_honeypot else 'false' }}
 port    = http,https
-backend = systemd
+backend = systemd[journalflags=1]
 journalmatch = SYSLOG_IDENTIFIER=drupal
 action  = {{ fail2ban_drupal_action | default(login_action) }}
 maxretry = {{ fail2ban_drupal_honeypot_maxretry }}
