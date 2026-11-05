@@ -109,8 +109,8 @@ mta = sendmail
 # Default protocol
 protocol = tcp
 
-# Chain for iptables-* actions, unused by the nftables actions, which keep
-# their rules in the own table f2b-table
+# Chain for the iptables-* actions. The nftables actions take it as the name of
+# their chain in the own table f2b-table
 chain = INPUT
 
 # Ports to be banned

@@ -242,8 +242,11 @@
       register: fail2ban_log
 
     # The nftables action creates set and rule of a jail with its first ban
-    - name: Ban a sample address in the sshd jail
-      ansible.builtin.command: fail2ban-client set sshd banip 192.0.2.40
+    - name: Ban a sample address in the sshd and the recidive jail
+      ansible.builtin.command: fail2ban-client set {{ item.jail }} banip {{ item.ip }}
+      loop:
+        - {jail: sshd, ip: 192.0.2.40}
+        - {jail: recidive, ip: 192.0.2.41}
       changed_when: false
 
     - name: Read the nftables ruleset
@@ -251,8 +254,11 @@
       register: nft_ruleset
       changed_when: false
 
-    - name: Unban the sample address again
-      ansible.builtin.command: fail2ban-client set sshd unbanip 192.0.2.40
+    - name: Unban the sample addresses again
+      ansible.builtin.command: fail2ban-client set {{ item.jail }} unbanip {{ item.ip }}
+      loop:
+        - {jail: sshd, ip: 192.0.2.40}
+        - {jail: recidive, ip: 192.0.2.41}
       changed_when: false
 
     # Bans live in the own table of fail2ban, no iptables involved
@@ -264,16 +270,18 @@
           - "'set addr-set-drupal-honeypot' in nft_ruleset.stdout"
         fail_msg: "{{ nft_ruleset.stdout }}"
 
-    # type=multiport: the rules restrict the ban to the ports of the jail, an
-    # allports rule would reject every port of the banned address
+    # type=multiport restricts the ban to the ports of the jail, only recidive
+    # uses type=allports, whose rule matches the protocol without ports. The
+    # chain is named after the chain parameter of the action shortcuts.
     - name: Verify the ban rules are limited to the jail ports
       ansible.builtin.assert:
         that:
+          - "'chain INPUT' in nft_ruleset.stdout"
           # nft prints a single port without braces
           - nft_ruleset.stdout is search('tcp dport 22 ip saddr @addr-set-sshd reject')
           - nft_ruleset.stdout is search('tcp dport \{ 80, 443 \} ip saddr @addr-set-drupal-honeypot reject')
-          # an allports rule starts with the address match instead of dport
-          - nft_ruleset.stdout is not search('\\n\\s*ip6? saddr @addr6?-set-')
+          - nft_ruleset.stdout is search('meta l4proto (tcp|\{ tcp \}) ip saddr @addr-set-recidive reject')
+          - nft_ruleset.stdout is not search('dport[^\\n]*@addr-set-recidive')
         fail_msg: "{{ nft_ruleset.stdout }}"
 
     - name: Verify the banned sample addresses are in the honeypot set
