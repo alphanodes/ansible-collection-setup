@@ -241,11 +241,51 @@
         path: /var/log/fail2ban.log
       register: fail2ban_log
 
-    - name: Check iptables rules created by fail2ban
-      ansible.builtin.command: iptables -L f2b-sshd
-      register: iptables_rules
+    # The nftables action creates set and rule of a jail with its first ban
+    - name: Ban a sample address in the sshd jail
+      ansible.builtin.command: fail2ban-client set sshd banip 192.0.2.40
       changed_when: false
-      failed_when: false
+
+    - name: Read the nftables ruleset
+      ansible.builtin.command: nft list ruleset
+      register: nft_ruleset
+      changed_when: false
+
+    - name: Unban the sample address again
+      ansible.builtin.command: fail2ban-client set sshd unbanip 192.0.2.40
+      changed_when: false
+
+    # Bans live in the own table of fail2ban, no iptables involved
+    - name: Verify fail2ban created its nftables table with the jail sets
+      ansible.builtin.assert:
+        that:
+          - "'table inet f2b-table' in nft_ruleset.stdout"
+          - "'set addr-set-sshd' in nft_ruleset.stdout"
+          - "'set addr-set-drupal-honeypot' in nft_ruleset.stdout"
+        fail_msg: "{{ nft_ruleset.stdout }}"
+
+    # type=multiport: the rules restrict the ban to the ports of the jail, an
+    # allports rule would reject every port of the banned address
+    - name: Verify the ban rules are limited to the jail ports
+      ansible.builtin.assert:
+        that:
+          # nft prints a single port without braces
+          - nft_ruleset.stdout is search('tcp dport 22 ip saddr @addr-set-sshd reject')
+          - nft_ruleset.stdout is search('tcp dport \{ 80, 443 \} ip saddr @addr-set-drupal-honeypot reject')
+          # an allports rule starts with the address match instead of dport
+          - nft_ruleset.stdout is not search('\\n\\s*ip6? saddr @addr6?-set-')
+        fail_msg: "{{ nft_ruleset.stdout }}"
+
+    - name: Verify the banned sample addresses are in the honeypot set
+      ansible.builtin.assert:
+        that:
+          - nft_ruleset.stdout is search('set addr-set-drupal-honeypot \{[^}]*192\.0\.2\.30')
+          - nft_ruleset.stdout is search('set addr-set-drupal-honeypot \{[^}]*192\.0\.2\.32')
+        fail_msg: "{{ nft_ruleset.stdout }}"
+
+    - name: Verify the nftables package is installed
+      ansible.builtin.command: dpkg-query -W nftables
+      changed_when: false
 
     - name: Test Matrix configuration with complete setup
       block:
@@ -293,6 +333,6 @@
           - "SSH jail running: {{ 'OK' if sshd_jail_status.rc == 0 else 'INFO: SSH jail not active' }}"
           - "Nginx jail running: {{ 'OK' if nginx_jail_status.rc == 0 else 'INFO: Nginx jail not active' }}"
           - "fail2ban log exists: {{ 'OK' if fail2ban_log.stat.exists else 'FAILED' }}"
-          - "iptables rules: {{ 'OK' if iptables_rules.rc == 0 else 'INFO: No iptables rules yet' }}"
+          - "nftables table: {{ 'OK' if 'f2b-table' in nft_ruleset.stdout else 'FAILED' }}"
           - "Matrix script syntax: {{ 'OK' if matrix_script_syntax is defined and matrix_script_syntax.rc == 0 else 'SKIPPED' }}"
           - "=== fail2ban ROLE VERIFICATION SUCCESS ==="

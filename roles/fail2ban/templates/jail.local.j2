@@ -109,7 +109,8 @@ mta = sendmail
 # Default protocol
 protocol = tcp
 
-# Specify chain where jumps would need to be added in iptables-* actions
+# Chain for iptables-* actions, unused by the nftables actions, which keep
+# their rules in the own table f2b-table
 chain = INPUT
 
 # Ports to be banned
@@ -119,12 +120,12 @@ port = 0:65535
 #
 # Action shortcuts. To be used to define action parameter
 
-# Default banning action (e.g. iptables, iptables-new,
-# iptables-multiport, shorewall, etc) It is used to define
-# action_* variables. Can be overridden globally or per
-# section within jail.local file
-banaction = iptables-multiport
-banaction_allports = iptables-allports
+# Default banning action, used to define the action_* variables. Can be
+# overridden globally or per section within jail.local file. multiport blocks
+# only the ports of the jail, allports blocks the address on all ports (do not
+# use on hosts addressed by recycled public cloud IPs).
+banaction = nftables[type=multiport]
+banaction_allports = nftables[type=allports]
 
 # The simplest action to take: ban only
 action_ = %(banaction)s[name=%(__name__)s, bantime="%(bantime)s", port="%(port)s", protocol="%(protocol)s", chain="%(chain)s"]
@@ -141,12 +142,6 @@ action_mwl = %(banaction)s[name=%(__name__)s, bantime="%(bantime)s", port="%(por
 {% if fail2ban_matrix_server is defined and fail2ban_matrix_server is not none and fail2ban_matrix_server | length > 0 and fail2ban_matrix_token is defined and fail2ban_matrix_token is not none and fail2ban_matrix_token | length > 0 and fail2ban_matrix_room_id is defined and fail2ban_matrix_room_id is not none and fail2ban_matrix_room_id | length > 0 %}
 action_with_matrix = %(banaction)s[name=%(__name__)s, bantime="%(bantime)s", port="%(port)s", protocol="%(protocol)s", chain="%(chain)s"]
                      matrix[name=%(__name__)s, dest="%(destemail)s", chain="%(chain)s"]
-
-action_with_matrix_proxy = iptables-proxy[name=%(__name__)s, port="%(port)s",protocol="%(protocol)s"]
-                           matrix[name=%(__name__)s, dest="%(destemail)s", chain="%(chain)s"]
-
-action_with_matrix_http = iptables-proxy[name=%(__name__)s, port="80",protocol="%(protocol)s"]
-                          matrix[name=%(__name__)s, dest="%(destemail)s", chain="%(chain)s"]
 {% endif %}
 
 # Report block via blocklist.de fail2ban reporting service API

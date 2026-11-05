@@ -1,9 +1,12 @@
 ---
 # defaults file for fail2ban
 
+# Bans are nftables sets in an own table (f2b-table), iptables is not needed.
+# nftables actions of fail2ban exist since 0.9.4, the dedicated table since
+# 0.10.5 (Debian 11 and later).
 fail2ban_packages:
   - fail2ban
-  - iptables
+  - nftables
   - python3-systemd
   - whois
 
@@ -32,12 +35,12 @@ fail2ban_default_maxretry: 6
 
 # fail2ban_sshd_bantime: 2h
 fail2ban_sshd_port: "{{ ssh_server_port | default('ssh') }}"
-# Ban action for the sshd jail. Default: iptables-multiport blocks only the SSH
-# port. The historical default 'iptables-allports' blocks all ports of the
-# banned IP, which is dangerous on hosts addressed by ephemeral public cloud
-# IPs (e.g. CI runners) where IP recycling can cause legitimate traffic to be
-# rejected on HTTPS/Registry ports as collateral damage.
-fail2ban_sshd_banaction: iptables-multiport
+# Ban action for the sshd jail. Default: nftables[type=multiport] blocks only
+# the SSH port. 'nftables[type=allports]' (or the historical iptables-allports)
+# blocks all ports of the banned IP, which is dangerous on hosts addressed by
+# ephemeral public cloud IPs (e.g. CI runners) where IP recycling can cause
+# legitimate traffic to be rejected on HTTPS/Registry ports as collateral damage.
+fail2ban_sshd_banaction: nftables[type=multiport]
 
 # for all login filters
 fail2ban_login_action: "%(action_with_matrix)s"

@@ -47,11 +47,11 @@
     mode: '0644'
   notify: Restart fail2ban
 
-- name: Install actions
-  ansible.builtin.copy:
-    src: action.d/
-    dest: '{{ fail2ban_action_path }}'
-    mode: '0644'
+# Replaced by the nftables actions shipped with fail2ban
+- name: Remove the obsolete iptables-proxy action
+  ansible.builtin.file:
+    path: '{{ fail2ban_action_path }}/iptables-proxy.conf'
+    state: absent
   notify: Restart fail2ban
 
 - name: Install filters
