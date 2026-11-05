@@ -151,9 +151,17 @@ table inet netfilter {
     ip6 saddr {{ allowed_network }} accept
 {% endfor %}
 {% for forward in netfilter_forward %}
-    {{ 'ip saddr ' ~ forward.saddr ~ ' ' if forward.saddr is defined else '' }}ip daddr {{ forward.daddr }} {{ forward.prot | default('tcp') }}{{ ' dport ' ~ forward.dport if forward.dport is defined else '' }} accept
+{% if forward.dport is defined %}
+    {{ 'ip saddr ' ~ forward.saddr ~ ' ' if forward.saddr is defined else '' }}ip daddr {{ forward.daddr }} {{ forward.prot | default('tcp') }} dport {{ forward.dport }} accept
+{% else %}
+    {{ 'ip saddr ' ~ forward.saddr ~ ' ' if forward.saddr is defined else '' }}ip daddr {{ forward.daddr }} meta l4proto {{ forward.prot | default('tcp') }} accept
+{% endif %}
 {% if forward.saddr_v6 is defined and forward.daddr_v6 is defined %}
-    ip6 saddr {{ forward.saddr_v6 }} ip6 daddr {{ forward.daddr_v6 }} {{ forward.prot | default('tcp') }}{{ ' dport ' ~ forward.dport if forward.dport is defined else '' }} accept
+{% if forward.dport is defined %}
+    ip6 saddr {{ forward.saddr_v6 }} ip6 daddr {{ forward.daddr_v6 }} {{ forward.prot | default('tcp') }} dport {{ forward.dport }} accept
+{% else %}
+    ip6 saddr {{ forward.saddr_v6 }} ip6 daddr {{ forward.daddr_v6 }} meta l4proto {{ forward.prot | default('tcp') }} accept
+{% endif %}
 {% endif %}
 {% endfor %}
 {% endif %}
@@ -174,10 +182,11 @@ table inet netfilter {
 {% endif %}
   }
 }
-{% if netfilter_prerouting | length > 0 or netfilter_postrouting | length > 0 %}
 
+# declared and deleted unconditionally, so emptied NAT lists remove the table
 table ip netfilter-nat
 delete table ip netfilter-nat
+{% if netfilter_prerouting | length > 0 or netfilter_postrouting | length > 0 %}
 
 table ip netfilter-nat {
   chain prerouting {

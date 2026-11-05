@@ -35,10 +35,11 @@
     - name: Verify the input rules
       ansible.builtin.assert:
         that:
-          - "'ip saddr 192.0.2.0/24 tcp dport 22 accept' in ruleset.stdout"
-          - "'ip saddr 198.51.100.7 tcp dport 22 accept' in ruleset.stdout"
-          - "'ip6 saddr 2001:db8:1::/64 tcp dport 22 accept' in ruleset.stdout"
-          - ruleset.stdout is not search('\\n\\s*meta nfproto ipv[46] tcp dport 22 accept')
+          - "'ip saddr 192.0.2.0/24 tcp dport 7099 accept' in ruleset.stdout"
+          - "'ip saddr 198.51.100.7 tcp dport 7099 accept' in ruleset.stdout"
+          - "'ip6 saddr 2001:db8:1::/64 tcp dport 7099 accept' in ruleset.stdout"
+          - ruleset.stdout is not search('tcp dport 22 accept')
+          - ruleset.stdout is not search('\\n\\s*meta nfproto ipv[46] tcp dport 7099 accept')
           - "'tcp dport 80 accept' in ruleset.stdout"
           - "'tcp dport 8000-8010 accept' in ruleset.stdout"
           - "'udp dport 443 accept' in ruleset.stdout"
@@ -69,6 +70,7 @@
       ansible.builtin.assert:
         that:
           - "'ip saddr 198.51.100.1 ip daddr 10.10.0.2 tcp dport 80 accept' in ruleset.stdout"
+          - "'ip daddr 10.10.0.3 meta l4proto icmp accept' in ruleset.stdout"
           - "'table ip netfilter-nat' in ruleset.stdout"
           - "'ip daddr 192.0.2.1 tcp dport 80 dnat to 10.10.0.2' in ruleset.stdout"
           - "'ip daddr 192.0.2.1 ip protocol icmp dnat to 10.10.0.2' in ruleset.stdout"
@@ -81,10 +83,30 @@
       ansible.builtin.command: fail2ban-client set sshd banip 192.0.2.40
       changed_when: false
 
+    - name: Get the stop command of the nftables service
+      ansible.builtin.command: systemctl show nftables -p ExecStop
+      register: nftables_execstop
+      changed_when: false
+
+    # the drop-in removes the flush ruleset of the packaged unit, systemctl
+    # prints nothing for a cleared ExecStop
+    - name: Verify the nftables service has no stop command
+      ansible.builtin.assert:
+        that:
+          - nftables_execstop.stdout | trim | length == 0
+        fail_msg: "{{ nftables_execstop.stdout }}"
+
     - name: Reload nftables
       ansible.builtin.systemd_service:
         name: nftables
         state: reloaded
+      changed_when: false
+
+    # Debian restarts the unit on package upgrades
+    - name: Restart nftables
+      ansible.builtin.systemd_service:
+        name: nftables
+        state: restarted
       changed_when: false
 
     - name: Read the ruleset after the reload
@@ -96,7 +118,7 @@
       ansible.builtin.command: fail2ban-client set sshd unbanip 192.0.2.40
       changed_when: false
 
-    - name: Verify the reload keeps the table and the ban of fail2ban
+    - name: Verify reload and restart keep the table and the ban of fail2ban
       ansible.builtin.assert:
         that:
           - "'table inet f2b-table' in ruleset_reloaded.stdout"

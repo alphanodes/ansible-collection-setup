@@ -53,6 +53,8 @@
 
   vars:
     netfilter_state: active
+    # production hosts run ssh on a custom port
+    ssh_server_port: 7099
     # molecule works with docker exec, ssh restrictions cannot lock it out
     netfilter_ssh_sources:
       - 192.0.2.0/24
@@ -92,6 +94,8 @@
       - saddr: 198.51.100.1
         daddr: 10.10.0.2
         dport: 80
+      - daddr: 10.10.0.3
+        prot: icmp
     netfilter_prerouting:
       - daddr: 192.0.2.1
         dport: 80

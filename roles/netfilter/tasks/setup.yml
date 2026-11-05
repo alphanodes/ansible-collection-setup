@@ -5,6 +5,22 @@
     name: '{{ netfilter_packages }}'
     state: present
 
+# Debian restarts nftables.service on package upgrades and its ExecStop flushes
+# the whole ruleset, including the table of fail2ban. Without ExecStop a restart
+# only reloads the configuration.
+- name: Create the nftables service drop-in directory
+  ansible.builtin.file:
+    path: /etc/systemd/system/nftables.service.d
+    state: directory
+    mode: '0755'
+
+- name: Keep nftables from flushing the ruleset on stop
+  ansible.builtin.template:
+    src: override.conf.j2
+    dest: /etc/systemd/system/nftables.service.d/override.conf
+    mode: '0644'
+  notify: Reload systemd daemon
+
 - name: Activate rules
   when: netfilter_state == 'active'
   block:
@@ -30,5 +46,8 @@
   when: netfilter_state != 'active'
   ansible.builtin.include_tasks: deactivate.yml
 
+# Only once the nftables rules protect the host, other states leave foreign
+# iptables rules (e.g. of Docker) alone
 - name: Include iptables cleanup tasks
   ansible.builtin.include_tasks: cleanup_iptables.yml
+  when: netfilter_state == 'active'

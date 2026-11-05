@@ -3,5 +3,8 @@
 - name: Remove the rules of this role
   ansible.builtin.include_tasks: deactivate.yml
 
-- name: Include iptables cleanup tasks
-  ansible.builtin.include_tasks: cleanup_iptables.yml
+- name: Remove the nftables service drop-in
+  ansible.builtin.file:
+    path: /etc/systemd/system/nftables.service.d/override.conf
+    state: absent
+  notify: Reload systemd daemon
