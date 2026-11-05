@@ -21,15 +21,27 @@
       - name: user.name
         value: "{{ hedgedoc_user }} job"
 
+# Empty on a fresh host, there the install builds the native modules anyway
+- name: Get node version before the nodejs role
+  ansible.builtin.command: node --version
+  register: hedgedoc_node_version_before
+  changed_when: false
+  failed_when: false
+
 - name: Include nodejs role
   ansible.builtin.include_role:
     name: alphanodes.setup.nodejs
     public: true
 
+# Native modules (sqlite3, bufferutil, utf-8-validate) are built for one node
+# ABI, so a new node release needs a rebuild before the service is restarted
 - name: Get installed node version
   ansible.builtin.command: "{{ nodejs_bin }} --version"
   register: hedgedoc_node_version
-  changed_when: false
+  changed_when:
+    - hedgedoc_node_version_before.rc == 0
+    - hedgedoc_node_version_before.stdout != hedgedoc_node_version.stdout
+  notify: Run yarn rebuild
 
 # Checked before the checkout, so an unsupported node version does not leave
 # the working copy on a revision that never gets built

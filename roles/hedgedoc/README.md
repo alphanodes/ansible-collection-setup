@@ -4,7 +4,7 @@ An Ansible Role that installs [HedgeDoc](https://hedgedoc.org/) on Debian and Ub
 
 ## Requirements
 
-HedgeDoc 1.12.0 and later require Node.js 20.17 or later. The role installs Node.js with the `nodejs` role and fails early if the installed version is too old.
+HedgeDoc 1.12 requires Node.js 20.17 or later, 22, 24 or 26, upstream runs its container on Node.js 24. The role installs Node.js with the `nodejs` role and fails early if the installed version is too old.
 
 ## Role Variables
 
