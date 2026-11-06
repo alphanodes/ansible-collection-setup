@@ -15,10 +15,15 @@
     name: '{{ ansible_node_packages }}'
     state: present
 
+# ansible-core is pinned only when ansible_node_ansible_core_version is set
 - name: Install ansible
   ansible.builtin.pip:
-    name: ansible
-    version: "{{ ansible_node_ansible_version }}"
+    name: >-
+      {{
+        ['ansible==' ~ ansible_node_ansible_version]
+        + (['ansible-core==' ~ ansible_node_ansible_core_version]
+           if ansible_node_ansible_core_version | length > 0 else [])
+      }}
     state: present
     virtualenv: '{{ ansible_pip_venv_path }}'
     virtualenv_site_packages: '{{ python_pip_virtualenv_site_packages }}'

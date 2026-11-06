@@ -54,7 +54,14 @@ ansible_node_disallowed_packages:
 # Problems with 11.1:
 # fatal: [127.0.0.1]: FAILED! => {"changed": false, "module_stderr": "/bin/sh: line 1: /root/.venvs/ansible/bin/python3.11: Permission denied\n", "module_stdout": "", "msg": "MODULE FAILURE: No start of json char found\nSee stdout/stderr for the exact error", "rc": 126}
 
-ansible_node_ansible_version: '14.5'
+ansible_node_ansible_version: '14.5.0'
+
+# The ansible package pulls the newest matching ansible-core point release
+# (ansible 14.5.0 -> ansible-core ~= 2.21.5). Set a version here to pin the
+# core when a point release is broken, e.g. '2.21.5' while 2.21.6 crashes the
+# git module on shallow clones (https://github.com/ansible/ansible/issues/87881).
+# Empty: no pin, the version required by the ansible package is used.
+ansible_node_ansible_core_version: ''
 
 ansible_node_pip_packages:
   - passlib

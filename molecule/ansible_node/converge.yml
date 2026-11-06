@@ -14,6 +14,9 @@
     - role: alphanodes.setup.common
     - role: alphanodes.setup.ansible_node
       vars:
+        # Pin the core to verify the pin reaches the venv (a point release
+        # below the one the ansible package would pull)
+        ansible_node_ansible_core_version: '2.21.5'
         # Override for testing: use 'install' without -U for idempotence
         ansible_node_collections:
           - name: 'git+https://git.alphanodes.com/alphanodes/ansible-collection-tasks.git,main'
@@ -31,5 +34,14 @@
 
   post_tasks:
     - name: Verify ansible is installed
-      ansible.builtin.command: ansible --version
+      ansible.builtin.command:
+        argv:
+          - '{{ ansible_pip_venv_path }}/bin/ansible'
+          - --version
+      register: ansible_node_version
       changed_when: false
+
+    - name: Verify the configured ansible-core version is installed
+      ansible.builtin.assert:
+        that:
+          - ansible_node_version.stdout_lines[0] == 'ansible [core ' ~ ansible_node_ansible_core_version ~ ']'
