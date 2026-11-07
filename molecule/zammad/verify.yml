@@ -69,11 +69,17 @@
       ansible.builtin.stat:
         path: '{{ item }}'
       loop:
-        - /opt/zammad/config/database.yml
+        - /etc/zammad/database.yml
         - /etc/zammad/conf.d/zz-ansible
         - /etc/zammad
         - /etc/zammad/conf.d
       register: secrets
+
+    - name: Inspect database configuration link
+      ansible.builtin.stat:
+        path: /opt/zammad/config/database.yml
+        follow: false
+      register: database_config_link
 
     - name: Read generated vhost
       ansible.builtin.slurp:
@@ -89,6 +95,9 @@
           - clusters.stdout_lines | length == 1
           - "'zammad' in holds.stdout_lines"
           - secrets.results[0].stat.mode == '0600'
+          - secrets.results[0].stat.pw_name == 'zammad'
+          - database_config_link.stat.islnk
+          - database_config_link.stat.lnk_source == '/etc/zammad/database.yml'
           - secrets.results[1].stat.mode == '0640'
           - secrets.results[2].stat.pw_name == 'root'
           - secrets.results[3].stat.pw_name == 'root'

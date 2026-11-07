@@ -28,6 +28,20 @@
           - disabled_service.stdout == 'inactive'
           - not disabled_vhost.stat.exists
 
+    - name: Remove database link to simulate the previous configuration layout
+      ansible.builtin.file:
+        path: /opt/zammad/config/database.yml
+        state: absent
+
+    - name: Restore a regular database file to exercise migration
+      ansible.builtin.copy:
+        src: /etc/zammad/database.yml
+        dest: /opt/zammad/config/database.yml
+        remote_src: true
+        owner: zammad
+        group: zammad
+        mode: '0600'
+
     - name: Re-enable application
       ansible.builtin.include_role:
         name: alphanodes.setup.zammad

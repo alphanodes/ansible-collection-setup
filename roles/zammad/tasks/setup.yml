@@ -83,16 +83,6 @@
     group: zammad
     mode: '0750'
 
-- name: Configure Zammad database before package installation
-  ansible.builtin.template:
-    src: database.yml.j2
-    dest: /opt/zammad/config/database.yml
-    owner: zammad
-    group: zammad
-    mode: '0600'
-  no_log: '{{ hide_sensitive_data }}'
-  notify: Restart zammad
-
 # pkgr sources these shell exports for CLI commands and package hooks as well
 # as systemd services. They must exist before postinst checks Redis.
 - name: Create Zammad environment directory
@@ -102,6 +92,27 @@
     owner: root
     group: zammad
     mode: '0750'
+
+- name: Configure Zammad database before package installation
+  ansible.builtin.template:
+    src: database.yml.j2
+    dest: /etc/zammad/database.yml
+    owner: zammad
+    group: zammad
+    mode: '0600'
+  no_log: '{{ hide_sensitive_data }}'
+  notify: Restart zammad
+
+# Replace the previously managed regular file only after its replacement exists.
+- name: Link Zammad database configuration from the package path
+  ansible.builtin.file:
+    src: /etc/zammad/database.yml
+    dest: /opt/zammad/config/database.yml
+    state: link
+    force: true
+    owner: zammad
+    group: zammad
+  notify: Restart zammad
 
 - name: Configure Zammad package environment
   ansible.builtin.template:

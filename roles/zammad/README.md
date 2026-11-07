@@ -26,6 +26,8 @@ Provide a TLS certificate through `ssl_certs` or an existing Let's Encrypt certi
 
 Set `zammad_with_elasticsearch: false` to disable search indexing. With `zammad_manage_elasticsearch: true`, the Elasticsearch DEB dependency stays installed but its service is stopped, disabled and masked. Set the usage flag back to true to start it and build a missing index. Set `zammad_vhost_users` to protect the entire vhost with HTTP Basic Auth, including WebSocket paths. Gateway Basic Auth credentials are removed from proxied requests; browser sessions authenticate inside Zammad.
 
+The database configuration is managed in `/etc/zammad/database.yml` and linked from `/opt/zammad/config/database.yml`, so existing `/etc` monitoring also tracks it. An existing regular database configuration file is replaced by the link. Package-owned Rails configuration stays under `/opt/zammad/config`. An optional S3 configuration in `config/zammad/storage.yml` is not currently managed by this role.
+
 The package is held against general APT upgrades. Set `zammad_version` to an exact package version to request a controlled upgrade. Back up through the central backup workflow before upgrades; major versions must not be skipped. Package scripts run migrations. A downgrade is not supported.
 
 Backups are managed separately through the central `alphanodes.tasks.backup` workflow. Include the Zammad PostgreSQL database, `/opt/zammad/config`, `/opt/zammad/storage` and `/etc/zammad`. This role does not create backups or schedule backup jobs. Disabling `zammad_enabled` stops the application and removes its active vhost; data and shared services remain.
