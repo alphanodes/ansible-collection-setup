@@ -15,7 +15,6 @@ name: "alphanodes.setup.zammad"
       - 'roles/elasticsearch/**'
       - 'roles/nginx_mono/**'
       - 'roles/ssl/**'
-      - 'roles/systemd_timer/**'
       - 'molecule/zammad/**'
       - '.github/workflows/zammad.yml'
 
@@ -55,7 +54,7 @@ jobs:
           python -m pip install --no-cache-dir --upgrade pip
           python -m pip install -r requirements.txt
 
-      - name: Run backup and credential template tests.
+      - name: Run credential template tests.
         run: python -m unittest discover -s molecule/zammad/tests -v
 
       - name: Run Molecule tests.

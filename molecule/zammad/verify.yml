@@ -73,7 +73,6 @@
         - /etc/zammad/conf.d/zz-ansible
         - /etc/zammad
         - /etc/zammad/conf.d
-        - /etc/zammad-backup.json
       register: secrets
 
     - name: Read generated vhost
@@ -93,21 +92,10 @@
           - secrets.results[1].stat.mode == '0640'
           - secrets.results[2].stat.pw_name == 'root'
           - secrets.results[3].stat.pw_name == 'root'
-          - secrets.results[4].stat.mode == '0600'
           - "'location /ws' in (vhost.content | b64decode)"
           - "'location /cable' in (vhost.content | b64decode)"
           - "'proxy_pass http://127.0.0.1:6142;' in (vhost.content | b64decode)"
           - "'proxy_pass http://127.0.0.1:3100;' in (vhost.content | b64decode)"
-
-    - name: Read active backup timer
-      ansible.builtin.command: systemctl is-active zammad-backup.timer
-      changed_when: false
-      register: timer
-
-    - name: Verify scheduled backups
-      ansible.builtin.assert:
-        that:
-          - timer.stdout == 'active'
 
     - name: Verify WebSocket upgrades through nginx
       ansible.builtin.command:
@@ -134,32 +122,4 @@
                     connection.sendall(request.encode())
                     status = connection.recv(4096).split(b'\r\n')[0]
                     assert b' 101 ' in status, (path, status)
-      changed_when: false
-
-    - name: Create an actual backup
-      ansible.builtin.command: /usr/local/sbin/zammad-backup
-      changed_when: true
-
-    - name: Validate backup dump and retained configuration
-      ansible.builtin.command:
-        argv:
-          - python3
-          - -c
-          - |
-            from pathlib import Path
-            import subprocess
-            import tarfile
-            import tempfile
-            backups = sorted(Path('/var/backups/zammad').glob('zammad-*.tar'))
-            assert backups
-            with tempfile.TemporaryDirectory() as work:
-                with tarfile.open(backups[-1]) as archive:
-                    assert set(archive.getnames()) == {'database.dump', 'files.tar.gz', 'version.txt'}
-                    archive.extractall(work, filter='data')
-                subprocess.run(['pg_restore', '--list', work + '/database.dump'], check=True,
-                               stdout=subprocess.DEVNULL)
-                with tarfile.open(work + '/files.tar.gz') as archive:
-                    assert 'etc/zammad/conf.d/zz-ansible' in archive.getnames()
-                    assert 'opt/zammad/config/database.yml' in archive.getnames()
-            assert subprocess.run(['systemctl', 'is-active', '--quiet', 'zammad']).returncode == 0
       changed_when: false

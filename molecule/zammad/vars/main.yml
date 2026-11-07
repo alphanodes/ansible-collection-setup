@@ -9,7 +9,6 @@ zammad_db_user: helpdesk_test
 postgresql_port: 5543
 zammad_http_port: 3100
 zammad_websocket_port: 6142
-zammad_backup_enabled: true
 nginx_with_ssl: false
 postgresql_log_destination: stderr
 postgresql_shared_buffers: 128MB

@@ -41,12 +41,3 @@ zammad_elasticsearch_password: ''
 zammad_elasticsearch_index: zammad
 # Additional Zammad Setting values. Core connection settings below take precedence.
 zammad_settings: {}
-
-# Backups include files and database. Store copies off-host independently.
-# The timer is opt-in; its removal is managed when disabled.
-zammad_backup_enabled: false
-zammad_backup_dir: /var/backups/zammad
-zammad_backup_hold_days: 10
-zammad_backup_on_calendar: '*-*-* 02:00:00'
-zammad_backup_randomized_delay_sec: 15min
-zammad_backup_before_upgrade: true

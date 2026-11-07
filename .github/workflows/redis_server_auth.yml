@@ -1,0 +1,39 @@
+---
+name: "alphanodes.setup.redis_server_auth"
+'on':
+  pull_request:
+  push:
+    branches:
+      - main
+    paths:
+      - 'roles/redis_server/**'
+      - 'roles/common/**'
+      - 'molecule/redis_server_auth/**'
+      - '.github/workflows/redis_server_auth.yml'
+defaults:
+  run:
+    working-directory: redis_server_auth
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        distro:
+          - debian13
+          - ubuntu2604
+    steps:
+      - name: Check out the codebase
+        uses: actions/checkout@v5
+        with:
+          path: redis_server_auth
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install test dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Run Redis authentication integration tests
+        run: molecule test -s redis_server_auth
+        env:
+          MOLECULE_DISTRO: ${{ matrix.distro }}

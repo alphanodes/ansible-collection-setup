@@ -29,8 +29,13 @@ def render(name, variables):
 
 
 class TemplateTest(unittest.TestCase):
+    @unittest.skipUnless(shutil.which('ruby'), 'Ruby is required to exercise Rails ERB and YAML processing')
     def test_database_password_remains_a_literal_yaml_string(self):
-        password = "quote'\" backslash\\ newline\ncolon: #{raise 'interpolation'}"
+        password = (
+            "quote'\" backslash\\ newline\ncolon: #{raise 'interpolation'} "
+            "<%= raise 'ERB interpolation' %> <% raise 'ERB execution' %> "
+            "<% invalid ruby syntax ! %> \\u003c äöüß"
+        )
         content = render('database.yml.j2', {
             'zammad_db_name': 'helpdesk', 'zammad_db_user': 'helpdesk',
             'zammad_db_password': password, 'zammad_db_host': '127.0.0.1',
@@ -39,6 +44,14 @@ class TemplateTest(unittest.TestCase):
         settings = yaml.safe_load(content)['production']
         self.assertEqual(settings['password'], password)
         self.assertEqual(settings['port'], 5543)
+        # Rails processes database.yml with ERB before loading the resulting YAML.
+        result = subprocess.run(
+            ['ruby', '-rerb', '-ryaml', '-rjson', '-e',
+             'puts JSON.generate(YAML.safe_load(ERB.new(STDIN.read).result))'],
+            input=content, capture_output=True, text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)['production'], settings)
 
     def test_shell_environment_preserves_literal_metacharacters(self):
         url = 'redis://:password-$USER-$(false)-\'"@127.0.0.1:6379/5'

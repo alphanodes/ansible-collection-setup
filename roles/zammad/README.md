@@ -14,7 +14,6 @@ Available variables can be found in [defaults/main.yml](defaults/main.yml).
     zammad_vhost_server: support.example.com
     zammad_db_password: '{{ vault_zammad_db_password }}'
     zammad_vhost_letsencrypt: true
-    zammad_backup_enabled: true
   roles:
     - alphanodes.setup.zammad
 ```
@@ -27,8 +26,8 @@ Provide a TLS certificate through `ssl_certs` or an existing Let's Encrypt certi
 
 Set `zammad_with_elasticsearch: false` to disable search indexing. With `zammad_manage_elasticsearch: true`, the Elasticsearch DEB dependency stays installed but its service is stopped, disabled and masked. Set the usage flag back to true to start it and build a missing index. Set `zammad_vhost_users` to protect the entire vhost with HTTP Basic Auth, including WebSocket paths. Gateway Basic Auth credentials are removed from proxied requests; browser sessions authenticate inside Zammad.
 
-The package is held against general APT upgrades. Set `zammad_version` to an exact package version to request a controlled upgrade. Existing installations are backed up before a requested version change by default; major versions must not be skipped. Package scripts run migrations. A downgrade is not supported.
+The package is held against general APT upgrades. Set `zammad_version` to an exact package version to request a controlled upgrade. Back up through the central backup workflow before upgrades; major versions must not be skipped. Package scripts run migrations. A downgrade is not supported.
 
-Backups use `/usr/local/sbin/zammad-backup` and an optional `systemd_timer` timer. The application is stopped during backup and restarted afterwards if previously active. Each archive contains a checked PostgreSQL custom-format dump, application config and storage, and `/etc/zammad` (including secrets). Symlinked application config or storage directories are rejected to avoid incomplete backups. Keep encrypted off-host copies. Restore on the same Zammad version: stop Zammad, extract the archive, restore `database.dump` using `pg_restore` into an empty database owned by the configured user, restore `files.tar.gz` at `/`, and rebuild the Elasticsearch index before starting Zammad. Test restoration before production use. Disabling `zammad_enabled` stops the application and removes its active vhost and backup timer; data and shared services remain.
+Backups are managed separately through the central `alphanodes.tasks.backup` workflow. Include the Zammad PostgreSQL database, `/opt/zammad/config`, `/opt/zammad/storage` and `/etc/zammad`. This role does not create backups or schedule backup jobs. Disabling `zammad_enabled` stops the application and removes its active vhost; data and shared services remain.
 
 Official DEB packages require amd64. The Molecule scenario uses an amd64 Docker platform; native amd64 is recommended because systemd services may fail under ARM host emulation. Budget at least 10 GB RAM for the application, PostgreSQL and local Elasticsearch together.

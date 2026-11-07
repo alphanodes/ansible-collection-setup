@@ -5,7 +5,7 @@
   vars_files:
     - vars/main.yml
   tasks:
-    - name: Disable application and scheduled backups
+    - name: Disable application
       ansible.builtin.include_role:
         name: alphanodes.setup.zammad
       vars:
@@ -17,11 +17,6 @@
       changed_when: false
       failed_when: false
 
-    - name: Inspect disabled backup timer
-      ansible.builtin.stat:
-        path: /etc/systemd/system/zammad-backup.timer
-      register: disabled_timer
-
     - name: Inspect disabled vhost
       ansible.builtin.stat:
         path: /etc/nginx/sites-enabled/zammad.conf
@@ -31,9 +26,8 @@
       ansible.builtin.assert:
         that:
           - disabled_service.stdout == 'inactive'
-          - not disabled_timer.stat.exists
           - not disabled_vhost.stat.exists
 
-    - name: Re-enable application and backups
+    - name: Re-enable application
       ansible.builtin.include_role:
         name: alphanodes.setup.zammad

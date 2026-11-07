@@ -54,6 +54,7 @@
     owner: redis
     group: redis
     mode: '0640'
+  no_log: '{{ redis_server_requirepass | length > 0 }}'
   notify: Restart redis
 
 - name: Setup sysctl vm.overcommit_memory
@@ -98,16 +99,41 @@
           journalctl:
           {{ redis_journal_logs.stdout | default('') }}
 
+- name: Apply Redis configuration before checking availability
+  ansible.builtin.meta: flush_handlers
+
 - name: Test Redis is working on port {{ redis_server_port }}
-  ansible.builtin.command: redis-cli ping
+  ansible.builtin.command:
+    argv:
+      - redis-cli
+      - -h
+      - '{{ redis_server_healthcheck_host }}'
+      - -p
+      - '{{ redis_server_port | string }}'
+      - ping
+  environment:
+    REDISCLI_AUTH: '{{ redis_server_requirepass }}'
   register: redis_test
-  failed_when: redis_test.stdout != 'PONG'
+  failed_when: redis_test.rc != 0 or redis_test.stdout != 'PONG'
   changed_when: false
-  when: redis_server_port != 0
+  no_log: '{{ redis_server_requirepass | length > 0 }}'
+  when:
+    - redis_server_port | int != 0
+    - not ansible_check_mode
 
 - name: Test Redis is working on socket
-  ansible.builtin.command: redis-cli -s {{ redis_server_unixsocket }} ping
+  ansible.builtin.command:
+    argv:
+      - redis-cli
+      - -s
+      - '{{ redis_server_unixsocket }}'
+      - ping
+  environment:
+    REDISCLI_AUTH: '{{ redis_server_requirepass }}'
   register: redis_test
-  failed_when: redis_test.stdout != 'PONG'
+  failed_when: redis_test.rc != 0 or redis_test.stdout != 'PONG'
   changed_when: false
-  when: redis_server_port == 0
+  no_log: '{{ redis_server_requirepass | length > 0 }}'
+  when:
+    - redis_server_port | int == 0
+    - not ansible_check_mode

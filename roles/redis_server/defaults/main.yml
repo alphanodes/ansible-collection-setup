@@ -17,6 +17,10 @@ redis_apt_signed_by: https://packages.redis.io/gpg
 # redis_vm_overcommit_memory: 1
 
 redis_server_bind: '127.0.0.1 -::1'
+# Override when the first bind address is not reachable by the local healthcheck.
+redis_server_healthcheck_host: >-
+  {{ redis_server_bind.split()[0] | regex_replace('^-', '')
+     | regex_replace('^0[.]0[.]0[.]0$', '127.0.0.1') | regex_replace('^::$', '::1') }}
 
 # Empty logfile = stdout only, captured by systemd journal
 redis_server_logfile: ''

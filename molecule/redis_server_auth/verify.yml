@@ -1,0 +1,90 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  tasks:
+    - name: Read active Redis service
+      ansible.builtin.command: systemctl is-active redis-server
+      changed_when: false
+      register: redis_auth_service
+
+    - name: Verify Redis service is running
+      ansible.builtin.assert:
+        that:
+          - redis_auth_service.stdout == 'active'
+
+    - name: Read configured memory limit through the Unix socket
+      ansible.builtin.command:
+        argv:
+          - redis-cli
+          - -s
+          - '{{ redis_server_unixsocket | default("/run/redis/redis.sock") }}'
+          - --raw
+          - CONFIG
+          - GET
+          - maxmemory
+      environment:
+        REDISCLI_AUTH: '{{ redis_server_requirepass | default("") }}'
+      changed_when: false
+      register: redis_auth_memory
+      no_log: '{{ redis_server_requirepass | default("") | length > 0 }}'
+
+    - name: Verify the applied configuration is active
+      ansible.builtin.assert:
+        that:
+          - redis_auth_memory.stdout_lines == ['maxmemory', '67108864']
+
+    - name: Ping non-default TCP address and port with authentication
+      ansible.builtin.command: redis-cli -h 127.0.0.2 -p 6387 ping
+      environment:
+        REDISCLI_AUTH: '{{ redis_server_requirepass }}'
+      changed_when: false
+      register: redis_auth_tcp
+      no_log: true
+      when: inventory_hostname == 'redis-auth-tcp-instance'
+
+    - name: Verify authenticated TCP connectivity
+      ansible.builtin.assert:
+        that:
+          - redis_auth_tcp.stdout == 'PONG'
+      when: inventory_hostname == 'redis-auth-tcp-instance'
+
+    - name: Try accessing password-protected Redis without authentication
+      ansible.builtin.command:
+        argv:
+          - redis-cli
+          - -s
+          - '{{ redis_server_unixsocket | default("/run/redis/redis.sock") }}'
+          - ping
+      environment:
+        REDISCLI_AUTH: ''
+      changed_when: false
+      failed_when: false
+      register: redis_auth_missing
+      when: redis_server_requirepass | default('') | length > 0
+
+    - name: Verify authentication is enforced
+      ansible.builtin.assert:
+        that:
+          - "'NOAUTH' in redis_auth_missing.stdout"
+      when: redis_server_requirepass | default('') | length > 0
+
+    - name: Verify socket-only Redis does not expose TCP
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: 6379
+        state: stopped
+        timeout: 3
+      when: inventory_hostname == 'redis-auth-socket-instance'
+
+    - name: Verify unauthenticated default TCP connectivity
+      ansible.builtin.command: redis-cli ping
+      changed_when: false
+      register: redis_auth_plain
+      when: inventory_hostname == 'redis-auth-plain-instance'
+
+    - name: Verify the default service still accepts unauthenticated clients
+      ansible.builtin.assert:
+        that:
+          - redis_auth_plain.stdout == 'PONG'
+      when: inventory_hostname == 'redis-auth-plain-instance'

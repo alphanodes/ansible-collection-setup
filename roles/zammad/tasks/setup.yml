@@ -1,17 +1,4 @@
 ---
-- name: Read installed packages
-  ansible.builtin.package_facts:
-    manager: apt
-
-- name: Back up existing Zammad before a requested package upgrade
-  ansible.builtin.command: /usr/local/sbin/zammad-backup
-  changed_when: true
-  when:
-    - zammad_backup_before_upgrade | bool
-    - zammad_version | length > 0
-    - "'zammad' in ansible_facts.packages"
-    - ansible_facts.packages.zammad[0].version != zammad_version
-
 - name: Add Zammad apt repository
   ansible.builtin.deb822_repository:
     name: zammad
