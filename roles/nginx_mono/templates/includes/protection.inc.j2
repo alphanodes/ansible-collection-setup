@@ -18,6 +18,11 @@
     return 444;
   }
 
+  # Deny multipart requests without a body
+  if ($bodyless_multipart) {
+    return 444;
+  }
+
 {% endif %}
 {% if instance.block_ai_crawlers | default(nginx_block_ai_crawlers) | bool %}
   # Deny AI crawlers and AI assistants

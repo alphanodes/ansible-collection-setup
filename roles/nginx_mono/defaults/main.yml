@@ -131,6 +131,11 @@ nginx_security_probe_patterns:
 # Same for the Content-Type and X-Forwarded-For headers. Rails also answers
 # a broken Content-Type with an InvalidMimeType backtrace. Path traversal
 # is left out, because a multipart boundary may contain "../".
+# The same switch also drops GET and HEAD requests with a multipart
+# Content-Type (no pattern needed): scanners probe POST / with a multipart
+# body against the bare IP, follow the redirect to the vhost as GET and
+# keep the header, and Rails logs a BadRequest backtrace for the empty
+# multipart body every time.
 nginx_security_probe_parsed_patterns:
   - '\$\{'
 

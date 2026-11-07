@@ -28,6 +28,16 @@ map "$http_content_type|$http_x_forwarded_for" $security_probe_parsed {
 {% endfor %}
 }
 
+# Multipart form data needs a request body, GET and HEAD never carry one.
+# Scanners send POST / with a multipart body to the bare IP, follow the
+# redirect to the vhost as GET and keep the Content-Type header. Rack then
+# parses an empty multipart body and Rails logs a BadRequest backtrace for
+# every attempt.
+map "$request_method|$http_content_type" $bodyless_multipart {
+  default 0;
+  "~*^(GET|HEAD)\|multipart/" 1;
+}
+
 map $http_user_agent $ai_crawler {
   default 0;
 {% for user_agent in nginx_ai_crawler_user_agents %}

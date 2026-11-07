@@ -357,16 +357,54 @@
       changed_when: false
       failed_when: safe_probe_response.rc not in [52, 56] or safe_probe_response.stdout != '000'
 
-    # A multipart boundary may contain "../", it must not be blocked
-    - name: Test multipart Content-Type with dots and slashes to safe.local works
+    # A multipart boundary may contain "../", it must not be blocked. The
+    # echo backend behind forwarded.local answers POST, so the upload reaches
+    # the upstream (a static vhost would answer 405).
+    - name: Test multipart upload with dots and slashes in the boundary to forwarded.local works
       ansible.builtin.command: >
-        curl -s -o /dev/null -w '%{http_code}' -H 'Host: safe.local'
+        curl -s -o /dev/null -w '%{http_code}' -H 'Host: forwarded.local'
         -H 'Content-Type: multipart/form-data; boundary="../a/b"'
         -H 'X-Forwarded-For: 192.0.2.10, 198.51.100.20'
-        http://127.0.0.1/
-      register: safe_multipart_response
+        --data-binary 'body' http://127.0.0.1/
+      register: forwarded_multipart_response
       changed_when: false
-      failed_when: safe_multipart_response.stdout != '200'
+      failed_when: forwarded_multipart_response.stdout != '200'
+
+    # GET and HEAD never carry a multipart body, Rails would log a
+    # BadRequest backtrace for the empty body
+    - name: Test multipart Content-Type without a body to forwarded.local gets no response (blocked by default)
+      ansible.builtin.command:
+        argv:
+          - curl
+          - -s
+          - -o
+          - /dev/null
+          - -w
+          - '%{http_code}'
+          - -H
+          - 'Host: forwarded.local'
+          - -H
+          - 'Content-Type: multipart/form-data; boundary=----probe'
+          - -m
+          - '5'
+          - -X
+          - '{{ item }}'
+          - http://127.0.0.1/
+      loop:
+        - GET
+        - HEAD
+      register: forwarded_bodyless_multipart_response
+      changed_when: false
+      failed_when: forwarded_bodyless_multipart_response.rc not in [52, 56] or forwarded_bodyless_multipart_response.stdout != '000'
+
+    - name: Test multipart Content-Type without a body to open.local works (block_security_scanners disabled)
+      ansible.builtin.command: >
+        curl -s -o /dev/null -w '%{http_code}' -H 'Host: open.local'
+        -H 'Content-Type: multipart/form-data; boundary=----probe'
+        http://127.0.0.1/
+      register: open_bodyless_multipart_response
+      changed_when: false
+      failed_when: open_bodyless_multipart_response.stdout != '200'
 
     - name: Test browser Accept header to safe.local works
       ansible.builtin.command: >
