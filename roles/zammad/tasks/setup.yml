@@ -75,6 +75,15 @@
     system: true
     shell: /bin/bash
 
+# nginx serves public assets directly and must be able to traverse the package root.
+- name: Allow nginx to access the Zammad public directory
+  ansible.builtin.file:
+    path: /opt/zammad
+    state: directory
+    owner: zammad
+    group: zammad
+    mode: '0755'
+
 - name: Create Zammad configuration directory
   ansible.builtin.file:
     path: /opt/zammad/config

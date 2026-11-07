@@ -35,6 +35,28 @@
       retries: 60
       delay: 5
 
+    - name: Read static asset references from the application page
+      ansible.builtin.set_fact:
+        zammad_asset_paths: >-
+          {{ response.content | regex_findall('(?:src|href)="(/assets/[^"]+\.(?:js|css))"') }}
+
+    - name: Verify the page references compiled JavaScript and stylesheets
+      ansible.builtin.assert:
+        that:
+          - zammad_asset_paths | select('search', '\.js$') | list | length > 0
+          - zammad_asset_paths | select('search', '\.css$') | list | length > 0
+
+    - name: Verify nginx can serve the compiled application assets
+      ansible.builtin.uri:
+        url: http://127.0.0.1{{ item }}
+        headers:
+          Host: '{{ zammad_vhost_server }}'
+        url_username: molecule
+        url_password: molecule-http-password
+        force_basic_auth: true
+        status_code: 200
+      loop: '{{ zammad_asset_paths }}'
+
     - name: Check search index
       ansible.builtin.uri:
         url: http://127.0.0.1:9200/{{ zammad_elasticsearch_index | default('zammad') }}_production_ticket/_count
