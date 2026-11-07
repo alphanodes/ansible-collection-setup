@@ -1,0 +1,5 @@
+---
+elasticsearch_enabled: false
+# Containers share the Docker host kernel; leave its sysctl untouched.
+elasticsearch_manage_sysctl: false
+elasticsearch_heap_size: 512m

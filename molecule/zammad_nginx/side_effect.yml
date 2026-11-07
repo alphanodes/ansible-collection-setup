@@ -1,0 +1,30 @@
+---
+- name: Exercise gateway authentication toggle
+  hosts: all
+  become: true
+  vars_files:
+    - vars/main.yml
+  tasks:
+    - name: Disable Basic Auth through the application configuration
+      ansible.builtin.include_role:
+        name: alphanodes.setup.zammad
+        tasks_from: nginx
+      vars:
+        zammad_vhost_users: []
+
+    - name: Apply changed gateway configuration
+      ansible.builtin.meta: flush_handlers
+
+    - name: Verify static content becomes accessible without credentials
+      ansible.builtin.uri:
+        url: http://127.0.0.1/robots.txt
+        headers:
+          Host: '{{ zammad_vhost_server }}'
+
+    - name: Restore Basic Auth
+      ansible.builtin.include_role:
+        name: alphanodes.setup.zammad
+        tasks_from: nginx
+
+    - name: Apply restored gateway protection
+      ansible.builtin.meta: flush_handlers

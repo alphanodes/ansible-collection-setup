@@ -1,0 +1,67 @@
+---
+name: "alphanodes.setup.zammad"
+'on':
+  pull_request:
+  push:
+    branches:
+      - main
+    paths:
+      - 'roles/zammad/**'
+      - 'roles/common/**'
+      - 'roles/postgresql/**'
+      - 'roles/postgresql_client/**'
+      - 'roles/redis_server/**'
+      - 'roles/redmine/**'
+      - 'roles/elasticsearch/**'
+      - 'roles/nginx_mono/**'
+      - 'roles/ssl/**'
+      - 'roles/systemd_timer/**'
+      - 'molecule/zammad/**'
+      - '.github/workflows/zammad.yml'
+
+defaults:
+  run:
+    working-directory: 'zammad'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      PY_COLORS: 1
+      ANSIBLE_FORCE_COLOR: 1
+
+    strategy:
+      matrix:
+        search:
+          - 'false'
+          - 'true'
+        distro:
+          - ubuntu2604
+          - debian13
+
+    steps:
+      - name: Check out the codebase.
+        uses: actions/checkout@v5
+        with:
+          path: 'zammad'
+
+      - name: Set up Python 3.
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install test dependencies.
+        run: |
+          python -m pip install --no-cache-dir --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Run backup and credential template tests.
+        run: python -m unittest discover -s molecule/zammad/tests -v
+
+      - name: Run Molecule tests.
+        run: |
+          molecule --version
+          molecule test -s zammad
+        env:
+          MOLECULE_DISTRO: ${{ matrix.distro }}
+          MOLECULE_ZAMMAD_ELASTICSEARCH: ${{ matrix.search }}

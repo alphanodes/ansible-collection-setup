@@ -1,0 +1,23 @@
+---
+- name: Apply Elasticsearch configuration before checking availability
+  ansible.builtin.meta: flush_handlers
+
+- name: Manage Elasticsearch service
+  ansible.builtin.systemd_service:
+    name: elasticsearch
+    enabled: '{{ elasticsearch_enabled }}'
+    state: "{{ 'started' if elasticsearch_enabled | bool else 'stopped' }}"
+    masked: '{{ not elasticsearch_enabled | bool }}'
+
+- name: Wait for Elasticsearch HTTP endpoint
+  ansible.builtin.uri:
+    url: "http://{{ '[' ~ elasticsearch_network_host ~ ']' if ':' in elasticsearch_network_host else elasticsearch_network_host }}:{{ elasticsearch_http_port }}/"
+    use_proxy: false
+    return_content: true
+  register: elasticsearch_health
+  until: elasticsearch_health.status | default(0) == 200
+  retries: 30
+  delay: 5
+  when:
+    - elasticsearch_enabled | bool
+    - not ansible_check_mode

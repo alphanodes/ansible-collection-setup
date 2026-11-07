@@ -1,0 +1,121 @@
+---
+- name: Install Elasticsearch repository prerequisites
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - python3-debian
+    state: present
+
+- name: Add Elasticsearch apt repository
+  ansible.builtin.deb822_repository:
+    name: elasticsearch
+    uris: '{{ elasticsearch_apt_url }}'
+    types: deb
+    suites: stable
+    components: main
+    signed_by: '{{ elasticsearch_apt_signed_by }}'
+    state: present
+  notify: Update elasticsearch apt cache
+
+- name: Apply Elasticsearch repository changes
+  ansible.builtin.meta: flush_handlers
+
+# Preseed the configuration so the package does not auto-configure a public HTTP
+# listener, certificates or passwords before Ansible manages the local service.
+- name: Check Elasticsearch configuration directory
+  ansible.builtin.stat:
+    path: /etc/elasticsearch
+  register: elasticsearch_config_directory
+
+- name: Create initial Elasticsearch configuration directory
+  ansible.builtin.file:
+    path: /etc/elasticsearch
+    state: directory
+    mode: '0755'
+  when: not elasticsearch_config_directory.stat.exists
+
+- name: Check Elasticsearch configuration file
+  ansible.builtin.stat:
+    path: /etc/elasticsearch/elasticsearch.yml
+  register: elasticsearch_config_file
+
+- name: Read existing Elasticsearch configuration
+  ansible.builtin.slurp:
+    src: /etc/elasticsearch/elasticsearch.yml
+  register: elasticsearch_existing_config
+  when: elasticsearch_config_file.stat.exists
+  no_log: '{{ hide_sensitive_data }}'
+
+- name: Reject adopting an existing secured Elasticsearch installation
+  ansible.builtin.assert:
+    that:
+      - >-
+        ((elasticsearch_existing_config.content | b64decode | from_yaml) | default({}, true)).get('xpack.security.enabled', true) == false
+    fail_msg: >-
+      This role only manages an explicitly unsecured local Elasticsearch service.
+      Manage an existing secured installation separately and configure the consuming application with its endpoint.
+  when: elasticsearch_config_file.stat.exists
+
+- name: Preseed configuration before the first Elasticsearch installation
+  ansible.builtin.template:
+    src: elasticsearch.yml.j2
+    dest: /etc/elasticsearch/elasticsearch.yml
+    mode: '0644'
+    force: false
+  when: not elasticsearch_config_file.stat.exists
+
+- name: Apply Elasticsearch service policy before installation
+  ansible.builtin.include_tasks: service_policy.yml
+
+- name: Configure Elasticsearch virtual memory limit
+  ansible.posix.sysctl:
+    name: vm.max_map_count
+    value: '{{ elasticsearch_vm_max_map_count | string }}'
+    sysctl_set: true
+    reload: true
+    sysctl_file: /etc/sysctl.d/90-elasticsearch.conf
+  when:
+    - elasticsearch_manage_sysctl | bool
+    - elasticsearch_enabled | bool
+
+- name: Install Elasticsearch package
+  ansible.builtin.apt:
+    name: "{{ 'elasticsearch=' ~ elasticsearch_version if elasticsearch_version | length > 0 else 'elasticsearch' }}"
+    state: present
+    policy_rc_d: 101
+    dpkg_options: force-confdef,force-confold
+  notify: Restart elasticsearch
+
+- name: Set Elasticsearch configuration directory permissions
+  ansible.builtin.file:
+    path: /etc/elasticsearch
+    state: directory
+    owner: root
+    group: elasticsearch
+    mode: '2750'
+
+- name: Configure Elasticsearch
+  ansible.builtin.template:
+    src: elasticsearch.yml.j2
+    dest: /etc/elasticsearch/elasticsearch.yml
+    owner: root
+    group: elasticsearch
+    mode: '0640'
+  notify: Restart elasticsearch
+
+- name: Create Elasticsearch JVM options directory
+  ansible.builtin.file:
+    path: /etc/elasticsearch/jvm.options.d
+    state: directory
+    owner: root
+    group: elasticsearch
+    mode: '0750'
+
+- name: Configure Elasticsearch heap size
+  ansible.builtin.template:
+    src: heap.options.j2
+    dest: /etc/elasticsearch/jvm.options.d/heap.options
+    owner: root
+    group: elasticsearch
+    mode: '0640'
+  notify: Restart elasticsearch

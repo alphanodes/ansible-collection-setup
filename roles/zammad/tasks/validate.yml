@@ -1,0 +1,31 @@
+---
+- name: Validate supported platform and required settings
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.architecture == 'x86_64'
+      - >-
+        (ansible_facts.distribution == 'Debian' and ansible_facts.distribution_major_version == '13')
+        or (ansible_facts.distribution == 'Ubuntu' and ansible_facts.distribution_version == '26.04')
+      - zammad_db_password | length >= 16
+      - zammad_db_user is match('^[a-z_][a-z0-9_]*$')
+      - zammad_db_name is match('^[a-z_][a-z0-9_]*$')
+      - zammad_db_host in ['127.0.0.1', 'localhost', '::1', '/run/postgresql', '/var/run/postgresql']
+      - zammad_db_port | int > 0
+      - zammad_db_port | int < 65536
+      - zammad_http_port | int > 0
+      - zammad_http_port | int < 65536
+      - zammad_websocket_port | int > 0
+      - zammad_websocket_port | int < 65536
+      - zammad_http_port | int != zammad_websocket_port | int
+      - zammad_vhost_server is match('^[a-zA-Z0-9][a-zA-Z0-9.-]+$')
+      - zammad_elasticsearch_index is match('^[a-z][a-z0-9_-]*$')
+      - zammad_redis_url is match('^rediss?://')
+      - not zammad_with_elasticsearch or zammad_elasticsearch_url is match('^https?://')
+      - zammad_web_concurrency | int >= 0
+      - zammad_backup_dir is match('^/[a-zA-Z0-9_./-]+$')
+      - zammad_backup_dir != '/'
+      - "'..' not in zammad_backup_dir.split('/')"
+      - zammad_manage_postgresql or postgresql_version is defined
+      - postgresql_version | default('18') | int >= 15
+      - zammad_backup_hold_days | int > 0
+    fail_msg: Use a supported amd64 host and supply valid connection settings and a database password of at least 16 characters.

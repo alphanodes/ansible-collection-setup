@@ -1,0 +1,165 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  vars_files:
+    - vars/main.yml
+  tasks:
+    - name: Validate nginx configuration
+      ansible.builtin.command: nginx -t
+      changed_when: false
+
+    - name: Verify Basic Auth protects every public entry point
+      ansible.builtin.uri:
+        url: http://127.0.0.1{{ item }}
+        headers:
+          Host: '{{ zammad_vhost_server }}'
+        status_code: 401
+      loop:
+        - /
+        - /ws
+        - /cable
+        - /assets/auth-test.js
+
+    - name: Wait for Zammad through nginx
+      ansible.builtin.uri:
+        url: http://127.0.0.1/
+        headers:
+          Host: '{{ zammad_vhost_server }}'
+        return_content: true
+        url_username: molecule
+        url_password: molecule-http-password
+        force_basic_auth: true
+      register: response
+      until: response.status == 200
+      retries: 60
+      delay: 5
+
+    - name: Check search index
+      ansible.builtin.uri:
+        url: http://127.0.0.1:9200/{{ zammad_elasticsearch_index | default('zammad') }}_production_ticket/_count
+      register: search_index
+      when: zammad_with_elasticsearch | bool
+
+    - name: Verify stopped Elasticsearch dependency without search
+      ansible.builtin.include_tasks: ../elasticsearch_disabled/tasks/disabled.yml
+      when: not zammad_with_elasticsearch | bool
+
+    - name: Read database ownership and privileges
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_query:
+        login_port: '{{ postgresql_port }}'
+        query: >-
+          SELECT datname, pg_get_userbyid(datdba) AS owner, rolsuper, rolcreatedb
+          FROM pg_database JOIN pg_roles ON pg_roles.oid = datdba WHERE datname = 'helpdesk_test'
+      register: database
+
+    - name: Read installed PostgreSQL clusters
+      ansible.builtin.command: pg_lsclusters --no-header
+      changed_when: false
+      register: clusters
+
+    - name: Read Zammad package hold
+      ansible.builtin.command: apt-mark showhold
+      changed_when: false
+      register: holds
+
+    - name: Check file permissions
+      ansible.builtin.stat:
+        path: '{{ item }}'
+      loop:
+        - /opt/zammad/config/database.yml
+        - /etc/zammad/conf.d/zz-ansible
+        - /etc/zammad
+        - /etc/zammad/conf.d
+        - /etc/zammad-backup.json
+      register: secrets
+
+    - name: Read generated vhost
+      ansible.builtin.slurp:
+        src: /etc/nginx/sites-available/zammad.conf
+      register: vhost
+
+    - name: Verify managed database and package integration
+      ansible.builtin.assert:
+        that:
+          - database.query_result[0].owner == 'helpdesk_test'
+          - not database.query_result[0].rolsuper
+          - not database.query_result[0].rolcreatedb
+          - clusters.stdout_lines | length == 1
+          - "'zammad' in holds.stdout_lines"
+          - secrets.results[0].stat.mode == '0600'
+          - secrets.results[1].stat.mode == '0640'
+          - secrets.results[2].stat.pw_name == 'root'
+          - secrets.results[3].stat.pw_name == 'root'
+          - secrets.results[4].stat.mode == '0600'
+          - "'location /ws' in (vhost.content | b64decode)"
+          - "'location /cable' in (vhost.content | b64decode)"
+          - "'proxy_pass http://127.0.0.1:6142;' in (vhost.content | b64decode)"
+          - "'proxy_pass http://127.0.0.1:3100;' in (vhost.content | b64decode)"
+
+    - name: Read active backup timer
+      ansible.builtin.command: systemctl is-active zammad-backup.timer
+      changed_when: false
+      register: timer
+
+    - name: Verify scheduled backups
+      ansible.builtin.assert:
+        that:
+          - timer.stdout == 'active'
+
+    - name: Verify WebSocket upgrades through nginx
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - |
+            import base64
+            import os
+            import socket
+            authorization = base64.b64encode(b'molecule:molecule-http-password').decode('ascii')
+            for path in ('/ws', '/cable'):
+                websocket_key = base64.b64encode(os.urandom(16)).decode('ascii')
+                with socket.create_connection(('127.0.0.1', 80), timeout=20) as connection:
+                    request = (
+                        'GET ' + path + ' HTTP/1.1\r\n'
+                        'Host: support.example.com\r\n'
+                        'Origin: http://support.example.com\r\n'
+                        f'Authorization: Basic {authorization}\r\n'
+                        'Upgrade: websocket\r\nConnection: Upgrade\r\n'
+                        f'Sec-WebSocket-Key: {websocket_key}\r\n'
+                        'Sec-WebSocket-Version: 13\r\n\r\n'
+                    )
+                    connection.sendall(request.encode())
+                    status = connection.recv(4096).split(b'\r\n')[0]
+                    assert b' 101 ' in status, (path, status)
+      changed_when: false
+
+    - name: Create an actual backup
+      ansible.builtin.command: /usr/local/sbin/zammad-backup
+      changed_when: true
+
+    - name: Validate backup dump and retained configuration
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - |
+            from pathlib import Path
+            import subprocess
+            import tarfile
+            import tempfile
+            backups = sorted(Path('/var/backups/zammad').glob('zammad-*.tar'))
+            assert backups
+            with tempfile.TemporaryDirectory() as work:
+                with tarfile.open(backups[-1]) as archive:
+                    assert set(archive.getnames()) == {'database.dump', 'files.tar.gz', 'version.txt'}
+                    archive.extractall(work, filter='data')
+                subprocess.run(['pg_restore', '--list', work + '/database.dump'], check=True,
+                               stdout=subprocess.DEVNULL)
+                with tarfile.open(work + '/files.tar.gz') as archive:
+                    assert 'etc/zammad/conf.d/zz-ansible' in archive.getnames()
+                    assert 'opt/zammad/config/database.yml' in archive.getnames()
+            assert subprocess.run(['systemctl', 'is-active', '--quiet', 'zammad']).returncode == 0
+      changed_when: false

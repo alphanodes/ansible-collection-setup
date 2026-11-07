@@ -1,0 +1,43 @@
+---
+# A mask must exist before the first package installation, including its hooks.
+# systemd cannot reliably manage a service that has not been installed yet.
+- name: Check for an installed Elasticsearch service unit
+  ansible.builtin.stat:
+    path: /usr/lib/systemd/system/elasticsearch.service
+  register: elasticsearch_service_unit
+
+- name: Stop and disable an installed Elasticsearch service before masking
+  ansible.builtin.systemd_service:
+    name: elasticsearch
+    state: stopped
+    enabled: false
+  when:
+    - not elasticsearch_enabled | bool
+    - elasticsearch_service_unit.stat.exists
+
+- name: Check Elasticsearch service mask
+  ansible.builtin.stat:
+    path: /etc/systemd/system/elasticsearch.service
+    follow: false
+  register: elasticsearch_service_mask
+
+- name: Mask Elasticsearch before package installation
+  ansible.builtin.file:
+    src: /dev/null
+    dest: /etc/systemd/system/elasticsearch.service
+    state: link
+  when: not elasticsearch_enabled | bool
+  notify: Reload elasticsearch systemd
+
+- name: Remove an Elasticsearch service mask when enabled
+  ansible.builtin.file:
+    path: /etc/systemd/system/elasticsearch.service
+    state: absent
+  when:
+    - elasticsearch_enabled | bool
+    - elasticsearch_service_mask.stat.islnk | default(false)
+    - elasticsearch_service_mask.stat.lnk_source | default('') == '/dev/null'
+  notify: Reload elasticsearch systemd
+
+- name: Apply Elasticsearch service policy before package installation
+  ansible.builtin.meta: flush_handlers

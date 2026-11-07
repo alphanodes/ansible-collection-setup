@@ -1,0 +1,57 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  vars:
+    # This scenario exercises Redis ownership without configuring a webserver.
+    nginx_with_ssl: false
+    redis_use_redis_io: false
+    redis_server_maxmemory: 256mb
+    redis_server_maxmemory_policy: noeviction
+    redmine_with_redis: true
+    redmine_manage_redis: false
+    # Deliberately conflicting standalone defaults must not reach the daemon.
+    redmine_redis_maxmemory: 128mb
+    redmine_redis_maxmemory_policy: volatile-lru
+    zammad_manage_postgresql: false
+    zammad_manage_redis: false
+    zammad_manage_elasticsearch: false
+  roles:
+    - role: alphanodes.setup.redis_server
+  tasks:
+    - name: Record centrally managed configuration
+      ansible.builtin.stat:
+        path: /etc/redis/redis.conf
+      register: shared_redis_baseline
+
+    - name: Use centrally managed Redis from Redmine
+      ansible.builtin.include_role:
+        name: alphanodes.setup.redmine
+        tasks_from: redis
+
+    - name: Verify central ownership after Redmine
+      ansible.builtin.include_tasks: tasks/assert_redis.yml
+
+    - name: Use centrally managed dependencies from Zammad
+      ansible.builtin.include_role:
+        name: alphanodes.setup.zammad
+        tasks_from: dependencies
+
+    - name: Verify central ownership after Zammad
+      ansible.builtin.include_tasks: tasks/assert_redis.yml
+
+    - name: Use centrally managed dependencies from Zammad in reverse order
+      ansible.builtin.include_role:
+        name: alphanodes.setup.zammad
+        tasks_from: dependencies
+
+    - name: Verify central ownership after Zammad in reverse order
+      ansible.builtin.include_tasks: tasks/assert_redis.yml
+
+    - name: Use centrally managed Redis from Redmine in reverse order
+      ansible.builtin.include_role:
+        name: alphanodes.setup.redmine
+        tasks_from: redis
+
+    - name: Verify central ownership after Redmine in reverse order
+      ansible.builtin.include_tasks: tasks/assert_redis.yml

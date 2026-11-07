@@ -1,0 +1,27 @@
+---
+
+# Install the package but stop, disable and mask its service when false.
+# This satisfies application package dependencies without running a JVM.
+elasticsearch_enabled: true
+
+# A local single-node search service. Remote access and clusters are intentionally
+# unsupported: authentication is disabled and both interfaces stay on loopback.
+elasticsearch_network_host: '127.0.0.1'
+elasticsearch_http_port: 9200
+elasticsearch_cluster_name: elasticsearch
+elasticsearch_node_name: '{{ ansible_facts.hostname }}'
+
+# Empty installs the repository candidate once; existing packages are not upgraded.
+# Set an exact DEB version for a controlled upgrade. Downgrades are not permitted.
+elasticsearch_major_version: '9'
+elasticsearch_version: ''
+elasticsearch_apt_url: 'https://artifacts.elastic.co/packages/{{ elasticsearch_major_version }}.x/apt'
+elasticsearch_apt_signed_by: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+
+# Leave sufficient RAM for filesystem cache and other services on the same host.
+elasticsearch_heap_size: 1g
+
+# Containers share the host kernel. Set this to false only when the container host
+# already provides an adequate vm.max_map_count.
+elasticsearch_manage_sysctl: true
+elasticsearch_vm_max_map_count: 1048576

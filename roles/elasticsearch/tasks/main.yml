@@ -1,0 +1,12 @@
+---
+- name: Include validation tasks
+  ansible.builtin.include_tasks: validate.yml
+  tags: elasticsearch
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  tags: elasticsearch
+
+- name: Include service tasks
+  ansible.builtin.include_tasks: service.yml
+  tags: elasticsearch

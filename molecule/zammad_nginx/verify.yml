@@ -1,0 +1,75 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  vars_files:
+    - vars/main.yml
+  tasks:
+    - name: Validate nginx configuration
+      ansible.builtin.command: nginx -t
+      changed_when: false
+
+    - name: Verify Basic Auth protects static and proxied paths
+      ansible.builtin.uri:
+        url: http://127.0.0.1{{ item }}
+        headers:
+          Host: '{{ zammad_vhost_server }}'
+        status_code: 401
+      loop:
+        - /
+        - /robots.txt
+        - /assets/auth-test.js
+        - /ws
+        - /cable
+
+    - name: Verify shared credentials grant access to static content
+      ansible.builtin.uri:
+        url: http://127.0.0.1/robots.txt
+        headers:
+          Host: '{{ zammad_vhost_server }}'
+        url_username: molecule
+        url_password: molecule-http-password
+        force_basic_auth: true
+        return_content: true
+      register: authenticated
+
+    - name: Verify the authenticated response
+      ansible.builtin.assert:
+        that:
+          - authenticated.content == 'Zammad auth test\n'
+
+    - name: Verify wrong credentials are rejected
+      ansible.builtin.uri:
+        url: http://127.0.0.1/robots.txt
+        headers:
+          Host: '{{ zammad_vhost_server }}'
+        url_username: molecule
+        url_password: wrong-password
+        force_basic_auth: true
+        status_code: 401
+
+    # No Zammad backend is running in this isolated nginx test. A 502 response
+    # confirms that valid credentials pass the gateway and reach proxy routing.
+    - name: Verify authenticated requests pass through to backend routing
+      ansible.builtin.uri:
+        url: http://127.0.0.1{{ item }}
+        headers:
+          Host: '{{ zammad_vhost_server }}'
+        url_username: molecule
+        url_password: molecule-http-password
+        force_basic_auth: true
+        status_code: 502
+      loop:
+        - /
+        - /ws
+        - /cable
+
+    - name: Read generated vhost
+      ansible.builtin.slurp:
+        src: /etc/nginx/sites-available/zammad.conf
+      register: vhost
+
+    - name: Verify gateway credentials are not forwarded to application backends
+      ansible.builtin.assert:
+        that:
+          - (vhost.content | b64decode).count('proxy_set_header Authorization "";') == 3

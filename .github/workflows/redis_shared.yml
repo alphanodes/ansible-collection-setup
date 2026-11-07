@@ -1,0 +1,41 @@
+---
+name: "alphanodes.setup.redis_shared"
+'on':
+  pull_request:
+  push:
+    branches:
+      - main
+    paths:
+      - 'roles/redmine/**'
+      - 'roles/zammad/**'
+      - 'roles/redis_server/**'
+      - 'roles/common/**'
+      - 'roles/ssl/**'
+      - 'molecule/redis_shared/**'
+      - '.github/workflows/redis_shared.yml'
+defaults:
+  run:
+    working-directory: redis_shared
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        distro:
+          - debian13
+          - ubuntu2604
+    steps:
+      - name: Check out the codebase
+        uses: actions/checkout@v5
+        with:
+          path: redis_shared
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install test dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Run shared Redis integration tests
+        run: molecule test -s redis_shared
+        env:
+          MOLECULE_DISTRO: ${{ matrix.distro }}

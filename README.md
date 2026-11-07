@@ -37,6 +37,7 @@ All provided roles do not use docker as container system.
 - [alphanodes.setup.drupal](roles/drupal/) [![drupal](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/drupal.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/drupal.yml)
 - [alphanodes.setup.drush](roles/drush/) [![drush](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/drush.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/drush.yml)
 - [alphanodes.setup.element_web](roles/element_web/) [![element_web](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/element_web.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/element_web.yml)
+- [alphanodes.setup.elasticsearch](roles/elasticsearch/)
 - [alphanodes.setup.fail2ban](roles/fail2ban/) [![fail2ban](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/fail2ban.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/fail2ban.yml)
 - [alphanodes.setup.git](roles/git/) [![git](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/git.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/git.yml)
 - [alphanodes.setup.git_config](roles/git_config/) [![git_config](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/git_config.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/git_config.yml)
@@ -85,6 +86,7 @@ All provided roles do not use docker as container system.
 - [alphanodes.setup.vimbadmin](roles/vimbadmin/) [![vimbadmin](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/vimbadmin.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/vimbadmin.yml)
 - [alphanodes.setup.zabbix_agent](roles/zabbix_agent/) [![zabbix_agent](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/zabbix_agent.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/zabbix_agent.yml)
 - [alphanodes.setup.zabbix_server](roles/zabbix_server/) [![zabbix_server](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/zabbix_server.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/zabbix_server.yml)
+- [alphanodes.setup.zammad](roles/zammad/) [![zammad](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/zammad.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/zammad.yml)
 - [alphanodes.setup.zsh](roles/zsh/) [![zsh](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/zsh.yml/badge.svg)](https://github.com/alphanodes/ansible-collection-setup/actions/workflows/zsh.yml)
 
 ## Installation

@@ -1,0 +1,25 @@
+{{ managed_by_ansible | comment }}
+require 'json'
+require 'base64'
+
+unless User.exists?
+  Rails.application.load_seed
+  puts 'ZAMMAD_CHANGED'
+end
+
+settings = JSON.parse(Base64.strict_decode64('{{ (zammad_settings | combine({
+    'fqdn': zammad_vhost_server,
+    'http_type': 'https' if nginx_with_ssl else 'http',
+    'es_url': zammad_elasticsearch_url if zammad_with_elasticsearch else '',
+    'es_user': zammad_elasticsearch_user,
+    'es_password': zammad_elasticsearch_password,
+    'es_index': zammad_elasticsearch_index
+  }) | to_json | b64encode) }}'))
+settings.each do |name, value|
+  next if Setting.get(name) == value
+
+  Setting.set(name, value)
+  puts 'ZAMMAD_CHANGED'
+end
+
+puts 'ZAMMAD_REINDEX' if !settings.fetch('es_url').empty? && !SearchIndexBackend.index_exists?('Ticket')

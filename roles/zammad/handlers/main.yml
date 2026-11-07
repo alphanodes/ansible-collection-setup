@@ -1,0 +1,11 @@
+---
+- name: Restart zammad
+  ansible.builtin.systemd_service:
+    name: zammad
+    state: "{{ 'restarted' if zammad_enabled else 'stopped' }}"
+    daemon_reload: true
+
+- name: Update zammad apt cache
+  ansible.builtin.apt:
+    update_cache: true
+  changed_when: false

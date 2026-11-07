@@ -1,0 +1,20 @@
+---
+- name: Configure PostgreSQL server
+  ansible.builtin.include_role:
+    name: alphanodes.setup.postgresql
+    public: true
+  when: zammad_manage_postgresql | bool
+
+- name: Configure Redis server
+  ansible.builtin.include_role:
+    name: alphanodes.setup.redis_server
+    apply:
+      no_log: '{{ hide_sensitive_data }}'
+  when: zammad_manage_redis | bool
+
+- name: Configure local Elasticsearch
+  ansible.builtin.include_role:
+    name: alphanodes.setup.elasticsearch
+  vars:
+    elasticsearch_enabled: '{{ zammad_with_elasticsearch }}'
+  when: zammad_manage_elasticsearch | bool

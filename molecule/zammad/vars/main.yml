@@ -1,0 +1,25 @@
+---
+zammad_db_password: "molecule-'\"-#{1+1}-password"
+redis_server_requirepass: molecule-redis-password
+zammad_redis_url: redis://:molecule-redis-password@127.0.0.1:6379/5
+zammad_vhost_server: support.example.com
+# Exercise non-default database identity, PostgreSQL port and application ports.
+zammad_db_name: helpdesk_test
+zammad_db_user: helpdesk_test
+postgresql_port: 5543
+zammad_http_port: 3100
+zammad_websocket_port: 6142
+zammad_backup_enabled: true
+nginx_with_ssl: false
+postgresql_log_destination: stderr
+postgresql_shared_buffers: 128MB
+postgresql_effective_cache_size: 512MB
+# Docker shares the host kernel; do not change the host's sysctl from a test.
+elasticsearch_manage_sysctl: false
+elasticsearch_heap_size: 512m
+
+# Exercise both modes in CI; the low-memory test defaults to no active search.
+zammad_with_elasticsearch: "{{ lookup('ansible.builtin.env', 'MOLECULE_ZAMMAD_ELASTICSEARCH', default='false') | bool }}"
+zammad_vhost_users:
+  - user: molecule
+    password: molecule-http-password

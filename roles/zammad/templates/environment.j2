@@ -1,0 +1,8 @@
+{{ managed_by_ansible | comment }}
+export RAILS_ENV=production
+export RAILS_LOG_TO_STDOUT=true
+export ZAMMAD_BIND_IP=127.0.0.1
+export ZAMMAD_RAILS_PORT={{ zammad_http_port | string | quote }}
+export ZAMMAD_WEBSOCKET_PORT={{ zammad_websocket_port | string | quote }}
+export ZAMMAD_WEB_CONCURRENCY={{ zammad_web_concurrency | string | quote }}
+export REDIS_URL={{ zammad_redis_url | quote }}

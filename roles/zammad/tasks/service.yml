@@ -1,0 +1,24 @@
+---
+- name: Apply Zammad configuration
+  ansible.builtin.meta: flush_handlers
+
+- name: Manage Zammad services
+  ansible.builtin.systemd_service:
+    name: zammad
+    state: "{{ 'started' if zammad_enabled else 'stopped' }}"
+    enabled: '{{ zammad_enabled }}'
+
+- name: Wait for the Zammad application
+  ansible.builtin.uri:
+    url: http://127.0.0.1:{{ zammad_http_port }}/
+    headers:
+      Host: '{{ zammad_vhost_server }}'
+    use_proxy: false
+    status_code: 200
+  register: zammad_application_health
+  until: zammad_application_health.status | default(0) == 200
+  retries: 60
+  delay: 5
+  when:
+    - zammad_enabled | bool
+    - not ansible_check_mode

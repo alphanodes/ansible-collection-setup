@@ -1,0 +1,7 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  tasks:
+    - name: Verify final package-only state
+      ansible.builtin.include_tasks: tasks/disabled.yml

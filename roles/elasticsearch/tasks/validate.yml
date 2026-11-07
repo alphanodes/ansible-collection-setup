@@ -1,0 +1,16 @@
+---
+
+- name: Validate local Elasticsearch configuration
+  ansible.builtin.assert:
+    that:
+      - >-
+        (ansible_facts.distribution == 'Debian' and ansible_facts.distribution_major_version == '13')
+        or (ansible_facts.distribution == 'Ubuntu' and ansible_facts.distribution_version == '26.04')
+      - elasticsearch_network_host in ['127.0.0.1', '::1']
+      - elasticsearch_major_version | string == '9'
+      - elasticsearch_version | length == 0 or elasticsearch_version is match('^9\.')
+      - elasticsearch_http_port | int > 0
+      - elasticsearch_http_port | int < 65536
+      - elasticsearch_heap_size is match('^[1-9][0-9]*[mg]$')
+      - elasticsearch_vm_max_map_count | int >= 1048576
+    fail_msg: Elasticsearch supports only a local Elasticsearch 9 single-node service.

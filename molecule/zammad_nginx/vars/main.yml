@@ -1,0 +1,6 @@
+---
+nginx_with_ssl: false
+zammad_vhost_server: support.example.com
+zammad_vhost_users:
+  - user: molecule
+    password: molecule-http-password

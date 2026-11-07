@@ -1,0 +1,12 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  vars_files:
+    - vars/main.yml
+  roles:
+    - role: alphanodes.setup.elasticsearch
+
+  post_tasks:
+    - name: Verify first installation stays disabled
+      ansible.builtin.include_tasks: tasks/disabled.yml

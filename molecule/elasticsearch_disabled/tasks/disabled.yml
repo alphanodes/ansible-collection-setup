@@ -1,0 +1,61 @@
+---
+- name: Read installed Elasticsearch package
+  ansible.builtin.package_facts:
+    manager: apt
+
+- name: Read Elasticsearch boot state
+  ansible.builtin.command: systemctl is-enabled elasticsearch
+  check_mode: false
+  changed_when: false
+  failed_when: false
+  register: elasticsearch_test_enabled
+
+- name: Read Elasticsearch running state
+  ansible.builtin.command: systemctl is-active elasticsearch
+  check_mode: false
+  changed_when: false
+  failed_when: false
+  register: elasticsearch_test_active
+
+- name: Check for Elasticsearch Java processes
+  ansible.builtin.command: pgrep -u elasticsearch java
+  check_mode: false
+  changed_when: false
+  failed_when: false
+  register: elasticsearch_test_process
+
+- name: Check Elasticsearch service mask
+  ansible.builtin.stat:
+    path: /etc/systemd/system/elasticsearch.service
+    follow: false
+  register: elasticsearch_test_mask
+
+- name: Check Elasticsearch boot link
+  ansible.builtin.stat:
+    path: /etc/systemd/system/multi-user.target.wants/elasticsearch.service
+    follow: false
+  register: elasticsearch_test_boot
+
+- name: Check for a role-managed Elasticsearch sysctl file
+  ansible.builtin.stat:
+    path: /etc/sysctl.d/90-elasticsearch.conf
+  register: elasticsearch_test_sysctl
+
+- name: Verify stopped package-only state
+  ansible.builtin.assert:
+    that:
+      - "'elasticsearch' in ansible_facts.packages"
+      - elasticsearch_test_enabled.stdout == 'masked'
+      - elasticsearch_test_active.stdout == 'inactive'
+      - elasticsearch_test_process.rc == 1
+      - elasticsearch_test_mask.stat.islnk
+      - elasticsearch_test_mask.stat.lnk_source == '/dev/null'
+      - not elasticsearch_test_boot.stat.exists
+      - not elasticsearch_test_sysctl.stat.exists
+
+- name: Verify Elasticsearch does not listen for HTTP connections
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: 9200
+    state: stopped
+    timeout: 3

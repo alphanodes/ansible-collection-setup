@@ -1,0 +1,39 @@
+---
+- name: Exercise disable and re-enable lifecycle
+  hosts: all
+  become: true
+  vars_files:
+    - vars/main.yml
+  tasks:
+    - name: Disable application and scheduled backups
+      ansible.builtin.include_role:
+        name: alphanodes.setup.zammad
+      vars:
+        zammad_enabled: false
+
+    - name: Read disabled Zammad service
+      ansible.builtin.command: systemctl is-active zammad
+      register: disabled_service
+      changed_when: false
+      failed_when: false
+
+    - name: Inspect disabled backup timer
+      ansible.builtin.stat:
+        path: /etc/systemd/system/zammad-backup.timer
+      register: disabled_timer
+
+    - name: Inspect disabled vhost
+      ansible.builtin.stat:
+        path: /etc/nginx/sites-enabled/zammad.conf
+      register: disabled_vhost
+
+    - name: Verify disabled lifecycle
+      ansible.builtin.assert:
+        that:
+          - disabled_service.stdout == 'inactive'
+          - not disabled_timer.stat.exists
+          - not disabled_vhost.stat.exists
+
+    - name: Re-enable application and backups
+      ansible.builtin.include_role:
+        name: alphanodes.setup.zammad

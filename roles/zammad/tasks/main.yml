@@ -1,0 +1,26 @@
+---
+- name: Include validation tasks
+  ansible.builtin.include_tasks: validate.yml
+  tags: zammad
+
+- name: Include dependency tasks
+  ansible.builtin.include_tasks: dependencies.yml
+  tags: zammad
+
+- name: Include nginx tasks
+  ansible.builtin.include_tasks: nginx.yml
+  tags: zammad
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  tags: zammad
+
+- name: Include backup tasks
+  ansible.builtin.include_tasks: backup.yml
+  tags:
+    - zammad
+    - backup
+
+- name: Include service tasks
+  ansible.builtin.include_tasks: service.yml
+  tags: zammad

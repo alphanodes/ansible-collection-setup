@@ -1,0 +1,8 @@
+{{ managed_by_ansible | comment }}
+Package: postgresql postgresql-client
+Pin: version {{ postgresql_version }}+*
+Pin-Priority: 990
+
+Package: postgresql postgresql-client
+Pin: version *
+Pin-Priority: -1

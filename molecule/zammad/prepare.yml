@@ -1,0 +1,8 @@
+---
+- name: Prepare
+  hosts: all
+  become: true
+  tasks:
+    - name: Check the test container can execute systemd services
+      ansible.builtin.command: systemd-run --wait --collect --quiet /bin/true
+      changed_when: false

@@ -1,0 +1,24 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  vars_files:
+    - vars/main.yml
+  pre_tasks:
+    - name: Create application public directory fixture
+      ansible.builtin.file:
+        path: /opt/zammad/public
+        state: directory
+        mode: '0755'
+
+    - name: Create static application fixture
+      ansible.builtin.copy:
+        content: "Zammad auth test\n"
+        dest: /opt/zammad/public/robots.txt
+        mode: '0644'
+
+  tasks:
+    - name: Configure the actual Zammad gateway tasks
+      ansible.builtin.include_role:
+        name: alphanodes.setup.zammad
+        tasks_from: nginx

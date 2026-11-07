@@ -1,0 +1,11 @@
+{{ managed_by_ansible | comment }}
+production:
+  adapter: postgresql
+  encoding: utf8
+  database: {{ zammad_db_name | to_json }}
+  username: {{ zammad_db_user | to_json }}
+  password: {{ zammad_db_password | to_json }}
+  host: {{ zammad_db_host }}
+  port: {{ zammad_db_port | int }}
+  pool: {{ zammad_db_pool | int }}
+  timeout: 5000

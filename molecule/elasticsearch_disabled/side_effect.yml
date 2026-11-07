@@ -1,0 +1,50 @@
+---
+- name: Exercise package-only service lifecycle
+  hosts: all
+  become: true
+  vars_files:
+    - vars/main.yml
+  tasks:
+    - name: Change disabled Elasticsearch configuration
+      ansible.builtin.include_role:
+        name: alphanodes.setup.elasticsearch
+      vars:
+        elasticsearch_cluster_name: disabled-handler-test
+
+    - name: Verify config handlers did not start Elasticsearch
+      ansible.builtin.include_tasks: tasks/disabled.yml
+
+    - name: Try to start the masked Elasticsearch service
+      ansible.builtin.command: systemctl start elasticsearch
+      register: elasticsearch_test_start
+      changed_when: false
+      failed_when: false
+
+    - name: Verify explicit starts are prevented by the mask
+      ansible.builtin.assert:
+        that:
+          - elasticsearch_test_start.rc != 0
+          - "'masked' in elasticsearch_test_start.stderr"
+
+    - name: Enable Elasticsearch through the role
+      ansible.builtin.include_role:
+        name: alphanodes.setup.elasticsearch
+      vars:
+        elasticsearch_enabled: true
+
+    - name: Read enabled Elasticsearch boot state
+      ansible.builtin.command: systemctl is-enabled elasticsearch
+      changed_when: false
+      register: elasticsearch_test_unmasked
+
+    - name: Verify the service was unmasked and enabled
+      ansible.builtin.assert:
+        that:
+          - elasticsearch_test_unmasked.stdout == 'enabled'
+
+    - name: Return Elasticsearch to package-only state
+      ansible.builtin.include_role:
+        name: alphanodes.setup.elasticsearch
+
+    - name: Verify enabled-to-disabled transition
+      ansible.builtin.include_tasks: tasks/disabled.yml

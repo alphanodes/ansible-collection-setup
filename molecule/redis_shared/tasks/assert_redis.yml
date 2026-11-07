@@ -1,0 +1,27 @@
+---
+- name: Read shared Redis configuration checksum
+  ansible.builtin.stat:
+    path: /etc/redis/redis.conf
+  register: shared_redis_current
+
+- name: Read shared Redis runtime memory limit
+  ansible.builtin.command: redis-cli --raw CONFIG GET maxmemory
+  changed_when: false
+  check_mode: false
+  register: shared_redis_memory
+
+- name: Read shared Redis runtime eviction policy
+  ansible.builtin.command: redis-cli --raw CONFIG GET maxmemory-policy
+  changed_when: false
+  check_mode: false
+  register: shared_redis_policy
+
+- name: Verify the central configuration and runtime settings remain unchanged
+  ansible.builtin.assert:
+    that:
+      - redmine_with_redis | bool
+      - not redmine_manage_redis | bool
+      - not zammad_manage_redis | bool
+      - shared_redis_current.stat.checksum == shared_redis_baseline.stat.checksum
+      - shared_redis_memory.stdout_lines[1] == '268435456'
+      - shared_redis_policy.stdout_lines[1] == 'noeviction'

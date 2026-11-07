@@ -1,0 +1,196 @@
+---
+- name: Read installed packages
+  ansible.builtin.package_facts:
+    manager: apt
+
+- name: Back up existing Zammad before a requested package upgrade
+  ansible.builtin.command: /usr/local/sbin/zammad-backup
+  changed_when: true
+  when:
+    - zammad_backup_before_upgrade | bool
+    - zammad_version | length > 0
+    - "'zammad' in ansible_facts.packages"
+    - ansible_facts.packages.zammad[0].version != zammad_version
+
+- name: Add Zammad apt repository
+  ansible.builtin.deb822_repository:
+    name: zammad
+    uris: '{{ zammad_apt_url }}'
+    types: deb
+    suites: '{{ zammad_apt_suites }}'
+    components: main
+    architectures: amd64
+    signed_by: '{{ zammad_apt_signed_by }}'
+    state: present
+  notify: Update zammad apt cache
+
+- name: Apply Zammad repository changes
+  ansible.builtin.meta: flush_handlers
+
+# The Zammad dependency is the unversioned metapackage. Pin its candidate to
+# the managed server major so APT cannot pull a second PostgreSQL cluster.
+- name: Pin PostgreSQL metapackages to the managed server version
+  ansible.builtin.template:
+    src: postgresql.pref.j2
+    dest: /etc/apt/preferences.d/zammad-postgresql
+    mode: '0644'
+
+- name: Install PostgreSQL metapackage before Zammad
+  ansible.builtin.apt:
+    name: postgresql
+    state: present
+
+- name: Ensure PostgreSQL metapackage matches the managed server
+  ansible.builtin.command: dpkg-query -W -f=${Version} postgresql
+  register: zammad_postgresql_package
+  changed_when: false
+  check_mode: false
+
+- name: Reject an incompatible PostgreSQL metapackage
+  ansible.builtin.assert:
+    that:
+      - zammad_postgresql_package.stdout is match('^' ~ (postgresql_version | string) ~ '[+.]')
+    fail_msg: The PostgreSQL metapackage must match postgresql_version. Check the configured APT repositories.
+
+- name: Create Zammad database user
+  become: true
+  become_user: postgres
+  community.postgresql.postgresql_user:
+    login_port: '{{ zammad_db_port }}'
+    name: '{{ zammad_db_user }}'
+    password: '{{ zammad_db_password }}'
+    role_attr_flags: NOSUPERUSER,NOCREATEDB,NOCREATEROLE,NOREPLICATION
+  no_log: '{{ hide_sensitive_data }}'
+
+- name: Create Zammad database
+  become: true
+  become_user: postgres
+  community.postgresql.postgresql_db:
+    login_port: '{{ zammad_db_port }}'
+    name: '{{ zammad_db_name }}'
+    owner: '{{ zammad_db_user }}'
+    encoding: UTF8
+    template: template0
+
+# Create the package account and connection file before postinst runs. Otherwise
+# postinst creates a separate default database and restarts PostgreSQL.
+- name: Create Zammad system group
+  ansible.builtin.group:
+    name: zammad
+    system: true
+
+- name: Create Zammad system user
+  ansible.builtin.user:
+    name: zammad
+    group: zammad
+    home: /opt/zammad
+    create_home: false
+    system: true
+    shell: /bin/bash
+
+- name: Create Zammad configuration directory
+  ansible.builtin.file:
+    path: /opt/zammad/config
+    state: directory
+    owner: zammad
+    group: zammad
+    mode: '0750'
+
+- name: Configure Zammad database before package installation
+  ansible.builtin.template:
+    src: database.yml.j2
+    dest: /opt/zammad/config/database.yml
+    owner: zammad
+    group: zammad
+    mode: '0600'
+  no_log: '{{ hide_sensitive_data }}'
+  notify: Restart zammad
+
+# pkgr sources these shell exports for CLI commands and package hooks as well
+# as systemd services. They must exist before postinst checks Redis.
+- name: Create Zammad environment directory
+  ansible.builtin.file:
+    path: /etc/zammad/conf.d
+    state: directory
+    owner: root
+    group: zammad
+    mode: '0750'
+
+- name: Configure Zammad package environment
+  ansible.builtin.template:
+    src: environment.j2
+    dest: /etc/zammad/conf.d/zz-ansible
+    owner: root
+    group: zammad
+    mode: '0640'
+  no_log: '{{ hide_sensitive_data }}'
+  notify: Restart zammad
+
+- name: Install Zammad package
+  ansible.builtin.apt:
+    name: "{{ 'zammad=' ~ zammad_version if zammad_version | length > 0 else 'zammad' }}"
+    state: present
+    allow_change_held_packages: true
+    policy_rc_d: 101
+  no_log: '{{ hide_sensitive_data }}'
+  notify: Restart zammad
+
+# Package hooks change ownership of /etc/zammad recursively.
+- name: Restore managed environment permissions
+  ansible.builtin.file:
+    path: /etc/zammad/conf.d/zz-ansible
+    owner: root
+    group: zammad
+    mode: '0640'
+
+- name: Protect Zammad automation directories from application writes
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: directory
+    owner: root
+    group: zammad
+    mode: '0750'
+  loop:
+    - /etc/zammad
+    - /etc/zammad/conf.d
+
+- name: Hold Zammad for controlled upgrades through this role
+  ansible.builtin.dpkg_selections:
+    name: zammad
+    selection: hold
+
+- name: Install Zammad settings script
+  ansible.builtin.template:
+    src: configure.rb.j2
+    dest: /etc/zammad/configure.rb
+    owner: root
+    group: zammad
+    mode: '0640'
+  no_log: '{{ hide_sensitive_data }}'
+
+- name: Apply Zammad seed and settings when required
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/zammad
+      - run
+      - rails
+      - runner
+      - /etc/zammad/configure.rb
+  environment:
+    REDIS_URL: '{{ zammad_redis_url }}'
+  register: zammad_configuration
+  changed_when: "'ZAMMAD_CHANGED' in zammad_configuration.stdout"
+  no_log: '{{ hide_sensitive_data }}'
+  when: not ansible_check_mode
+  notify: Restart zammad
+
+- name: Build missing Zammad search index
+  ansible.builtin.command: /usr/bin/zammad run rake zammad:searchindex:rebuild
+  environment:
+    REDIS_URL: '{{ zammad_redis_url }}'
+  when:
+    - zammad_with_elasticsearch | bool
+    - not ansible_check_mode
+    - "'ZAMMAD_REINDEX' in zammad_configuration.stdout"
+  changed_when: true
+  no_log: '{{ hide_sensitive_data }}'

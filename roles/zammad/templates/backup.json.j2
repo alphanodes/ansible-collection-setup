@@ -1,0 +1,10 @@
+{{ {
+  'directory': zammad_backup_dir,
+  'hold_days': zammad_backup_hold_days | int,
+  'host': zammad_db_host,
+  'port': zammad_db_port | int,
+  'database': zammad_db_name,
+  'user': zammad_db_user,
+  'password': zammad_db_password,
+  'pg_dump': '/usr/lib/postgresql/' ~ (postgresql_version | string) ~ '/bin/pg_dump'
+} | to_nice_json }}

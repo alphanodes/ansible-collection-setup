@@ -1,0 +1,76 @@
+---
+- name: Configure Zammad vhost through nginx_mono
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nginx_mono
+    apply:
+      no_log: '{{ hide_sensitive_data and zammad_vhost_users | length > 0 }}'
+  vars:
+    nginx_with_websocket: true
+    nginx_mono_service_name: zammad
+    nginx_mono_service_enabled: '{{ zammad_enabled }}'
+    nginx_mono_service_config:
+      server_name: '{{ zammad_vhost_server }}'
+      vhost_users: '{{ zammad_vhost_users }}'
+      auth_basic_realm: Restricted access only
+      root: /opt/zammad/public
+      letsencrypt: '{{ zammad_vhost_letsencrypt }}'
+      letsencrypt_cert: '{{ zammad_vhost_letsencrypt_cert }}'
+      letsencrypt_key: '{{ zammad_vhost_letsencrypt_key }}'
+      vhost_ssl_cert: '{{ zammad_vhost_ssl_cert }}'
+      vhost_for_zabbix: '{{ zammad_vhost_for_zabbix }}'
+      raw_actions:
+        - client_max_body_size 50M;
+      locations:
+        - name: /ws
+          actions:
+            - proxy_http_version 1.1
+            - proxy_set_header Host $host
+            - >-
+              {{ 'proxy_set_header Authorization ""' if zammad_vhost_users | length > 0
+                 else 'proxy_set_header Authorization $http_authorization' }}
+            - proxy_set_header X-Real-IP $remote_addr
+            - proxy_set_header X-Forwarded-For $remote_addr
+            - proxy_set_header X-Forwarded-Proto $scheme
+            - proxy_set_header Forwarded ""
+            - proxy_set_header X-Forwarded-Scheme ""
+            - proxy_set_header X-Forwarded-Ssl ""
+            - proxy_set_header Upgrade $http_upgrade
+            - proxy_set_header Connection $connection_upgrade
+            - proxy_read_timeout 86400
+            - proxy_pass http://127.0.0.1:{{ zammad_websocket_port }}
+        - name: /cable
+          actions:
+            - proxy_http_version 1.1
+            - proxy_set_header Host $host
+            - >-
+              {{ 'proxy_set_header Authorization ""' if zammad_vhost_users | length > 0
+                 else 'proxy_set_header Authorization $http_authorization' }}
+            - proxy_set_header X-Real-IP $remote_addr
+            - proxy_set_header X-Forwarded-For $remote_addr
+            - proxy_set_header X-Forwarded-Proto $scheme
+            - proxy_set_header Forwarded ""
+            - proxy_set_header X-Forwarded-Scheme ""
+            - proxy_set_header X-Forwarded-Ssl ""
+            - proxy_set_header Upgrade $http_upgrade
+            - proxy_set_header Connection $connection_upgrade
+            - proxy_read_timeout 86400
+            - proxy_pass http://127.0.0.1:{{ zammad_http_port }}
+        - name: '~ ^/assets/'
+          actions:
+            - expires max
+        - name: /
+          actions:
+            - proxy_http_version 1.1
+            - proxy_set_header Host $host
+            - >-
+              {{ 'proxy_set_header Authorization ""' if zammad_vhost_users | length > 0
+                 else 'proxy_set_header Authorization $http_authorization' }}
+            - proxy_set_header X-Real-IP $remote_addr
+            - proxy_set_header X-Forwarded-For $remote_addr
+            - proxy_set_header X-Forwarded-Proto $scheme
+            - proxy_set_header Forwarded ""
+            - proxy_set_header X-Forwarded-Scheme ""
+            - proxy_set_header X-Forwarded-Ssl ""
+            - proxy_set_header X-Forwarded-User ""
+            - proxy_read_timeout 180
+            - proxy_pass http://127.0.0.1:{{ zammad_http_port }}

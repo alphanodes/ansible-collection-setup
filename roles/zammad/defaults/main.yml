@@ -1,0 +1,52 @@
+---
+# Official DEB packages. Empty version installs once; upgrades require an exact package version.
+zammad_version: ''
+zammad_apt_url: https://go.packager.io/srv/deb/zammad/zammad/stable/{{ ansible_facts.distribution | lower }}/
+zammad_apt_suites: "{{ ansible_facts.distribution_major_version if ansible_facts.distribution == 'Debian' else ansible_facts.distribution_version }}"
+zammad_apt_signed_by: https://go.packager.io/srv/deb/zammad/zammad/gpg-key.asc
+zammad_enabled: true
+
+# One installation per host; the package fixes the application path and user.
+zammad_vhost_server: zammad.example.com
+zammad_vhost_letsencrypt: false
+zammad_vhost_ssl_cert: '{{ (ssl_certs | first).name | default("default") }}'
+zammad_vhost_letsencrypt_cert: /etc/letsencrypt/live/{{ zammad_vhost_server }}/fullchain.pem
+zammad_vhost_letsencrypt_key: /etc/letsencrypt/live/{{ zammad_vhost_server }}/privkey.pem
+# Optional HTTP Basic Auth protects the entire vhost, including WebSockets.
+# Entries use {user: ..., password: ...}; keep secrets in inventory / Vault.
+zammad_vhost_users: []
+zammad_vhost_for_zabbix: false
+zammad_http_port: 3000
+zammad_websocket_port: 6042
+zammad_web_concurrency: 1
+zammad_db_name: zammad
+zammad_db_user: zammad
+# Supply a secret from inventory / Ansible Vault. No generated or public default password.
+zammad_db_password: ''
+zammad_db_host: 127.0.0.1
+zammad_db_port: '{{ postgresql_port | default(5432) }}'
+zammad_db_pool: 50
+zammad_redis_url: redis://127.0.0.1:6379/0
+# Shared service roles run before installation; they remain independently configurable.
+# With false, provide a local PostgreSQL server and postgresql_version explicitly.
+zammad_manage_postgresql: true
+zammad_manage_redis: true
+# Management controls local package/service ownership; usage can be disabled
+# independently while retaining the DEB dependency as a stopped, masked service.
+zammad_manage_elasticsearch: true
+zammad_with_elasticsearch: true
+zammad_elasticsearch_url: http://127.0.0.1:9200
+zammad_elasticsearch_user: ''
+zammad_elasticsearch_password: ''
+zammad_elasticsearch_index: zammad
+# Additional Zammad Setting values. Core connection settings below take precedence.
+zammad_settings: {}
+
+# Backups include files and database. Store copies off-host independently.
+# The timer is opt-in; its removal is managed when disabled.
+zammad_backup_enabled: false
+zammad_backup_dir: /var/backups/zammad
+zammad_backup_hold_days: 10
+zammad_backup_on_calendar: '*-*-* 02:00:00'
+zammad_backup_randomized_delay_sec: 15min
+zammad_backup_before_upgrade: true
