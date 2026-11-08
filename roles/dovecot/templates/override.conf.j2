@@ -1,0 +1,5 @@
+{{ managed_by_ansible | comment }}
+# Start after a local database, otherwise authentication fails after a reboot.
+# After only sets the order, it does not pull in a service missing on this host.
+[Unit]
+After=mysql.service mariadb.service

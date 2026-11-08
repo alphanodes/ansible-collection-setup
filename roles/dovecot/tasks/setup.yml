@@ -29,6 +29,19 @@
     shell: /usr/sbin/nologin
     uid: 5000
 
+- name: Create the dovecot service drop-in directory
+  ansible.builtin.file:
+    path: /etc/systemd/system/dovecot.service.d
+    state: directory
+    mode: '0755'
+
+- name: Start dovecot after a local database
+  ansible.builtin.template:
+    src: override.conf.j2
+    dest: /etc/systemd/system/dovecot.service.d/override.conf
+    mode: '0644'
+  notify: Reload systemd daemon
+
 - name: Update dovecot configuration
   ansible.builtin.template:
     src: dovecot.conf.j2

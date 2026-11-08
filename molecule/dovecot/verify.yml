@@ -156,3 +156,29 @@
           - '''header :contains "X-Spam-Flag" "YES"'' in sieve'
           - '''fileinto "Junk";'' in sieve'
         fail_msg: before.sieve does not match the role defaults
+
+    - name: Get the start order of the dovecot service
+      ansible.builtin.command: systemctl show dovecot -p After -p Requires -p Wants
+      register: dovecot_unit_order
+      changed_when: false
+
+    - name: Read the dovecot service drop-in
+      ansible.builtin.slurp:
+        src: /etc/systemd/system/dovecot.service.d/override.conf
+      register: dovecot_unit_dropin
+
+    # Without the order dovecot starts before the database after a reboot. It
+    # must not depend on it, the database can be on another host. This scenario
+    # runs MariaDB, where systemd resolves mysql.service as an alias, so Oracle
+    # MySQL is only covered by the content of the drop-in.
+    - name: Verify dovecot starts after a local database without requiring it
+      vars:
+        dovecot_unit_after: "{{ dovecot_unit_order.stdout_lines | select('match', '^After=') | first }}"
+        dovecot_unit_dependencies: "{{ dovecot_unit_order.stdout_lines | reject('match', '^After=') | join(' ') }}"
+      ansible.builtin.assert:
+        that:
+          - "'mariadb.service' in dovecot_unit_after"
+          - "'mariadb.service' not in dovecot_unit_dependencies"
+          - "'mysql.service' not in dovecot_unit_dependencies"
+          - "'After=mysql.service mariadb.service' in dovecot_unit_dropin.content | b64decode"
+        fail_msg: "{{ dovecot_unit_order.stdout }}"

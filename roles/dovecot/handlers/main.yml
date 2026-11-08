@@ -1,6 +1,11 @@
 ---
 # handlers file for dovecot
 
+# The start order only matters at boot, dovecot needs no restart for it
+- name: Reload systemd daemon
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+
 - name: Restart dovecot
   ansible.builtin.systemd_service:
     name: dovecot
