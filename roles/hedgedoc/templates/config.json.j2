@@ -1,6 +1,7 @@
 {
   "{{ hedgedoc_node_env }}": {
     "domain": "{{ hedgedoc_vhost_server }}",
+    "host": "{{ hedgedoc_host_name }}",
     "port": "{{ hedgedoc_http_port }}",
     "urlPath": "{{ hedgedoc_url_path }}",
     "urlAddPort": {{ 'true' if hedgedoc_url_add_port else 'false' }},

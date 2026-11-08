@@ -29,7 +29,9 @@ hedgedoc_content_security_policy: ''
 
 hedgedoc_syslog_identifier: hedgedoc
 hedgedoc_node_env: production
-hedgedoc_host_name: localhost
+# Address HedgeDoc listens on and nginx connects to. HedgeDoc itself defaults to
+# 0.0.0.0, nginx is the only client. No localhost: it can resolve to IPv6 as well.
+hedgedoc_host_name: 127.0.0.1
 hedgedoc_http_port: 50342
 hedgedoc_url_path: ''
 hedgedoc_url_add_port: false

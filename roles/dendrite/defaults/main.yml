@@ -11,6 +11,9 @@ dendrite_repository: https://github.com/matrix-org/dendrite.git
 dendrite_version: 'v0.13.8'
 dendrite_force_rebuild: false
 
+# nginx is the only client, Dendrite defaults to all interfaces
+dendrite_http_bind_address: 127.0.0.1:8008
+
 dendrite_required_packages: []
 
 dendrite_service_user: dendrite

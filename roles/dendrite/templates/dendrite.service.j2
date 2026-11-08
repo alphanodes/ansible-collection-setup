@@ -14,7 +14,7 @@ LimitNOFILE={{ dendrite_service_limit_no_file }}
 Environment={{ item.name }}={{ item.value }}
 {% endfor -%}
 WorkingDirectory={{ dendrite_app_dir }}
-ExecStart={{ dendrite_app_dir }}/bin/dendrite --config {{ dendrite_config_file }}
+ExecStart={{ dendrite_app_dir }}/bin/dendrite --config {{ dendrite_config_file }} --http-bind-address {{ dendrite_http_bind_address }}
 
 [Install]
 WantedBy=multi-user.target

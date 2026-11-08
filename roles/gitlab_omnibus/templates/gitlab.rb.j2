@@ -209,6 +209,7 @@ nginx['ssl_certificate'] = '{{ gitlab_nginx_ssl_certificate }}'
 nginx['ssl_certificate_key'] = '{{ gitlab_nginx_ssl_certificate_key }}'
 {% endif %}
 nginx['listen_addresses'] = {{ gitlab_nginx_listen_addresses | to_json }}
+nginx['status']['listen_addresses'] = {{ gitlab_nginx_status_listen_addresses | to_json }}
 {% if gitlab_nginx_blocked_user_agents | length > 0 %}
 # Reject unwanted crawlers before they reach Puma. Single-quoted on the Ruby
 # side so the nginx variable and the regex quoting pass through untouched.

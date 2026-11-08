@@ -1,7 +1,9 @@
 auth_enabled: {{ loki_auth_enabled | bool | lower }}
 
 server:
+  http_listen_address: {{ loki_http_listen_address }}
   http_listen_port: {{ loki_http_listen_port }}
+  grpc_listen_address: {{ loki_grpc_listen_address }}
   grpc_listen_port: {{ loki_grpc_listen_port }}
   log_level: {{ loki_log_level }}
   grpc_server_max_concurrent_streams: {{ loki_grpc_server_max_concurrent_streams }}

@@ -25,6 +25,8 @@ grafana_web_password: ''
 
 grafana_admin_user: admin
 grafana_admin_password: changeMe123!
+# nginx is the only client
+grafana_listen_address: 127.0.0.1
 grafana_listen_port: 3000
 
 # Datasource: Loki

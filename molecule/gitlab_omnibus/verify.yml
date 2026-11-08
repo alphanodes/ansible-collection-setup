@@ -125,6 +125,18 @@
         dest: /tmp/gitlab-backup-run-test
         mode: '0755'
 
+    - name: Read the status vhost of the bundled nginx
+      ansible.builtin.slurp:
+        src: /var/opt/gitlab/nginx/conf/nginx-status.conf
+      register: gitlab_nginx_status_conf
+
+    - name: Verify the status page only listens locally
+      ansible.builtin.assert:
+        that:
+          - "'listen 127.0.0.1:8060' in gitlab_nginx_status_conf.content | b64decode"
+          - "'listen *:8060' not in gitlab_nginx_status_conf.content | b64decode"
+        fail_msg: "{{ gitlab_nginx_status_conf.content | b64decode }}"
+
     - name: Get the current time
       ansible.builtin.command: date +%s
       register: test_now

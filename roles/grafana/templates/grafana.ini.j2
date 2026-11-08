@@ -1,7 +1,8 @@
 ; Ansible-managed
 
 [server]
-# Listen-Port (default 3000)
+# Listen address and port (defaults: all interfaces, 3000)
+http_addr = {{ grafana_listen_address }}
 http_port = {{ grafana_listen_port }}
 
 [security]

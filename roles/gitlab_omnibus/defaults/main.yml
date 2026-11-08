@@ -47,6 +47,9 @@ gitlab_backup_archive_permissions: '0644'
 # 7 days in seconds
 gitlab_backup_keep_time: 604800
 
+# The status page of the bundled nginx (port 8060) is only used locally
+gitlab_nginx_status_listen_addresses:
+  - 127.0.0.1
 gitlab_nginx_listen_addresses:
   - '*'
   - '[::]'

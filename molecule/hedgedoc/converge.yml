@@ -17,7 +17,7 @@
     hedgedoc_vhost_server: hedgedoc.local
     hedgedoc_vhost_for_zabbix: false
     hedgedoc_path: /srv/hedgedoc
-    hedgedoc_host_name: localhost
+    hedgedoc_host_name: 127.0.0.1
     hedgedoc_http_port: 50342
     nginx_with_ssl: false  # No SSL in container test
     nginx_with_websocket: true  # Hedgedoc requires WebSocket support
@@ -92,10 +92,16 @@
         path: /etc/nginx/sites-available/hedgedoc.conf
       register: hedgedoc_vhost
 
+    - name: Read hedgedoc vhost configuration
+      ansible.builtin.slurp:
+        src: /etc/nginx/sites-available/hedgedoc.conf
+      register: hedgedoc_vhost_content
+
     - name: Verify hedgedoc vhost configuration
       ansible.builtin.assert:
         that:
           - nginx_syntax.rc == 0
           - hedgedoc_vhost.stat.exists
+          - "'proxy_pass http://127.0.0.1:50342;' in hedgedoc_vhost_content.content | b64decode"
         fail_msg: "hedgedoc nginx configuration failed"
         success_msg: "hedgedoc nginx_mono integration works correctly"

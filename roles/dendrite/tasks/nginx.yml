@@ -12,7 +12,7 @@
       root: "{{ dendrite_vhost_root | default(omit) }}"
       upstream_name: dendrite
       upstream_servers:
-        - "127.0.0.1:8008"
+        - "{{ dendrite_http_bind_address }}"
       proxy_pass: "http://dendrite"
       proxy_location: "/_matrix"
       proxy_timeout: "600"
