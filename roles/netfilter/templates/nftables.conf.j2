@@ -29,10 +29,13 @@ table inet netfilter {
     iif lo accept
     ct state established,related accept
     ct state invalid drop
-    meta l4proto { icmp, icmpv6 } accept
 
-    # remote packets claiming to come from a loopback address
-    iif != lo ip daddr 127.0.0.0/8 reject
+    # a new connection starts with a SYN, conntrack accepts other packets as new
+    tcp flags & (fin | syn | rst | ack) != syn ct state new drop
+
+    # remote packets claiming to come from or go to a loopback address
+    iif != lo ip saddr 127.0.0.0/8 drop
+    iif != lo ip daddr 127.0.0.0/8 drop
     iif != lo ip6 saddr ::1 drop
 
     # packets to broadcast, multicast or anycast addresses
@@ -45,38 +48,19 @@ table inet netfilter {
 {% for blocked_address in netfilter_blocked_addresses_v6 %}
     ip6 saddr {{ blocked_address }} drop
 {% endfor %}
-{% if netfilter_honeypot_tcp_ports | length > 0 or netfilter_honeypot_udp_ports | length > 0 %}
 
-    # honeypot: drop known scanners on all ports and renew their timeout
-    ip saddr @honeypot update @honeypot { ip saddr } drop
-    ip6 saddr @honeypot6 update @honeypot6 { ip6 saddr } drop
-{% if netfilter_honeypot_tcp_ports | length > 0 %}
-    tcp dport { {{ netfilter_honeypot_tcp_ports | join(', ') }} } update @honeypot { ip saddr } log prefix "HONEYPOT: " level info drop
-    tcp dport { {{ netfilter_honeypot_tcp_ports | join(', ') }} } update @honeypot6 { ip6 saddr } log prefix "HONEYPOT: " level info drop
-{% endif %}
-{% if netfilter_honeypot_udp_ports | length > 0 %}
-    udp dport { {{ netfilter_honeypot_udp_ports | join(', ') }} } update @honeypot { ip saddr } log prefix "HONEYPOT: " level info drop
-    udp dport { {{ netfilter_honeypot_udp_ports | join(', ') }} } update @honeypot6 { ip6 saddr } log prefix "HONEYPOT: " level info drop
-{% endif %}
-{% endif %}
+    # no redirects or timestamps, IPv6 needs neighbor discovery and packet too big
+    icmp type { destination-unreachable, time-exceeded, parameter-problem } accept
+    icmp type echo-request limit rate {{ netfilter_icmp_echo_limit }} accept
+    icmpv6 type { destination-unreachable, packet-too-big, time-exceeded, parameter-problem, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert, mld-listener-query } accept
+    icmpv6 type echo-request limit rate {{ netfilter_icmp_echo_limit }} accept
 
+    # trusted sources and ssh come first, a honeypot hit must not lock them out
 {% for allowed_network in netfilter_allowed_networks %}
     ip saddr {{ allowed_network }} accept
 {% endfor %}
 {% for allowed_network in netfilter_allowed_networks_v6 %}
     ip6 saddr {{ allowed_network }} accept
-{% endfor %}
-    # local mail submission and ntp
-    ip saddr 127.0.0.0/8 tcp dport 25 accept
-    ip6 saddr ::1 tcp dport 25 accept
-    ip saddr 127.0.0.0/8 udp dport 123 accept
-    ip6 saddr ::1 udp dport 123 accept
-
-{% for allowed_tcp_port in netfilter_allowed_tcp_ports %}
-    tcp dport {{ allowed_tcp_port | string | replace(':', '-') }} accept
-{% endfor %}
-{% for allowed_udp_port in netfilter_allowed_udp_ports %}
-    udp dport {{ allowed_udp_port | string | replace(':', '-') }} accept
 {% endfor %}
 {% for allowed_tcp in netfilter_allowed_tcp_ports_with_saddr %}
     ip saddr {{ allowed_tcp.saddr }} tcp dport {{ allowed_tcp.port | string | replace(':', '-') }} accept
@@ -124,14 +108,36 @@ table inet netfilter {
     ip6 saddr {{ active_zabbix_address }} tcp dport 10051 accept
 {% endfor %}
 {% endif %}
+{% if netfilter_honeypot_tcp_ports | length > 0 or netfilter_honeypot_udp_ports | length > 0 %}
 
-{% for allowed_nameserver in netfilter_allowed_nameservers %}
-    ip saddr {{ allowed_nameserver }} udp sport 53 udp dport 1024-65535 accept
+    # honeypot: known scanners also lose the public ports below
+    ip saddr @honeypot update @honeypot { ip saddr } drop
+    ip6 saddr @honeypot6 update @honeypot6 { ip6 saddr } drop
+{% endif %}
+
+    # public ports
+{% for allowed_tcp_port in netfilter_allowed_tcp_ports %}
+    tcp dport {{ allowed_tcp_port | string | replace(':', '-') }} accept
 {% endfor %}
-{% for allowed_nameserver in netfilter_allowed_nameservers_v6 %}
-    ip6 saddr {{ allowed_nameserver }} udp sport 53 udp dport 1024-65535 accept
+{% for allowed_udp_port in netfilter_allowed_udp_ports %}
+    udp dport {{ allowed_udp_port | string | replace(':', '-') }} accept
 {% endfor %}
+{% if netfilter_honeypot_tcp_ports | length > 0 %}
+
+    # honeypot traps, behind the public ports so an opened port is no trap
+    tcp dport { {{ netfilter_honeypot_tcp_ports | join(', ') }} } update @honeypot { ip saddr } log prefix "HONEYPOT: " level info drop
+    tcp dport { {{ netfilter_honeypot_tcp_ports | join(', ') }} } update @honeypot6 { ip6 saddr } log prefix "HONEYPOT: " level info drop
+{% endif %}
+{% if netfilter_honeypot_udp_ports | length > 0 %}
+    udp dport { {{ netfilter_honeypot_udp_ports | join(', ') }} } update @honeypot { ip saddr } log prefix "HONEYPOT: " level info drop
+    udp dport { {{ netfilter_honeypot_udp_ports | join(', ') }} } update @honeypot6 { ip6 saddr } log prefix "HONEYPOT: " level info drop
+{% endif %}
 {% if netfilter_log_dropped_packets %}
+{% if netfilter_silent_drop_udp_ports | length > 0 %}
+
+    # local network chatter would fill the log sample below
+    udp dport { {{ netfilter_silent_drop_udp_ports | join(', ') }} } drop
+{% endif %}
 
     # everything else is dropped by the policy, log a sample
     limit rate 15/minute log prefix "netfilter-dropped: " level debug
@@ -169,10 +175,26 @@ table inet netfilter {
 
   chain output {
     type filter hook output priority filter; policy {{ netfilter_filter_output_policy | lower }};
-{% if netfilter_filter_output_policy | lower != 'accept' %}
 
     oif lo accept
     ct state established,related accept
+{% set metadata_users = netfilter_metadata_blocked_users | select('in', ansible_facts.getent_passwd) | list %}
+{% if metadata_users | length > 0 and netfilter_metadata_addresses | length > 0 %}
+
+    # web applications have no use for the cloud metadata service, an SSRF could
+    # read access tokens from it
+    meta skuid { {{ metadata_users | map('to_json') | join(', ') }} } ip daddr { {{ netfilter_metadata_addresses | join(', ') }} } reject
+{% endif %}
+{% set smtp_users = netfilter_output_smtp_users | select('in', ansible_facts.getent_passwd) | list %}
+{% if smtp_users | length > 0 %}
+
+    # only the mail server talks SMTP to other hosts, nothing that got into a
+    # web application can send spam directly
+    tcp dport 25 meta skuid != { {{ smtp_users | map('to_json') | join(', ') }} } limit rate 15/minute log prefix "netfilter-smtp-output: " level info
+    tcp dport 25 meta skuid != { {{ smtp_users | map('to_json') | join(', ') }} } reject
+{% endif %}
+{% if netfilter_filter_output_policy | lower != 'accept' %}
+
 {% for allowed_network in netfilter_allowed_networks_output %}
     ip daddr {{ allowed_network }} accept
 {% endfor %}

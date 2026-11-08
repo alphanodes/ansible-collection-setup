@@ -3,6 +3,14 @@
 - name: Remove the rules of this role
   ansible.builtin.include_tasks: deactivate.yml
 
+- name: Remove the kernel network settings
+  ansible.posix.sysctl:
+    name: '{{ item }}'
+    state: absent
+    reload: false
+    sysctl_file: '{{ common_sysctl_file }}'
+  loop: '{{ netfilter_sysctl.keys() | list + ["net.ipv4.conf.all.rp_filter"] }}'
+
 - name: Remove the nftables service drop-in
   ansible.builtin.file:
     path: /etc/systemd/system/nftables.service.d/override.conf

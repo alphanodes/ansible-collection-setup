@@ -10,6 +10,13 @@
         cache_valid_time: 600
       changed_when: false
 
+    # netfilter_metadata_blocked_users and netfilter_output_smtp_users skip the
+    # missing user redmine, the rules name www-data and postfix
+    - name: Create the mail server user
+      ansible.builtin.user:
+        name: postfix
+        system: true
+
     # State of a host set up with the former iptables engine of this role,
     # created only on the first run so the second run stays idempotent
     - name: Check for the migration marker
@@ -55,6 +62,8 @@
     netfilter_state: active
     # production hosts run ssh on a custom port
     ssh_server_port: 7099
+    # the bans must outlast the run, also if the test host sleeps meanwhile
+    fail2ban_sshd_bantime: 24h
     # molecule works with docker exec, ssh restrictions cannot lock it out
     netfilter_ssh_sources:
       - 192.0.2.0/24
@@ -82,10 +91,6 @@
       - 203.0.113.9
     netfilter_blocked_addresses_v6:
       - 2001:db8:bad::/48
-    netfilter_allowed_nameservers:
-      - 192.0.2.53
-    netfilter_allowed_nameservers_v6:
-      - 2001:db8::53
     netfilter_zabbix_server_address: 192.0.2.100
     netfilter_zabbix_server_address_v6: 2001:db8::100
     netfilter_allowed_active_zabbix_addresses:

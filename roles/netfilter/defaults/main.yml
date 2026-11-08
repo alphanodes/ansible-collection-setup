@@ -20,8 +20,42 @@ netfilter_iptables_cleanup_packages:
 
 netfilter_config_file: /etc/nftables.conf
 
-netfilter_allowed_nameservers: '{{ hetzner_nameserver_v4 | default([]) }}'
-netfilter_allowed_nameservers_v6: '{{ hetzner_nameserver_v6 | default([]) }}'
+# Rate of accepted ICMP echo requests in total, further ones are dropped
+netfilter_icmp_echo_limit: 20/second burst 50 packets
+
+# Written with state active, removed with state remove
+netfilter_sysctl:
+  net.ipv4.conf.all.accept_redirects: 0
+  net.ipv4.conf.default.accept_redirects: 0
+  net.ipv4.conf.all.secure_redirects: 0
+  net.ipv4.conf.default.secure_redirects: 0
+  net.ipv6.conf.all.accept_redirects: 0
+  net.ipv6.conf.default.accept_redirects: 0
+  net.ipv4.conf.all.log_martians: 1
+  net.ipv4.conf.default.log_martians: 1
+
+# Reverse path filter for hosts without one (value 0). A distribution or cloud
+# image setting the stricter 1 keeps it. 2 = loose, works with asymmetric routing.
+netfilter_rp_filter: 2
+
+# Users without access to the cloud metadata service. Only existing users are
+# used, a user created by a later role is added with the next run.
+netfilter_metadata_blocked_users:
+  - www-data
+  - redmine
+netfilter_metadata_addresses:
+  - 169.254.169.254
+
+# Only these users may connect to port 25 of other hosts (only existing users
+# are used, without any of them the port is not restricted). Applications deliver
+# through the local mail server, an empty list disables the restriction.
+netfilter_output_smtp_users:
+  - postfix
+
+# Dropped without logging, they would fill the log sample (LLMNR, MikroTik discovery)
+netfilter_silent_drop_udp_ports:
+  - 5355
+  - 5678
 
 netfilter_blocked_addresses: []
 netfilter_blocked_addresses_v6: []
@@ -77,11 +111,19 @@ netfilter_filter_output_policy: accept
 netfilter_nat_prerouting_policy: accept
 netfilter_nat_postrouting_policy: accept
 
-# Sources probing these ports are dropped on all ports for the timeout,
-# every further packet renews it. Empty lists disable the honeypot.
+# Sources probing these ports lose the public ports for the timeout, every further
+# packet renews it. Trusted sources and ssh are not affected. Empty lists disable
+# the honeypot, which is the right choice behind NAT, as one infected client would
+# lock out everybody sharing the address.
 netfilter_honeypot_tcp_ports:
+  - 23
   - 139
   - 445
+  - 3389
+  - 5900
+  - 6379
+  - 9200
+  - 27017
 netfilter_honeypot_udp_ports:
   - 137
   - 138
