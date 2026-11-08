@@ -25,7 +25,7 @@ Available variables can be found in [defaults/main.yml](defaults/main.yml)
 
 ## Integration with fail2ban
 
-The rules live in the tables `inet netfilter` and `ip netfilter-nat`, which the configuration replaces atomically on every reload. The table `inet f2b-table` of fail2ban and the tables `ip filter` and `ip nat` of iptables-nft (used by Docker) are not touched, so bans survive a reload. The states `disabled` and `remove` only delete the tables of this role. A drop-in removes the `ExecStop` of `nftables.service`, which would flush the whole ruleset including the bans on every stop and on the restart Debian performs when the package is upgraded.
+The rules live in the tables `inet netfilter` and `ip netfilter-nat`, which the configuration replaces atomically on every reload. The table `inet f2b-table` of fail2ban and the tables `ip filter` and `ip nat` of iptables-nft (used by Docker) are not touched, so bans survive a reload. The states `disabled` and `remove` only delete the tables of this role, empty the configuration file and stop the service, so the rules do not come back with a package upgrade. A drop-in removes the `ExecStop` of `nftables.service`, which would flush the whole ruleset including the bans on every stop and on the restart Debian performs when the package is upgraded.
 
 ## Migration from iptables
 

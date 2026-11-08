@@ -146,3 +146,111 @@
         that:
           - iptables_persistent.rc != 0 or iptables_persistent.stdout is not match('^ii')
         fail_msg: "iptables-persistent is still installed: {{ iptables_persistent.stdout }}"
+
+    # Deactivation runs last, it removes the rules checked above
+    - name: Ban a sample address before the deactivation
+      ansible.builtin.command: fail2ban-client set sshd banip 192.0.2.41
+      changed_when: false
+
+    - name: Deactivate the rules
+      ansible.builtin.include_role:
+        name: alphanodes.setup.netfilter
+      vars:
+        netfilter_state: disabled
+        ssh_server_port: 7099
+
+    - name: Check the nftables service is stopped and disabled
+      ansible.builtin.systemd_service:
+        name: nftables
+        state: stopped
+        enabled: false
+      check_mode: true
+      register: nftables_service_disabled
+      failed_when: nftables_service_disabled.changed
+
+    - name: Read the configuration after the deactivation
+      ansible.builtin.slurp:
+        src: /etc/nftables.conf
+      register: nftables_config_disabled
+
+    - name: Validate the configuration after the deactivation
+      ansible.builtin.command: nft --check --file /etc/nftables.conf
+      changed_when: false
+
+    - name: Verify the configuration has no rules
+      ansible.builtin.assert:
+        that:
+          - nftables_config_disabled.content | b64decode is not search('(?m)^\\s*table ')
+          - nftables_config_disabled.content | b64decode is not search('(?m)^\\s*flush ruleset')
+        fail_msg: "{{ nftables_config_disabled.content | b64decode }}"
+
+    # the postinst of the package runs try-restart, which does nothing for a
+    # stopped unit, a start must not bring back the rules either
+    - name: Run the service restart of a package upgrade
+      ansible.builtin.command: systemctl try-restart nftables
+      changed_when: false
+
+    - name: Read the ruleset after the package upgrade restart
+      ansible.builtin.command: nft list ruleset
+      register: ruleset_try_restart
+      changed_when: false
+
+    - name: Start nftables manually
+      ansible.builtin.systemd_service:
+        name: nftables
+        state: started
+      changed_when: false
+
+    - name: Read the ruleset after the manual start
+      ansible.builtin.command: nft list ruleset
+      register: ruleset_started
+      changed_when: false
+
+    - name: Verify the rules stay gone and the ban of fail2ban stays
+      ansible.builtin.assert:
+        that:
+          - "'table inet netfilter' not in item"
+          - "'table ip netfilter-nat' not in item"
+          - "'table inet f2b-table' in item"
+          - "'192.0.2.41' in item"
+        fail_msg: "{{ item }}"
+      loop:
+        - "{{ ruleset_try_restart.stdout }}"
+        - "{{ ruleset_started.stdout }}"
+
+    # the unit is running again here, remove has to stop it before the drop-in
+    # goes away, without the drop-in a stop flushes the whole ruleset
+    - name: Remove the role setup
+      ansible.builtin.include_role:
+        name: alphanodes.setup.netfilter
+      vars:
+        netfilter_state: remove
+        ssh_server_port: 7099
+
+    - name: Check the nftables service drop-in
+      ansible.builtin.stat:
+        path: /etc/systemd/system/nftables.service.d/override.conf
+      register: nftables_dropin_removed
+
+    - name: Check the nftables service is stopped after the removal
+      ansible.builtin.systemd_service:
+        name: nftables
+        state: stopped
+        enabled: false
+      check_mode: true
+      register: nftables_service_removed
+      failed_when: nftables_service_removed.changed
+
+    - name: Read the ruleset after the removal
+      ansible.builtin.command: nft list ruleset
+      register: ruleset_removed
+      changed_when: false
+
+    - name: Verify the removal keeps the ban of fail2ban
+      ansible.builtin.assert:
+        that:
+          - not nftables_dropin_removed.stat.exists
+          - "'table inet netfilter' not in ruleset_removed.stdout"
+          - "'table inet f2b-table' in ruleset_removed.stdout"
+          - "'192.0.2.41' in ruleset_removed.stdout"
+        fail_msg: "{{ ruleset_removed.stdout }}"

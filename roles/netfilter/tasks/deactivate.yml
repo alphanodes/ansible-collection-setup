@@ -5,8 +5,6 @@
   register: netfilter_tables
   changed_when: false
 
-# Stopping nftables.service would flush the whole ruleset including the table
-# of fail2ban, so only the tables of this role are removed
 - name: Remove the rules of this role
   ansible.builtin.command: nft delete table {{ item }}
   loop:
@@ -14,6 +12,29 @@
     - ip netfilter-nat
   when: ('table ' ~ item) in netfilter_tables.stdout_lines
   changed_when: true
+
+# Neither a start of the unit nor the shipped default config, which contains a
+# flush ruleset, may change the ruleset from now on
+- name: Remove the rules of this role from the configuration
+  ansible.builtin.template:
+    src: nftables_disabled.conf.j2
+    dest: '{{ netfilter_config_file }}'
+    mode: '0755'
+    validate: nft --check --file %s
+
+- name: Check for the nftables service drop-in
+  ansible.builtin.stat:
+    path: /etc/systemd/system/nftables.service.d/override.conf
+  register: netfilter_service_dropin
+
+# A running unit is restarted on package upgrades. Stopping it is only safe with
+# the drop-in, the ExecStop of the package flushes the table of fail2ban.
+- name: Stop the nftables service
+  ansible.builtin.systemd_service:
+    name: nftables
+    state: stopped
+    daemon_reload: true
+  when: netfilter_service_dropin.stat.exists
 
 - name: Ensure nftables does not load rules at boot
   ansible.builtin.systemd_service:

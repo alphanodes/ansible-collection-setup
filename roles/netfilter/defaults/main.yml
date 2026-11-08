@@ -3,8 +3,8 @@
 
 # possible states:
 # - active = rules from this role are loaded and reloaded on changes
-# - disabled = nftables installed, the rules of this role are removed and the
-#   service is not started at boot
+# - disabled = nftables installed, the rules of this role are removed from the
+#   kernel and the configuration, the service is stopped and not started at boot
 # - reset = same as disabled
 # - remove = like disabled, nothing else is uninstalled, fail2ban needs nftables
 netfilter_state: disabled

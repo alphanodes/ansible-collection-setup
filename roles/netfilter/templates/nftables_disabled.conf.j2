@@ -1,0 +1,5 @@
+#!/usr/sbin/nft -f
+{{ managed_by_ansible | comment }}
+
+# This host runs without the rules of this role. No flush ruleset here, that
+# would also remove the table of fail2ban (inet f2b-table).
