@@ -1,0 +1,33 @@
+# checkViewPermission of 1.12.1/1.12.2 rejects logged-in users on HTTP requests:
+# https://github.com/hedgedoc/hedgedoc/issues/6946
+# Drop this directory when updating to a release containing the fix.
+--- a/lib/permissions.js
++++ b/lib/permissions.js
+@@ -1,16 +1,25 @@
+ export const allowedPermissionValues = ['freely', 'editable', 'limited', 'locked', 'protected', 'private']
+ 
++// Sockets get req.user.logged_in from passport.socketio, which also sets it to
++// false for guests. HTTP requests only have the Passport session check.
++function isLoggedIn (req) {
++  if (!req.user) return false
++  if (req.user.logged_in === true) return true
++  return typeof req.isAuthenticated === 'function' && req.isAuthenticated()
++}
++
+ export function checkViewPermission (req, note) {
+   const permission = note.permission
+ 
+   // Private notes should only be readable to their owner
++  // (ownerId on the database model, owner in the realtime note state)
+   if (permission === 'private') {
+-    return req.user && req.user.logged_in && req.user.id === note.owner
++    return isLoggedIn(req) && req.user.id === (note.ownerId ?? note.owner)
+   }
+ 
+   // Limited and protected notes should be readable by all logged-in users
+   if (permission === 'limited' || permission === 'protected') {
+-    return req.user && req.user.logged_in
++    return isLoggedIn(req)
+   }
+ 
+   // Freely, Editable and Locked notes should be readable by everyone

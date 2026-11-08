@@ -54,6 +54,40 @@
       or later, but {{ hedgedoc_node_version.stdout }} is installed
     success_msg: "node {{ hedgedoc_node_version.stdout }} is supported by hedgedoc"
 
+- name: Be sure patch is installed
+  ansible.builtin.apt:
+    name: patch
+    state: present
+
+- name: Check the checked out hedgedoc version
+  ansible.builtin.command: git -C {{ hedgedoc_path }} describe --tags --exact-match
+  register: hedgedoc_installed_version
+  become_user: "{{ hedgedoc_user }}"
+  become: true
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+# Patched files are hidden from git (see below), a checkout of another version
+# would refuse to overwrite them
+- name: Undo the local patches before a version change
+  ansible.builtin.shell: |
+    set -eo pipefail
+    cd {{ hedgedoc_path }}
+    git ls-files -v | sed -n 's/^S //p' | while read -r file; do
+      git update-index --no-skip-worktree "$file"
+      git checkout -- "$file"
+    done
+  args:
+    executable: /bin/bash
+  become_user: "{{ hedgedoc_user }}"
+  become: true
+  changed_when: true
+  when:
+    - hedgedoc_update
+    - hedgedoc_installed_version.rc == 0
+    - hedgedoc_installed_version.stdout != hedgedoc_repository_version
+
 - name: Ensure hedgedoc is latest
   ansible.builtin.git:
     repo: "{{ hedgedoc_repository }}"
@@ -66,6 +100,32 @@
     - Run yarn install
     - Run yarn build
     - Restart hedgedoc
+
+# Patches for bugs without an upstream release, in a directory per version
+- name: Apply the patches for this hedgedoc version
+  ansible.posix.patch:
+    src: '{{ item }}'
+    basedir: '{{ hedgedoc_path }}'
+    strip: 1
+  loop: "{{ lookup('ansible.builtin.fileglob', role_path ~ '/files/patches/' ~ hedgedoc_repository_version ~ '/*.patch', wantlist=True) }}"
+  become_user: "{{ hedgedoc_user }}"
+  become: true
+  register: hedgedoc_patches
+  notify: Restart hedgedoc
+
+# The git task above fails on local modifications
+- name: Hide the patched files from git
+  ansible.builtin.shell: |
+    set -eo pipefail
+    cd {{ hedgedoc_path }}
+    git diff --name-only | tee /dev/stderr | xargs --no-run-if-empty git update-index --skip-worktree
+  args:
+    executable: /bin/bash
+  become_user: "{{ hedgedoc_user }}"
+  become: true
+  register: hedgedoc_patches_hidden
+  changed_when: hedgedoc_patches_hidden.stderr | length > 0
+  when: hedgedoc_patches.results | length > 0
 
 - name: Ensure hedgedoc configuration is latest
   ansible.builtin.template:
