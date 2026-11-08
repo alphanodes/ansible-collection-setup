@@ -24,32 +24,6 @@
 - name: Activate rules
   when: netfilter_state == 'active'
   block:
-    - name: Harden the kernel network settings
-      ansible.posix.sysctl:
-        name: '{{ item.key }}'
-        value: '{{ item.value }}'
-        sysctl_set: true
-        reload: true
-        sysctl_file: '{{ common_sysctl_file }}'
-      loop: '{{ netfilter_sysctl | dict2items }}'
-      loop_control:
-        label: '{{ item.key }}'
-
-    - name: Read the reverse path filter setting
-      ansible.builtin.command: sysctl -n net.ipv4.conf.all.rp_filter
-      register: netfilter_rp_filter_current
-      changed_when: false
-      check_mode: false
-
-    - name: Enable the reverse path filter
-      ansible.posix.sysctl:
-        name: net.ipv4.conf.all.rp_filter
-        value: '{{ netfilter_rp_filter }}'
-        sysctl_set: true
-        reload: true
-        sysctl_file: '{{ common_sysctl_file }}'
-      when: netfilter_rp_filter_current.stdout == '0'
-
     # The rules use the numeric uids of the users existing now
     - name: Read the existing users
       ansible.builtin.getent:

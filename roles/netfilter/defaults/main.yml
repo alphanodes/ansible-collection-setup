@@ -24,23 +24,6 @@ netfilter_config_file: /etc/nftables.conf
 # only pass as a trusted source or as part of a tracked ping.
 netfilter_icmp_echo_limit: 20/second burst 50 packets
 
-# Written with state active. State remove takes them out of the sysctl file, the
-# running values stay until the next reboot. Existing interfaces keep their own
-# accept_redirects value, the input chain therefore also drops redirects.
-netfilter_sysctl:
-  net.ipv4.conf.all.accept_redirects: 0
-  net.ipv4.conf.default.accept_redirects: 0
-  net.ipv4.conf.all.secure_redirects: 0
-  net.ipv4.conf.default.secure_redirects: 0
-  net.ipv6.conf.all.accept_redirects: 0
-  net.ipv6.conf.default.accept_redirects: 0
-  net.ipv4.conf.all.log_martians: 1
-  net.ipv4.conf.default.log_martians: 1
-
-# Set once if net.ipv4.conf.all.rp_filter is 0, another value stays. The kernel uses
-# the higher of the all and the interface value. 2 = loose, works with asymmetric routing.
-netfilter_rp_filter: 2
-
 # Users without access to the cloud metadata service. Only existing users are
 # used, a user created by a later role is added with the next run.
 netfilter_metadata_blocked_users:

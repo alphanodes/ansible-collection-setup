@@ -135,23 +135,6 @@
           - netfilter_output_blocked.stdout is not search('postfix-smtp:.*Connection refused')
         fail_msg: "{{ netfilter_output_blocked.stdout }}"
 
-    - name: Read the kernel network settings
-      ansible.builtin.command: >-
-        sysctl -n net.ipv4.conf.all.accept_redirects net.ipv6.conf.all.accept_redirects
-        net.ipv4.conf.all.secure_redirects net.ipv4.conf.all.log_martians net.ipv4.conf.all.rp_filter
-      register: netfilter_sysctl_values
-      changed_when: false
-
-    - name: Verify the kernel network settings
-      ansible.builtin.assert:
-        that:
-          - netfilter_sysctl_values.stdout_lines[0] == '0'
-          - netfilter_sysctl_values.stdout_lines[1] == '0'
-          - netfilter_sysctl_values.stdout_lines[2] == '0'
-          - netfilter_sysctl_values.stdout_lines[3] == '1'
-          - netfilter_sysctl_values.stdout_lines[4] != '0'
-        fail_msg: "{{ netfilter_sysctl_values.stdout }}"
-
     - name: Verify forward and nat rules
       ansible.builtin.assert:
         that:
@@ -349,16 +332,3 @@
           - "'table inet f2b-table' in ruleset_removed.stdout"
           - "'192.0.2.41' in ruleset_removed.stdout"
         fail_msg: "{{ ruleset_removed.stdout }} {{ netfilter_fail2ban_journal.stdout }}"
-
-    - name: Read the sysctl file after the removal
-      ansible.builtin.slurp:
-        src: /etc/sysctl.d/90-ansible.conf
-      register: netfilter_sysctl_removed
-
-    - name: Verify the removal took back the kernel network settings
-      ansible.builtin.assert:
-        that:
-          - "'accept_redirects' not in netfilter_sysctl_removed.content | b64decode"
-          - "'log_martians' not in netfilter_sysctl_removed.content | b64decode"
-          - "'rp_filter' not in netfilter_sysctl_removed.content | b64decode"
-        fail_msg: "{{ netfilter_sysctl_removed.content | b64decode }}"
