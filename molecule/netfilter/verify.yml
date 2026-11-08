@@ -78,8 +78,8 @@
       ansible.builtin.assert:
         that:
           - netfilter_pos_trusted | int >= 0
-          - netfilter_pos_trusted | int < netfilter_pos_known | int
-          - netfilter_pos_ssh | int < netfilter_pos_known | int
+          - netfilter_pos_trusted | int < netfilter_pos_syn | int
+          - netfilter_pos_ssh | int < netfilter_pos_syn | int
           - netfilter_pos_zabbix | int < netfilter_pos_syn | int
           - netfilter_pos_syn | int < netfilter_pos_known | int
           - netfilter_pos_known | int < netfilter_pos_public | int
@@ -100,12 +100,11 @@
           - "'udp dport { 5355, 5678 } drop' in ruleset.stdout"
         fail_msg: "{{ ruleset.stdout }}"
 
-    # nft prints users as uid. redmine does not exist here, naming it would make
-    # nft refuse the config, so a single uid remains
+    # www-data and nobody as uids, nosuchuser is skipped
     - name: Verify the rules of the output chain
       ansible.builtin.assert:
         that:
-          - ruleset.stdout is search('meta skuid \\d+ ip daddr 169\\.254\\.169\\.254 reject')
+          - ruleset.stdout is search('meta skuid \\{ \\d+, \\d+ \\} ip daddr 169\\.254\\.169\\.254 reject')
           - ruleset.stdout is search('tcp dport 25 meta skuid != \\d+ reject')
         fail_msg: "{{ ruleset.stdout }}"
 
@@ -118,6 +117,7 @@
         echo "web-metadata: $(timeout 8 runuser -u www-data -- bash -c 'exec 3<>/dev/tcp/169.254.169.254/80' 2>&1 | tail -1)"
         echo "web-smtp: $(timeout 8 runuser -u www-data -- bash -c 'exec 3<>/dev/tcp/192.0.2.1/25' 2>&1 | tail -1)"
         echo "root-metadata: $(timeout 8 bash -c 'exec 3<>/dev/tcp/169.254.169.254/80' 2>&1 | tail -1)"
+        echo "postfix-user: $(runuser -u postfix -- id -un)"
         echo "postfix-smtp: $(timeout 8 runuser -u postfix -- bash -c 'exec 3<>/dev/tcp/192.0.2.1/25' 2>&1 | tail -1)"
       args:
         executable: /bin/bash
@@ -131,6 +131,7 @@
           - netfilter_output_blocked.stdout is search('web-metadata:.*Connection refused')
           - netfilter_output_blocked.stdout is search('web-smtp:.*Connection refused')
           - netfilter_output_blocked.stdout is not search('root-metadata:.*Connection refused')
+          - "netfilter_output_blocked.stdout is search('postfix-user: postfix')"
           - netfilter_output_blocked.stdout is not search('postfix-smtp:.*Connection refused')
         fail_msg: "{{ netfilter_output_blocked.stdout }}"
 

@@ -10,8 +10,7 @@
         cache_valid_time: 600
       changed_when: false
 
-    # netfilter_metadata_blocked_users skips the
-    # missing user redmine, the rules name www-data and postfix
+    # the SMTP rule of this scenario refers to this user
     - name: Create the mail server user
       ansible.builtin.user:
         name: postfix
@@ -64,6 +63,10 @@
     ssh_server_port: 7099
     # the bans must outlast the run, also if the test host sleeps meanwhile
     fail2ban_sshd_bantime: 24h
+    netfilter_metadata_blocked_users:
+      - www-data
+      - nobody
+      - nosuchuser
     # off by default, enabled here to cover the rule
     netfilter_output_smtp_users:
       - postfix

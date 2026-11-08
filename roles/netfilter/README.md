@@ -29,7 +29,7 @@ The rules live in the tables `inet netfilter` and `ip netfilter-nat`, which the 
 
 ## Rule Order
 
-Trusted sources, ssh and zabbix are accepted first, so a honeypot hit never locks them out. Then known scanners are dropped, then the public ports are accepted, and only then the honeypot traps follow, so a port opened in `netfilter_allowed_tcp_ports` is never a trap. Behind NAT a single infected client would lock out everybody sharing the address on the public ports, set the honeypot lists empty there.
+Trusted sources, ssh and zabbix are accepted first, so a honeypot hit never locks them out and flows unknown to conntrack recover. Then new TCP packets without SYN and known scanners are dropped, then the public ports are accepted, and only then the honeypot traps follow, so a port opened in `netfilter_allowed_tcp_ports` is never a trap. Behind NAT a single infected client would lock out everybody sharing the address on the public ports, set the honeypot lists empty there.
 
 ## Outgoing Connections
 
