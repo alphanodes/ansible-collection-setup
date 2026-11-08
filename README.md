@@ -9,7 +9,7 @@ This collection provides setup for:
 
 - Linux operating systems:
   - Debian 13
-  - Ubuntu 24.04/26.04
+  - Ubuntu 26.04
 
 All provided roles do not use docker as container system.
 

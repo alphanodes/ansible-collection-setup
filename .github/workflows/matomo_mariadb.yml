@@ -28,11 +28,8 @@ jobs:
       fail-fast: false
       matrix:
         distro:
-          # Verified green. Both Ubuntu releases are left out on purpose, for
-          # two separate defects: on ubuntu2404 the matomo role writes to
-          # /etc/apparmor.d/usr.sbin.mysqld, which does not exist with MariaDB
-          # (the profile is named usr.sbin.mariadbd); on ubuntu2604 MariaDB
-          # 11.8.6 fails to start at all, see the mysql_mariadb workflow.
+          # Verified green. ubuntu2604 is left out on purpose: MariaDB 11.8.6
+          # fails to start there at all, see the mysql_mariadb workflow.
           - debian13
 
     steps:

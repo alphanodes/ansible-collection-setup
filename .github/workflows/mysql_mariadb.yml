@@ -32,7 +32,6 @@ jobs:
           # initialised ("Table 'mysql.db' doesn't exist"). That is a defect of
           # the role on that release, not of this scenario - add the distro
           # back once it is fixed.
-          - ubuntu2404
           - debian13
 
     steps:

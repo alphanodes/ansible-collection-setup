@@ -1,4 +1,0 @@
----
-
-mysql_client_check_php_package: php{{ php_version }}-common
-mysql_client_php_package: php{{ php_version }}-mysql

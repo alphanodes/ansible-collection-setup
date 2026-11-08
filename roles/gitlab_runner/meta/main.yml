@@ -13,7 +13,3 @@ galaxy_info:
     - name: Debian
       versions:
         - trixie
-    - name: Ubuntu
-      versions:
-        - noble
-        - resolute

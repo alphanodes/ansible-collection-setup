@@ -31,7 +31,6 @@ jobs:
           - '17'
           - '18'
         distro:
-          - ubuntu2404
           - ubuntu2604
           - debian13
 

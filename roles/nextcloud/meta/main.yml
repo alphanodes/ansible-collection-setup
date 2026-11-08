@@ -15,7 +15,6 @@ galaxy_info:
   platforms:
     - name: Ubuntu
       versions:
-        - noble
         - resolute
     - name: Debian
       versions:

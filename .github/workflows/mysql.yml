@@ -29,7 +29,6 @@ jobs:
     strategy:
       matrix:
         distro:
-          - ubuntu2404  # Ubuntu 24.04 LTS - MySQL 8.4 LTS supported
           - ubuntu2604  # Ubuntu 26.04 LTS - MySQL 8.4 LTS supported
           - debian13    # Debian 13 Trixie - MySQL 8.4 LTS supported
 
