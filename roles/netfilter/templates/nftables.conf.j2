@@ -27,11 +27,13 @@ table inet netfilter {
     type filter hook input priority filter; policy {{ netfilter_filter_input_policy | lower }};
 
     iif lo accept
+
+    # before the state rules, a redirect can belong to a tracked connection
+    icmp type redirect drop
+    icmpv6 type nd-redirect drop
+
     ct state established,related accept
     ct state invalid drop
-
-    # a new connection starts with a SYN, conntrack accepts other packets as new
-    tcp flags & (fin | syn | rst | ack) != syn ct state new drop
 
     # remote packets claiming to come from or go to a loopback address
     iif != lo ip saddr 127.0.0.0/8 drop
@@ -49,7 +51,7 @@ table inet netfilter {
     ip6 saddr {{ blocked_address }} drop
 {% endfor %}
 
-    # no redirects or timestamps, IPv6 needs neighbor discovery and packet too big
+    # no timestamps, IPv6 needs neighbor discovery and packet too big
     icmp type { destination-unreachable, time-exceeded, parameter-problem } accept
     icmp type echo-request limit rate {{ netfilter_icmp_echo_limit }} accept
     icmpv6 type { destination-unreachable, packet-too-big, time-exceeded, parameter-problem, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert, mld-listener-query } accept
@@ -108,6 +110,11 @@ table inet netfilter {
     ip6 saddr {{ active_zabbix_address }} tcp dport 10051 accept
 {% endfor %}
 {% endif %}
+
+    # A new connection starts with a SYN, conntrack accepts other packets as new.
+    # Behind the management rules, flows unknown to conntrack (first activation,
+    # idle for days) must recover there, a public client just reconnects.
+    tcp flags & (fin | syn | rst | ack) != syn ct state new drop
 {% if netfilter_honeypot_tcp_ports | length > 0 or netfilter_honeypot_udp_ports | length > 0 %}
 
     # honeypot: known scanners also lose the public ports below
@@ -178,20 +185,21 @@ table inet netfilter {
 
     oif lo accept
     ct state established,related accept
-{% set metadata_users = netfilter_metadata_blocked_users | select('in', ansible_facts.getent_passwd) | list %}
-{% if metadata_users | length > 0 and netfilter_metadata_addresses | length > 0 %}
+{# numeric uids: with names nft refuses the whole file once a user is gone, a boot would then leave the host without these rules #}
+{% set metadata_uids = netfilter_metadata_blocked_users | select('in', ansible_facts.getent_passwd) | map('extract', ansible_facts.getent_passwd) | map(attribute='1') | list %}
+{% if metadata_uids | length > 0 and netfilter_metadata_addresses | length > 0 %}
 
     # web applications have no use for the cloud metadata service, an SSRF could
     # read access tokens from it
-    meta skuid { {{ metadata_users | map('to_json') | join(', ') }} } ip daddr { {{ netfilter_metadata_addresses | join(', ') }} } reject
+    meta skuid { {{ metadata_uids | join(', ') }} } ip daddr { {{ netfilter_metadata_addresses | join(', ') }} } reject
 {% endif %}
-{% set smtp_users = netfilter_output_smtp_users | select('in', ansible_facts.getent_passwd) | list %}
-{% if smtp_users | length > 0 %}
+{% set smtp_uids = netfilter_output_smtp_users | select('in', ansible_facts.getent_passwd) | map('extract', ansible_facts.getent_passwd) | map(attribute='1') | list %}
+{% if smtp_uids | length > 0 %}
 
-    # only the mail server talks SMTP to other hosts, nothing that got into a
-    # web application can send spam directly
-    tcp dport 25 meta skuid != { {{ smtp_users | map('to_json') | join(', ') }} } limit rate 15/minute log prefix "netfilter-smtp-output: " level info
-    tcp dport 25 meta skuid != { {{ smtp_users | map('to_json') | join(', ') }} } reject
+    # only these users talk to port 25 of other hosts, which limits spam sent from
+    # a compromised application on this port (465 and 587 stay open)
+    tcp dport 25 meta skuid != { {{ smtp_uids | join(', ') }} } limit rate 15/minute log prefix "netfilter-smtp-output: " level info
+    tcp dport 25 meta skuid != { {{ smtp_uids | join(', ') }} } reject
 {% endif %}
 {% if netfilter_filter_output_policy | lower != 'accept' %}
 

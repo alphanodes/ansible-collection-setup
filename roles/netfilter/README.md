@@ -33,7 +33,7 @@ Trusted sources, ssh and zabbix are accepted first, so a honeypot hit never lock
 
 ## Outgoing Connections
 
-The output chain rejects connections of `netfilter_metadata_blocked_users` to the cloud metadata service and connections to port 25 of other hosts by anyone but `netfilter_output_smtp_users`. Applications have to deliver through the local mail server. Only users existing at the time of the run are used, as nft refuses a configuration with unknown users, so a user created by a later role is added with the next run.
+The output chain rejects connections of `netfilter_metadata_blocked_users` to the cloud metadata service. With `netfilter_output_smtp_users` set, it also rejects connections to port 25 of other hosts by anyone else. This is off by default: applications with their own SMTP server, such as a helpdesk plugin configured per project, would fail, so check a host before enabling it. Only users existing at the time of the run are used, as a numeric uid, so a user created by a later role is added with the next run.
 
 ## Migration from iptables
 

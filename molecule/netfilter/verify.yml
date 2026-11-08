@@ -71,6 +71,7 @@
         netfilter_pos_trusted: "{{ ruleset.stdout.find('ip saddr 10.10.0.0/16 accept') }}"
         netfilter_pos_ssh: "{{ ruleset.stdout.find('tcp dport 7099 accept') }}"
         netfilter_pos_zabbix: "{{ ruleset.stdout.find('tcp dport 10050 accept') }}"
+        netfilter_pos_syn: "{{ ruleset.stdout.find('tcp flags & (fin | syn | rst | ack) != syn ct state new drop') }}"
         netfilter_pos_known: "{{ ruleset.stdout.find('ip saddr @honeypot update') }}"
         netfilter_pos_public: "{{ ruleset.stdout.find('tcp dport 80 accept') }}"
         netfilter_pos_trap: "{{ ruleset.stdout.find('update @honeypot { ip saddr } log prefix') }}"
@@ -79,7 +80,8 @@
           - netfilter_pos_trusted | int >= 0
           - netfilter_pos_trusted | int < netfilter_pos_known | int
           - netfilter_pos_ssh | int < netfilter_pos_known | int
-          - netfilter_pos_zabbix | int < netfilter_pos_known | int
+          - netfilter_pos_zabbix | int < netfilter_pos_syn | int
+          - netfilter_pos_syn | int < netfilter_pos_known | int
           - netfilter_pos_known | int < netfilter_pos_public | int
           - netfilter_pos_public | int < netfilter_pos_trap | int
         fail_msg: "{{ ruleset.stdout }}"
@@ -87,7 +89,7 @@
     - name: Verify the hardening rules of the input chain
       ansible.builtin.assert:
         that:
-          - "'tcp flags & (fin | syn | rst | ack) != syn ct state new drop' in ruleset.stdout"
+          - ruleset.stdout is search('icmp type redirect drop\\s+icmpv6 type nd-redirect drop\\s+ct state established,related accept')
           - "'iif != \"lo\" ip saddr 127.0.0.0/8 drop' in ruleset.stdout"
           - ruleset.stdout is search('icmp type \\{ destination-unreachable, time-exceeded, parameter-problem \\} accept')
           - "'icmp type echo-request limit rate 20/second burst 50 packets accept' in ruleset.stdout"

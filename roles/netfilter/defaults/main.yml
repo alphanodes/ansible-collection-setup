@@ -20,10 +20,13 @@ netfilter_iptables_cleanup_packages:
 
 netfilter_config_file: /etc/nftables.conf
 
-# Rate of accepted ICMP echo requests in total, further ones are dropped
+# Rate of new ICMP echo requests accepted from all sources together. Further ones
+# only pass as a trusted source or as part of a tracked ping.
 netfilter_icmp_echo_limit: 20/second burst 50 packets
 
-# Written with state active, removed with state remove
+# Written with state active. State remove takes them out of the sysctl file, the
+# running values stay until the next reboot. Existing interfaces keep their own
+# accept_redirects value, the input chain therefore also drops redirects.
 netfilter_sysctl:
   net.ipv4.conf.all.accept_redirects: 0
   net.ipv4.conf.default.accept_redirects: 0
@@ -34,8 +37,8 @@ netfilter_sysctl:
   net.ipv4.conf.all.log_martians: 1
   net.ipv4.conf.default.log_martians: 1
 
-# Reverse path filter for hosts without one (value 0). A distribution or cloud
-# image setting the stricter 1 keeps it. 2 = loose, works with asymmetric routing.
+# Set once if net.ipv4.conf.all.rp_filter is 0, another value stays. The kernel uses
+# the higher of the all and the interface value. 2 = loose, works with asymmetric routing.
 netfilter_rp_filter: 2
 
 # Users without access to the cloud metadata service. Only existing users are
@@ -46,11 +49,11 @@ netfilter_metadata_blocked_users:
 netfilter_metadata_addresses:
   - 169.254.169.254
 
-# Only these users may connect to port 25 of other hosts (only existing users
-# are used, without any of them the port is not restricted). Applications deliver
-# through the local mail server, an empty list disables the restriction.
-netfilter_output_smtp_users:
-  - postfix
+# Only these users may connect to port 25 of other hosts, e.g. [postfix]. Empty
+# disables the restriction. Enable it per host only after checking that nothing else
+# sends there: Redmine, Matomo and Drupal can use their own SMTP server, a Redmine
+# helpdesk plugin even per project. Only existing users are used.
+netfilter_output_smtp_users: []
 
 # Dropped without logging, they would fill the log sample (LLMNR, MikroTik discovery)
 netfilter_silent_drop_udp_ports:
