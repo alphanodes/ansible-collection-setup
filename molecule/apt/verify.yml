@@ -105,6 +105,99 @@
           - kernel_purge_service.status.Result == 'success'
         fail_msg: "apt-kernel-purge.service failed: {{ kernel_purge_service.status.Result }}"
 
+    # Config files of a removed kernel while another apt process holds the dpkg
+    # lock, as happens when a cron job with apt starts at the time of the timer
+    - name: Create the directories of a sample kernel package
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: directory
+        mode: '0755'
+      loop:
+        - /tmp/linux-image-molecule/DEBIAN
+        - /tmp/linux-image-molecule/etc
+
+    - name: Write the package metadata
+      ansible.builtin.copy:
+        dest: /tmp/linux-image-molecule/DEBIAN/control
+        mode: '0644'
+        content: |
+          Package: linux-image-molecule
+          Version: 1.0
+          Architecture: all
+          Maintainer: Molecule <molecule@example.com>
+          Description: Sample kernel package to test apt-kernel-purge
+
+    - name: Write the conffile list
+      ansible.builtin.copy:
+        dest: /tmp/linux-image-molecule/DEBIAN/conffiles
+        mode: '0644'
+        content: |
+          /etc/linux-image-molecule.conf
+
+    - name: Write the conffile
+      ansible.builtin.copy:
+        dest: /tmp/linux-image-molecule/etc/linux-image-molecule.conf
+        mode: '0644'
+        content: |
+          sample
+
+    - name: Build, install and remove the sample package, which keeps its config
+      ansible.builtin.shell: |
+        set -e
+        dpkg-deb --build /tmp/linux-image-molecule /tmp/linux-image-molecule.deb
+        dpkg --install /tmp/linux-image-molecule.deb
+        dpkg --remove linux-image-molecule
+      args:
+        executable: /bin/bash
+      changed_when: false
+
+    - name: Hold the dpkg frontend lock for some seconds
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - |
+            import fcntl, pathlib, time
+            lock = open('/var/lib/dpkg/lock-frontend', 'w')
+            fcntl.lockf(lock, fcntl.LOCK_EX)
+            pathlib.Path('/tmp/dpkg-lock-held').touch()
+            time.sleep(15)
+      async: 60
+      poll: 0
+      changed_when: false
+
+    - name: Wait until the dpkg frontend lock is held
+      ansible.builtin.wait_for:
+        path: /tmp/dpkg-lock-held
+        timeout: 15
+
+    - name: Run apt-kernel-purge.service while the lock is held
+      ansible.builtin.systemd_service:
+        name: apt-kernel-purge.service
+        state: started
+      changed_when: false
+      failed_when: false
+
+    - name: Check apt-kernel-purge.service result with held lock
+      ansible.builtin.systemd_service:
+        name: apt-kernel-purge.service
+      register: kernel_purge_locked
+
+    - name: Get the state of the sample package
+      ansible.builtin.command: dpkg-query -W -f '${db:Status-Abbrev}' linux-image-molecule
+      register: kernel_purge_leftover
+      changed_when: false
+      failed_when: false
+
+    - name: Assert apt-kernel-purge waited for the lock and purged the config files
+      ansible.builtin.assert:
+        that:
+          - kernel_purge_locked.status.Result == 'success'
+          - kernel_purge_leftover.rc != 0
+        fail_msg: >-
+          Result {{ kernel_purge_locked.status.Result }},
+          package state {{ kernel_purge_leftover.stdout }}
+
     - name: Read 50unattended-upgrades config
       ansible.builtin.slurp:
         src: /etc/apt/apt.conf.d/50unattended-upgrades

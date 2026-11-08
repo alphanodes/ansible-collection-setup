@@ -28,5 +28,6 @@ selections=$(dpkg --get-selections 'linux-*')
 mapfile -t leftovers < <(awk '$2 == "deinstall" {print $1}' <<< "$selections")
 if [ -n "${leftovers[*]}" ]; then
   echo "Purging config files of removed kernel packages: ${leftovers[*]}"
-  dpkg --purge "${leftovers[@]}"
+  # apt-get instead of dpkg, which fails at once if another process holds the lock
+  apt-get -y -o DPkg::Lock::Timeout=600 purge "${leftovers[@]}"
 fi
