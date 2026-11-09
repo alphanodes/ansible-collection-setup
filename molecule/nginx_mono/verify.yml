@@ -988,3 +988,36 @@
       register: forwarded_location
       changed_when: false
       failed_when: forwarded_location.rc != 0
+
+    # Rails raises IpSpoofAttackError if Client-IP names another client than X-Forwarded-For
+    - name: Test Client-IP header from a direct client is dropped
+      ansible.builtin.command: >
+        curl -s --interface 192.0.2.1 -H 'Host: forwarded.local' -H 'Client-IP: 192.0.2.10'
+        http://127.0.0.1/client-ip
+      register: client_ip_direct
+      changed_when: false
+      failed_when: client_ip_direct.stdout != 'client_ip=[]'
+
+    - name: Test Client-IP header from a local proxy is dropped
+      ansible.builtin.command: >
+        curl -s -H 'Host: forwarded.local' -H 'Client-IP: 192.0.2.10'
+        http://127.0.0.1/client-ip
+      register: client_ip_proxy
+      changed_when: false
+      failed_when: client_ip_proxy.stdout != 'client_ip=[]'
+
+    - name: Verify location based proxies drop the Client-IP header
+      ansible.builtin.command: >
+        grep -F 'proxy_set_header Client-IP "";'
+        /etc/nginx/sites-available/named_location_test.conf
+      register: client_ip_location
+      changed_when: false
+      failed_when: client_ip_location.rc != 0
+
+    - name: Test Forwarded header is still passed on from a local proxy together with Client-IP
+      ansible.builtin.command: >
+        curl -s -H 'Host: forwarded.local' -H 'Forwarded: for=192.0.2.10' -H 'Client-IP: 192.0.2.11'
+        http://127.0.0.1/
+      register: forwarded_with_client_ip
+      changed_when: false
+      failed_when: forwarded_with_client_ip.stdout != 'forwarded=[for=192.0.2.10]'

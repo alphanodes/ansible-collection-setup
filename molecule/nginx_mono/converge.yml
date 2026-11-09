@@ -66,7 +66,12 @@
           server {
             listen 127.0.0.1:8099;
             default_type text/plain;
-            return 200 "forwarded=[$http_forwarded]";
+            location / {
+              return 200 "forwarded=[$http_forwarded]";
+            }
+            location = /client-ip {
+              return 200 "client_ip=[$http_client_ip]";
+            }
           }
         dest: /etc/nginx/conf.d/zz_forwarded_echo.conf
         mode: '0644'

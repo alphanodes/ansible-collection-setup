@@ -25,6 +25,7 @@
 {% if instance.proxy_headers is not defined or not (instance.proxy_headers | select('match', '^X-Forwarded-For ') | list) %}
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 {% endif %}
+    proxy_set_header Client-IP "";
 {% endif %}
     proxy_set_header Forwarded $proxy_forwarded;
 {% if instance.proxy_forwarded_proto is defined %}

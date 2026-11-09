@@ -217,10 +217,11 @@ nginx_ai_crawler_user_agents:
   - YiyanBot
   - YouBot
 
-# Set to false if an upstream reverse proxy sets X-Client-IP header.
-# When true (default), nginx sets X-Forwarded-For which can conflict
-# with X-Client-IP causing Rails ActionDispatch::RemoteIp::IpSpoofAttackError.
-# Proper fix: configure upstream proxy to set X-Forwarded-For instead of X-Client-IP.
+# Set to false if an upstream reverse proxy only provides the client address with the
+# Client-IP header. When true (default), nginx sets X-Forwarded-For and drops Client-IP,
+# as Rails raises ActionDispatch::RemoteIp::IpSpoofAttackError if Client-IP names
+# another client than X-Forwarded-For, and any client can send that header.
+# Proper fix: configure upstream proxy to set X-Forwarded-For instead of Client-IP.
 # The Forwarded header is passed on only from trusted proxies (see protection.conf).
 # An upstream proxy must not pass on a Forwarded header sent by the client, if it only
 # sets X-Forwarded-For, otherwise Rails raises IpSpoofAttackError for these requests.
