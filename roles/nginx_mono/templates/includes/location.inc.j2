@@ -16,6 +16,7 @@
     - proxy_websocket: Enable WebSocket support (Upgrade headers)
     - proxy_timeout: Connection/send/read timeout in seconds
     - proxy_headers: List of additional proxy headers
+    - proxy_host_header: Value of the Host header (default: $proxy_host)
 
   with_fpm is used for whitelist FPM patterns where only specific PHP files
   should be processed. See fpm.inc.j2 for documentation on FPM patterns.
@@ -79,7 +80,9 @@
     proxy_http_version 1.1;
 {% endif %}
     proxy_set_header X-Real-IP $remote_addr;
-{% if nginx_with_proxy_forwarded_hosts | default([]) | length > 0 %}
+{% if location.proxy_host_header is defined %}
+    proxy_set_header Host {{ location.proxy_host_header }};
+{% elif nginx_with_proxy_forwarded_hosts | default([]) | length > 0 %}
     proxy_set_header Host $http_host;
     proxy_set_header X-Forwarded-Host $forwarded_host;
 {% else %}

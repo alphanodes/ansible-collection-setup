@@ -8,6 +8,12 @@
     nginx_with_websocket: true
     nginx_mono_service_name: zammad
     nginx_mono_service_enabled: '{{ zammad_enabled }}'
+    zammad_nginx_proxy_headers:
+      - >-
+        {{ 'Authorization ""' if zammad_vhost_users | length > 0
+           else 'Authorization $http_authorization' }}
+      - X-Forwarded-Scheme ""
+      - X-Forwarded-Ssl ""
     nginx_mono_service_config:
       server_name: '{{ zammad_vhost_server }}'
       vhost_users: '{{ zammad_vhost_users }}'
@@ -23,54 +29,26 @@
       locations:
         - name: /ws
           actions:
-            - proxy_http_version 1.1
-            - proxy_set_header Host $host
-            - >-
-              {{ 'proxy_set_header Authorization ""' if zammad_vhost_users | length > 0
-                 else 'proxy_set_header Authorization $http_authorization' }}
-            - proxy_set_header X-Real-IP $remote_addr
-            - proxy_set_header X-Forwarded-For $remote_addr
-            - proxy_set_header X-Forwarded-Proto $scheme
-            - proxy_set_header Forwarded ""
-            - proxy_set_header X-Forwarded-Scheme ""
-            - proxy_set_header X-Forwarded-Ssl ""
-            - proxy_set_header Upgrade $http_upgrade
-            - proxy_set_header Connection $connection_upgrade
             - proxy_read_timeout 86400
-            - proxy_pass http://127.0.0.1:{{ zammad_websocket_port }}
+          proxy_pass: http://127.0.0.1:{{ zammad_websocket_port }}
+          proxy_websocket: true
+          proxy_host_header: $host
+          proxy_headers: '{{ zammad_nginx_proxy_headers }}'
         - name: /cable
           actions:
-            - proxy_http_version 1.1
-            - proxy_set_header Host $host
-            - >-
-              {{ 'proxy_set_header Authorization ""' if zammad_vhost_users | length > 0
-                 else 'proxy_set_header Authorization $http_authorization' }}
-            - proxy_set_header X-Real-IP $remote_addr
-            - proxy_set_header X-Forwarded-For $remote_addr
-            - proxy_set_header X-Forwarded-Proto $scheme
-            - proxy_set_header Forwarded ""
-            - proxy_set_header X-Forwarded-Scheme ""
-            - proxy_set_header X-Forwarded-Ssl ""
-            - proxy_set_header Upgrade $http_upgrade
-            - proxy_set_header Connection $connection_upgrade
             - proxy_read_timeout 86400
-            - proxy_pass http://127.0.0.1:{{ zammad_http_port }}
+          proxy_pass: http://127.0.0.1:{{ zammad_http_port }}
+          proxy_websocket: true
+          proxy_host_header: $host
+          proxy_headers: '{{ zammad_nginx_proxy_headers }}'
         - name: '~ ^/assets/'
           actions:
             - expires max
         - name: /
           actions:
-            - proxy_http_version 1.1
-            - proxy_set_header Host $host
-            - >-
-              {{ 'proxy_set_header Authorization ""' if zammad_vhost_users | length > 0
-                 else 'proxy_set_header Authorization $http_authorization' }}
-            - proxy_set_header X-Real-IP $remote_addr
-            - proxy_set_header X-Forwarded-For $remote_addr
-            - proxy_set_header X-Forwarded-Proto $scheme
-            - proxy_set_header Forwarded ""
-            - proxy_set_header X-Forwarded-Scheme ""
-            - proxy_set_header X-Forwarded-Ssl ""
-            - proxy_set_header X-Forwarded-User ""
             - proxy_read_timeout 180
-            - proxy_pass http://127.0.0.1:{{ zammad_http_port }}
+          proxy_pass: http://127.0.0.1:{{ zammad_http_port }}
+          proxy_http_version: '1.1'
+          proxy_host_header: $host
+          # Zammad accepts this header as the single sign-on user, a client must not set it
+          proxy_headers: '{{ zammad_nginx_proxy_headers + [''X-Forwarded-User ""''] }}'

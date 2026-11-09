@@ -73,3 +73,28 @@
       ansible.builtin.assert:
         that:
           - (vhost.content | b64decode).count('proxy_set_header Authorization "";') == 3
+
+    - name: Verify the proxy locations get the shared and the Zammad specific headers once
+      ansible.builtin.assert:
+        that:
+          - (vhost.content | b64decode).count('proxy_set_header ' + item.header + ';') == item.count
+          - (vhost.content | b64decode).count('proxy_set_header ' + (item.header | split(' ') | first) + ' ') == item.count
+        fail_msg: "Expected {{ item.count }} of: {{ item.header }}"
+      loop:
+        - {header: 'Host $host', count: 3}
+        - {header: 'X-Forwarded-For $proxy_add_x_forwarded_for', count: 3}
+        - {header: 'Client-IP ""', count: 3}
+        - {header: 'Forwarded $proxy_forwarded', count: 3}
+        - {header: 'X-Forwarded-Proto $scheme', count: 3}
+        - {header: 'X-Forwarded-Scheme ""', count: 3}
+        - {header: 'X-Forwarded-Ssl ""', count: 3}
+        - {header: 'X-Forwarded-User ""', count: 1}
+        - {header: 'Upgrade $http_upgrade', count: 2}
+        - {header: 'Connection $connection_upgrade', count: 2}
+
+    - name: Verify the proxy timeouts of the websocket and the application locations
+      ansible.builtin.assert:
+        that:
+          - (vhost.content | b64decode).count('proxy_read_timeout 86400;') == 2
+          - (vhost.content | b64decode).count('proxy_read_timeout 180;') == 1
+          - (vhost.content | b64decode).count('proxy_http_version 1.1;') == 3
