@@ -26,6 +26,13 @@
       ansible.builtin.debug:
         var: nginx_config
 
+    # One line each for the mapping location and its additional location
+    - name: Verify mapping proxies drop the Client-IP header
+      ansible.builtin.assert:
+        that:
+          - nginx_config.count('proxy_set_header Client-IP "";') == 2
+        fail_msg: "Client-IP is not dropped in all mapping proxy locations"
+
     # Verify default vhost has HTTP/3
     - name: Verify default vhost has QUIC listen directive
       ansible.builtin.assert:
