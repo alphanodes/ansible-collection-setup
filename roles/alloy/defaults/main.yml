@@ -124,4 +124,5 @@ alloy_drop_redmine_regex:
   - "DealNote as a proc"
   - "Deal as a proc"
   - "ReportingLog: Failed to resolve hostname"
-  - 'logged_type=>"AutomationRule"'
+  # Hash#inspect writes "key=>value" before Ruby 3.4 and "key: value" since
+  - 'logged_type(=>|: )"AutomationRule"'
