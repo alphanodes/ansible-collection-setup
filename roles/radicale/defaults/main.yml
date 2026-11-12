@@ -5,7 +5,8 @@ radicale_group: '{{ radicale_user }}'
 radicale_dir: '/var/lib/{{ radicale_user }}'
 
 # radicale pulls in libpass (the maintained passlib fork) itself,
-# bcrypt is required for htpasswd with bcrypt encryption
+# bcrypt is required for htpasswd with bcrypt encryption.
+# Do not add passlib: the role removes it on every run (conflicts with libpass)
 radicale_pip_packages:
   - bcrypt
   - radicale

@@ -1,0 +1,15 @@
+---
+# Simulate a host upgraded from Radicale < 3.6, which still has the obsolete
+# passlib next to libpass in its virtualenv, then run the role again
+- name: Install obsolete passlib into radicale virtualenv
+  hosts: all
+  tasks:
+    - name: Install passlib 1.7.4 next to libpass
+      ansible.builtin.pip:
+        name: passlib==1.7.4
+        virtualenv: /var/lib/radicale/.venv
+      become: true
+      become_user: radicale
+
+- name: Converge again to migrate from passlib to libpass
+  ansible.builtin.import_playbook: converge.yml

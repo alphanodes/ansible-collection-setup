@@ -58,7 +58,7 @@
       ansible.builtin.command: /var/lib/radicale/.venv/bin/pip show passlib
       register: passlib_show
       changed_when: false
-      failed_when: passlib_show.rc == 0
+      failed_when: passlib_show.rc != 1
 
     - name: Check passlib module from libpass is importable
       ansible.builtin.command: >-

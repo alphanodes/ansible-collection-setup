@@ -41,16 +41,33 @@
   become_user: '{{ radicale_user }}'
   register: radicale_passlib_result
 
-# Uninstalling passlib deletes the shared module files, restore them from libpass.
-# No handler: this must run before the service (re)start below.
-- name: Reinstall libpass after passlib removal  # noqa: no-handler
+# Uninstalling passlib deletes the shared module files. Check the actual state
+# (not only the uninstall result), so an interrupted run is repaired next time.
+# Prints the installed libpass version and fails if passlib.hash is not importable.
+- name: Check passlib module from libpass in radicale virtualenv
+  ansible.builtin.command:
+    argv:
+      - '{{ radicale_pip_venv_path }}/bin/python3'
+      - -c
+      - "import importlib.metadata as m; print(m.version('libpass')); import passlib.hash"
+  become: true
+  become_user: '{{ radicale_user }}'
+  register: radicale_libpass_check
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+# Restore the files with the already installed libpass version,
+# so no upgrade happens outside of the radicale dependency resolution
+- name: Reinstall libpass to restore the passlib module
   ansible.builtin.pip:
-    name: libpass
+    name: "libpass{{ ('==' ~ radicale_libpass_check.stdout_lines[0]) if radicale_libpass_check.stdout_lines | length > 0 else '' }}"
     virtualenv: '{{ radicale_pip_venv_path }}'
     extra_args: --force-reinstall --no-deps
   become: true
   become_user: '{{ radicale_user }}'
-  when: radicale_passlib_result.changed
+  register: radicale_libpass_result
+  when: radicale_libpass_check.rc != 0
 
 - name: Check folder exists for /etc/radicale
   ansible.builtin.file:
@@ -95,6 +112,7 @@
     state: >-
       {{ 'restarted' if (radicale_pip_result.changed
                          or radicale_passlib_result.changed
+                         or radicale_libpass_result.changed
                          or radicale_config_result.changed
                          or radicale_service_result.changed) else 'started' }}
     enabled: true
