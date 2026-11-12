@@ -54,6 +54,19 @@
         path: /var/lib/radicale/.venv/bin/radicale
       register: radicale_venv
 
+    - name: Check obsolete passlib is not installed in radicale venv
+      ansible.builtin.command: /var/lib/radicale/.venv/bin/pip show passlib
+      register: passlib_show
+      changed_when: false
+      failed_when: passlib_show.rc == 0
+
+    - name: Check passlib module from libpass is importable
+      ansible.builtin.command: >-
+        /var/lib/radicale/.venv/bin/python3 -c
+        "import importlib.metadata, passlib.hash; print(importlib.metadata.version('libpass'))"
+      register: libpass_import
+      changed_when: false
+
     - name: Check htpasswd file exists
       ansible.builtin.stat:
         path: /etc/nginx/.htpasswd_radicale
@@ -112,6 +125,7 @@
           - "Radicale rights exists: {{ 'OK' if radicale_rights.stat.exists else 'FAILED' }}"
           - "Radicale collections dir: {{ 'OK' if radicale_collections.stat.exists else 'FAILED' }}"
           - "Radicale venv exists: {{ 'OK' if radicale_venv.stat.exists else 'FAILED' }}"
+          - "Passlib removed, libpass {{ libpass_import.stdout }} importable: OK"
           - "Htpasswd file exists: {{ 'OK' if htpasswd_file.stat.exists else 'FAILED' }}"
           - "Radicale direct response: {{ 'OK' if radicale_response.status in [200, 302, 401] else 'FAILED' }}"
           - "Nginx proxy to radicale: {{ 'OK' if nginx_proxy.status in [200, 302, 401] else 'FAILED' }}"

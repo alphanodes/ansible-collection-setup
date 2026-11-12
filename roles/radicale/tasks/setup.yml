@@ -28,6 +28,29 @@
     virtualenv_site_packages: '{{ python_pip_virtualenv_site_packages }}'
   become: true
   become_user: '{{ radicale_user }}'
+  register: radicale_pip_result
+
+# Since Radicale 3.6.0, libpass replaces passlib. Both ship the same
+# passlib module directory, so a leftover passlib can overwrite libpass files.
+- name: Remove obsolete passlib from radicale virtualenv
+  ansible.builtin.pip:
+    name: passlib
+    virtualenv: '{{ radicale_pip_venv_path }}'
+    state: absent
+  become: true
+  become_user: '{{ radicale_user }}'
+  register: radicale_passlib_result
+
+# Uninstalling passlib deletes the shared module files, restore them from libpass.
+# No handler: this must run before the service (re)start below.
+- name: Reinstall libpass after passlib removal  # noqa: no-handler
+  ansible.builtin.pip:
+    name: libpass
+    virtualenv: '{{ radicale_pip_venv_path }}'
+    extra_args: --force-reinstall --no-deps
+  become: true
+  become_user: '{{ radicale_user }}'
+  when: radicale_passlib_result.changed
 
 - name: Check folder exists for /etc/radicale
   ansible.builtin.file:
@@ -69,7 +92,11 @@
 - name: Radicale service is enabled and started
   ansible.builtin.systemd_service:
     name: "{{ radicale_service_name }}"
-    state: "{{ 'restarted' if (radicale_config_result.changed or radicale_service_result.changed) else 'started' }}"
+    state: >-
+      {{ 'restarted' if (radicale_pip_result.changed
+                         or radicale_passlib_result.changed
+                         or radicale_config_result.changed
+                         or radicale_service_result.changed) else 'started' }}
     enabled: true
     daemon_reload: true
 
