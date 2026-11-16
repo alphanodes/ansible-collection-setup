@@ -25,6 +25,10 @@ gitlab_runner_with_hetzner_fleed: true
 # intermittent "failed to send write: offset mismatch" during image pulls.
 # Pin to Docker 28.x (containerd v1.7.x) to avoid the issue.
 # Set to '' to install latest docker-ce version.
+# The pin requires gitlab_runner_hetzner_image debian-13, Docker ships no
+# 28.x packages for newer Debian releases.
+# No upstream fix is known for the offset mismatch, the issues below are
+# related context only (all closed before the failures started in 2026).
 # Related upstream issues:
 #   https://github.com/containerd/containerd/issues/11440
 #   https://github.com/containerd/containerd/issues/8741
