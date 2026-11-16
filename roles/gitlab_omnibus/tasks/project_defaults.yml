@@ -1,0 +1,33 @@
+---
+
+- name: Set project defaults state
+  ansible.builtin.set_fact:
+    gitlab_project_defaults_state: >-
+      {{ 'present' if gitlab_project_defaults_pipeline_cleanup | default('') | length > 0 else 'absent' }}
+
+- name: Install project defaults script
+  ansible.builtin.template:
+    src: gitlab-project-defaults.rb.j2
+    dest: '{{ gitlab_project_defaults_script }}'
+    owner: root
+    group: root
+    mode: '0644'
+  when: gitlab_project_defaults_state == 'present'
+
+- name: Manage project defaults timer
+  ansible.builtin.include_role:
+    name: alphanodes.setup.systemd_timer
+  vars:
+    timers:
+      gitlab-project-defaults:
+        state: '{{ gitlab_project_defaults_state }}'
+        on_calendar: '{{ gitlab_project_defaults_on_calendar }}'
+        persistent: true
+        exec_start: /opt/gitlab/bin/gitlab-rails runner {{ gitlab_project_defaults_script }}
+        syslog_identifier: gitlab-project-defaults
+
+- name: Remove project defaults script
+  ansible.builtin.file:
+    path: '{{ gitlab_project_defaults_script }}'
+    state: absent
+  when: gitlab_project_defaults_state == 'absent'

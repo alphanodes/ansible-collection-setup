@@ -5,6 +5,11 @@
   tags:
     - gitlab
 
+- name: Include project defaults tasks
+  ansible.builtin.include_tasks: project_defaults.yml
+  tags:
+    - gitlab
+
 - name: Include backup tasks
   ansible.builtin.include_tasks: backup.yml
   tags:

@@ -1,0 +1,68 @@
+{{ managed_by_ansible | comment }}
+#
+# Fills in project settings that GitLab only knows per project, run with
+# gitlab-rails runner. A setting is only set where a project has none yet,
+# values chosen in a project are never changed. Archived projects are skipped.
+
+require 'json'
+
+# single quoted heredoc: no interpolation or escaping of the values
+PIPELINE_CLEANUP_DEFAULT = <<~'VALUE'.strip
+  {{ gitlab_project_defaults_pipeline_cleanup }}
+VALUE
+
+PIPELINE_CLEANUP_OVERRIDES = JSON.parse(<<~'JSON')
+  {{ gitlab_project_defaults_pipeline_cleanup_overrides | to_json }}
+JSON
+
+def parse_duration!(value, label)
+  ChronicDuration.parse(value).tap do |seconds|
+    raise ArgumentError, "invalid duration for #{label}: #{value.inspect}" if seconds.nil?
+  end
+end
+
+# returns the duration in seconds for a project, nil leaves it alone
+def pipeline_cleanup_for(full_path, default_seconds, overrides)
+  match = overrides.find { |override| File.fnmatch(override[:pattern], full_path) }
+  match ? match[:seconds] : default_seconds
+end
+
+def fill_pipeline_cleanup
+  return 0 if PIPELINE_CLEANUP_DEFAULT.empty?
+
+  default_seconds = parse_duration!(PIPELINE_CLEANUP_DEFAULT, 'pipeline cleanup default')
+  overrides = PIPELINE_CLEANUP_OVERRIDES.map do |override|
+    duration = override.fetch('duration').to_s.strip
+    {
+      pattern: override.fetch('pattern'),
+      seconds: duration.empty? ? nil : parse_duration!(duration, override['pattern'])
+    }
+  end
+
+  errors = 0
+  # archived projects are read-only and run no pipelines, a cleanup there would
+  # only delete their history
+  projects = Project.where(pending_delete: false, archived: false)
+                    .left_joins(:ci_cd_settings)
+                    .where(project_ci_cd_settings: { delete_pipelines_in_seconds: nil })
+                    .includes(:route, :ci_cd_settings)
+
+  projects.find_each do |project|
+    seconds = pipeline_cleanup_for(project.full_path, default_seconds, overrides)
+    next if seconds.nil?
+
+    settings = project.ci_cd_settings || project.build_ci_cd_settings
+    settings.delete_pipelines_in_seconds = seconds
+    if settings.save
+      puts "#{project.full_path}: pipeline cleanup set to #{ChronicDuration.output(seconds, format: :long)}"
+    else
+      errors += 1
+      warn "#{project.full_path}: #{settings.errors.full_messages.join(', ')}"
+    end
+  end
+
+  errors
+end
+
+errors = fill_pipeline_cleanup
+exit(1) if errors.positive?

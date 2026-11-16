@@ -68,6 +68,13 @@
     gitlab_pages_domain: pages.example.com
     gitlab_pages_nginx_ssl_certificate: /etc/gitlab/ssl/pages-wildcard.crt
     gitlab_pages_nginx_ssl_certificate_key: /etc/gitlab/ssl/pages-wildcard.key
+    # Project defaults timer, verify.yml checks the filled in settings
+    gitlab_project_defaults_pipeline_cleanup: '180 days'
+    gitlab_project_defaults_pipeline_cleanup_overrides:
+      - pattern: '*/log'
+        duration: '14 days'
+      - pattern: 'root/skip-*'
+        duration: ''
 
   roles:
     - role: alphanodes.setup.common

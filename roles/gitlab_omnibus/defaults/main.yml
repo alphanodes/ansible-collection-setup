@@ -47,6 +47,29 @@ gitlab_backup_archive_permissions: '0644'
 # 7 days in seconds
 gitlab_backup_keep_time: 604800
 
+# Project defaults: a daily timer fills in project settings that GitLab only
+# knows per project, so new projects get them without manual work. A setting
+# is only filled in where a project has none yet, values set in a project are
+# never changed, archived projects are skipped. The timer is installed as soon
+# as one default is set and removed again when all are empty.
+#
+# Automatic pipeline cleanup (Settings > CI/CD > General pipelines): pipelines
+# older than this are deleted with their jobs, job logs and artifacts. Job logs
+# never expire otherwise. A GitLab duration like '180 days', empty disables it.
+gitlab_project_defaults_pipeline_cleanup: ''
+# Other durations by project path, first match wins. The pattern is a shell
+# glob on the full path (Ruby File.fnmatch, '*' also matches '/'), an empty
+# duration leaves the matching projects alone.
+# gitlab_project_defaults_pipeline_cleanup_overrides:
+#   - pattern: '*/log'
+#     duration: '14 days'
+#   - pattern: 'someone/*'
+#     duration: ''
+gitlab_project_defaults_pipeline_cleanup_overrides: []
+gitlab_project_defaults_script: /usr/local/lib/gitlab-project-defaults.rb
+# every day at 4:15, after the backup
+gitlab_project_defaults_on_calendar: '04:15'
+
 # The status page of the bundled nginx (port 8060) is only used locally
 gitlab_nginx_status_listen_addresses:
   - 127.0.0.1

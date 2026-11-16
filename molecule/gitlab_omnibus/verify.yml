@@ -178,3 +178,61 @@
           - backup_files.files | map(attribute='path') | map('basename') | sort | list ==
             [(test_now.stdout | int - 3 * 86400) ~ '_2026_01_01_19.0.0-ee_gitlab_backup.tar', 'unrelated.txt']
         fail_msg: "unexpected files after the failed run: {{ backup_files.files | map(attribute='path') | list }}"
+
+    - name: Stat the project defaults timer
+      ansible.builtin.stat:
+        path: /etc/systemd/system/gitlab-project-defaults.timer
+      register: project_defaults_timer
+
+    - name: Assert the project defaults timer is installed
+      ansible.builtin.assert:
+        that:
+          - project_defaults_timer.stat.exists
+        fail_msg: the project defaults timer is missing
+
+    # One project per case: default, override, skipped by an empty override,
+    # an archived project, which is skipped, and a project with its own value,
+    # which must stay unchanged
+    - name: Create test projects for the project defaults
+      ansible.builtin.command:
+        cmd: >-
+          /opt/gitlab/bin/gitlab-rails runner "
+          user = User.find_by_username!('root');
+          %w[app log skip-me archived own].each do |path|
+            next if Project.find_by_full_path(\"root/#{path}\");
+            project = Projects::CreateService.new(user, name: path, path: path, namespace_id: user.namespace.id).execute;
+            raise project.errors.full_messages.join(', ') unless project.persisted?;
+          end;
+          Project.find_by_full_path('root/archived').update!(archived: true);
+          own = Project.find_by_full_path('root/own');
+          own.ci_cd_settings.update!(delete_pipelines_in_seconds: 30.days.to_i)
+          "
+      changed_when: false
+
+    - name: Run the project defaults service
+      ansible.builtin.systemd_service:
+        name: gitlab-project-defaults.service
+        state: started
+      changed_when: false
+
+    - name: Read the pipeline cleanup of the test projects
+      ansible.builtin.command:
+        cmd: >-
+          /opt/gitlab/bin/gitlab-rails runner "
+          values = %w[app log skip-me archived own].to_h { |path| [path, Project.find_by_full_path(\"root/#{path}\").ci_cd_settings.delete_pipelines_in_seconds] };
+          puts values.to_json
+          "
+      register: project_defaults_result
+      changed_when: false
+
+    - name: Assert the pipeline cleanup was filled in only where it was missing
+      vars:
+        cleanup: '{{ project_defaults_result.stdout_lines | last | from_json }}'
+      ansible.builtin.assert:
+        that:
+          - cleanup['app'] == 15552000
+          - cleanup['log'] == 1209600
+          - cleanup['skip-me'] is none
+          - cleanup['archived'] is none
+          - cleanup['own'] == 2592000
+        fail_msg: 'unexpected pipeline cleanup values: {{ cleanup }}'
