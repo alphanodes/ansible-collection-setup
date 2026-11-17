@@ -23,7 +23,9 @@ gitlab_runner_hetzner_label: 'env=test'
 gitlab_runner_with_hetzner_fleed: true
 # Workaround for containerd v2 content store bug in Docker 29.x causing
 # intermittent "failed to send write: offset mismatch" during image pulls.
-# Pin to Docker 28.x (containerd v1.7.x) to avoid the issue.
+# Pin to Docker 28.x, which pulls images without the containerd image store.
+# Only docker-ce and docker-ce-cli are pinned, containerd.io and the plugins
+# install in their latest version, which works with Docker 28.x.
 # Set to '' to install latest docker-ce version.
 # The pin requires gitlab_runner_hetzner_image debian-13, Docker ships no
 # 28.x packages for newer Debian releases.
@@ -35,6 +37,8 @@ gitlab_runner_with_hetzner_fleed: true
 #   https://github.com/containerd/containerd/issues/11864
 # Tracking: #15045
 gitlab_runner_hetzner_docker_version: '5:28.5.2'
+# Storage driver for Docker on the runner VM (daemon.json), e.g. overlay2.
+# Forcing overlay2 did not fix the offset mismatch above.
 gitlab_runner_hetzner_docker_storage_driver: ''
 # DNS resolvers for Docker containers on the runner VM. Hetzner Cloud resolvers
 # (185.12.64.1/.2) are reliable but occasionally throttle, causing
@@ -45,7 +49,11 @@ gitlab_runner_hetzner_dns:
   - 185.12.64.2
   - 1.1.1.1
   - 9.9.9.9
-gitlab_runner_hetzner_fleed_plugin: "hetznercloud/fleeting-plugin-hetzner:latest"
+# Keep a fixed version: the runner resolves a tag like :latest only on the first
+# install and keeps that binary, so it silently ages. Older versions break when
+# the Hetzner Cloud API changes (v1.2.0 stopped working in May 2026).
+# see https://gitlab.com/hetznercloud/fleeting-plugin-hetzner/-/releases
+gitlab_runner_hetzner_fleed_plugin: "hetznercloud/fleeting-plugin-hetzner:1.4.7"
 gitlab_runner_timezone: "{{ ntp_timezone | default('Europe/Berlin') }}"
 
 gitlab_runner_registry_mirror: ''
