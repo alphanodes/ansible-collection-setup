@@ -12,12 +12,23 @@ zabbix_export:
         Checks that open-vm-tools (vmtoolsd) is running on a Linux guest
         in a VMware virtual machine.
 
-        Link this template to VMware guests in addition to their Linux
-        template. It only uses the built-in proc.num agent item, no
-        UserParameter is required.
+        Link this template to VMware guests. It links the Linux, Linux Kernel
+        and systemd-timesyncd templates of this collection, so a guest only
+        needs this one.
+
+        Only the built-in proc.num agent item is used, no UserParameter is
+        required.
+
+        This template requires:
+        - the Linux, Linux Kernel and systemd-timesyncd templates imported
+          before this one
       vendor:
         name: AlphaNodes
         version: 7.4-__DATE__
+      templates:
+        - name: Linux
+        - name: 'Linux Kernel'
+        - name: systemd-timesyncd
       groups:
         - name: 'Templates/Operating systems'
       items:

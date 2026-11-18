@@ -1,0 +1,119 @@
+---
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
+      name: Templates/Applications
+  templates:
+    - uuid: 2fec392304a5423a8138da22847f9b7c
+      template: PHP
+      name: PHP
+      description: |
+        Checks PHP security settings (display_errors, expose_php), collects
+        PHP version information and alerts on PHP errors in the journal.
+
+        This template requires:
+        - Zabbix agent with UserParameter php[*] and php_log[*] configured by the
+          alphanodes.setup.zabbix_agent role
+      vendor:
+        name: AlphaNodes
+        version: 7.4-__DATE__
+      groups:
+        - name: Templates/Applications
+      items:
+        - uuid: aa2f3f6692d7472c80cadf5097986276
+          name: display_errors
+          key: 'php[display_errors,info,{$PHP_INFO_PORT}]'
+          delay: 1h
+          history: 1w
+          value_type: CHAR
+          tags:
+            - tag: Application
+              value: PHP
+          triggers:
+            - uuid: 169c8869e8b547f3837aea8826558e46
+              expression: 'find(/PHP/php[display_errors,info,{$PHP_INFO_PORT}],,"like","")=0'
+              name: 'PHP display_errors=On'
+              url: 'http://www.php.net/manual/de/errorfunc.configuration.php#ini.display-errors'
+              priority: WARNING
+              description: 'For security reasons display_errors should be Off.'
+        - uuid: 7757aca5e5a6439790fe010edf375b14
+          name: expose_php
+          key: 'php[expose_php,info,{$PHP_INFO_PORT}]'
+          delay: 1h
+          history: 1w
+          value_type: CHAR
+          tags:
+            - tag: Application
+              value: PHP
+          triggers:
+            - uuid: 3356f7437a6940fbb6a457a95f5aced3
+              expression: 'find(/PHP/php[expose_php,info,{$PHP_INFO_PORT}],,"like","")=0'
+              name: 'PHP expose_php=On'
+              priority: WARNING
+              description: 'For security reasons expose_php should be Off.'
+        - uuid: ea12dbaee98d4f5984ea2e5617e7460c
+          name: loaded_extensions
+          key: 'php[loaded_extensions,info,{$PHP_INFO_PORT}]'
+          delay: 1h
+          history: 1w
+          tags:
+            - tag: Application
+              value: PHP
+        - uuid: cb952c6650734135bd4cf6c93f4af9e8
+          name: php_major_version
+          key: 'php[php_major_version,info,{$PHP_INFO_PORT}]'
+          delay: 1h
+          history: 1w
+          tags:
+            - tag: Application
+              value: PHP
+        - uuid: 2ed2320302c945f986e4f7c615ee4385
+          name: php_minor_version
+          key: 'php[php_minor_version,info,{$PHP_INFO_PORT}]'
+          delay: 1h
+          history: 1w
+          tags:
+            - tag: Application
+              value: PHP
+        - uuid: 3abd54babbc649ddb5f27132449d735d
+          name: php_release_version
+          key: 'php[php_release_version,info,{$PHP_INFO_PORT}]'
+          delay: 1h
+          history: 1w
+          tags:
+            - tag: Application
+              value: PHP
+        - uuid: 896ba5b1ad7148f98ccd10d457530a46
+          name: php_version
+          key: 'php[php_version,info,{$PHP_INFO_PORT}]'
+          delay: 1h
+          history: 1w
+          value_type: CHAR
+          tags:
+            - tag: Application
+              value: PHP
+        - uuid: ba4cf9d3c6b3458781b8187baf174679
+          name: 'PHP log errors'
+          key: php_log
+          delay: 10m
+          history: 10d
+          value_type: TEXT
+          tags:
+            - tag: Application
+              value: PHP
+          triggers:
+            - uuid: 3863febae59b4ac19319430b756c78a9
+              expression: 'last(/PHP/php_log)<> ""'
+              name: 'PHP Errors'
+              priority: WARNING
+              manual_close: 'YES'
+      macros:
+        - macro: '{$PHP_5.4_RELEASE_VERSION}'
+          value: '43'
+        - macro: '{$PHP_5.5_RELEASE_VERSION}'
+          value: '33'
+        - macro: '{$PHP_5.6_RELEASE_VERSION}'
+          value: '30'
+        - macro: '{$PHP_INFO_PORT}'
+          value: '80'

@@ -1,0 +1,42 @@
+---
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: 7df96b18c230490a9a0a9e2307226338
+      name: Templates
+  templates:
+    - uuid: 2488fead206444aeb886afc1a0010ee7
+      template: 'Linux Kernel'
+      name: 'Linux Kernel'
+      description: |
+        Alerts on kernel errors and traps in the kernel log.
+
+        Use it only on hosts with their own kernel (physical servers and full
+        virtual machines), not in containers.
+
+        This template requires:
+        - Zabbix agent with UserParameter kernel_log configured by the
+          alphanodes.setup.zabbix_agent role
+      vendor:
+        name: AlphaNodes
+        version: 7.4-__DATE__
+      groups:
+        - name: Templates
+      items:
+        - uuid: 72036ac7ff544372bc4811406634c415
+          name: 'Kernel errors'
+          type: ZABBIX_ACTIVE
+          key: kernel_log
+          delay: 1h
+          history: 2w
+          value_type: TEXT
+          tags:
+            - tag: Application
+              value: Kernel
+          triggers:
+            - uuid: 73c72d93891f4b10828f0115c0dfa4b4
+              expression: 'last(/Linux Kernel/kernel_log)<> ""'
+              name: 'Kernel error'
+              url: 'http://stackoverflow.com/questions/3149175/what-is-the-difference-between-trap-and-interrupt'
+              priority: AVERAGE
+              description: 'Kernel error or trap found'

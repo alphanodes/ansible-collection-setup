@@ -1,0 +1,201 @@
+---
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
+      name: Templates/Applications
+  templates:
+    - uuid: d0aceaced5154a66aad5dfae545db20c
+      template: PHP-opcache
+      name: PHP-opcache
+      description: |
+        Collects OPcache memory, key and hit statistics with a dashboard.
+
+        This template requires:
+        - Zabbix agent with UserParameter php[*] configured by the
+          alphanodes.setup.zabbix_agent role
+        - the PHP template imported before this one
+      vendor:
+        name: AlphaNodes
+        version: 7.4-__DATE__
+      templates:
+        - name: PHP
+      groups:
+        - name: Templates/Applications
+      items:
+        - uuid: a9cab4e2f7b24979a4f5ae66991d6714
+          name: 'Opcache $1'
+          key: 'php[free_memory,opcache_stat,{$PHP_INFO_PORT}]'
+          delay: 2m
+          history: 1w
+          value_type: FLOAT
+          units: b
+          tags:
+            - tag: Application
+              value: PHP-opcache
+        - uuid: 82f44211f4db46b1be9ff8ee2a2e5911
+          name: 'Opcache $1'
+          key: 'php[hits,opcache_stat,{$PHP_INFO_PORT}]'
+          delay: 2m
+          history: 1w
+          value_type: FLOAT
+          preprocessing:
+            - type: CHANGE_PER_SECOND
+          tags:
+            - tag: Application
+              value: PHP-opcache
+        - uuid: 5b5c457c978d4a4196213f1189f1492c
+          name: 'Opcache $1'
+          key: 'php[max_cached_keys,opcache_stat,{$PHP_INFO_PORT}]'
+          delay: 2m
+          history: 1w
+          value_type: FLOAT
+          tags:
+            - tag: Application
+              value: PHP-opcache
+        - uuid: fc7d91ee677643989a0c45c87a0dd87c
+          name: 'Opcache $1'
+          key: 'php[misses,opcache_stat,{$PHP_INFO_PORT}]'
+          delay: 2m
+          history: 1w
+          value_type: FLOAT
+          preprocessing:
+            - type: CHANGE_PER_SECOND
+          tags:
+            - tag: Application
+              value: PHP-opcache
+        - uuid: b19d2e8aa3084e6f8588726523f1d890
+          name: 'Opcache $1'
+          key: 'php[num_cached_keys,opcache_stat,{$PHP_INFO_PORT}]'
+          delay: 2m
+          history: 1w
+          value_type: FLOAT
+          tags:
+            - tag: Application
+              value: PHP-opcache
+        - uuid: ff866085a59846f8ba5a3dc261faa5a7
+          name: 'Opcache $1'
+          key: 'php[used_memory,opcache_stat,{$PHP_INFO_PORT}]'
+          delay: 2m
+          history: 1w
+          units: b
+          tags:
+            - tag: Application
+              value: PHP-opcache
+        - uuid: 00ceaa30a30d4e2095515f6498af0d19
+          name: 'Opcache $1'
+          key: 'php[wasted_memory,opcache_stat,{$PHP_INFO_PORT}]'
+          delay: 2m
+          history: 1w
+          value_type: FLOAT
+          units: b
+          tags:
+            - tag: Application
+              value: PHP-opcache
+      macros:
+        - macro: '{$PHP_INFO_PORT}'
+          value: '80'
+      dashboards:
+        - uuid: 59137bad7b5c4af8be200964f33c7bae
+          name: 'PHP OpCache'
+          pages:
+            - widgets:
+                - type: graph
+                  width: '72'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: PHP-opcache
+                        name: 'PHP-opcache Memory'
+                    - type: STRING
+                      name: reference
+                      value: AAAAS
+                - type: graph
+                  'y': '5'
+                  width: '72'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: PHP-opcache
+                        name: 'PHP-opcache Hits'
+                    - type: STRING
+                      name: reference
+                      value: AAAAQ
+                - type: graph
+                  'y': '10'
+                  width: '72'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: PHP-opcache
+                        name: 'PHP-opcache Keys'
+                    - type: STRING
+                      name: reference
+                      value: AAAAR
+  graphs:
+    - uuid: 7bcdae1c6dcb484d9de5e7e9ee9600cd
+      name: 'PHP-opcache Hits'
+      show_work_period: 'NO'
+      show_triggers: 'NO'
+      type: STACKED
+      ymin_type_1: FIXED
+      graph_items:
+        - color: C80000
+          calc_fnc: MAX
+          item:
+            host: PHP-opcache
+            key: 'php[misses,opcache_stat,{$PHP_INFO_PORT}]'
+        - sortorder: '1'
+          color: 00AA00
+          calc_fnc: MAX
+          item:
+            host: PHP-opcache
+            key: 'php[hits,opcache_stat,{$PHP_INFO_PORT}]'
+    - uuid: 1b67fcf5603a464ab63f82b0d10ba90c
+      name: 'PHP-opcache Keys'
+      show_work_period: 'NO'
+      show_triggers: 'NO'
+      type: STACKED
+      ymin_type_1: FIXED
+      graph_items:
+        - color: C80000
+          calc_fnc: MAX
+          item:
+            host: PHP-opcache
+            key: 'php[num_cached_keys,opcache_stat,{$PHP_INFO_PORT}]'
+        - sortorder: '1'
+          color: 00AA00
+          calc_fnc: MAX
+          item:
+            host: PHP-opcache
+            key: 'php[max_cached_keys,opcache_stat,{$PHP_INFO_PORT}]'
+    - uuid: 9e9b7ec56a6746e6a167ba95853a65f4
+      name: 'PHP-opcache Memory'
+      show_work_period: 'NO'
+      show_triggers: 'NO'
+      type: STACKED
+      ymin_type_1: FIXED
+      graph_items:
+        - color: CC0000
+          calc_fnc: MAX
+          item:
+            host: PHP-opcache
+            key: 'php[used_memory,opcache_stat,{$PHP_INFO_PORT}]'
+        - sortorder: '1'
+          color: 0000CC
+          calc_fnc: MAX
+          item:
+            host: PHP-opcache
+            key: 'php[wasted_memory,opcache_stat,{$PHP_INFO_PORT}]'
+        - sortorder: '2'
+          color: 00AA00
+          calc_fnc: MAX
+          item:
+            host: PHP-opcache
+            key: 'php[free_memory,opcache_stat,{$PHP_INFO_PORT}]'

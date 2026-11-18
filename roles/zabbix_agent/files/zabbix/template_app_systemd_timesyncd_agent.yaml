@@ -1,0 +1,46 @@
+---
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: 7df96b18c230490a9a0a9e2307226338
+      name: Templates
+  templates:
+    - uuid: 60b19a64818f4363a014c3173eddac15
+      template: systemd-timesyncd
+      name: systemd-timesyncd
+      description: |
+        Alerts when systemd-timesyncd is not running.
+
+        Only the built-in proc.num agent item is used, no UserParameter is
+        required.
+      vendor:
+        name: AlphaNodes
+        version: 7.4-__DATE__
+      groups:
+        - name: Templates
+      items:
+        - uuid: 74c9dfcecd8744fdae57dac53f0351ad
+          name: 'systemd-timesyncd is running'
+          key: 'proc.num[systemd-timesyncd]'
+          delay: 2m
+          history: 1w
+          trends: 180d
+          valuemap:
+            name: 'Service state'
+          tags:
+            - tag: Application
+              value: 'Time sync'
+          triggers:
+            - uuid: 3ff1a8a8d63e42129aa1aa3cee63c3d6
+              expression: 'max(/systemd-timesyncd/proc.num[systemd-timesyncd],#3)=0'
+              name: 'TimeSync service is down on {HOST.NAME}'
+              priority: AVERAGE
+              description: 'systemd-timesyncd is down.'
+      valuemaps:
+        - uuid: 86f7ef45bc0942db8dfd0b5279497c1a
+          name: 'Service state'
+          mappings:
+            - value: '0'
+              newvalue: Down
+            - value: '1'
+              newvalue: Up

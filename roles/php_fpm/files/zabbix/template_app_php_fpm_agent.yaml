@@ -1,0 +1,48 @@
+---
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
+      name: Templates/Applications
+  templates:
+    - uuid: fffe3b9c306a4536b39797be29e0a3bb
+      template: PHP-fpm
+      name: PHP-fpm
+      description: |
+        Extends the official PHP-FPM template with an alert on errors in the
+        journal of the php-fpm service. Set {$PHP_VERSION} (e.g. 8.4) as
+        global macro and override it on hosts with another PHP version.
+
+        This template requires:
+        - Zabbix agent with UserParameter phpfpm_log[*] configured by the
+          alphanodes.setup.zabbix_agent role
+      vendor:
+        name: AlphaNodes
+        version: 7.4-__DATE__
+      templates:
+        - name: 'PHP-FPM by Zabbix agent'
+      groups:
+        - name: Templates/Applications
+      items:
+        - uuid: 769f3d3890c14604a58cca64d1a0a39b
+          name: 'php-fpm log errors'
+          key: 'phpfpm_log[php{$PHP_VERSION}-fpm]'
+          delay: 10m
+          history: 10d
+          value_type: TEXT
+          tags:
+            - tag: Application
+              value: PHP-fpm
+          triggers:
+            - uuid: 3257c8052d3242c98b15dd02c0ce9da3
+              expression: 'last(/PHP-fpm/phpfpm_log[php{$PHP_VERSION}-fpm])<>""'
+              name: 'PHP-fpm errors'
+              priority: WARNING
+              manual_close: 'YES'
+      macros:
+        - macro: '{$PHP_FPM.PING.PAGE}'
+          value: /php_ping
+        - macro: '{$PHP_FPM.PROCESS_NAME}'
+          value: 'php-fpm: pool www'
+        - macro: '{$PHP_FPM.STATUS.PAGE}'
+          value: php_status

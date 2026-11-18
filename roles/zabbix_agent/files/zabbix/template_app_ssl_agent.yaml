@@ -1,0 +1,45 @@
+---
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: 7df96b18c230490a9a0a9e2307226338
+      name: Templates
+  templates:
+    - uuid: ea52c36203c5499cbce2442d531b1a22
+      template: SSL
+      name: SSL
+      description: |
+        Alerts before the TLS certificate of {$SSL_HOST}:{$SSL_PORT} expires
+        (30 days info, 10 days average). Set both macros on the host.
+
+        This template requires:
+        - Zabbix agent with UserParameter linux[*] configured by the
+          alphanodes.setup.zabbix_agent role
+      vendor:
+        name: AlphaNodes
+        version: 7.4-__DATE__
+      groups:
+        - name: Templates
+      items:
+        - uuid: 32501cae20604696985d557c20cd3f98
+          name: ssl_cert_valid_days
+          key: 'linux[ssl,ssl,{$SSL_HOST},{$SSL_PORT}]'
+          delay: 6m
+          history: 2w
+          tags:
+            - tag: Application
+              value: SSL
+          triggers:
+            - uuid: 6951da77f1784fe2b4723c362dbe6dec
+              expression: 'last(/SSL/linux[ssl,ssl,{$SSL_HOST},{$SSL_PORT}])<10'
+              name: 'SSL certificate expires in {ITEM.LASTVALUE} days for {$SSL_HOST}'
+              priority: AVERAGE
+              description: 'The SSL certificate expires in {ITEM.LASTVALUE} days for  {$SSL_HOST}. Renew this certificate to provide a secure connection to this webpage.'
+            - uuid: a92fef7cdd074bbc82052ecd2b327a87
+              expression: 'last(/SSL/linux[ssl,ssl,{$SSL_HOST},{$SSL_PORT}])<30'
+              name: 'SSL certificate expires in {ITEM.LASTVALUE} days for {$SSL_HOST}'
+              priority: INFO
+              description: 'The SSL certificate expires in {ITEM.LASTVALUE} days for  {$SSL_HOST}. Renew this certificate to provide a secure connection to this webpage.'
+              dependencies:
+                - name: 'SSL certificate expires in {ITEM.LASTVALUE} days for {$SSL_HOST}'
+                  expression: 'last(/SSL/linux[ssl,ssl,{$SSL_HOST},{$SSL_PORT}])<10'

@@ -1,0 +1,81 @@
+---
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
+      name: Templates/Applications
+  templates:
+    - uuid: 372b3b213c174fd7884fc27a7d0624db
+      template: 'Redmine Automation'
+      name: 'Redmine Automation'
+      description: |
+        Checks the redmine-automation.timer and the health check page at
+        {$REDMINE.URL}/health_check. Set {$REDMINE.URL} on the host.
+
+        Only built-in agent items are used.
+
+        This template requires:
+        - the Redmine template imported before this one
+      vendor:
+        name: AlphaNodes
+        version: 7.4-__DATE__
+      templates:
+        - name: Redmine
+      groups:
+        - name: Templates/Applications
+      items:
+        - uuid: b8efdbfe9dda476692a98656b2d9299f
+          name: 'Redmine automation timer status'
+          key: 'systemd.unit.info[redmine-automation.timer,UnitFileState]'
+          delay: 2m
+          history: 2w
+          value_type: CHAR
+          description: 'Status of Redmine automation job'
+          tags:
+            - tag: redmine
+              value: automation
+          triggers:
+            - uuid: 5efb34c1664341cea0aab7890e1bcd41
+              expression: 'count(/Redmine Automation/systemd.unit.info[redmine-automation.timer,UnitFileState],#1,"eq","enabled")=0'
+              name: 'Redmine Automation: Timer is not working'
+              priority: AVERAGE
+              dependencies:
+                - name: 'Redmine Automation: Timer is not active'
+                  expression: 'last(/Redmine Automation/systemd.unit.info[redmine-automation.timer])<>"active"'
+        - uuid: c5d648f3252142c8b90584678869fb5d
+          name: 'Redmine automation timer'
+          key: 'systemd.unit.info[redmine-automation.timer]'
+          delay: 30m
+          history: 2w
+          value_type: CHAR
+          tags:
+            - tag: redmine
+              value: automation
+          triggers:
+            - uuid: 0a5cad6e01404fd194f24809430439e1
+              expression: 'last(/Redmine Automation/systemd.unit.info[redmine-automation.timer])<>"active"'
+              name: 'Redmine Automation: Timer is not active'
+              url: 'https://www.freedesktop.org/software/systemd/man/systemctl.html'
+              priority: AVERAGE
+              description: 'Automation job is not running, check systemctl list-timers.'
+        - uuid: 5f92db7d7e4e42319f04cc7e7fe39e58
+          name: 'Redmine Health Check Page'
+          key: 'web.page.get[{$REDMINE.URL}/health_check]'
+          delay: 2m
+          history: 2w
+          value_type: TEXT
+          tags:
+            - tag: redmine
+              value: automation
+          triggers:
+            - uuid: 7b240202a0da4c27a6174b8791e9ba26
+              expression: 'find(/Redmine Automation/web.page.get[{$REDMINE.URL}/health_check],,"like","HTTP/1.1 200")=0'
+              name: 'Redmine Health Check'
+              priority: WARNING
+              dependencies:
+                - name: 'Redmine Health Check without data'
+                  expression: 'nodata(/Redmine Automation/web.page.get[{$REDMINE.URL}/health_check],30m)=1'
+            - uuid: 2d5665de90e0462e8b24b7cfd47f8ead
+              expression: 'nodata(/Redmine Automation/web.page.get[{$REDMINE.URL}/health_check],30m)=1'
+              name: 'Redmine Health Check without data'
+              priority: WARNING

@@ -1,0 +1,135 @@
+---
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: 7df96b18c230490a9a0a9e2307226338
+      name: Templates
+  templates:
+    - uuid: 376b5681a7644cd2a49c030374a3d8d0
+      template: 'Disk Performance'
+      name: 'Disk Performance'
+      description: |
+        Discovers block devices and collects read and write operations, time
+        and throughput per device.
+
+        This template requires:
+        - Zabbix agent with UserParameter custom.vfs.discover_disks configured by the
+          alphanodes.setup.zabbix_agent role
+      vendor:
+        name: AlphaNodes
+        version: 7.4-__DATE__
+      groups:
+        - name: Templates
+      discovery_rules:
+        - uuid: e14bfbeda08e49f8b110cb6f63264924
+          name: 'Disk discovery'
+          key: custom.vfs.discover_disks
+          delay: 1h
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: 917be3545ffe4594923411e401bfd032
+              name: 'Disk:$1:Read:Ops per second'
+              key: 'vfs.dev.read[{#DEVICENAME},operations]'
+              delay: 2m
+              history: 2w
+              units: ops/s
+              description: 'This is the total number of reads completed successfully.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+              tags:
+                - tag: Application
+                  value: 'Disk Performance'
+            - uuid: a81c4d7a484d4db291d74e36f56a4a71
+              name: 'Disk:$1:Read:ms'
+              key: 'vfs.dev.read[{#DEVICENAME},ops]'
+              delay: 2m
+              history: 2w
+              value_type: FLOAT
+              units: ms
+              description: 'This is the total number of milliseconds spent by all reads (as measured from __make_request() to end_that_request_last()).'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+              tags:
+                - tag: Application
+                  value: 'Disk Performance'
+            - uuid: 909de28dacb6400fa14d74b5a42474e9
+              name: 'Disk:$1:Read:Bytes/sec'
+              key: 'vfs.dev.read[{#DEVICENAME},sectors]'
+              delay: 2m
+              history: 2w
+              units: B/sec
+              description: 'This is the total number of sectors read successfully.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                - type: MULTIPLIER
+                  parameters:
+                    - '512'
+              tags:
+                - tag: Application
+                  value: 'Disk Performance'
+            - uuid: 20f5cf97778b4560861ae4892118eaca
+              name: 'Disk:$1:Write:Ops per second'
+              key: 'vfs.dev.write[{#DEVICENAME},operations]'
+              delay: 2m
+              history: 2w
+              units: ops/s
+              description: 'This is the total number of reads completed successfully.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+              tags:
+                - tag: Application
+                  value: 'Disk Performance'
+            - uuid: cf0d2d375eb748c6aa8e74c74f610b79
+              name: 'Disk:$1:Write:ms'
+              key: 'vfs.dev.write[{#DEVICENAME},ops]'
+              delay: 2m
+              history: 2w
+              value_type: FLOAT
+              units: ms
+              description: 'This is the total number of milliseconds spent by all reads (as measured from __make_request() to end_that_request_last()).'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+              tags:
+                - tag: Application
+                  value: 'Disk Performance'
+            - uuid: d6514c4f84de41b5b22eddb3e83c16f0
+              name: 'Disk:$1:Write:Bytes/sec'
+              key: 'vfs.dev.write[{#DEVICENAME},sectors]'
+              delay: 2m
+              history: 2w
+              units: B/sec
+              description: 'This is the total number of sectors read successfully.'
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                - type: MULTIPLIER
+                  parameters:
+                    - '512'
+              tags:
+                - tag: Application
+                  value: 'Disk Performance'
+          graph_prototypes:
+            - uuid: 54397e914ced44188af248f1ce8cb040
+              name: 'Disk {#DEVICENAME} - Bytes/second'
+              graph_items:
+                - color: C80000
+                  item:
+                    host: 'Disk Performance'
+                    key: 'vfs.dev.read[{#DEVICENAME},sectors]'
+                - sortorder: '1'
+                  color: 00C800
+                  item:
+                    host: 'Disk Performance'
+                    key: 'vfs.dev.write[{#DEVICENAME},sectors]'
+            - uuid: 9dac581d64eb4a7faa0c7db72117ac22
+              name: 'Disk {#DEVICENAME} - Ops/second'
+              graph_items:
+                - color: C80000
+                  item:
+                    host: 'Disk Performance'
+                    key: 'vfs.dev.read[{#DEVICENAME},operations]'
+                - sortorder: '1'
+                  color: 00C800
+                  item:
+                    host: 'Disk Performance'
+                    key: 'vfs.dev.write[{#DEVICENAME},operations]'

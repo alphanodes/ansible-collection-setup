@@ -32,29 +32,13 @@ zabbix_export:
       groups:
         - name: 'Templates/Operating systems'
       items:
-        - uuid: 8caabd0b7d1e47598451439ed89fff08
-          name: 'Debian updates available'
-          key: 'linux[debian_updates,security]'
-          delay: 1d
-          history: 2w
-          status: DISABLED
-          tags:
-            - tag: Application
-              value: Security
-          triggers:
-            - uuid: 0f32881ed64f408a8e5dff31115e5321
-              expression: 'last(/Linux/linux[debian_updates,security])>0'
-              name: 'Debian system updates available'
-              status: DISABLED
-              priority: INFO
-              description: '{ITEM.LASTVALUE} new debian updates are available for installation.'
         - uuid: 477c21a343c94c36905084b2a09468eb
           name: 'SSH PasswordAuthentication'
           key: 'linux[PasswordAuthentication,sshd_config]'
           delay: 2h
           history: 2w
           value_type: CHAR
-          description: 'SSH should allow only key authentification for security.'
+          description: 'SSH should allow only key authentication for security.'
           tags:
             - tag: Application
               value: Security
@@ -63,14 +47,14 @@ zabbix_export:
               expression: 'find(/Linux/linux[PasswordAuthentication,sshd_config],,"like","yes")=1'
               name: 'SSH PasswordAuthentication = yes'
               priority: WARNING
-              description: 'PasswordAuthentification should be not allowed because of security issues.'
+              description: 'PasswordAuthentication should not be allowed because of security issues.'
         - uuid: 70631fb4ec9b46d8bbbd3925641d5661
           name: 'SSH PermitEmptyPasswords'
           key: 'linux[PermitEmptyPasswords,sshd_config]'
           delay: 2h
           history: 2w
           value_type: CHAR
-          description: 'SSHD Config: PermitEmptyPasswords should be set to no (all users must use passwords/keys).  (Remember to restart SSHD with /etc/init.d/ssh restart after making changes.'
+          description: 'SSHD Config: PermitEmptyPasswords should be set to no (all users must use passwords/keys). Restart sshd with systemctl restart ssh after making changes.'
           tags:
             - tag: Application
               value: Security
@@ -79,7 +63,7 @@ zabbix_export:
               expression: 'find(/Linux/linux[PermitEmptyPasswords,sshd_config],,"like","yes")=1'
               name: 'SSH PermitEmptyPasswords = yes'
               priority: WARNING
-              description: 'SSHD Config: PermitEmptyPasswords should be set to no (all users must use passwords/keys).  (Remember to restart SSHD with /etc/init.d/ssh restart after making changes).'
+              description: 'SSHD Config: PermitEmptyPasswords should be set to no (all users must use passwords/keys). Restart sshd with systemctl restart ssh after making changes.'
         - uuid: bf635bfdf49745fba9020bb1c716e4a6
           name: 'Server name in /etc/hosts'
           key: 'linux[server_name_in_hosts,performance]'
@@ -102,7 +86,7 @@ zabbix_export:
           delay: 2h
           history: 2w
           value_type: CHAR
-          description: 'SSHD Config: StrictModes should be set to yes (to check file permissions of files such as ~/.ssh, ~/.ssh/authorized_keys etc).  (Remember to restart SSHD with /etc/init.d/ssh restart after making changes).'
+          description: 'SSHD Config: StrictModes should be set to yes (to check file permissions of files such as ~/.ssh, ~/.ssh/authorized_keys etc). Restart sshd with systemctl restart ssh after making changes.'
           tags:
             - tag: Application
               value: Security
@@ -111,7 +95,7 @@ zabbix_export:
               expression: 'find(/Linux/linux[StrictModes,sshd_config],,"like","no")=1'
               name: 'SSH StrictModes = no'
               priority: WARNING
-              description: 'SSHD Config: StrictModes should be set to yes (to check file permissions of files such as ~/.ssh, ~/.ssh/authorized_keys etc).  (Remember to restart SSHD with /etc/init.d/ssh restart after making changes).'
+              description: 'SSHD Config: StrictModes should be set to yes (to check file permissions of files such as ~/.ssh, ~/.ssh/authorized_keys etc). Restart sshd with systemctl restart ssh after making changes.'
         - uuid: 7aefd116993e46deb8f5f62dad6efc9d
           name: 'World-writable in /etc'
           key: 'linux[world_write_etc,perm]'
@@ -147,9 +131,9 @@ zabbix_export:
               expression: 'find(/Linux/linux[X11Forwarding,sshd_config],,"like","yes")=1'
               name: 'SSH X11Forwarding = yes'
               priority: INFO
-              description: 'SSHD Config: X11Forwarding should be set to no (unless needed).  (Remember to restart SSHD with /etc/init.d/ssh restart after making changes).'
+              description: 'SSHD Config: X11Forwarding should be set to no (unless needed). Restart sshd with systemctl restart ssh after making changes.'
         - uuid: 02c78b24bdc2400694ad10a04f744b35
-          name: 'Prozess-Speicher - Python'
+          name: 'Process memory: Python'
           key: 'proc.mem[,,,^/usr/bin/python]'
           delay: 2m
           history: 2w
@@ -158,7 +142,7 @@ zabbix_export:
             - tag: Application
               value: Memory
         - uuid: c112cb7a05274b1d9a705c124bca833e
-          name: 'Prozess-Speicher - Puma'
+          name: 'Process memory: Puma'
           key: 'proc.mem[,,,^puma]'
           delay: 2m
           history: 2w
@@ -167,7 +151,7 @@ zabbix_export:
             - tag: Application
               value: Memory
         - uuid: e217d2bd25d0407fb46bffab3cf4ba99
-          name: 'Prozess-Speicher - root'
+          name: 'Process memory: root'
           key: 'proc.mem[,root]'
           delay: '2m;50s/1-7,00:00-24:00'
           history: 2w
@@ -176,7 +160,7 @@ zabbix_export:
             - tag: Application
               value: Memory
         - uuid: 733534250ee34efcb3b5b760779ca582
-          name: 'Prozess-Speicher - www-data'
+          name: 'Process memory: www-data'
           key: 'proc.mem[,www-data]'
           delay: 2m
           history: 2w
@@ -185,7 +169,7 @@ zabbix_export:
             - tag: Application
               value: Memory
         - uuid: 9fa219a6dfec452d844a6aae6199845b
-          name: 'Prozess-Speicher - Zabbix'
+          name: 'Process memory: Zabbix'
           key: 'proc.mem[,zabbix]'
           delay: 2m
           history: 2w
@@ -194,7 +178,7 @@ zabbix_export:
             - tag: Application
               value: Memory
         - uuid: 4545f4abffd94853b1b3a4ff2bae9c49
-          name: 'Prozess-Speicher - Java'
+          name: 'Process memory: Java'
           key: 'proc.mem[java]'
           delay: 2m
           history: 2w
@@ -203,7 +187,7 @@ zabbix_export:
             - tag: Application
               value: Memory
         - uuid: fb9c9f06c312457da2a5751d6bf3e6b0
-          name: 'Prozess-Speicher - MySQL'
+          name: 'Process memory: MySQL'
           key: 'proc.mem[mysqld]'
           delay: '2m;50s/1-7,00:00-24:00'
           history: 2w
@@ -216,7 +200,7 @@ zabbix_export:
             - tag: Application
               value: Memory
         - uuid: 4c8df859e7694dc786c509cff03e36b9
-          name: 'Prozess-Speicher - PostgreSQL'
+          name: 'Process memory: PostgreSQL'
           key: 'proc.mem[postgres]'
           delay: 2m
           history: 2w
@@ -225,7 +209,7 @@ zabbix_export:
             - tag: Application
               value: Memory
         - uuid: 1b6e4b2b74f6482984bc781c1ba4ead8
-          name: 'Prozess-Speicher - Gesamt'
+          name: 'Process memory: total'
           key: 'proc.mem[]'
           delay: 2m
           history: 2w
@@ -242,13 +226,6 @@ zabbix_export:
           tags:
             - tag: Application
               value: Security
-          triggers:
-            - uuid: c763a06b11cb4a858e41c8335a3d0f9b
-              expression: 'last(/Linux/security_log[{$SECURITY_LOG_HOURS}])<> ""'
-              name: 'Invalid system logins'
-              status: DISABLED
-              priority: INFO
-              manual_close: 'YES'
         - uuid: 399a5ec4a7a3418589e490bd438569de
           name: 'Systemd unit status'
           key: systemctl.global_status
@@ -286,7 +263,7 @@ zabbix_export:
                       name: graphid
                       value:
                         host: Linux
-                        name: 'Prozesse - Speicherverteilung'
+                        name: 'Process memory distribution'
                     - type: STRING
                       name: reference
                       value: AAABH
@@ -332,7 +309,7 @@ zabbix_export:
                       value: AAABJ
   graphs:
     - uuid: 64d1ab0256c145c0aa9d0535a5b80755
-      name: 'Prozesse - Speicherverteilung'
+      name: 'Process memory distribution'
       show_work_period: 'NO'
       show_triggers: 'NO'
       type: STACKED

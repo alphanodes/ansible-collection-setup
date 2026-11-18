@@ -1,0 +1,48 @@
+---
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
+      name: Templates/Applications
+  templates:
+    - uuid: 068db14ef132432fa4f4f01e5227d2b5
+      template: Redmine
+      name: Redmine
+      description: |
+        Alerts on errors in the Redmine log of the puma-{$REDMINE_USER} service.
+        Set {$REDMINE_USER} as global macro and override it on hosts with
+        another Redmine user.
+
+        This template requires:
+        - Zabbix agent with UserParameter redmine_log[*] configured by the
+          alphanodes.setup.zabbix_agent role
+        - the Puma template imported before this one
+      vendor:
+        name: AlphaNodes
+        version: 7.4-__DATE__
+      templates:
+        - name: Puma
+      groups:
+        - name: Templates/Applications
+      items:
+        - uuid: 5973f1fe83794b929dae6b4b612c1a78
+          name: 'Redmine Error Logs'
+          key: 'redmine_log[puma-{$REDMINE_USER}]'
+          delay: 10m
+          history: 14d
+          value_type: TEXT
+          description: 'Example of time: 2022-06-28T16:20:56+0200'
+          tags:
+            - tag: Application
+              value: Redmine
+          triggers:
+            - uuid: 3c057e1c57ea4919b43578db85035861
+              expression: 'last(/Redmine/redmine_log[puma-{$REDMINE_USER}])<>""'
+              name: 'Redmine errors'
+              priority: WARNING
+              manual_close: 'YES'
+      tags:
+        - tag: application
+          value: redmine
+        - tag: target
+          value: application
