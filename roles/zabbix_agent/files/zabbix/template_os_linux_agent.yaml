@@ -1,0 +1,387 @@
+---
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: 846977d1dfed4968bc5f8bdb363285bc
+      name: 'Templates/Operating systems'
+  templates:
+    - uuid: c1c3a11a4e714521aedd204220c9f8f7
+      template: Linux
+      name: Linux
+      description: |
+        Base template for Linux hosts: sshd_config hardening, world-writable
+        files in /etc, the host name in /etc/hosts, memory per process group,
+        invalid logins and the overall systemd state.
+
+        It links the official "Linux by Zabbix agent" template and the Journal
+        and Services templates of this collection, so a host only needs this
+        one (or a template that links it).
+
+        This template requires:
+        - Zabbix agent with UserParameter linux[*], security_log[*] and
+          systemctl.global_status configured by the alphanodes.setup.zabbix_agent
+          role
+        - the Journal and Services templates imported before this one
+      vendor:
+        name: AlphaNodes
+        version: 7.4-__DATE__
+      templates:
+        - name: Journal
+        - name: 'Linux by Zabbix agent'
+        - name: Services
+      groups:
+        - name: 'Templates/Operating systems'
+      items:
+        - uuid: 8caabd0b7d1e47598451439ed89fff08
+          name: 'Debian updates available'
+          key: 'linux[debian_updates,security]'
+          delay: 1d
+          history: 2w
+          status: DISABLED
+          tags:
+            - tag: Application
+              value: Security
+          triggers:
+            - uuid: 0f32881ed64f408a8e5dff31115e5321
+              expression: 'last(/Linux/linux[debian_updates,security])>0'
+              name: 'Debian system updates available'
+              status: DISABLED
+              priority: INFO
+              description: '{ITEM.LASTVALUE} new debian updates are available for installation.'
+        - uuid: 477c21a343c94c36905084b2a09468eb
+          name: 'SSH PasswordAuthentication'
+          key: 'linux[PasswordAuthentication,sshd_config]'
+          delay: 2h
+          history: 2w
+          value_type: CHAR
+          description: 'SSH should allow only key authentification for security.'
+          tags:
+            - tag: Application
+              value: Security
+          triggers:
+            - uuid: 32478be4afe340518d38a9ced0f9ca3e
+              expression: 'find(/Linux/linux[PasswordAuthentication,sshd_config],,"like","yes")=1'
+              name: 'SSH PasswordAuthentication = yes'
+              priority: WARNING
+              description: 'PasswordAuthentification should be not allowed because of security issues.'
+        - uuid: 70631fb4ec9b46d8bbbd3925641d5661
+          name: 'SSH PermitEmptyPasswords'
+          key: 'linux[PermitEmptyPasswords,sshd_config]'
+          delay: 2h
+          history: 2w
+          value_type: CHAR
+          description: 'SSHD Config: PermitEmptyPasswords should be set to no (all users must use passwords/keys).  (Remember to restart SSHD with /etc/init.d/ssh restart after making changes.'
+          tags:
+            - tag: Application
+              value: Security
+          triggers:
+            - uuid: 21f6aef03eb94d86b6fa635b62276bac
+              expression: 'find(/Linux/linux[PermitEmptyPasswords,sshd_config],,"like","yes")=1'
+              name: 'SSH PermitEmptyPasswords = yes'
+              priority: WARNING
+              description: 'SSHD Config: PermitEmptyPasswords should be set to no (all users must use passwords/keys).  (Remember to restart SSHD with /etc/init.d/ssh restart after making changes).'
+        - uuid: bf635bfdf49745fba9020bb1c716e4a6
+          name: 'Server name in /etc/hosts'
+          key: 'linux[server_name_in_hosts,performance]'
+          delay: 2h
+          history: 2w
+          value_type: CHAR
+          description: 'For performance reasons the server name should be in /etc/hosts.'
+          tags:
+            - tag: Application
+              value: Performance
+          triggers:
+            - uuid: f6cb6758d524494d9955925b83fb10a2
+              expression: 'find(/Linux/linux[server_name_in_hosts,performance],,"like","no")=1'
+              name: 'Server name not found in /etc/hosts'
+              priority: WARNING
+              description: 'There is no entry for the server''s name {HOST.NAME} in /etc/hosts.  This may cause unexpected performance problems for local connections.  Add the IP and name in /etc/hosts, eg: 192.168.0.1 {HOST.NAME}'
+        - uuid: 6981993e93ea4502aafa34e266ae2f25
+          name: 'SSH StrictModes'
+          key: 'linux[StrictModes,sshd_config]'
+          delay: 2h
+          history: 2w
+          value_type: CHAR
+          description: 'SSHD Config: StrictModes should be set to yes (to check file permissions of files such as ~/.ssh, ~/.ssh/authorized_keys etc).  (Remember to restart SSHD with /etc/init.d/ssh restart after making changes).'
+          tags:
+            - tag: Application
+              value: Security
+          triggers:
+            - uuid: dd067091b0104589b9f64e593c701ea7
+              expression: 'find(/Linux/linux[StrictModes,sshd_config],,"like","no")=1'
+              name: 'SSH StrictModes = no'
+              priority: WARNING
+              description: 'SSHD Config: StrictModes should be set to yes (to check file permissions of files such as ~/.ssh, ~/.ssh/authorized_keys etc).  (Remember to restart SSHD with /etc/init.d/ssh restart after making changes).'
+        - uuid: 7aefd116993e46deb8f5f62dad6efc9d
+          name: 'World-writable in /etc'
+          key: 'linux[world_write_etc,perm]'
+          delay: 2h
+          history: 2w
+          description: |
+            There are files or folders in /etc which are world writable.  It is a security risk to have world-writables in this folder, as they may be executed by other scripts as root.
+            Find all files with: find /etc -type f -perm -002
+            Find all folders with: find /etc -type d -perm -002
+          tags:
+            - tag: Application
+              value: Security
+          triggers:
+            - uuid: eec19b97a1f744bf99d361e3e9294be3
+              expression: 'last(/Linux/linux[world_write_etc,perm])>0'
+              name: 'World-writable files in /etc'
+              priority: WARNING
+              description: |
+                Warning: There are files or folders in /etc which are world writable.  It is a security risk to have world-writables in this folder, as they may be executed by other scripts as root.
+                Find all files with: find /etc -type f -perm -002
+                Find all folders with: find /etc -type d -perm -002
+        - uuid: 518b9e9aee534d11b5a0adbac99dfd3a
+          name: 'SSH X11Forwarding'
+          key: 'linux[X11Forwarding,sshd_config]'
+          delay: 2h
+          history: 2w
+          value_type: CHAR
+          tags:
+            - tag: Application
+              value: Security
+          triggers:
+            - uuid: 5ca31ce43f7542c7a58ebf46ebaf0164
+              expression: 'find(/Linux/linux[X11Forwarding,sshd_config],,"like","yes")=1'
+              name: 'SSH X11Forwarding = yes'
+              priority: INFO
+              description: 'SSHD Config: X11Forwarding should be set to no (unless needed).  (Remember to restart SSHD with /etc/init.d/ssh restart after making changes).'
+        - uuid: 02c78b24bdc2400694ad10a04f744b35
+          name: 'Prozess-Speicher - Python'
+          key: 'proc.mem[,,,^/usr/bin/python]'
+          delay: 2m
+          history: 2w
+          value_type: FLOAT
+          tags:
+            - tag: Application
+              value: Memory
+        - uuid: c112cb7a05274b1d9a705c124bca833e
+          name: 'Prozess-Speicher - Puma'
+          key: 'proc.mem[,,,^puma]'
+          delay: 2m
+          history: 2w
+          value_type: FLOAT
+          tags:
+            - tag: Application
+              value: Memory
+        - uuid: e217d2bd25d0407fb46bffab3cf4ba99
+          name: 'Prozess-Speicher - root'
+          key: 'proc.mem[,root]'
+          delay: '2m;50s/1-7,00:00-24:00'
+          history: 2w
+          value_type: FLOAT
+          tags:
+            - tag: Application
+              value: Memory
+        - uuid: 733534250ee34efcb3b5b760779ca582
+          name: 'Prozess-Speicher - www-data'
+          key: 'proc.mem[,www-data]'
+          delay: 2m
+          history: 2w
+          value_type: FLOAT
+          tags:
+            - tag: Application
+              value: Memory
+        - uuid: 9fa219a6dfec452d844a6aae6199845b
+          name: 'Prozess-Speicher - Zabbix'
+          key: 'proc.mem[,zabbix]'
+          delay: 2m
+          history: 2w
+          value_type: FLOAT
+          tags:
+            - tag: Application
+              value: Memory
+        - uuid: 4545f4abffd94853b1b3a4ff2bae9c49
+          name: 'Prozess-Speicher - Java'
+          key: 'proc.mem[java]'
+          delay: 2m
+          history: 2w
+          value_type: FLOAT
+          tags:
+            - tag: Application
+              value: Memory
+        - uuid: fb9c9f06c312457da2a5751d6bf3e6b0
+          name: 'Prozess-Speicher - MySQL'
+          key: 'proc.mem[mysqld]'
+          delay: '2m;50s/1-7,00:00-24:00'
+          history: 2w
+          value_type: FLOAT
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '1'
+          tags:
+            - tag: Application
+              value: Memory
+        - uuid: 4c8df859e7694dc786c509cff03e36b9
+          name: 'Prozess-Speicher - PostgreSQL'
+          key: 'proc.mem[postgres]'
+          delay: 2m
+          history: 2w
+          value_type: FLOAT
+          tags:
+            - tag: Application
+              value: Memory
+        - uuid: 1b6e4b2b74f6482984bc781c1ba4ead8
+          name: 'Prozess-Speicher - Gesamt'
+          key: 'proc.mem[]'
+          delay: 2m
+          history: 2w
+          value_type: FLOAT
+          tags:
+            - tag: Application
+              value: Memory
+        - uuid: fd93adbf7b9b4b8d8eb4ccc36693942d
+          name: 'Invalid Logins'
+          key: 'security_log[{$SECURITY_LOG_HOURS}]'
+          delay: 5m
+          history: 10d
+          value_type: TEXT
+          tags:
+            - tag: Application
+              value: Security
+          triggers:
+            - uuid: c763a06b11cb4a858e41c8335a3d0f9b
+              expression: 'last(/Linux/security_log[{$SECURITY_LOG_HOURS}])<> ""'
+              name: 'Invalid system logins'
+              status: DISABLED
+              priority: INFO
+              manual_close: 'YES'
+        - uuid: 399a5ec4a7a3418589e490bd438569de
+          name: 'Systemd unit status'
+          key: systemctl.global_status
+          delay: 5m
+          history: 2w
+          value_type: CHAR
+          tags:
+            - tag: component
+              value: system
+          triggers:
+            - uuid: 8271a61d36cf445a8b9730364a451dbc
+              expression: 'last(/Linux/systemctl.global_status)<>"" and last(/Linux/systemctl.global_status)<>"State: running"'
+              name: 'Systemd global status'
+              priority: AVERAGE
+              description: 'Run ''systemctl --failed'' on server, to find out which services failed.'
+      macros:
+        - macro: '{$LOAD_AVG_PER_CPU.MAX.WARN}'
+          value: '3'
+        - macro: '{$NET_INTERFACE}'
+          value: eth0
+        - macro: '{$NUMBER_OF_PROCESSES}'
+          value: '300'
+        - macro: '{$NUMBER_OF_PROCESSES_RUN}'
+          value: '30'
+      dashboards:
+        - uuid: b71c4aee60884803b06044ffa9a577ab
+          name: 'Memory overview'
+          pages:
+            - widgets:
+                - type: graph
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: Linux
+                        name: 'Prozesse - Speicherverteilung'
+                    - type: STRING
+                      name: reference
+                      value: AAABH
+                - type: graph
+                  'y': '5'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: Linux
+                        name: 'Linux: Swap usage'
+                    - type: STRING
+                      name: reference
+                      value: AAABI
+                - type: graph
+                  x: '36'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: Linux
+                        name: 'Linux: Memory usage'
+                    - type: STRING
+                      name: reference
+                      value: AAAAA
+                - type: graph
+                  x: '36'
+                  'y': '5'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: Linux
+                        name: 'Linux: Memory utilization'
+                    - type: STRING
+                      name: reference
+                      value: AAABJ
+  graphs:
+    - uuid: 64d1ab0256c145c0aa9d0535a5b80755
+      name: 'Prozesse - Speicherverteilung'
+      show_work_period: 'NO'
+      show_triggers: 'NO'
+      type: STACKED
+      ymin_type_1: FIXED
+      graph_items:
+        - color: 0000C8
+          calc_fnc: MAX
+          item:
+            host: Linux
+            key: 'proc.mem[,root]'
+        - sortorder: '1'
+          color: 00C800
+          calc_fnc: MAX
+          item:
+            host: Linux
+            key: 'proc.mem[mysqld]'
+        - sortorder: '2'
+          color: '007700'
+          calc_fnc: MAX
+          item:
+            host: Linux
+            key: 'proc.mem[postgres]'
+        - sortorder: '3'
+          color: 00C8C8
+          calc_fnc: MAX
+          item:
+            host: Linux
+            key: 'proc.mem[,www-data]'
+        - sortorder: '4'
+          color: C8C800
+          calc_fnc: MAX
+          item:
+            host: Linux
+            key: 'proc.mem[,zabbix]'
+        - sortorder: '5'
+          color: C800C8
+          calc_fnc: MAX
+          item:
+            host: Linux
+            key: 'proc.mem[,,,^puma]'
+        - sortorder: '6'
+          color: 611F27
+          calc_fnc: MAX
+          item:
+            host: Linux
+            key: 'proc.mem[,,,^/usr/bin/python]'
+        - sortorder: '7'
+          color: '999999'
+          calc_fnc: MAX
+          item:
+            host: Linux
+            key: 'proc.mem[java]'

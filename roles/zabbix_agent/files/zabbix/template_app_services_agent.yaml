@@ -1,0 +1,186 @@
+---
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: 730ef0b168104e01bc69354413763243
+      name: Templates/Linux
+  templates:
+    - uuid: 992a0f0542384f1ea5ef51b7cf4ae6c4
+      template: Services
+      name: Services
+      description: |
+        Discovers all systemd services and alerts on services that are enabled
+        but not running, running but not enabled, or not in a healthy state.
+
+        Exclude services with the regular expression in the discovery filter.
+
+        This template requires:
+        - Zabbix agent with UserParameter services.systemctl and
+          systemctl.status[*] configured by the alphanodes.setup.zabbix_agent role
+      vendor:
+        name: AlphaNodes
+        version: 7.4-__DATE__
+      groups:
+        - name: Templates/Linux
+      discovery_rules:
+        - uuid: 5fbc59339be14d86bb4a2e91ab541493
+          name: 'systemctl list-unit-files'
+          type: ZABBIX_ACTIVE
+          key: services.systemctl
+          delay: 1h
+          filter:
+            conditions:
+              - macro: '{#NAME}'
+                value: (cloud-init|cloud-init-main|e2scrub_reap|grub-common|grub2-common|grub-initrd-fallback|hc-net-scan|hv-fcopy-daemon|secureboot-db|unbound-resolvconf)
+                operator: NOT_MATCHES_REGEX
+              - macro: '{#STATUS}'
+                value: (enabled|disabled)
+          lifetime_type: DELETE_IMMEDIATELY
+          item_prototypes:
+            - uuid: a699466247e241dd8a79bb2c625f724e
+              name: 'contains condition {#NAME}'
+              type: DEPENDENT
+              key: 'contains.condition[{#NAME}]'
+              history: 2w
+              valuemap:
+                name: systemctl.condition
+              preprocessing:
+                - type: REGEX
+                  parameters:
+                    - '((.*)(\n)?)+'
+                    - '\0:Condition= no'
+                - type: REGEX
+                  parameters:
+                    - 'Condition..(.*)'
+                    - '\1:no=0:start=1'
+                - type: REGEX
+                  parameters:
+                    - '(no|start)(?=.*:\1=(\d))'
+                    - \2
+              master_item:
+                key: 'systemctl.status[{#NAME}]'
+              tags:
+                - tag: Application
+                  value: 'systemctl contains condition'
+            - uuid: 86fce803f345460498211270c15e6065
+              name: 'startup {#NAME}'
+              type: DEPENDENT
+              key: 'startup[{#NAME}]'
+              history: 2w
+              valuemap:
+                name: systemctl.loaded
+              preprocessing:
+                - type: REGEX
+                  parameters:
+                    - '(Loaded.*)(\n)?'
+                    - \1
+                - type: REGEX
+                  parameters:
+                    - ';.(.*);'
+                    - '\1:disabled=0:enabled=1:static=2:indirect=3'
+                - type: REGEX
+                  parameters:
+                    - '(disabled|enabled|static|indirect)(?=.*:\1=(\d))'
+                    - \2
+              master_item:
+                key: 'systemctl.status[{#NAME}]'
+              tags:
+                - tag: Application
+                  value: 'systemctl startup'
+            - uuid: 1604b8556f6d402ab6cab0de1fadb10c
+              name: 'status {#NAME}'
+              type: DEPENDENT
+              key: 'status[{#NAME}]'
+              history: 2w
+              valuemap:
+                name: systemctl.active
+              preprocessing:
+                - type: REGEX
+                  parameters:
+                    - 'Active..(.*)(\n)?'
+                    - \1
+                - type: REGEX
+                  parameters:
+                    - '\((.*)\)'
+                    - '\1;dead=0;running=1;exited=2;start=3;Result: exit-code=4'
+                - type: REGEX
+                  parameters:
+                    - '(dead|running|exited|start|Result: exit-code)(?=.*;\1=(\d))'
+                    - \2
+              master_item:
+                key: 'systemctl.status[{#NAME}]'
+              tags:
+                - tag: Application
+                  value: 'systemctl status'
+              trigger_prototypes:
+                - uuid: 9e5640cdde444e58ab69b34a41baa180
+                  expression: 'last(/Services/status[{#NAME}],{$SERVICE_STARTUP_WINDOW})=3'
+                  name: 'Service "{#NAME}" is not completely started in last {$SERVICE_STARTUP_WINDOW}'
+                  priority: WARNING
+                  description: 'Maybe the pid file do not match from config with the startup init file'
+                - uuid: f5eb2218656544ce8b09e36a10e01a16
+                  expression: 'last(/Services/status[{#NAME}])=4'
+                  name: 'Service "{#NAME}" is not in healthy state'
+                  priority: HIGH
+            - uuid: 0dfb58f6c9a3489e8310d653f326b515
+              name: 'status of "{#NAME}"'
+              type: ZABBIX_ACTIVE
+              key: 'systemctl.status[{#NAME}]'
+              delay: 10m
+              history: '0'
+              value_type: TEXT
+              tags:
+                - tag: Application
+                  value: 'systemctl raw'
+          trigger_prototypes:
+            - uuid: c6bda6d3c7bb45f49362e908f8fa0159
+              expression: 'last(/Services/status[{#NAME}])=0 and last(/Services/startup[{#NAME}])=1 and last(/Services/contains.condition[{#NAME}])=0'
+              name: 'Service "{#NAME}" is not running but configured at startup'
+              priority: AVERAGE
+              description: |
+                some services like:
+                * rhel-autorelabel
+                * rhel-autorelabel-mark
+                * rhel-configure
+                * rhel-loadmodules
+                * systemd-readahead-collect
+                contains a triggered start. A workaround has been made to detect if the service contains even an condition
+            - uuid: 6386941c42224f5da810869933402a96
+              expression: 'last(/Services/status[{#NAME}])=1 and last(/Services/startup[{#NAME}])=0'
+              name: 'Service "{#NAME}" is running but not enabled at startup'
+              priority: INFO
+      macros:
+        - macro: '{$SERVICE_STARTUP_WINDOW}'
+          value: 8m
+      valuemaps:
+        - uuid: 58d9ba8a1a2f480c805ea1f6de799f9b
+          name: systemctl.active
+          mappings:
+            - value: '0'
+              newvalue: dead
+            - value: '1'
+              newvalue: running
+            - value: '2'
+              newvalue: exited
+            - value: '3'
+              newvalue: start
+            - value: '4'
+              newvalue: 'something wrong'
+        - uuid: 5793323fe1a54a75addaa7b88496f3c9
+          name: systemctl.condition
+          mappings:
+            - value: '0'
+              newvalue: 'no'
+            - value: '1'
+              newvalue: 'yes'
+        - uuid: b9ad14c53ea5484db9f56298a57ab284
+          name: systemctl.loaded
+          mappings:
+            - value: '0'
+              newvalue: disabled
+            - value: '1'
+              newvalue: enabled
+            - value: '2'
+              newvalue: static
+            - value: '3'
+              newvalue: indirect

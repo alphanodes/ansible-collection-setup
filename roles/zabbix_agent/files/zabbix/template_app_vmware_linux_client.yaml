@@ -1,0 +1,37 @@
+---
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: 846977d1dfed4968bc5f8bdb363285bc
+      name: 'Templates/Operating systems'
+  templates:
+    - uuid: 29af77b6a8974034a1d96b6e1893ef9a
+      template: 'VMware Linux Client'
+      name: 'VMware Linux Client'
+      description: |
+        Checks that open-vm-tools (vmtoolsd) is running on a Linux guest
+        in a VMware virtual machine.
+
+        Link this template to VMware guests in addition to their Linux
+        template. It only uses the built-in proc.num agent item, no
+        UserParameter is required.
+      vendor:
+        name: AlphaNodes
+        version: 7.4-__DATE__
+      groups:
+        - name: 'Templates/Operating systems'
+      items:
+        - uuid: 9fa8ad411c914a6fac446e79fae19f61
+          name: 'open-vm-tools service is running'
+          key: 'proc.num[vmtoolsd]'
+          delay: 30s
+          history: 2w
+          trends: 180d
+          tags:
+            - tag: Application
+              value: 'VMware Client'
+          triggers:
+            - uuid: 67b1118667644e218a8afa609af81833
+              expression: 'last(/VMware Linux Client/proc.num[vmtoolsd])=0'
+              name: 'open-vm-tools is not running on {HOST.HOST}'
+              priority: WARNING
