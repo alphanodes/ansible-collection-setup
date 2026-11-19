@@ -187,7 +187,9 @@ jobs:
         id: molecule
         run: |
           START_TIME=$(date +%s)
-          molecule converge -s ${{ matrix.role }} 2>&1 || true
+          CONVERGE_RC=0
+          molecule converge -s ${{ matrix.role }} 2>&1 || CONVERGE_RC=$?
+          echo "converge_rc=${CONVERGE_RC}" >> $GITHUB_OUTPUT
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
           MINUTES=$((DURATION / 60))
@@ -200,11 +202,19 @@ jobs:
       - name: Run idempotency check
         id: idempotency
         run: |
-          # Run converge again to check idempotency
-          IDEMP_OUTPUT=$(molecule converge -s ${{ matrix.role }} 2>&1 || true)
-          # Extract changed count from the last play recap
-          CHANGED=$(echo "$IDEMP_OUTPUT" | grep -E "changed=[0-9]+" | tail -1 | grep -oE "changed=[0-9]+" | cut -d= -f2)
-          [ -z "$CHANGED" ] && CHANGED="?"
+          # molecule idempotence runs converge again and skips tasks tagged
+          # molecule-idempotence-notest, like the idempotence step of the CI.
+          # It exits non-zero when tasks changed, so its exit code is not used.
+          IDEMP_OUTPUT=$(molecule idempotence -s ${{ matrix.role }} 2>&1 || true)
+          # A failed converge makes the changed count meaningless: the second
+          # run only catches up on what the first one did not finish
+          if [ "${{ steps.molecule.outputs.converge_rc }}" != "0" ] || echo "$IDEMP_OUTPUT" | grep -qE "failed=[1-9]"; then
+            CHANGED="failed"
+          else
+            # Extract changed count from the last play recap
+            CHANGED=$(echo "$IDEMP_OUTPUT" | grep -E "changed=[0-9]+" | tail -1 | grep -oE "changed=[0-9]+" | cut -d= -f2)
+            [ -z "$CHANGED" ] && CHANGED="?"
+          fi
           echo "changed=$CHANGED" >> $GITHUB_OUTPUT
         env:
           MOLECULE_DISTRO: debian13
@@ -434,6 +444,8 @@ jobs:
                 IDEMP_DISPLAY="✅"
               elif [ "$IDEMPOTENT" = "?" ]; then
                 IDEMP_DISPLAY="?"
+              elif [ "$IDEMPOTENT" = "failed" ]; then
+                IDEMP_DISPLAY="❌ converge"
               else
                 IDEMP_DISPLAY="⚠️ ${IDEMPOTENT}"
               fi
@@ -468,6 +480,7 @@ jobs:
           | ✅ | No issues found |
           | ⚠️ n | n warnings |
           | ❌ n | n errors |
+          | ❌ converge | Molecule converge failed, idempotency not measurable |
           | 💡 nL | n Low severity issues (Gixy) |
           | ⚠️ nM | n Medium severity issues (Gixy) |
           | ❌ nH | n High severity issues (Gixy) |

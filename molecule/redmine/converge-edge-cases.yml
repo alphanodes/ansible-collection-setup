@@ -160,6 +160,8 @@
       ansible.builtin.file:
         path: "/run/{{ item }}/redmine.sock"
         state: touch
+        access_time: preserve
+        modification_time: preserve
         owner: root
         group: root
         mode: '0660'
@@ -246,6 +248,8 @@
           upstream_name: redmine_protected
           upstream_servers:
             - "unix:/run/redmine_protected/redmine.sock"
+          # Server-level basic auth is opt-in, as set by the redmine role
+          auth_basic_realm: 'Restricted access only'
           vhost_users:
             - user: testuser
               password: testpassword123

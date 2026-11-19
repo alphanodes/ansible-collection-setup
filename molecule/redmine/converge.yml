@@ -233,6 +233,8 @@
       ansible.builtin.file:
         path: "{{ item }}"
         state: touch
+        access_time: preserve
+        modification_time: preserve
         owner: root
         group: root
         mode: '0660'
@@ -399,8 +401,11 @@
       register: redmine_test_gem_user_dir
       changed_when: false
 
-    # current ruby version (kept), a former one (removed) and a foreign directory (kept)
+    # current ruby version (kept), a former one (removed) and a foreign directory (kept).
+    # The fixture is recreated and removed again on every run, so it is excluded
+    # from the idempotence check
     - name: Create gem directories for cleanup
+      tags: molecule-idempotence-notest
       ansible.builtin.file:
         path: "{{ item }}"
         state: directory
@@ -413,7 +418,11 @@
         - "{{ redmine_test_gem_user_dir.stdout | dirname }}/custom"
 
     - name: Apply gem cleanup tasks
-      ansible.builtin.include_tasks: "{{ playbook_dir }}/../../roles/redmine/tasks/instance_gem_cleanup.yml"
+      ansible.builtin.include_tasks:
+        file: "{{ playbook_dir }}/../../roles/redmine/tasks/instance_gem_cleanup.yml"
+        apply:
+          tags: molecule-idempotence-notest
+      tags: molecule-idempotence-notest
       vars:
         redmine_instance_name: redmine
         redmine_user: redmine
