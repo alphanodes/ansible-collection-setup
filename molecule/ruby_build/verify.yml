@@ -54,7 +54,7 @@
       ansible.builtin.assert:
         that:
           - ansible_facts.packages.keys() | select('match', '^(ruby|libruby)') | list == []
-          - ruby_path_version.stdout is search('^ruby 4\.0\.9 ')
+          - ruby_path_version.stdout is search('^ruby 4\.0\.10 ')
           - ruby_links.results | map(attribute='stat.lnk_source') | list ==
             ['bundle', 'bundler', 'erb', 'gem', 'irb', 'rake', 'ruby'] | map('regex_replace', '^', '/opt/ruby/4.0.10/bin/') | list
         fail_msg: >-
@@ -97,7 +97,7 @@
     - name: Verify compiled ruby
       ansible.builtin.assert:
         that:
-          - ruby_compiled_version.stdout is search('^ruby 4\.0\.9 ')
+          - ruby_compiled_version.stdout is search('^ruby 4\.0\.10 ')
           - ruby_yjit.rc == 0
           - ruby_extensions.rc == 0
           - not ruby_outdated.stat.exists

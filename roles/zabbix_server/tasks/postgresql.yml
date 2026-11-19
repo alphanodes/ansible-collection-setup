@@ -23,7 +23,7 @@
   become_user: postgres
   become: true
   community.postgresql.postgresql_query:
-    db: '{{ zabbix_server_db_name }}'
+    login_db: '{{ zabbix_server_db_name }}'
     query: "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'users'"
   register: zabbix_schema_check
 
@@ -69,7 +69,7 @@
   become_user: postgres
   become: true
   community.postgresql.postgresql_query:
-    db: '{{ zabbix_server_db_name }}'
+    login_db: '{{ zabbix_server_db_name }}'
     query: "SELECT COUNT(*) FROM timescaledb_information.hypertables WHERE hypertable_name = 'history'"
   register: zabbix_timescaledb_check
   when: zabbix_server_with_timescaledb
@@ -170,7 +170,7 @@
   become_user: postgres
   become: true
   community.postgresql.postgresql_query:
-    db: '{{ zabbix_server_db_name }}'
+    login_db: '{{ zabbix_server_db_name }}'
     query: >-
       SELECT hypertable_name, num_chunks, compression_enabled
       FROM timescaledb_information.hypertables
@@ -197,7 +197,7 @@
   become_user: postgres
   become: true
   community.postgresql.postgresql_query:
-    db: '{{ zabbix_server_db_name }}'
+    login_db: '{{ zabbix_server_db_name }}'
     query: "SELECT 1 FROM pg_extension WHERE extname = 'pg_buffercache'"
   register: pg_buffercache_check
 
@@ -206,7 +206,7 @@
   become: true
   community.postgresql.postgresql_ext:
     name: pg_buffercache
-    db: '{{ zabbix_server_db_name }}'
+    login_db: '{{ zabbix_server_db_name }}'
     state: present
   when:
     - postgresql_with_pg_buffercache
@@ -217,7 +217,7 @@
   become: true
   community.postgresql.postgresql_ext:
     name: pg_buffercache
-    db: '{{ zabbix_server_db_name }}'
+    login_db: '{{ zabbix_server_db_name }}'
     state: absent
   when:
     - not postgresql_with_pg_buffercache

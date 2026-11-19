@@ -18,7 +18,9 @@
     repo: '{{ ruby_build_tool_repo }}'
     dest: '{{ ruby_build_tool_dir }}'
     version: '{{ ruby_build_tool_version }}'
-    depth: 1
+    # no depth: with a shallow clone of a tag, the git module crashes on the
+    # next run ('NoneType' object has no attribute 'startswith'), and the
+    # full repository is only a few MB
     force: true
 
 - name: Ensure ruby install base exists
