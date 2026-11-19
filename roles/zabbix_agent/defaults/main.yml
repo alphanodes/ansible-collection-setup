@@ -52,6 +52,9 @@ zabbix_agent_binary: ''
 zabbix_agent_server_api: true
 
 zabbix_url: "https://{{ zabbix_server_vhost }}"
+# Path of the Zabbix frontend below zabbix_url, empty if it runs at the web root
+# (as set up by the zabbix_server role). Without it the httpapi plugin uses /zabbix
+zabbix_url_path: ''
 zabbix_api_user: Admin
 # Required if zabbix_agent_server_api is enabled
 zabbix_api_pass: ''
