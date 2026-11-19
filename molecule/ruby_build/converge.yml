@@ -5,7 +5,7 @@
 
   vars:
     ruby_source: ruby_build
-    ruby_version: 4.0.9
+    ruby_version: 4.0.10
 
   pre_tasks:
     - name: Update apt cache.
@@ -22,5 +22,5 @@
     - name: Verify ruby_bin_dir fact
       ansible.builtin.assert:
         that:
-          - ruby_bin_dir == '/opt/ruby/4.0.9/bin'
+          - ruby_bin_dir == '/opt/ruby/4.0.10/bin'
         quiet: true

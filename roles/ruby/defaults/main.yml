@@ -8,7 +8,7 @@
 #               with package, and leftovers of a former ruby_build setup are removed.
 ruby_source: package
 
-# Ruby version to compile with ruby_source: ruby_build, e.g. 4.0.9
+# Ruby version to compile with ruby_source: ruby_build, e.g. 4.0.10
 # (has to be a definition known by ruby_build_tool_version)
 ruby_version: ''
 
@@ -22,7 +22,7 @@ ruby_remove_other_versions: true
 ruby_configure_opts: '--enable-yjit --disable-install-doc'
 
 # ruby-build release (git tag), see https://github.com/rbenv/ruby-build/releases
-ruby_build_tool_version: v20261023
+ruby_build_tool_version: v20261119
 ruby_build_tool_repo: https://github.com/rbenv/ruby-build.git
 ruby_build_tool_dir: /usr/local/share/ruby-build
 

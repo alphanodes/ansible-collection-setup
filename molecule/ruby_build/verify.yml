@@ -5,7 +5,7 @@
   gather_facts: false
 
   vars:
-    ruby_bin: /opt/ruby/4.0.9/bin/ruby
+    ruby_bin: /opt/ruby/4.0.10/bin/ruby
 
   tasks:
     - name: Check compiled ruby version
@@ -32,7 +32,7 @@
 
     - name: Check install base permissions
       ansible.builtin.stat:
-        path: /opt/ruby/4.0.9
+        path: /opt/ruby/4.0.10
       register: ruby_install_dir
 
     - name: Gather installed packages
@@ -56,7 +56,7 @@
           - ansible_facts.packages.keys() | select('match', '^(ruby|libruby)') | list == []
           - ruby_path_version.stdout is search('^ruby 4\.0\.9 ')
           - ruby_links.results | map(attribute='stat.lnk_source') | list ==
-            ['bundle', 'bundler', 'erb', 'gem', 'irb', 'rake', 'ruby'] | map('regex_replace', '^', '/opt/ruby/4.0.9/bin/') | list
+            ['bundle', 'bundler', 'erb', 'gem', 'irb', 'rake', 'ruby'] | map('regex_replace', '^', '/opt/ruby/4.0.10/bin/') | list
         fail_msg: >-
           packages={{ ansible_facts.packages.keys() | select('match', '^(ruby|libruby)') | list }}
           version={{ ruby_path_version.stdout }}
@@ -64,7 +64,7 @@
 
     # bundler, as installed by the redmine role with gem install
     - name: Install gem with executable as user
-      ansible.builtin.command: /opt/ruby/4.0.9/bin/gem install --user-install --no-document bundler
+      ansible.builtin.command: /opt/ruby/4.0.10/bin/gem install --user-install --no-document bundler
       environment:
         HOME: /tmp/gemtest
       changed_when: false
@@ -121,7 +121,7 @@
             name: alphanodes.setup.ruby
           vars:
             ruby_source: ruby_build
-            ruby_version: 4.0.9
+            ruby_version: 4.0.10
 
         - name: Role has to fail
           ansible.builtin.set_fact:
@@ -161,7 +161,7 @@
         name: alphanodes.setup.ruby
       vars:
         ruby_source: ruby_build
-        ruby_version: 4.0.9
+        ruby_version: 4.0.10
         ruby_defer_cleanup: true
 
     - name: Check distribution ruby after deferred cleanup
@@ -194,7 +194,7 @@
         tasks_from: cleanup
       vars:
         ruby_source: ruby_build
-        ruby_version: 4.0.9
+        ruby_version: 4.0.10
 
     - name: Gather installed packages after deferred cleanup
       ansible.builtin.package_facts:

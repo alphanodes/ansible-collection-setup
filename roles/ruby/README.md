@@ -15,13 +15,13 @@ Available variables can be found in [defaults/main.yml](defaults/main.yml)
         - alphanodes.setup.ruby
 ```
 
-Compiled ruby with [ruby-build](https://github.com/rbenv/ruby-build) and YJIT, installed to `/opt/ruby/4.0.9`:
+Compiled ruby with [ruby-build](https://github.com/rbenv/ruby-build) and YJIT, installed to `/opt/ruby/4.0.10`:
 
 ```yaml
     - hosts: all
       vars:
         ruby_source: ruby_build
-        ruby_version: 4.0.9
+        ruby_version: 4.0.10
 
       roles:
         - alphanodes.setup.ruby
