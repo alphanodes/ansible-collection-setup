@@ -23,6 +23,16 @@
       become_user: postgres
       become: true
 
+    # Root owned and outside the home of zabbix, so zabbix cannot replace the
+    # query that sudo runs as postgres
+    - name: Install collation check query for zabbix
+      ansible.builtin.copy:
+        src: zabbix/pg_collation_mismatch.sql
+        dest: /etc/zabbix/pg_collation_mismatch.sql
+        owner: root
+        group: root
+        mode: '0644'
+
     - name: Install sudoer access for zabbix
       ansible.builtin.copy:
         src: sudoers.d/postgresql
@@ -64,6 +74,11 @@
       community.postgresql.postgresql_user:
         login_port: "{{ _postgresql_login_port | default(postgresql_port) }}"
         name: '{{ postgresql_zabbix_user }}'
+        state: absent
+
+    - name: Remove collation check query for zabbix
+      ansible.builtin.file:
+        path: /etc/zabbix/pg_collation_mismatch.sql
         state: absent
 
     - name: Remove PostgreSQL plugin credentials of the Zabbix agent

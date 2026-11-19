@@ -166,6 +166,42 @@
           - postgresql_plugin_keys.results[2].stdout is search('molecule_test')
         fail_msg: "{{ postgresql_plugin_keys.results | map(attribute='stdout') | list }}"
 
+    # Like the UserParameter pg_collation_mismatch of the agent: zabbix runs the
+    # query file through sudo as postgres (sudo-rs on Ubuntu)
+    - name: Run the collation check as zabbix through sudo
+      become: true
+      become_user: zabbix
+      ansible.builtin.command:
+        argv:
+          - sudo
+          - -n
+          - -u
+          - postgres
+          # No port: like the agent, pg_wrapper picks the port of the cluster
+          - psql
+          - -t
+          - -A
+          - -f
+          - /etc/zabbix/pg_collation_mismatch.sql
+      register: postgresql_collation_check
+      changed_when: false
+      failed_when: false
+
+    - name: Read the active sudo implementation
+      ansible.builtin.command: readlink -f /usr/bin/sudo
+      register: postgresql_sudo_impl
+      changed_when: false
+
+    - name: Assert the collation check returns a count
+      ansible.builtin.assert:
+        that:
+          - postgresql_collation_check.rc == 0
+          - postgresql_collation_check.stdout | trim is match('^[0-9]+$')
+        fail_msg: >-
+          Collation check failed with {{ postgresql_sudo_impl.stdout }}:
+          rc={{ postgresql_collation_check.rc }}
+          {{ postgresql_collation_check.stdout }} {{ postgresql_collation_check.stderr }}
+
     - name: Read obsolete zabbix sql PostgreSQL files
       ansible.builtin.stat:
         path: /var/lib/zabbix/postgresql

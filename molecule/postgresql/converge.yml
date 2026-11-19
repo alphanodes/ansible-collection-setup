@@ -12,6 +12,14 @@
         cache_valid_time: 600
       changed_when: false
 
+    # Ubuntu 26.04 servers run sudo-rs as sudo, the Docker image ships only the
+    # classic sudo. sudo-rs takes over through the alternatives with priority 50
+    - name: Install sudo-rs like on Ubuntu servers
+      ansible.builtin.apt:
+        name: sudo-rs
+        state: present
+      when: ansible_facts['distribution'] == 'Ubuntu'
+
   # The zabbix_agent role runs before postgresql on the servers (dependency of
   # the server role there) and provides the Zabbix repository for the plugin
   roles:

@@ -1,3 +1,5 @@
 # Only the collation check of the Zabbix agent (UserParameter
-# pg_collation_mismatch), never arbitrary commands as postgres
-zabbix ALL = (postgres) NOPASSWD: /usr/bin/psql -t -A -c SELECT count(\*) FROM pg_database WHERE datcollversion <> pg_database_collation_actual_version(oid);
+# pg_collation_mismatch), never arbitrary commands as postgres. The query is
+# read from a root owned file: sudo-rs (Ubuntu 26.04) rejects escaped
+# wildcards and does not match arguments containing spaces
+zabbix ALL = (postgres) NOPASSWD: /usr/bin/psql -t -A -f /etc/zabbix/pg_collation_mismatch.sql
