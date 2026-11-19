@@ -3,5 +3,4 @@
 # tools like cat or find with arbitrary arguments, they grant root access
 # (e.g. find -exec). passwd -S refuses the modifying options.
 Cmnd_Alias ZABBIX = /usr/bin/find /etc -type f -perm -002, /usr/bin/find /etc -type d -perm -002, /usr/bin/passwd -S *
-Cmnd_Alias MON_APT = /usr/bin/apt-get -qq update, /usr/bin/apt-get -dqq dist-upgrade
-zabbix ALL = NOPASSWD:SETENV: ZABBIX, MON_APT
+zabbix ALL = NOPASSWD:SETENV: ZABBIX

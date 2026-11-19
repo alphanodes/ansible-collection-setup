@@ -289,6 +289,7 @@
         - /usr/bin/stat /etc/shadow
         - /usr/bin/find /etc -maxdepth 0 -exec /bin/true ;
         - /usr/bin/find / -maxdepth 0
+        - /usr/bin/apt-get -qq update
       register: zabbix_forbidden_sudo
       changed_when: false
       failed_when: false
