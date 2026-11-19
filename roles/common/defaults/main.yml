@@ -26,6 +26,13 @@ nginx_group: www-data
 # Per-service roles will auto-detect SSL based on their configuration if not explicitly set
 nginx_with_ssl: true
 
+# Optional GitHub token for release lookups through the GitHub API (pandoc,
+# mailpit, starship). Unauthenticated requests are limited to 60 per hour and
+# IP, which the shared CI runners of GitHub exhaust easily. Defaults to
+# GITHUB_TOKEN of the controller environment, which GitHub Actions provides.
+# The lookups run on the target hosts, so leave it empty for regular rollouts
+github_api_token: "{{ lookup('ansible.builtin.env', 'GITHUB_TOKEN') }}"
+
 # set no_log (e.g. for passwords used)
 hide_sensitive_data: true
 

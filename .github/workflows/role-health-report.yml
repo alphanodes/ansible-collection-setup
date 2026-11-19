@@ -197,6 +197,8 @@ jobs:
           echo "duration=${MINUTES}m ${SECONDS}s" >> $GITHUB_OUTPUT
         env:
           MOLECULE_DISTRO: debian13
+          # Raises the GitHub API rate limit for release lookups (github_api_token)
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
       - name: Run idempotency check
@@ -218,6 +220,8 @@ jobs:
           echo "changed=$CHANGED" >> $GITHUB_OUTPUT
         env:
           MOLECULE_DISTRO: debian13
+          # Raises the GitHub API rate limit for release lookups (github_api_token)
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
       - name: Run Gixy security check

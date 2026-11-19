@@ -2,13 +2,17 @@
 
 # Resolve mailpit version (supports 'latest')
 
+# A token raises the API rate limit (see github_api_token in the common role).
+# The task runs on the target host, so no_log keeps the token out of its journal
 - name: Fetch latest mailpit version from GitHub API
   ansible.builtin.uri:
     url: https://api.github.com/repos/axllent/mailpit/releases/latest
+    headers: "{{ {'Authorization': 'Bearer ' ~ github_api_token} if github_api_token | length > 0 else {} }}"
     return_content: true
   register: mailpit_latest_release
   when: mailpit_version == 'latest'
   changed_when: false
+  no_log: "{{ github_api_token | length > 0 }}"
 
 - name: Set resolved mailpit version (latest)
   ansible.builtin.set_fact:

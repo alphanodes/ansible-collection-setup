@@ -51,3 +51,5 @@ jobs:
           molecule test -s mailpit
         env:
           MOLECULE_DISTRO: ${{ matrix.distro }}
+          # Raises the GitHub API rate limit for release lookups (github_api_token)
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

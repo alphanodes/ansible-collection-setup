@@ -1,21 +1,39 @@
 ---
 
+# A token raises the API rate limit (see github_api_token in the common role).
+# The task runs on the target host, so no_log keeps the token out of its journal
 - name: Fetch pandoc release from GitHub API
   ansible.builtin.uri:
     url: "https://api.github.com/repos/jgm/pandoc/releases/{{ 'latest' if pandoc_version == 'latest' else 'tags/' ~ pandoc_version }}"
+    headers: "{{ {'Authorization': 'Bearer ' ~ github_api_token} if github_api_token | length > 0 else {} }}"
     return_content: true
   register: pandoc_release
   check_mode: false
   changed_when: false
+  no_log: "{{ github_api_token | length > 0 }}"
 
 # The asset name carries the Debian revision (pandoc-3.14-1-amd64.deb),
 # which is part of the package version dpkg reports
-- name: Set pandoc package to install
+- name: Find pandoc package of the release
   ansible.builtin.set_fact:
-    pandoc_deb_asset: >-
+    pandoc_deb_assets: >-
       {{ pandoc_release.json.assets
          | selectattr('name', 'match', '^pandoc-' ~ (pandoc_release.json.tag_name | regex_escape) ~ '-[0-9]+-' ~ pandoc_arch ~ '\.deb$')
-         | first }}
+         | list }}
+
+- name: Ensure the release provides a pandoc package
+  ansible.builtin.assert:
+    that:
+      - pandoc_deb_assets | length > 0
+    fail_msg: >-
+      pandoc release {{ pandoc_release.json.tag_name }} has no package
+      pandoc-{{ pandoc_release.json.tag_name }}-<revision>-{{ pandoc_arch }}.deb
+      (not uploaded yet or the asset naming changed)
+    quiet: true
+
+- name: Set pandoc package to install
+  ansible.builtin.set_fact:
+    pandoc_deb_asset: "{{ pandoc_deb_assets | first }}"
 
 - name: Set pandoc package version
   ansible.builtin.set_fact:
@@ -28,8 +46,12 @@
   changed_when: false
   failed_when: false
 
+# Skipped in check mode: tempfile does not support it, so there would be no
+# download directory
 - name: Download and install pandoc package
-  when: pandoc_installed_version.stdout != pandoc_deb_version
+  when:
+    - pandoc_installed_version.stdout != pandoc_deb_version
+    - not ansible_check_mode
   block:
     - name: Create temporary download directory
       ansible.builtin.tempfile:
@@ -50,11 +72,13 @@
       ansible.builtin.apt:
         deb: "{{ pandoc_temp_dir.path }}/{{ pandoc_deb_asset.name }}"
 
+  always:
     - name: Remove temporary download directory
       ansible.builtin.file:
         path: "{{ pandoc_temp_dir.path }}"
         state: absent
       changed_when: false
+      when: pandoc_temp_dir.path is defined
 
 # Left over from the distribution package, whose files the upstream package
 # took over (it declares Replaces: pandoc-data)
