@@ -70,7 +70,7 @@ zabbix_export:
               value: automation
           triggers:
             - uuid: 7b240202a0da4c27a6174b8791e9ba26
-              expression: 'find(/Redmine Automation/web.page.get[{$REDMINE.URL}/health_check],,"like","HTTP/1.1 200")=0'
+              expression: 'count(/Redmine Automation/web.page.get[{$REDMINE.URL}/health_check],#3,"like","HTTP/1.1 200")=0'
               name: 'Redmine Health Check'
               priority: WARNING
               dependencies:

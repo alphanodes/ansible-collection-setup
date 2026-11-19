@@ -159,11 +159,15 @@ zabbix_export:
               priority: WARNING
               description: 'Requests are waiting in the backlog for more than 5 minutes. All workers and threads are busy. Consider increasing workers or threads.'
               manual_close: 'YES'
+              dependencies:
+                - name: 'Puma: High request backlog'
+                  expression: 'min(/Puma/puma.backlog,2m)>{$PUMA.BACKLOG.HIGH}'
+                  recovery_expression: 'max(/Puma/puma.backlog,5m)=0'
               tags:
                 - tag: scope
                   value: performance
             - uuid: 1a5ae03cb070487c9c763d78945154f9
-              expression: 'last(/Puma/puma.backlog)>{$PUMA.BACKLOG.HIGH}'
+              expression: 'min(/Puma/puma.backlog,2m)>{$PUMA.BACKLOG.HIGH}'
               recovery_mode: RECOVERY_EXPRESSION
               recovery_expression: 'max(/Puma/puma.backlog,5m)=0'
               name: 'Puma: High request backlog'
@@ -358,6 +362,10 @@ zabbix_export:
               priority: WARNING
               description: 'Average thread utilization exceeds the warning threshold. The server is approaching saturation.'
               manual_close: 'YES'
+              dependencies:
+                - name: 'Puma: Critical thread utilization'
+                  expression: 'avg(/Puma/puma.utilization,5m)>{$PUMA.UTILIZATION.HIGH}'
+                  recovery_expression: 'avg(/Puma/puma.utilization,10m)<{$PUMA.UTILIZATION.WARN}'
               tags:
                 - tag: scope
                   value: performance
