@@ -1,10 +1,5 @@
 ---
 
-- name: Detect controller OS is linux
-  ansible.builtin.set_fact:
-    controller_is_linux: "{{ False if lookup('env', 'LC_TERMINAL') == 'iTerm2' or lookup('env', 'TERM_PROGRAM') == 'vscode' else True }}"
-  delegate_to: localhost
-
 - name: Create hostgroups
   community.zabbix.zabbix_group:
     host_group: "{{ zabbix_host_groups }}"
@@ -46,15 +41,13 @@
         linux_install_timestamp: '{{ oldest_dir.ctime | int }}'
       when: oldest_dir | length > 0
 
-    - name: Set linux installation date (Linux)
+    # strftime runs in Python on the controller, independent of its date
+    # command (GNU and BSD syntax differ). UTC keeps the value the same for
+    # rollouts from CI and from a workstation in another time zone
+    - name: Set linux installation date
       ansible.builtin.set_fact:
-        linux_install_date: "{{ lookup('pipe', 'date -d @' + linux_install_timestamp | string + ' +\"%Y-%m-%d\"') }}"
-      when: controller_is_linux
-
-    - name: Set linux installation date (OSX)
-      ansible.builtin.set_fact:
-        linux_install_date: "{{ lookup('pipe', 'date -r ' + linux_install_timestamp | string + ' +\"%Y-%m-%d\"') }}"
-      when: not controller_is_linux
+        linux_install_date: "{{ '%Y-%m-%d' | strftime(linux_install_timestamp | int, utc=true) }}"
+      when: linux_install_timestamp is defined
 
     - name: Create inventory information
       ansible.builtin.set_fact:
