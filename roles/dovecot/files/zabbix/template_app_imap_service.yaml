@@ -21,7 +21,7 @@ zabbix_export:
         - uuid: 823451f4ebb6437c88c2915ba6d6faad
           name: 'IMAP service is running'
           type: SIMPLE
-          key: 'net.tcp.port[,993]'
+          key: 'net.tcp.service[tcp,,993]'
           history: 1w
           valuemap:
             name: 'Service state'
@@ -30,7 +30,7 @@ zabbix_export:
               value: network
           triggers:
             - uuid: 075e6217564d45fdb713f810a9eef87c
-              expression: 'max(/IMAP Service/net.tcp.port[,993],#3)=0'
+              expression: 'max(/IMAP Service/net.tcp.service[tcp,,993],#3)=0'
               name: 'IMAP service is down on {HOST.NAME}'
               priority: AVERAGE
               tags:

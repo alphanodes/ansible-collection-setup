@@ -1,6 +1,7 @@
 {{ managed_by_ansible | comment }}
 # Only the exact root commands used by linux_check.sh. Never allow generic
 # tools like cat or find with arbitrary arguments, they grant root access
-# (e.g. find -exec). passwd -S refuses the modifying options.
-Cmnd_Alias ZABBIX = /usr/bin/find /etc -type f -perm -002, /usr/bin/find /etc -type d -perm -002, /usr/bin/passwd -S *
+# (e.g. find -exec). passwd -S refuses the modifying options, sshd -T only
+# prints the effective configuration.
+Cmnd_Alias ZABBIX = /usr/bin/find /etc -type f -perm -002, /usr/bin/find /etc -type d -perm -002, /usr/bin/passwd -S *, /usr/sbin/sshd -T
 zabbix ALL = NOPASSWD:SETENV: ZABBIX

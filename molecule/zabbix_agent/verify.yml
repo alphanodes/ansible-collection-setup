@@ -266,6 +266,52 @@
           only ignored failed: {{ systemd_status_ignored.stdout }}
         success_msg: "systemd status ignores SentinelOne tasks and reports other failed units"
 
+    # sshd_config is mode 0600 (ssh role), so the check has to use sshd -T
+    - name: Read sshd settings via linux_check.sh as zabbix
+      ansible.builtin.command: /usr/share/zabbix_addons/scripts/linux_check.sh {{ item }} sshd_config
+      become: true
+      become_user: zabbix
+      loop:
+        - PasswordAuthentication
+        - PermitEmptyPasswords
+        - StrictModes
+        - X11Forwarding
+      register: sshd_checks
+      changed_when: false
+
+    - name: Verify the sshd checks return yes or no
+      ansible.builtin.assert:
+        that:
+          - sshd_checks.results | map(attribute='stdout') | reject('in', ['yes', 'no']) | list | length == 0
+        fail_msg: "sshd checks return no setting: {{ sshd_checks.results | map(attribute='stdout') | list }}"
+        success_msg: "sshd checks read the effective sshd configuration"
+
+    # With fork_worker, workers 1..n are children of worker 0, so the check
+    # must select the workers by process title, not by parent PID
+    - name: Start fake puma processes as nobody
+      ansible.builtin.shell: |
+        setsid runuser -u nobody -- bash -c 'exec -a "puma 8.0.0 (unix:///run/x/redmine.sock) [x]" sleep 300' > /dev/null 2>&1 &
+        setsid runuser -u nobody -- bash -c 'exec -a "puma: cluster worker 0: 1 [x]" sleep 300' > /dev/null 2>&1 &
+        setsid runuser -u nobody -- bash -c 'exec -a "puma: cluster worker 1: 1 [x]" sleep 300' > /dev/null 2>&1 &
+        sleep 1
+      changed_when: true
+
+    - name: Run puma worker memory item through the agent
+      ansible.builtin.command: zabbix_agent2 -c /etc/zabbix/zabbix_agent2.conf -t 'puma_worker_rss_max[{{ item }}]'
+      loop:
+        - nobody
+        - daemon
+      register: puma_rss
+      changed_when: false
+
+    - name: Verify puma worker memory is a number for cluster and missing workers
+      ansible.builtin.assert:
+        that:
+          - puma_rss.results[0].stdout is regex('\\[[a-z]\\|[1-9][0-9]*\\]')
+          - puma_rss.results[1].stdout is regex('\\[[a-z]\\|0\\]')
+        fail_msg: "puma worker memory is wrong: {{ puma_rss.results | map(attribute='stdout') | list }}"
+        success_msg: "puma worker memory covers all workers and reports 0 without puma"
+
     # zabbix may only run the exact root commands of linux_check.sh, generic
     # tools like cat or find with arbitrary arguments would grant root access
     - name: Run allowed root commands as zabbix via sudo
@@ -276,6 +322,7 @@
         - /usr/bin/find /etc -type f -perm -002
         - /usr/bin/find /etc -type d -perm -002
         - /usr/bin/passwd -S root
+        - /usr/sbin/sshd -T
       changed_when: false
 
     - name: Try forbidden root commands as zabbix via sudo

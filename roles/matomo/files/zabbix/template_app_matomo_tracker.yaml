@@ -49,6 +49,14 @@ zabbix_export:
             - tag: source
               value: redis
           triggers:
+            - uuid: 6c95e84c4b694e18bd1c5626f2f6ef27
+              expression: 'nodata(/Matomo Tracker/matomo.queue.total_size,10m)=1'
+              name: 'Matomo: No tracking queue data for 10m'
+              priority: HIGH
+              description: 'The tracking queue size returns no data, usually because Redis does not answer. Tracking requests cannot be queued then.'
+              tags:
+                - tag: scope
+                  value: availability
             - uuid: 60a9375b81c64f338ea96612be89d987
               expression: 'min(/Matomo Tracker/matomo.queue.total_size,30m)>{$MATOMO.QUEUE.SIZE.WARN}'
               recovery_mode: RECOVERY_EXPRESSION

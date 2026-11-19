@@ -40,6 +40,14 @@ zabbix_export:
             - tag: log-type
               value: warning
           triggers:
+            - uuid: 9cfbdd44affc4931adf44a84dc315980
+              expression: 'nodata(/PostgreSQL Custom/pg_collation_mismatch,3h)=1'
+              name: 'PostgreSQL: No collation check data for 3h'
+              priority: INFO
+              description: 'The collation check returns no data, e.g. because sudo or psql fails. Check the item error on the host.'
+              tags:
+                - tag: scope
+                  value: availability
             - uuid: c9c61309ffcd4e14b3918cffb6b17320
               expression: 'last(/PostgreSQL Custom/pg_collation_mismatch)>0'
               recovery_mode: RECOVERY_EXPRESSION

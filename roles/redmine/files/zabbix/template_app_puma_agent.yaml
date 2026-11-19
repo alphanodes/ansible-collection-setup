@@ -9,16 +9,17 @@ zabbix_export:
       template: 'Puma'
       name: 'Puma'
       description: |
-        Performance monitoring for Puma web server via pumactl stats.
-        Collects worker, thread and request metrics from the Puma control
-        socket using UserParameter puma_stats.
+        Performance monitoring for Puma web server via the stats endpoint of
+        the Puma control app. Collects worker, thread and request metrics
+        using UserParameter puma_stats (curl on the control socket).
 
         Supports both cluster mode (multiple workers) and single mode.
 
         This template requires:
-        - Zabbix agent with UserParameter puma_stats configured
-        - sudo access for zabbix user to run pumactl as the application user
-        - Puma control app enabled (activate_control_app in puma.rb)
+        - Zabbix agent with UserParameter puma_stats and puma_worker_rss_max
+          configured by the alphanodes.setup.zabbix_agent role
+        - Puma control app enabled (activate_control_app in puma.rb) with its
+          socket at /run/<instance>/redmine-pumactl.sock
       vendor:
         name: AlphaNodes
         version: 7.4-__DATE__
@@ -33,7 +34,7 @@ zabbix_export:
           history: 1d
           trends: '0'
           value_type: TEXT
-          description: 'Raw JSON output from pumactl stats. Master item for all dependent Puma metrics.'
+          description: 'Raw JSON from the stats endpoint of the Puma control app. Master item for all dependent Puma metrics.'
           tags:
             - tag: component
               value: puma
@@ -43,7 +44,7 @@ zabbix_export:
               name: 'Puma: No stats data received'
               event_name: 'Puma: No stats data for {$PUMA.NODATA.TIMEOUT}'
               priority: HIGH
-              description: 'No data received from pumactl stats. Puma may be down or the UserParameter is misconfigured.'
+              description: 'No data received from the Puma stats endpoint. Puma may be down or the control socket is missing.'
               manual_close: 'YES'
               tags:
                 - tag: scope

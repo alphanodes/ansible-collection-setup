@@ -34,7 +34,7 @@ zabbix_export:
                 value: (cloud-init|cloud-init-main|e2scrub_reap|grub-common|grub2-common|grub-initrd-fallback|hc-net-scan|hv-fcopy-daemon|secureboot-db|unbound-resolvconf)
                 operator: NOT_MATCHES_REGEX
               - macro: '{#STATUS}'
-                value: (enabled|disabled)
+                value: '^(enabled|disabled)(\s|$)'
           lifetime_type: DELETE_IMMEDIATELY
           item_prototypes:
             - uuid: a699466247e241dd8a79bb2c625f724e

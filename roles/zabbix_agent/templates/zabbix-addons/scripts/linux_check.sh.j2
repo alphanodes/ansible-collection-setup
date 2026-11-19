@@ -14,8 +14,9 @@ ZBX_REQ_DATA_SOURCE="$2"
 ZBX_REQ_DATA_PARAM="$3"
 ZBX_REQ_DATA_PARAM2="$4"
 
-# SSH configuration
-SSHD_CONFIG=/etc/ssh/sshd_config
+# SSH server binary, sshd -T prints the effective configuration
+# including all sshd_config.d drop-ins (sshd_config itself is mode 0600)
+SSHD_BIN=/usr/sbin/sshd
 
 #
 # Error handling:
@@ -110,13 +111,14 @@ get_users(){
 	[ -z "$value" ] && echo $ERROR_WRONG_PARAM || echo $value
 }
 
-# get from sshd_config
+# get the effective sshd configuration value (keys are lower case in sshd -T)
 get_sshd_config(){
 	if [ -z "$ZBX_REQ_DATA" ]; then
 	  echo $ERROR_WRONG_PARAM
 	  exit 1
 	fi
-	value=`cat $SSHD_CONFIG | sed -n -e "/^[[:space:]]*$ZBX_REQ_DATA/{s/.*[[:space:]]//p}"`
+	key=`echo "$ZBX_REQ_DATA" | tr '[:upper:]' '[:lower:]'`
+	value=`sudo $SSHD_BIN -T 2>/dev/null | awk -v k="$key" '$1 == k {print $2; exit}'`
 	[ -z "$value" ] && echo $ERROR_WRONG_PARAM || echo $value
 }
 

@@ -49,6 +49,14 @@ zabbix_export:
             - tag: source
               value: piwik_option
           triggers:
+            - uuid: e7fb6b043aad4f82ab6c912ea0e4be73
+              expression: 'nodata(/Matomo Archiver/matomo.archive.last_success.age,30m)=1'
+              name: 'Matomo: No archive age data for 30m'
+              priority: WARNING
+              description: 'The archive age query returns no data, e.g. because the database is not reachable. The archive triggers cannot fire meanwhile.'
+              tags:
+                - tag: scope
+                  value: availability
             - uuid: 8eb4d3f931bd4fad9a851b8e0dc9ccc7
               expression: 'last(/Matomo Archiver/matomo.archive.last_success.age)>{$MATOMO.ARCHIVE.AGE.WARN}'
               recovery_mode: RECOVERY_EXPRESSION

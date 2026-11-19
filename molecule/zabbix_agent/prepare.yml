@@ -47,3 +47,10 @@
         content: "server { include /usr/share/zabbix_addons/conf/nginx-server-status.conf; }\n"
         dest: /etc/nginx/sites-available/old.conf
         mode: '0644'
+
+    # linux_check.sh reads the effective sshd configuration with sshd -T
+    - name: Install OpenSSH server for the sshd configuration check
+      ansible.builtin.apt:
+        name: openssh-server
+        state: present
+        update_cache: true

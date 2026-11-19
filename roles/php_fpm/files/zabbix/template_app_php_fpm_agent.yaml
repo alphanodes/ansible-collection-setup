@@ -10,8 +10,7 @@ zabbix_export:
       name: PHP-fpm
       description: |
         Extends the official PHP-FPM template with an alert on errors in the
-        journal of the php-fpm service. Set {$PHP_VERSION} (e.g. 8.4) as
-        global macro and override it on hosts with another PHP version.
+        journal of all php*-fpm services, independent of the PHP version.
 
         This template requires:
         - Zabbix agent with UserParameter phpfpm_log[*] configured by the
@@ -26,7 +25,7 @@ zabbix_export:
       items:
         - uuid: 769f3d3890c14604a58cca64d1a0a39b
           name: 'php-fpm log errors'
-          key: 'phpfpm_log[php{$PHP_VERSION}-fpm]'
+          key: 'phpfpm_log'
           delay: 10m
           history: 10d
           value_type: TEXT
@@ -35,7 +34,7 @@ zabbix_export:
               value: PHP-fpm
           triggers:
             - uuid: 3257c8052d3242c98b15dd02c0ce9da3
-              expression: 'last(/PHP-fpm/phpfpm_log[php{$PHP_VERSION}-fpm])<>""'
+              expression: 'last(/PHP-fpm/phpfpm_log)<>""'
               name: 'PHP-fpm errors'
               priority: WARNING
               manual_close: 'YES'

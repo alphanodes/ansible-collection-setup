@@ -2,13 +2,13 @@
 
 ## Overview
 
-Performance monitoring for Puma web server using pumactl stats via the Puma
-control socket. Collects worker, thread and request metrics through a Zabbix
+Performance monitoring for Puma web server using the stats endpoint of the
+Puma control app. Collects worker, thread and request metrics through a Zabbix
 agent UserParameter without impacting application performance.
 
 Designed for Puma running in cluster mode (multiple workers) but also supports
-single mode. All metrics are extracted from a single `pumactl stats` JSON
-response using dependent items with JavaScript preprocessing.
+single mode. All metrics are extracted from a single stats JSON response
+using dependent items with JavaScript preprocessing.
 
 ## Requirements
 
@@ -16,25 +16,23 @@ Zabbix version: 7.4 and higher.
 
 ### Prerequisites
 
-- Zabbix agent with **UserParameter `puma_stats`** configured
-- sudo access for `zabbix` user to run `pumactl` as the application user
-- Puma **control app enabled** (`activate_control_app` in puma.rb)
-- Puma **state file** at `/run/<instance>/redmine.state`
+- Zabbix agent with **UserParameters `puma_stats` and `puma_worker_rss_max`**
+  configured by the `alphanodes.setup.zabbix_agent` role
+- Puma **control app enabled** (`activate_control_app` in puma.rb) with its
+  socket at `/run/<instance>/redmine-pumactl.sock`
 
 ### Permissions
 
-The `zabbix` user needs sudo access to the application user. The Redmine
-Ansible role configures this automatically:
-
-```text
-zabbix ALL = (<redmine_user>) NOPASSWD: ALL
-```
-
-The UserParameter command runs:
+No sudo is needed. The `zabbix` user reads the stats directly from the control
+socket:
 
 ```bash
-sudo -u <instance> -i -- pumactl stats -S /run/<instance>/redmine.state
+curl -s --unix-socket /run/<instance>/redmine-pumactl.sock http://localhost/stats
 ```
+
+The worker memory comes from `ps -u <instance>` over all `puma: cluster worker`
+processes. With `fork_worker`, workers 1..n are children of worker 0, not of
+the master, so the parent PID is no reliable selector.
 
 ## Tested versions
 

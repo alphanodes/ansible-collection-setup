@@ -54,6 +54,14 @@ zabbix_export:
             - tag: log-type
               value: error
           triggers:
+            - uuid: 1c182a9a36eb41bbbd9b1416f190a81e
+              expression: 'nodata(/Journal/journalctl[],40m)=1 and {$JOURNAL.ALERT}=1'
+              name: 'Journal: No journal check data for 40m'
+              priority: INFO
+              description: 'The journal check returns no data, e.g. because journalctl runs into the agent timeout. Errors in the journal go unnoticed meanwhile.'
+              tags:
+                - tag: scope
+                  value: availability
             - uuid: 85fc0aa2fef54492ac12e428e6390923
               expression: 'last(/Journal/journalctl[])<>"" and {$JOURNAL.ALERT}=1'
               name: 'Journal: Error messages found'

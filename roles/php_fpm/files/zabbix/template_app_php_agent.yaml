@@ -32,7 +32,7 @@ zabbix_export:
               value: PHP
           triggers:
             - uuid: 169c8869e8b547f3837aea8826558e46
-              expression: 'find(/PHP/php[display_errors,info,{$PHP_INFO_PORT}],,"like","")=0'
+              expression: 'find(/PHP/php[display_errors,info,{$PHP_INFO_PORT}],,"regexp","^(1|[Oo]n)$")=1'
               name: 'PHP display_errors=On'
               url: 'https://www.php.net/manual/en/errorfunc.configuration.php#ini.display-errors'
               priority: WARNING
@@ -48,7 +48,7 @@ zabbix_export:
               value: PHP
           triggers:
             - uuid: 3356f7437a6940fbb6a457a95f5aced3
-              expression: 'find(/PHP/php[expose_php,info,{$PHP_INFO_PORT}],,"like","")=0'
+              expression: 'find(/PHP/php[expose_php,info,{$PHP_INFO_PORT}],,"regexp","^(1|[Oo]n)$")=1'
               name: 'PHP expose_php=On'
               priority: WARNING
               description: 'For security reasons expose_php should be Off.'

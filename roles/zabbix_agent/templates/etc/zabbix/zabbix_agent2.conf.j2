@@ -352,7 +352,7 @@ UserParameter=journalctl[*], bash {{ zabbix_addons_dir }}/scripts/journal_check.
 UserParameter=linux[*], bash {{ zabbix_addons_dir }}/scripts/linux_check.sh "$1" "$2" "$3" "$4"
 {% if php_installed %}
 UserParameter=php_log[*], journalctl {{ zabbix_agent_journalctl_options }} -t php -p 4 --since "{{ zabbix_agent_journalctl_since }}" | grep -Ei "error|RuntimeException"
-UserParameter=phpfpm_log[*], journalctl {{ zabbix_agent_journalctl_options }} -u $1 --since "{{ zabbix_agent_journalctl_since }}" | grep -Ei "error\:|RuntimeException"
+UserParameter=phpfpm_log, journalctl {{ zabbix_agent_journalctl_options }} -u 'php*-fpm.service' --since "{{ zabbix_agent_journalctl_since }}" | grep -Ei "error\:|RuntimeException"
 UserParameter=php[*], bash {{ zabbix_addons_dir }}/scripts/php_check.sh "$1" "$2" "$3"
 {% endif %}
 {% if drupal_installed %}
@@ -364,8 +364,8 @@ UserParameter=pg_collation_mismatch, sudo -u postgres psql -t -A -c "SELECT coun
 {% if redmine_installed %}
 UserParameter=redmine_log[*], bash {{ zabbix_addons_dir }}/scripts/journal_check.sh redmine "$1"
 UserParameter=redmine_journal[*], bash {{ zabbix_addons_dir }}/scripts/journal_check.sh redmine_json "$1"
-UserParameter=puma_stats[*], sudo -u $1 -- bash -lc 'pumactl stats -S /run/$1/redmine.state' | tail -n +2
-UserParameter=puma_worker_rss_max[*], ps -o rss= --ppid $(cat /run/$1/redmine.pid 2>/dev/null) 2>/dev/null | sort -rn | head -1
+UserParameter=puma_stats[*], curl -s --max-time 3 --unix-socket /run/$1/redmine-pumactl.sock http://localhost/stats
+UserParameter=puma_worker_rss_max[*], ps -u $1 -o rss=,args= | awk '/puma: cluster worker/ {w=1; if ($$1 > m) m = $$1} /^ *[0-9]+ puma [0-9]/ {s = $$1} END {print (w ? m : s) + 0}'
 {% endif %}
 
 ### Parameter for monitoring disk performance
