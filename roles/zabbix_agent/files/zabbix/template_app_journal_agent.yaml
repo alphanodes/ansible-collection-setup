@@ -48,6 +48,11 @@ zabbix_export:
           trends: '0'
           value_type: TEXT
           description: 'Journal lines of all units matching the error keywords within the configured time window (default: 4 hours), ignore patterns already applied. Empty means no errors.'
+          preprocessing:
+            # store only changes, the heartbeat stays below the nodata window of 40m
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 30m
           tags:
             - tag: component
               value: journal

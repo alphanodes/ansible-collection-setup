@@ -368,9 +368,6 @@ UserParameter=puma_stats[*], curl -s --max-time 3 --unix-socket /run/$1/redmine-
 UserParameter=puma_worker_rss_max[*], ps -u $1 -o rss=,args= | awk '/puma: cluster worker/ {w=1; if ($$1 > m) m = $$1} /^ *[0-9]+ puma [0-9]/ {s = $$1} END {print (w ? m : s) + 0}'
 {% endif %}
 
-### Parameter for monitoring disk performance
-UserParameter=custom.vfs.discover_disks, python3 {{ zabbix_addons_dir }}/scripts/diskstats_lld.py
-
 ### Parameter for systemctl monitoring
 {% raw %}
 UserParameter=services.systemctl,echo "{\"data\":[$(systemctl list-unit-files --type=service|grep \.service|grep -v "@"|sed -E -e "s/\.service\s+/\",\"{#STATUS}\":\"/;s/(\s+)?$/\"},/;s/^/{\"{#NAME}\":\"/;$ s/.$//")]}"

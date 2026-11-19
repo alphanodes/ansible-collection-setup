@@ -169,8 +169,14 @@
     - journal_check.sh
     - systemd_status.sh
     - php_check.sh
-    - diskstats_lld.py
   notify: Restart zabbix-agent
+
+# Disk statistics come from the block device discovery of the official
+# Linux template, the own Disk Performance template is gone
+- name: Remove obsolete disk discovery script
+  ansible.builtin.file:
+    path: '{{ zabbix_addons_dir }}/scripts/diskstats_lld.py'
+    state: absent
 
 - name: Install zabbix drush script
   ansible.builtin.template:

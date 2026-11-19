@@ -186,6 +186,53 @@ zabbix_export:
               tags:
                 - tag: scope
                   value: performance
+        - uuid: 6ab8c4fe262b406facebd6bdc8aa0fdd
+          name: 'GitLab: Readiness'
+          type: ZABBIX_ACTIVE
+          key: gitlab.readiness
+          history: '0'
+          value_type: TEXT
+          description: 'Raw JSON of the GitLab readiness endpoint (/-/readiness?all=1), queried on 127.0.0.1. Master item for the readiness status.'
+          tags:
+            - tag: component
+              value: health
+          triggers:
+            - uuid: e15ee949607e417591900533f612c177
+              expression: 'nodata(/GitLab/gitlab.readiness,{$GITLAB.NODATA.TIMEOUT})=1'
+              name: 'GitLab: No readiness data for {$GITLAB.NODATA.TIMEOUT}'
+              priority: WARNING
+              description: 'The readiness check returns no data. Check that the UserParameter gitlab.readiness is deployed and the agent is running.'
+              tags:
+                - tag: scope
+                  value: availability
+        - uuid: 6c4b2ceb453c4e1fad12a1e70e005e84
+          name: 'GitLab: Readiness status'
+          type: DEPENDENT
+          key: gitlab.readiness.status
+          history: 14d
+          value_type: CHAR
+          description: 'Overall readiness status of GitLab (ok, failed). "unreachable" when GitLab does not answer.'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.status
+              error_handler: CUSTOM_VALUE
+              error_handler_params: unreachable
+          master_item:
+            key: gitlab.readiness
+          tags:
+            - tag: component
+              value: health
+          triggers:
+            - uuid: 6df70209bb5146ca9ce82d2325a4906b
+              expression: 'count(/GitLab/gitlab.readiness.status,#5,"eq","ok")=0'
+              name: 'GitLab: Not ready'
+              event_name: 'GitLab: Not ready ({ITEM.LASTVALUE})'
+              priority: HIGH
+              description: 'The GitLab readiness check has not returned "ok" for 5 checks in a row. A component (database, Redis, Gitaly, workhorse) is down or GitLab does not answer. Short restarts do not trigger.'
+              tags:
+                - tag: scope
+                  value: availability
       tags:
         - tag: class
           value: software

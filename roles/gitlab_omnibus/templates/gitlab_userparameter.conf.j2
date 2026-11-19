@@ -1,0 +1,7 @@
+{{ managed_by_ansible | comment }}
+#
+# Zabbix agent UserParameter for the GitLab template: readiness of all
+# GitLab components. Queried on 127.0.0.1, which is always part of the
+# GitLab monitoring whitelist (gitlab_monitoring_ip_whitelist).
+
+UserParameter=gitlab.readiness,curl -sk --max-time 4 --connect-to ::127.0.0.1: "{{ gitlab_external_url }}/-/readiness?all=1"

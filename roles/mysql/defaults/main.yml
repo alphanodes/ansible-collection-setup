@@ -167,10 +167,11 @@ mysql_zabbix_password: '{{ [ansible_facts["machine_id"], ansible_facts["hostname
 # (SELECT on all schemas) and its my.cnf at {{ zabbix_agent_home }}/.my.cnf.
 mysql_with_matomo_archiver_check: false
 mysql_matomo_archiver_userparameter_file: /etc/zabbix/zabbix_agent2.d/matomo_archiver.conf
-# Fallback for matomo_db_tables_prefix on hosts where only the mysql
-# role runs (dedicated Matomo DB servers without the matomo role). Kept
-# in sync with the matomo role default; override via host_vars together
-# with matomo_db_tables_prefix on legacy Piwik-prefixed installs.
+# Fallbacks for matomo_db_name and matomo_db_tables_prefix on hosts where
+# only the mysql role runs (dedicated Matomo DB servers without the matomo
+# role). Kept in sync with the matomo role defaults; override via host_vars
+# on installs with another database name or legacy Piwik-prefixed tables.
+matomo_db_name: matomo
 matomo_db_tables_prefix: matomo_
 
 mysql_replication_with_write: false

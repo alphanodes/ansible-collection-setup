@@ -62,6 +62,10 @@ zabbix_export:
               recovery_mode: RECOVERY_EXPRESSION
               recovery_expression: 'max(/Matomo Tracker/matomo.queue.total_size,15m)<{$MATOMO.QUEUE.SIZE.WARN}'
               name: 'Matomo: Tracking queue backlog growing'
+              dependencies:
+                - name: 'Matomo: Tracking queue critical backlog'
+                  expression: 'min(/Matomo Tracker/matomo.queue.total_size,30m)>{$MATOMO.QUEUE.SIZE.DISASTER}'
+                  recovery_expression: 'max(/Matomo Tracker/matomo.queue.total_size,15m)<{$MATOMO.QUEUE.SIZE.DISASTER}'
               event_name: 'Matomo: tracking queue at {ITEM.LASTVALUE} entries'
               priority: HIGH
               description: |

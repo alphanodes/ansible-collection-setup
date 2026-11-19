@@ -3,7 +3,8 @@
 ## Overview
 
 Log-based error monitoring for GitLab Omnibus installations using native
-Zabbix `log[]` and `log.count[]` active check items.
+Zabbix `log[]` and `log.count[]` active check items, plus a readiness check
+of all GitLab components.
 
 This template monitors GitLab Omnibus log files directly via the Zabbix
 agent, detecting errors in nginx, Puma, Sidekiq and Gitaly without
@@ -21,6 +22,9 @@ Zabbix version: 7.4 and higher.
 - Zabbix agent with **active checks** enabled (`ServerActive` configured)
 - Read access to `/var/log/gitlab/` for the Zabbix user
 - GitLab Omnibus installation with default log paths
+- UserParameter `gitlab.readiness`, deployed by the `alphanodes.setup.gitlab_omnibus`
+  role. It queries `/-/readiness?all=1` on 127.0.0.1, which is always part of
+  `gitlab_monitoring_ip_whitelist`
 
 ### File permissions
 
@@ -72,6 +76,8 @@ setting. All monitoring logic is contained in this template.
 | Puma: Error count | Numeric (active) | `log.count[...]` | Count of fatal/OOM errors per interval |
 | Sidekiq: Failure count | Numeric (active) | `log.count[...]` | Count of failed background jobs per interval |
 | Gitaly: Error count | Numeric (active) | `log.count[...]` | Count of Gitaly error/fatal entries per interval |
+| GitLab: Readiness | Text (active) | `gitlab.readiness` | Raw readiness JSON, not stored |
+| GitLab: Readiness status | Dependent | `gitlab.readiness.status` | ok, failed or unreachable |
 
 ### Triggers
 
@@ -82,6 +88,8 @@ setting. All monitoring logic is contained in this template.
 | Puma application errors detected | WARNING | Fatal errors, OOM kills in Puma |
 | High Sidekiq job failure rate | WARNING | Sidekiq failure count exceeds threshold |
 | High Gitaly error rate | WARNING | Gitaly error count exceeds threshold |
+| Not ready | HIGH | Readiness not ok for 5 checks in a row (short restarts are ignored) |
+| No readiness data | WARNING | No readiness data for `{$GITLAB.NODATA.TIMEOUT}` |
 
 ### Graphs
 

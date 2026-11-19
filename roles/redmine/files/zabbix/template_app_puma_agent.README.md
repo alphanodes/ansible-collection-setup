@@ -56,12 +56,14 @@ is handled automatically by the `zabbix_agent` Ansible role when
 | {$PUMA.UTILIZATION.WARN} | Warning utilization percentage | `80` |
 | {$PUMA.UTILIZATION.HIGH} | Critical utilization percentage | `95` |
 | {$PUMA.NODATA.TIMEOUT} | Timeout for missing data alert | `5m` |
+| {$PUMA.WORKER.RSS.MAX} | Memory threshold for the largest worker | `1G` |
 
 ### Items
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| Puma: Get stats | Active (master) | Raw JSON from pumactl stats |
+| Puma: Get stats | Active (master) | Raw JSON from the stats endpoint, not stored |
+| Puma: Responding | Dependent | 1 when the stats endpoint returns valid JSON, else 0 |
 | Puma: Workers configured | Dependent | Number of configured worker processes |
 | Puma: Workers booted | Dependent | Number of currently booted workers |
 | Puma: Old workers | Dependent | Workers pending shutdown during restart |
@@ -72,18 +74,21 @@ is handled automatically by the `zabbix_agent` Ansible role when
 | Puma: Total requests | Dependent | Cumulative requests served (counter) |
 | Puma: Requests per second | Dependent | Request rate (change per second) |
 | Puma: Thread utilization | Dependent | Percentage of thread capacity in use |
+| Puma: Worker max RSS | Active | Memory of the largest worker in bytes (single mode: master) |
 
 ### Triggers
 
 | Name | Severity | Description |
 | ---- | -------- | ----------- |
 | No stats data received | HIGH | Puma may be down or UserParameter misconfigured |
+| Not responding | HIGH | No valid stats for 3 minutes (Puma down or hanging) |
 | Workers not fully booted | WARNING | Not all workers are running (crash or boot failure) |
 | Old workers present | INFO | Stuck phased restart (old workers for > 10 min) |
 | Request backlog detected | WARNING | Sustained backlog for > 5 min (all threads busy) |
-| High request backlog | HIGH | Backlog exceeds critical threshold |
+| High request backlog | HIGH | Backlog above the critical threshold for 2 minutes |
 | High thread utilization | WARNING | Average utilization > 80% over 5 min |
 | Critical thread utilization | HIGH | Average utilization > 95% over 5 min |
+| Worker memory bloat detected | WARNING | Largest worker above `{$PUMA.WORKER.RSS.MAX}` over 30 min |
 
 ### Graphs
 

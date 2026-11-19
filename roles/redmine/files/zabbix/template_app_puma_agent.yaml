@@ -31,7 +31,7 @@ zabbix_export:
           type: ZABBIX_ACTIVE
           key: 'puma_stats[{$PUMA.INSTANCE}]'
           delay: '{$PUMA.UPDATE.INTERVAL}'
-          history: 1d
+          history: '0'
           trends: '0'
           value_type: TEXT
           description: 'Raw JSON from the stats endpoint of the Puma control app. Master item for all dependent Puma metrics.'
@@ -45,6 +45,37 @@ zabbix_export:
               event_name: 'Puma: No stats data for {$PUMA.NODATA.TIMEOUT}'
               priority: HIGH
               description: 'No data received from the Puma stats endpoint. Puma may be down or the control socket is missing.'
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: availability
+        - uuid: cc95065b70304ab08946b3b1136b0d9d
+          name: 'Puma: Responding'
+          type: DEPENDENT
+          key: puma.up
+          master_item:
+            key: 'puma_stats[{$PUMA.INSTANCE}]'
+          history: 7d
+          trends: 365d
+          value_type: UNSIGNED
+          description: '1 when the stats endpoint returns valid JSON, 0 when Puma does not answer (empty or invalid response).'
+          valuemap:
+            name: 'Puma state'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - 'JSON.parse(value); return 1;'
+              error_handler: CUSTOM_VALUE
+              error_handler_params: '0'
+          tags:
+            - tag: component
+              value: puma
+          triggers:
+            - uuid: 07bd71b4a1fb4fe6aa2c153d36695a8a
+              expression: 'max(/Puma/puma.up,3m)=0'
+              name: 'Puma: Not responding'
+              priority: HIGH
+              description: 'The Puma control app has not returned valid stats for 3 minutes. Puma is down or hangs.'
               manual_close: 'YES'
               tags:
                 - tag: scope
@@ -155,7 +186,7 @@ zabbix_export:
               recovery_mode: RECOVERY_EXPRESSION
               recovery_expression: 'max(/Puma/puma.backlog,5m)=0'
               name: 'Puma: Request backlog detected'
-              event_name: 'Puma: Sustained request backlog (>{ITEM.LASTVALUE})'
+              event_name: 'Puma: Request backlog for 5 minutes (last {ITEM.LASTVALUE})'
               priority: WARNING
               description: 'Requests are waiting in the backlog for more than 5 minutes. All workers and threads are busy. Consider increasing workers or threads.'
               manual_close: 'YES'
@@ -389,8 +420,12 @@ zabbix_export:
           history: 7d
           trends: 365d
           value_type: UNSIGNED
-          units: KB
-          description: 'Resident set size of the largest Puma worker process in KB. Monitors memory bloat over time.'
+          units: B
+          description: 'Resident set size of the largest Puma worker process (single mode: the master). The agent reports KB, preprocessing converts to bytes.'
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '1024'
           tags:
             - tag: component
               value: puma
@@ -400,7 +435,7 @@ zabbix_export:
               recovery_mode: RECOVERY_EXPRESSION
               recovery_expression: 'avg(/Puma/puma_worker_rss_max[{$PUMA.INSTANCE}],30m)<{$PUMA.WORKER.RSS.MAX}*0.8'
               name: 'Puma: Worker memory bloat detected'
-              event_name: 'Puma: Largest worker RSS > {$PUMA.WORKER.RSS.MAX} KB (avg {ITEM.LASTVALUE})'
+              event_name: 'Puma: Largest worker RSS > {$PUMA.WORKER.RSS.MAX} (last {ITEM.LASTVALUE})'
               priority: WARNING
               description: 'A Puma worker process is using more memory than expected. Consider restarting Puma or reducing worker memory limits.'
               manual_close: 'YES'
@@ -431,8 +466,8 @@ zabbix_export:
           value: '95'
           description: 'Critical threshold for thread utilization percentage.'
         - macro: '{$PUMA.WORKER.RSS.MAX}'
-          value: '1048576'
-          description: 'Maximum allowed RSS per Puma worker in KB (default 1 GB). Triggers warning when average over 30 minutes exceeds this value.'
+          value: 1G
+          description: 'Maximum allowed RSS per Puma worker (default 1G). Triggers warning when average over 30 minutes exceeds this value.'
         - macro: '{$PUMA.NODATA.TIMEOUT}'
           value: 5m
           description: 'Timeout before alerting on missing Puma stats data.'
@@ -526,6 +561,14 @@ zabbix_export:
                     - type: STRING
                       name: reference
                       value: AAAAE
+      valuemaps:
+        - uuid: 80e38e995a094c64a08b2ea10751f181
+          name: 'Puma state'
+          mappings:
+            - value: '0'
+              newvalue: Down
+            - value: '1'
+              newvalue: Up
   triggers:
     - uuid: 0667dda862d24b06995f90bb68bae86a
       expression: 'last(/Puma/puma.booted_workers)<last(/Puma/puma.workers) and last(/Puma/puma.workers)>0'

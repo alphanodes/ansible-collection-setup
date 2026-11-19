@@ -281,6 +281,8 @@ gitlab_log_group: adm
 # Zabbix agent2 Redis plugin session for Omnibus Unix socket
 gitlab_zabbix_redis_socket: /var/opt/gitlab/redis/redis.socket
 gitlab_zabbix_redis_dir: /var/opt/gitlab/redis
+# UserParameter file for the readiness check of the GitLab Zabbix template
+gitlab_zabbix_userparameter_file: /etc/zabbix/zabbix_agent2.d/gitlab.conf
 
 # Container Registry metadata database mode. Required to avoid the v4.40.0
 # HandleGetStatistics panic that fires when registry runs in default 'prefer'

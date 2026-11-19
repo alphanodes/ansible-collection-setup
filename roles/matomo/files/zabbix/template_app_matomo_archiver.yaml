@@ -62,6 +62,10 @@ zabbix_export:
               recovery_mode: RECOVERY_EXPRESSION
               recovery_expression: 'last(/Matomo Archiver/matomo.archive.last_success.age)<{$MATOMO.ARCHIVE.AGE.WARN}'
               name: 'Matomo: Archive job slightly behind'
+              dependencies:
+                - name: 'Matomo: Archive job stalled'
+                  expression: 'last(/Matomo Archiver/matomo.archive.last_success.age)>{$MATOMO.ARCHIVE.AGE.HIGH}'
+                  recovery_expression: 'last(/Matomo Archiver/matomo.archive.last_success.age)<{$MATOMO.ARCHIVE.AGE.HIGH}'
               event_name: 'Matomo: last successful archive run is {ITEM.LASTVALUE} ago'
               priority: WARNING
               description: |
@@ -78,6 +82,10 @@ zabbix_export:
               recovery_mode: RECOVERY_EXPRESSION
               recovery_expression: 'last(/Matomo Archiver/matomo.archive.last_success.age)<{$MATOMO.ARCHIVE.AGE.HIGH}'
               name: 'Matomo: Archive job stalled'
+              dependencies:
+                - name: 'Matomo: Archive job has not run for a day'
+                  expression: 'last(/Matomo Archiver/matomo.archive.last_success.age)>{$MATOMO.ARCHIVE.AGE.DISASTER}'
+                  recovery_expression: 'last(/Matomo Archiver/matomo.archive.last_success.age)<{$MATOMO.ARCHIVE.AGE.DISASTER}'
               event_name: 'Matomo: last successful archive run is {ITEM.LASTVALUE} ago'
               priority: HIGH
               description: |

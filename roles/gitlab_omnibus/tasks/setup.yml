@@ -85,6 +85,15 @@
     - zabbix_monitoring
     - zabbix_agent_remove is undefined or not zabbix_agent_remove
   block:
+    - name: Deploy Zabbix UserParameter for the GitLab readiness check
+      ansible.builtin.template:
+        src: gitlab_userparameter.conf.j2
+        dest: '{{ gitlab_zabbix_userparameter_file }}'
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Restart zabbix-agent2
+
     - name: Deploy Zabbix agent2 Redis plugin config for Omnibus
       ansible.builtin.template:
         src: redis_omnibus.conf.j2
