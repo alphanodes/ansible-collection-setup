@@ -17,6 +17,15 @@
         state: present
       when: inventory_hostname != 'instance-nodhcp'
 
+    # Debian 13 cloud images use dhcpcd. dnsmasq-base serves the test leases
+    - name: Install dhcpcd and dnsmasq (not on instance-nodhcp)
+      ansible.builtin.apt:
+        name:
+          - dhcpcd-base
+          - dnsmasq-base
+        state: present
+      when: inventory_hostname != 'instance-nodhcp'
+
   vars:
     resolver_mode: static
     resolver_with_unbound: true

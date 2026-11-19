@@ -35,6 +35,11 @@
     path: '{{ resolver_dhclient_enter_hooks_dir }}/resolver-static'
     state: absent
 
+- name: Remove dhcpcd enter hook of static mode
+  ansible.builtin.file:
+    path: '{{ resolver_dhcpcd_enter_hook }}'
+    state: absent
+
 - name: Symlink /etc/resolv.conf to systemd-resolved stub
   ansible.builtin.file:
     path: /etc/resolv.conf

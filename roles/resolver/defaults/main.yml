@@ -27,3 +27,9 @@ resolver_search_domains: []
 # there that keeps dhclient from overwriting /etc/resolv.conf on every
 # lease renewal. Hosts without isc-dhcp-client are not touched.
 resolver_dhclient_enter_hooks_dir: /etc/dhcp/dhclient-enter-hooks.d
+
+# dhcpcd (Debian 13 cloud images). In static mode the role places an enter
+# hook that skips the resolv.conf hook of dhcpcd, otherwise every lease
+# renewal replaces /etc/resolv.conf. Hosts without dhcpcd are not touched.
+resolver_dhcpcd_conf: /etc/dhcpcd.conf
+resolver_dhcpcd_enter_hook: /etc/dhcpcd.enter-hook

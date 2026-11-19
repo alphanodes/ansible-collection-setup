@@ -2,8 +2,15 @@
 - name: Verify
   hosts: all
   become: true
-  gather_facts: false
+  # The resolver role runs again in the dhcpcd test
+  gather_facts: true
   vars:
+    # Same settings as converge.yml, for the role run in the dhcpcd test
+    resolver_mode: static
+    resolver_with_unbound: true
+    resolver_nameservers:
+      - 1.1.1.1
+      - 1.0.0.1
     hook_path: /etc/dhcp/dhclient-enter-hooks.d/resolver-static
     # Calls the real dhclient-script like dhclient does on a lease renewal.
     # The interface does not exist, so the ip commands fail without touching
@@ -102,3 +109,119 @@
                 mode: '0644'
                 unsafe_writes: true
               changed_when: false
+
+    - name: Check dhcpcd enter hook
+      ansible.builtin.stat:
+        path: /etc/dhcpcd.enter-hook
+      register: dhcpcd_enter_hook
+
+    - name: Verify no dhcpcd enter hook without dhcpcd
+      ansible.builtin.assert:
+        that:
+          - not dhcpcd_enter_hook.stat.exists
+        fail_msg: 'Enter hook must not be created on hosts without dhcpcd'
+      when: inventory_hostname == 'instance-nodhcp'
+
+    # Mirrors a host where dhcpcd already runs when the role arrives: dnsmasq
+    # serves real leases with a name server on one end of a veth pair, dhcpcd
+    # runs as a daemon for the other end and runs its hooks on every lease
+    - name: Verify a running dhcpcd keeps /etc/resolv.conf after the role
+      when: inventory_hostname != 'instance-nodhcp'
+      block:
+        - name: Verify the enter hook exists with mode 0644
+          ansible.builtin.assert:
+            that:
+              - dhcpcd_enter_hook.stat.exists
+              - dhcpcd_enter_hook.stat.mode == '0644'
+            fail_msg: 'dhcpcd enter hook missing or wrong mode: {{ dhcpcd_enter_hook.stat }}'
+
+        - name: Read /etc/resolv.conf of the role
+          ansible.builtin.slurp:
+            src: /etc/resolv.conf
+          register: dhcpcd_resolv_before
+
+        - name: Set up a DHCP test network
+          ansible.builtin.shell: |
+            set -e
+            ip link add mdhcp0 type veth peer name mdhcp1
+            ip addr add 192.0.2.1/24 dev mdhcp1
+            ip link set mdhcp1 up
+            ip link set mdhcp0 up
+            dnsmasq --port=0 --interface=mdhcp1 --bind-interfaces \
+              --dhcp-range=192.0.2.10,192.0.2.20,1h --dhcp-option=6,192.0.2.53 \
+              --leasefile-ro --pid-file=/run/molecule-dnsmasq.pid
+          args:
+            executable: /bin/bash
+          changed_when: false
+
+        # State before the role: no enter hook and a running dhcpcd
+        - name: Remove the enter hook
+          ansible.builtin.file:
+            path: /etc/dhcpcd.enter-hook
+            state: absent
+          changed_when: false
+
+        - name: Start dhcpcd for the test interface
+          ansible.builtin.command: dhcpcd --ipv4only --waitip=4 --timeout 30 mdhcp0
+          changed_when: false
+
+        - name: Read /etc/resolv.conf with the lease of dhcpcd
+          ansible.builtin.slurp:
+            src: /etc/resolv.conf
+          register: dhcpcd_resolv_control
+
+        - name: Verify dhcpcd writes /etc/resolv.conf without the enter hook
+          ansible.builtin.assert:
+            that:
+              - "'192.0.2.53' in (dhcpcd_resolv_control.content | b64decode)"
+            fail_msg: >-
+              Control failed, dhcpcd did not write /etc/resolv.conf:
+              {{ dhcpcd_resolv_control.content | b64decode }}
+
+        # The role restores /etc/resolv.conf and places the enter hook, which
+        # the running dhcpcd picks up with its next hook run
+        - name: Apply the resolver role to the running dhcpcd
+          ansible.builtin.include_role:
+            name: alphanodes.setup.resolver
+
+        - name: Renew the lease of the running dhcpcd
+          ansible.builtin.command: dhcpcd --renew --ipv4only mdhcp0
+          changed_when: false
+
+        - name: Wait for the dhcpcd hooks of the renewal
+          ansible.builtin.pause:
+            seconds: 3
+
+        - name: Read /etc/resolv.conf after the renewal
+          ansible.builtin.slurp:
+            src: /etc/resolv.conf
+          register: dhcpcd_resolv_after
+
+        - name: Verify the running dhcpcd left /etc/resolv.conf alone
+          ansible.builtin.assert:
+            that:
+              - dhcpcd_resolv_after.content == dhcpcd_resolv_before.content
+            fail_msg: >-
+              dhcpcd changed /etc/resolv.conf despite the enter hook:
+              {{ dhcpcd_resolv_after.content | b64decode }}
+
+      always:
+        - name: Remove the DHCP test network
+          ansible.builtin.shell: |
+            dhcpcd --exit --ipv4only mdhcp0 >/dev/null 2>&1
+            [ -f /run/molecule-dnsmasq.pid ] && kill "$(cat /run/molecule-dnsmasq.pid)"
+            ip link del mdhcp0 2>/dev/null
+            rm -f /run/molecule-dnsmasq.pid
+            true
+          args:
+            executable: /bin/bash
+          changed_when: false
+
+        - name: Restore /etc/resolv.conf after the dhcpcd test
+          ansible.builtin.copy:
+            content: '{{ dhcpcd_resolv_before.content | b64decode }}'
+            dest: /etc/resolv.conf
+            mode: '0644'
+            unsafe_writes: true
+          changed_when: false
+          when: dhcpcd_resolv_before.content is defined

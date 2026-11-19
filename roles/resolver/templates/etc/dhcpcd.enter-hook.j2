@@ -1,0 +1,6 @@
+{{ managed_by_ansible | comment }}
+#
+# Sourced by dhcpcd-run-hooks before the hooks of dhcpcd on every lease event.
+# /etc/resolv.conf is managed by Ansible (resolver_mode static), so the
+# resolv.conf hook of dhcpcd is skipped. Takes effect without restarting dhcpcd.
+skip_hooks="${skip_hooks:+$skip_hooks }resolv.conf"
