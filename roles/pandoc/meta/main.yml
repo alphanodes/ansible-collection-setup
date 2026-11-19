@@ -1,0 +1,25 @@
+---
+
+dependencies:
+  - role: alphanodes.setup.common
+    public: true
+
+galaxy_info:
+  role_name: pandoc
+  namespace: alphanodes
+  author: Alexander Meindl
+  description: Install pandoc from the upstream Debian package
+  company: AlphaNodes
+  license: MIT
+  min_ansible_version: "2.18"
+  platforms:
+    - name: Debian
+      versions:
+        - trixie
+    - name: Ubuntu
+      versions:
+        - resolute
+  galaxy_tags:
+    - pandoc
+    - documents
+    - converter

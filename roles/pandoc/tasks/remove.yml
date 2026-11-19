@@ -1,0 +1,8 @@
+---
+
+- name: Remove pandoc package
+  ansible.builtin.apt:
+    name:
+      - pandoc
+      - pandoc-data
+    state: absent

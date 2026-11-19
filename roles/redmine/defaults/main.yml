@@ -222,7 +222,6 @@ redmine_packages:
   - gnupg
   - graphviz
   - imagemagick
-  - pandoc
   - subversion
 
 # overwrite it, if you need it.

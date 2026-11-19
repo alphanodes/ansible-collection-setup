@@ -1,0 +1,64 @@
+---
+
+- name: Fetch pandoc release from GitHub API
+  ansible.builtin.uri:
+    url: "https://api.github.com/repos/jgm/pandoc/releases/{{ 'latest' if pandoc_version == 'latest' else 'tags/' ~ pandoc_version }}"
+    return_content: true
+  register: pandoc_release
+  check_mode: false
+  changed_when: false
+
+# The asset name carries the Debian revision (pandoc-3.14-1-amd64.deb),
+# which is part of the package version dpkg reports
+- name: Set pandoc package to install
+  ansible.builtin.set_fact:
+    pandoc_deb_asset: >-
+      {{ pandoc_release.json.assets
+         | selectattr('name', 'match', '^pandoc-' ~ (pandoc_release.json.tag_name | regex_escape) ~ '-[0-9]+-' ~ pandoc_arch ~ '\.deb$')
+         | first }}
+
+- name: Set pandoc package version
+  ansible.builtin.set_fact:
+    pandoc_deb_version: "{{ pandoc_deb_asset.name | regex_replace('^pandoc-(.+)-' ~ pandoc_arch ~ '\\.deb$', '\\1') }}"
+
+- name: Read installed pandoc version
+  ansible.builtin.command: dpkg-query --showformat='${Version}' --show pandoc
+  register: pandoc_installed_version
+  check_mode: false
+  changed_when: false
+  failed_when: false
+
+- name: Download and install pandoc package
+  when: pandoc_installed_version.stdout != pandoc_deb_version
+  block:
+    - name: Create temporary download directory
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: pandoc
+      register: pandoc_temp_dir
+      changed_when: false
+
+    # GitHub publishes the checksum only for newer releases
+    - name: Download pandoc package
+      ansible.builtin.get_url:
+        url: "{{ pandoc_deb_asset.browser_download_url }}"
+        dest: "{{ pandoc_temp_dir.path }}/{{ pandoc_deb_asset.name }}"
+        checksum: "{{ pandoc_deb_asset.digest | default(omit, true) }}"
+        mode: '0644'
+
+    - name: Install pandoc package
+      ansible.builtin.apt:
+        deb: "{{ pandoc_temp_dir.path }}/{{ pandoc_deb_asset.name }}"
+
+    - name: Remove temporary download directory
+      ansible.builtin.file:
+        path: "{{ pandoc_temp_dir.path }}"
+        state: absent
+      changed_when: false
+
+# Left over from the distribution package, whose files the upstream package
+# took over (it declares Replaces: pandoc-data)
+- name: Remove pandoc-data of the distribution package
+  ansible.builtin.apt:
+    name: pandoc-data
+    state: absent

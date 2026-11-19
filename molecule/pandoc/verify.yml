@@ -1,0 +1,28 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: List pandoc input formats
+      ansible.builtin.command: pandoc --list-input-formats
+      register: pandoc_input_formats
+      changed_when: false
+
+    # xlsx is the reason for the upstream package (pandoc 3.8.3 or newer)
+    - name: Verify pandoc reads xlsx
+      ansible.builtin.assert:
+        that:
+          - "'xlsx' in pandoc_input_formats.stdout_lines"
+        fail_msg: "pandoc cannot read xlsx, the distribution package is still installed"
+
+    - name: Read pandoc-data package status
+      ansible.builtin.command: dpkg-query --showformat='${Status}' --show pandoc-data
+      register: pandoc_data_status
+      changed_when: false
+      failed_when: false
+
+    - name: Verify pandoc-data is removed
+      ansible.builtin.assert:
+        that:
+          - "'install ok installed' not in pandoc_data_status.stdout"
+        fail_msg: "pandoc-data of the distribution package is still installed"

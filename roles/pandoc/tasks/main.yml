@@ -1,0 +1,13 @@
+---
+
+- name: Include setup tasks
+  ansible.builtin.import_tasks: setup.yml
+  tags:
+    - pandoc
+  when: not pandoc_remove | bool
+
+- name: Include remove tasks
+  ansible.builtin.import_tasks: remove.yml
+  tags:
+    - pandoc
+  when: pandoc_remove | bool

@@ -1,0 +1,19 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  # The distribution package first, as on servers set up before this role
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+
+    - name: Install pandoc of the distribution
+      ansible.builtin.apt:
+        name: pandoc
+        state: present
+
+  roles:
+    - role: alphanodes.setup.pandoc

@@ -1,0 +1,14 @@
+---
+
+# Pandoc - universal document converter, installed from the upstream
+# Debian package (the distribution package is too old for some input
+# formats, e.g. xlsx needs pandoc 3.8.3 or newer)
+# see https://github.com/jgm/pandoc/releases
+
+# Version to install - specific version (e.g. '3.14') or 'latest'
+# With 'latest', the role updates pandoc whenever a new release is out
+pandoc_version: latest
+pandoc_arch: "{{ 'arm64' if ansible_facts['architecture'] == 'aarch64' else 'amd64' }}"
+
+# set it to true, if you want to remove pandoc
+pandoc_remove: false

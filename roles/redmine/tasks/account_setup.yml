@@ -11,6 +11,12 @@
     name: '{{ redmine_packages }}'
     state: present
 
+# Redmine previews office documents (and redmine_ai reads them) through pandoc,
+# which the distribution packages too old for xlsx
+- name: Install pandoc
+  ansible.builtin.include_role:
+    name: alphanodes.setup.pandoc
+
 - name: Ensure jemalloc library is installed
   ansible.builtin.apt:
     name: libjemalloc2

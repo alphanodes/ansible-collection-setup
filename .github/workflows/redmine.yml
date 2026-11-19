@@ -8,6 +8,7 @@ name: "alphanodes.setup.redmine"
     paths:
       - 'roles/redmine/**'
       - 'roles/nginx_mono/**'
+      - 'roles/pandoc/**'
       - 'roles/common/**'
       - 'molecule/redmine/**'
       - '.github/workflows/redmine.yml'
