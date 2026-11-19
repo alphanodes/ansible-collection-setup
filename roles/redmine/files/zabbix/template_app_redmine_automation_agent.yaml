@@ -12,7 +12,8 @@ zabbix_export:
         Checks the redmine-automation.timer and the health check page at
         {$REDMINE.URL}/health_check. Set {$REDMINE.URL} on the host.
 
-        Only built-in agent items are used.
+        Its own items only use built-in agent keys. The linked Redmine and
+        Puma templates need their UserParameters, see their descriptions.
 
         This template requires:
         - the Redmine template imported before this one

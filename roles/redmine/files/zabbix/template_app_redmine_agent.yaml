@@ -15,7 +15,8 @@ zabbix_export:
 
         This template requires:
         - Zabbix agent with UserParameter redmine_log[*] configured by the
-          alphanodes.setup.zabbix_agent role
+          alphanodes.setup.zabbix_agent role (only on hosts with Redmine
+          installed)
         - the Puma template imported before this one
       vendor:
         name: AlphaNodes

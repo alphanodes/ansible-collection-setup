@@ -15,7 +15,7 @@ zabbix_export:
 
         This template requires:
         - Zabbix agent with UserParameter phpfpm_log[*] configured by the
-          alphanodes.setup.zabbix_agent role
+          alphanodes.setup.zabbix_agent role (only on hosts with PHP installed)
       vendor:
         name: AlphaNodes
         version: 7.4-__DATE__

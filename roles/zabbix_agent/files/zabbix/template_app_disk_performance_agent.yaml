@@ -29,37 +29,24 @@ zabbix_export:
           enabled_lifetime_type: DISABLE_NEVER
           item_prototypes:
             - uuid: 917be3545ffe4594923411e401bfd032
-              name: 'Disk:$1:Read:Ops per second'
+              name: 'Disk {#DEVICENAME}: read operations per second'
               key: 'vfs.dev.read[{#DEVICENAME},operations]'
               delay: 2m
               history: 2w
               units: ops/s
-              description: 'This is the total number of reads completed successfully.'
-              preprocessing:
-                - type: CHANGE_PER_SECOND
-              tags:
-                - tag: Application
-                  value: 'Disk Performance'
-            - uuid: a81c4d7a484d4db291d74e36f56a4a71
-              name: 'Disk:$1:Read:ms'
-              key: 'vfs.dev.read[{#DEVICENAME},ops]'
-              delay: 2m
-              history: 2w
-              value_type: FLOAT
-              units: ms
-              description: 'This is the total number of milliseconds spent by all reads (as measured from __make_request() to end_that_request_last()).'
+              description: 'Read operations completed per second.'
               preprocessing:
                 - type: CHANGE_PER_SECOND
               tags:
                 - tag: Application
                   value: 'Disk Performance'
             - uuid: 909de28dacb6400fa14d74b5a42474e9
-              name: 'Disk:$1:Read:Bytes/sec'
+              name: 'Disk {#DEVICENAME}: read bytes per second'
               key: 'vfs.dev.read[{#DEVICENAME},sectors]'
               delay: 2m
               history: 2w
               units: B/sec
-              description: 'This is the total number of sectors read successfully.'
+              description: 'Bytes read per second.'
               preprocessing:
                 - type: CHANGE_PER_SECOND
                 - type: MULTIPLIER
@@ -69,37 +56,24 @@ zabbix_export:
                 - tag: Application
                   value: 'Disk Performance'
             - uuid: 20f5cf97778b4560861ae4892118eaca
-              name: 'Disk:$1:Write:Ops per second'
+              name: 'Disk {#DEVICENAME}: write operations per second'
               key: 'vfs.dev.write[{#DEVICENAME},operations]'
               delay: 2m
               history: 2w
               units: ops/s
-              description: 'This is the total number of reads completed successfully.'
-              preprocessing:
-                - type: CHANGE_PER_SECOND
-              tags:
-                - tag: Application
-                  value: 'Disk Performance'
-            - uuid: cf0d2d375eb748c6aa8e74c74f610b79
-              name: 'Disk:$1:Write:ms'
-              key: 'vfs.dev.write[{#DEVICENAME},ops]'
-              delay: 2m
-              history: 2w
-              value_type: FLOAT
-              units: ms
-              description: 'This is the total number of milliseconds spent by all reads (as measured from __make_request() to end_that_request_last()).'
+              description: 'Write operations completed per second.'
               preprocessing:
                 - type: CHANGE_PER_SECOND
               tags:
                 - tag: Application
                   value: 'Disk Performance'
             - uuid: d6514c4f84de41b5b22eddb3e83c16f0
-              name: 'Disk:$1:Write:Bytes/sec'
+              name: 'Disk {#DEVICENAME}: write bytes per second'
               key: 'vfs.dev.write[{#DEVICENAME},sectors]'
               delay: 2m
               history: 2w
               units: B/sec
-              description: 'This is the total number of sectors read successfully.'
+              description: 'Bytes written per second.'
               preprocessing:
                 - type: CHANGE_PER_SECOND
                 - type: MULTIPLIER

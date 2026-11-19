@@ -14,7 +14,7 @@ zabbix_export:
 
         This template requires:
         - Zabbix agent with UserParameter php[*] and php_log[*] configured by the
-          alphanodes.setup.zabbix_agent role
+          alphanodes.setup.zabbix_agent role (only on hosts with PHP installed)
       vendor:
         name: AlphaNodes
         version: 7.4-__DATE__
@@ -34,7 +34,7 @@ zabbix_export:
             - uuid: 169c8869e8b547f3837aea8826558e46
               expression: 'find(/PHP/php[display_errors,info,{$PHP_INFO_PORT}],,"like","")=0'
               name: 'PHP display_errors=On'
-              url: 'http://www.php.net/manual/de/errorfunc.configuration.php#ini.display-errors'
+              url: 'https://www.php.net/manual/en/errorfunc.configuration.php#ini.display-errors'
               priority: WARNING
               description: 'For security reasons display_errors should be Off.'
         - uuid: 7757aca5e5a6439790fe010edf375b14
@@ -109,11 +109,5 @@ zabbix_export:
               priority: WARNING
               manual_close: 'YES'
       macros:
-        - macro: '{$PHP_5.4_RELEASE_VERSION}'
-          value: '43'
-        - macro: '{$PHP_5.5_RELEASE_VERSION}'
-          value: '33'
-        - macro: '{$PHP_5.6_RELEASE_VERSION}'
-          value: '30'
         - macro: '{$PHP_INFO_PORT}'
           value: '80'

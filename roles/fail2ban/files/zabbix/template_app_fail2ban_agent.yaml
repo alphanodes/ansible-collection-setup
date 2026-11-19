@@ -28,7 +28,7 @@ zabbix_export:
           name: 'Fail2Ban service is running'
           key: 'proc.num[fail2ban-server]'
           history: 2w
-          description: 'ping - tests if the server is alive'
+          description: 'Number of running fail2ban-server processes.'
           valuemap:
             name: 'Service state'
           tags:

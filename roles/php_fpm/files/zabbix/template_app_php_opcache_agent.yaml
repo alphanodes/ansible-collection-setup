@@ -13,7 +13,7 @@ zabbix_export:
 
         This template requires:
         - Zabbix agent with UserParameter php[*] configured by the
-          alphanodes.setup.zabbix_agent role
+          alphanodes.setup.zabbix_agent role (only on hosts with PHP installed)
         - the PHP template imported before this one
       vendor:
         name: AlphaNodes
@@ -24,7 +24,7 @@ zabbix_export:
         - name: Templates/Applications
       items:
         - uuid: a9cab4e2f7b24979a4f5ae66991d6714
-          name: 'Opcache $1'
+          name: 'Opcache free memory'
           key: 'php[free_memory,opcache_stat,{$PHP_INFO_PORT}]'
           delay: 2m
           history: 1w
@@ -34,7 +34,7 @@ zabbix_export:
             - tag: Application
               value: PHP-opcache
         - uuid: 82f44211f4db46b1be9ff8ee2a2e5911
-          name: 'Opcache $1'
+          name: 'Opcache hits per second'
           key: 'php[hits,opcache_stat,{$PHP_INFO_PORT}]'
           delay: 2m
           history: 1w
@@ -45,7 +45,7 @@ zabbix_export:
             - tag: Application
               value: PHP-opcache
         - uuid: 5b5c457c978d4a4196213f1189f1492c
-          name: 'Opcache $1'
+          name: 'Opcache max cached keys'
           key: 'php[max_cached_keys,opcache_stat,{$PHP_INFO_PORT}]'
           delay: 2m
           history: 1w
@@ -54,7 +54,7 @@ zabbix_export:
             - tag: Application
               value: PHP-opcache
         - uuid: fc7d91ee677643989a0c45c87a0dd87c
-          name: 'Opcache $1'
+          name: 'Opcache misses per second'
           key: 'php[misses,opcache_stat,{$PHP_INFO_PORT}]'
           delay: 2m
           history: 1w
@@ -65,7 +65,7 @@ zabbix_export:
             - tag: Application
               value: PHP-opcache
         - uuid: b19d2e8aa3084e6f8588726523f1d890
-          name: 'Opcache $1'
+          name: 'Opcache cached keys'
           key: 'php[num_cached_keys,opcache_stat,{$PHP_INFO_PORT}]'
           delay: 2m
           history: 1w
@@ -74,7 +74,7 @@ zabbix_export:
             - tag: Application
               value: PHP-opcache
         - uuid: ff866085a59846f8ba5a3dc261faa5a7
-          name: 'Opcache $1'
+          name: 'Opcache used memory'
           key: 'php[used_memory,opcache_stat,{$PHP_INFO_PORT}]'
           delay: 2m
           history: 1w
@@ -83,7 +83,7 @@ zabbix_export:
             - tag: Application
               value: PHP-opcache
         - uuid: 00ceaa30a30d4e2095515f6498af0d19
-          name: 'Opcache $1'
+          name: 'Opcache wasted memory'
           key: 'php[wasted_memory,opcache_stat,{$PHP_INFO_PORT}]'
           delay: 2m
           history: 1w

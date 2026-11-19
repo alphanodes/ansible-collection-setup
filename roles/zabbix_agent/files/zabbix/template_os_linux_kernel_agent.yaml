@@ -37,6 +37,5 @@ zabbix_export:
             - uuid: 73c72d93891f4b10828f0115c0dfa4b4
               expression: 'last(/Linux Kernel/kernel_log)<> ""'
               name: 'Kernel error'
-              url: 'http://stackoverflow.com/questions/3149175/what-is-the-difference-between-trap-and-interrupt'
               priority: AVERAGE
               description: 'Kernel error or trap found'

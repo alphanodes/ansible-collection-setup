@@ -192,10 +192,6 @@ zabbix_export:
           delay: '2m;50s/1-7,00:00-24:00'
           history: 2w
           value_type: FLOAT
-          preprocessing:
-            - type: MULTIPLIER
-              parameters:
-                - '1'
           tags:
             - tag: Application
               value: Memory
@@ -244,12 +240,9 @@ zabbix_export:
       macros:
         - macro: '{$LOAD_AVG_PER_CPU.MAX.WARN}'
           value: '3'
-        - macro: '{$NET_INTERFACE}'
-          value: eth0
-        - macro: '{$NUMBER_OF_PROCESSES}'
-          value: '300'
-        - macro: '{$NUMBER_OF_PROCESSES_RUN}'
-          value: '30'
+        - macro: '{$SECURITY_LOG_HOURS}'
+          value: '12'
+          description: 'Time window in hours for the invalid logins check'
       dashboards:
         - uuid: b71c4aee60884803b06044ffa9a577ab
           name: 'Memory overview'
