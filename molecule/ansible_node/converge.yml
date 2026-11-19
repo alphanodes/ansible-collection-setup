@@ -3,6 +3,13 @@
   hosts: all
   become: true
 
+  # Play level, so the role and the checks in post_tasks see the same value
+  # (vars at a role entry only apply inside that role)
+  vars:
+    # Pin the core to verify the pin reaches the venv (a point release
+    # below the one the ansible package would pull)
+    ansible_node_ansible_core_version: '2.21.5'
+
   pre_tasks:
     - name: Update apt cache.
       ansible.builtin.apt:
@@ -14,9 +21,6 @@
     - role: alphanodes.setup.common
     - role: alphanodes.setup.ansible_node
       vars:
-        # Pin the core to verify the pin reaches the venv (a point release
-        # below the one the ansible package would pull)
-        ansible_node_ansible_core_version: '2.21.5'
         # Override for testing: use 'install' without -U for idempotence
         ansible_node_collections:
           - name: 'git+https://git.alphanodes.com/alphanodes/ansible-collection-tasks.git,main'
