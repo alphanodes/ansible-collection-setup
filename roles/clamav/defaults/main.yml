@@ -62,7 +62,6 @@ clamav_algorithmic_detection: true
 clamav_scan_swf: true
 
 # freshclam configuration
-clamav_freshclam_update_interval: 1h
 clamav_freshclam_checks_per_day: 24
 clamav_freshclam_database_mirror:
   - database.clamav.net

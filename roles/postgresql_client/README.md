@@ -11,9 +11,6 @@ Available variables can be found in [defaults/main.yml](defaults/main.yml)
 ```yaml
     - hosts: all
 
-      vars:
-        postgresql_client_use_repo: true
-
       roles:
         - alphanodes.setup.postgresql_client
 ```

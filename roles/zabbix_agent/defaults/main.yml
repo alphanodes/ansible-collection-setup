@@ -22,7 +22,6 @@ zabbix_agent_server: "{{ zabbix_server_vhost }}"
 zabbix_agent_listen_port: 10050
 zabbix_agent_server_active: '{{ zabbix_server_vhost }}'
 zabbix_agent_hostname: '{{ hostname | default(ansible_host) }}'
-zabbix_agent_start_agents: 3
 
 zabbix_agent_source_ip: ''
 
@@ -51,19 +50,6 @@ zabbix_agent_binary: ''
 
 # Zabbix API
 zabbix_agent_server_api: true
-zabbix_agent_create_hostgroup: false
-zabbix_agent_create_host: false
-zabbix_agent_macros: []
-
-zabbix_agent_host_groups:
-  - Linux servers
-
-zabbix_agent_link_templates:
-  - Linux System
-
-# Zabbix API stuff
-zabbix_agent_become_on_localhost: true
-zabbix_install_pip_packages: true
 
 zabbix_url: "https://{{ zabbix_server_vhost }}"
 zabbix_api_user: Admin
@@ -88,14 +74,6 @@ zabbix_link_templates:
 
 # time out for scripts (drush needs log, if Drupal is used)
 zabbix_agent_timeout: 5
-
-agent_interfaces:
-#  - type: 1
-#    main: 1
-#    useip: "{{ zabbix_useuip }}"
-#    ip: "{{ agent_ip }}"
-#    dns: "{{ ansible_fqdn }}"
-#    port: "{{ agent_listenport }}"
 
 zabbix_cleanup_files:
   - /etc/zabbix/zabbix_agentd.conf.dpkg-dist

@@ -31,7 +31,6 @@ loki_schema_index_prefix: index_
 loki_schema_index_period: 24h
 
 loki_pattern_ingester_enabled: true
-loki_pattern_ingester_loki_address: localhost:3100
 
 # loki_storage_config_boltdb_shipper_shared_store: filesystem
 

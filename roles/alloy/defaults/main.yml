@@ -22,22 +22,6 @@ alloy_basic_pass: ''
 alloy_label_owner: unknown
 alloy_label_env: prod
 
-# not used at the moment (whitelisting not working with alloy pipelines)
-alloy_allow_system_regex:
-  - undefined
-  - failed
-  - warning
-  - missing
-  - NilClass
-  - error
-  - terminating connection
-  - cannot allocate memory
-  - out of memory
-  - too many clients
-  - killed
-  - QueryCanceled
-  - mismatch
-
 alloy_with_postgres: false
 alloy_drop_postgres_regex:
   - connection received

@@ -17,10 +17,6 @@ unbound_packages:
 # do uninstall unbound, set it to yes
 unbound_remove: false
 
-unbound_root_key_file: /var/lib/unbound/root.key
-unbound_user: unbound
-unbound_group: unbound
-
 # Cache sizes. The built-in default is 4m each, which is sparse for a host
 # doing sustained lookups (mail filtering, monitoring). The rrset cache should
 # be about twice the message cache.

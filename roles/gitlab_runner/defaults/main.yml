@@ -2,7 +2,6 @@
 # defaults file for gitlab_runner
 
 gitlab_runner_coordinator_url: ''
-gitlab_runner_registration_token: ''
 
 gitlab_runner_packages:
   - gitlab-runner
@@ -14,8 +13,6 @@ gitlab_runner_hetzner_server_type: cx23
 gitlab_runner_hetzner_ruby_server_type: '{{ gitlab_runner_hetzner_server_type }}'
 gitlab_runner_hetzner_image: debian-13
 gitlab_runner_hetzner_api_token: ''
-# see https://docs.hetzner.cloud/#labels
-gitlab_runner_hetzner_label: 'env=test'
 
 # see https://community.hetzner.com/tutorials/howto-setup-gitlab-ci-auto-scaling-infrastructure
 # see https://gitlab.com/hetznercloud/fleeting-plugin-hetzner/-/blob/main/docs/guides/quickstart.md

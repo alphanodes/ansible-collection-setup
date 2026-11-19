@@ -1,9 +1,6 @@
 ---
 # defaults file for postgresql client
 
-# if yes, postgresql.org packages are used, else distribution packages
-postgresql_client_use_repo: true
-
 # which version should be used?
 # if postresql role (server) is available, this version is used
 postgresql_client_version: "{{ postgresql_version | default('17') }}"
