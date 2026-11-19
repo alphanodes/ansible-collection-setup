@@ -15,7 +15,7 @@ All provided roles do not use docker as container system.
 
 ## Minimum required Ansible-version
 
-- Ansible >= 2.18.0
+- Ansible >= 2.19.0
 
 ## Included content
 
