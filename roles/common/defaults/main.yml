@@ -38,7 +38,23 @@ hide_sensitive_data: true
 
 common_packages:
   - curl
+  # fuser, killall and pstree for troubleshooting
+  - psmisc
   - python3-debian
+  # Kernel defaults of the distribution, e.g. fs.protected_fifos and
+  # fs.protected_regular. Ubuntu only recommends it, so it is missing on
+  # hosts installed without recommends
+  - linux-sysctl-defaults
+
+# Install recommended packages along with requested ones. false on all hosts,
+# so a role behaves the same everywhere and its tests show missing packages
+common_apt_install_recommends: false
+
+# Replace sudo-rs, the default sudo of Ubuntu 26.04, with the classic sudo,
+# which Debian uses. Opt-in: sudo-rs handles sudoers rules differently (no
+# escapes, no arguments with spaces), so a fleet may want one implementation.
+# The classic sudo is installed first, so become keeps working
+common_remove_sudo_rs: false
 
 # MySQL backend selection: mysql (Oracle MySQL) or mariadb (Debian/Ubuntu native)
 # Used by ansible_node playbook templates and ansible.tasks roles

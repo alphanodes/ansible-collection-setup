@@ -10,11 +10,26 @@
         cache_valid_time: 600
       changed_when: false
 
+    # Like a Hetzner cloud image, which disables recommends with this file
+    - name: Add the recommends setting of the cloud image
+      ansible.builtin.copy:
+        content: "APT::Install-Recommends \"false\";\n"
+        dest: /etc/apt/apt.conf.d/00InstallRecommends
+        mode: '0644'
+      tags: molecule-idempotence-notest
+
+    # Like Ubuntu 26.04 servers, where sudo-rs comes as recommendation of sudo
+    - name: Install sudo and sudo-rs like on Ubuntu servers
+      ansible.builtin.apt:
+        name:
+          - sudo
+          - sudo-rs
+        state: present
+        install_recommends: false
+      when: ansible_facts['distribution'] == 'Ubuntu'
+      tags: molecule-idempotence-notest
+
   roles:
     - role: alphanodes.setup.common
-
-  post_tasks:
-    - name: Verify common role completed
-      ansible.builtin.command: which vim
-      changed_when: false
-      failed_when: false
+      vars:
+        common_remove_sudo_rs: true

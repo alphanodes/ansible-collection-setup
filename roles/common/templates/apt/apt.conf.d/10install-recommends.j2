@@ -1,0 +1,5 @@
+{{ managed_by_ansible | comment('c') }}
+// Install only the packages roles ask for, not the ones they recommend, on
+// every host alike (Hetzner cloud images ship this setting, other images do
+// not). Packages a role needs belong into its package list.
+APT::Install-Recommends "{{ 'true' if common_apt_install_recommends | bool else 'false' }}";

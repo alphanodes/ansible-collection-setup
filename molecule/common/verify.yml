@@ -1,0 +1,56 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Read the effective recommends setting of apt
+      ansible.builtin.command: apt-config dump APT::Install-Recommends
+      register: common_recommends
+      changed_when: false
+
+    - name: Read the recommends setting of the cloud image
+      ansible.builtin.stat:
+        path: /etc/apt/apt.conf.d/00InstallRecommends
+      register: common_cloud_recommends
+
+    - name: Verify recommends are disabled by the role only
+      ansible.builtin.assert:
+        that:
+          - common_recommends.stdout == 'APT::Install-Recommends "false";'
+          - not common_cloud_recommends.stat.exists
+        fail_msg: "{{ common_recommends.stdout }}, cloud file exists: {{ common_cloud_recommends.stat.exists }}"
+
+    - name: Gather package facts
+      ansible.builtin.package_facts:
+
+    - name: Verify the common packages are installed
+      ansible.builtin.assert:
+        that:
+          - "'psmisc' in ansible_facts.packages"
+          - "'linux-sysctl-defaults' in ansible_facts.packages"
+          - "'sudo-rs' not in ansible_facts.packages"
+
+    - name: Verify the classic sudo is installed on Ubuntu
+      ansible.builtin.assert:
+        that:
+          - "'sudo' in ansible_facts.packages"
+      when: ansible_facts['distribution'] == 'Ubuntu'
+
+    - name: Read the active sudo implementation
+      ansible.builtin.command: readlink -f /usr/bin/sudo
+      register: common_sudo_impl
+      changed_when: false
+      when: ansible_facts['distribution'] == 'Ubuntu'
+
+    - name: Verify the classic sudo is active on Ubuntu
+      ansible.builtin.assert:
+        that:
+          - common_sudo_impl.stdout == '/usr/bin/sudo.ws'
+        fail_msg: "sudo points to {{ common_sudo_impl.stdout }}"
+      when: ansible_facts['distribution'] == 'Ubuntu'
+
+    - name: Run sudo after the switch
+      ansible.builtin.command: sudo -n true
+      changed_when: false
+      when: ansible_facts['distribution'] == 'Ubuntu'
