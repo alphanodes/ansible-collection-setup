@@ -39,6 +39,8 @@
     roundcube_git_install: false
     roundcube_db_password: 'test_roundcube_password'
     roundcube_des_key: 'molecule-test-des-key-24'
+    # Non-default value to verify the template uses the variable
+    roundcube_imap_host: 'tls://imap.example.com:143'
 
   pre_tasks:
     - name: Update apt cache

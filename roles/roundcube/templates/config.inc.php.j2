@@ -30,7 +30,7 @@ $config['db_dsnw'] = 'mysql://{{ roundcube_db_user }}:{{ roundcube_db_password }
 
 // IMAP host chosen to perform the log-in.
 // See defaults.inc.php for the option description.
-$config['imap_host'] = 'localhost:143';
+$config['imap_host'] = '{{ roundcube_imap_host }}';
 
 // See defaults.inc.php for the option description.
 $config['smtp_host'] = '{{ roundcube_smtp_host }}';

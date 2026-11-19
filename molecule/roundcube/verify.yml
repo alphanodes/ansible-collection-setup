@@ -65,6 +65,19 @@
           - roundcube_config.stat.exists
         fail_msg: "roundcube configuration file not found"
 
+    - name: Read roundcube config
+      ansible.builtin.slurp:
+        src: /srv/roundcube/config/config.inc.php
+      register: roundcube_config_content
+
+    - name: Verify roundcube config uses the configured IMAP host
+      ansible.builtin.assert:
+        that:
+          - >-
+            "$config['imap_host'] = 'tls://imap.example.com:143';"
+            in (roundcube_config_content.content | b64decode)
+        fail_msg: "imap_host does not match roundcube_imap_host"
+
     - name: Check roundcube database exists
       ansible.builtin.command: >
         mysql -e "SHOW DATABASES LIKE 'roundcube';"
