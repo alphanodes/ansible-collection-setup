@@ -24,3 +24,9 @@ postgresql_privileges:
     roles: molecule_reader
     type: database
     privs: CREATE
+
+# Zabbix monitoring with the PostgreSQL plugin of the agent
+zabbix_monitoring: true
+zabbix_server_vhost: zabbix.example.com
+# No Zabbix server available for the API tasks
+zabbix_agent_server_api: false

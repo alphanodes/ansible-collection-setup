@@ -30,25 +30,30 @@
         mode: '0440'
         validate: visudo -cf %s
 
-    # [DEPRECATION WARNING]: The connection's stdin object is deprecated. Call display.prompt_until(msg) instead. This feature will be removed in version 2.19.
-    - name: Install zabbix sql PostgreSQL files
-      ansible.posix.synchronize:
-        src: zabbix/postgresql
-        dest: '{{ zabbix_agent_home }}'
-        # NOTE: workaroud for string problem
-        # @SEE https://github.com/ansible-collections/ansible.posix/issues/376#issuecomment-1222046195
-        dest_port: "{{ lookup('ansible.builtin.vars', 'ansible_port', default=22) }}"
-        group: false
-        owner: false
+    # Provides the pgsql.* keys of the template "PostgreSQL by Zabbix agent 2"
+    # (from the Zabbix repository, which the zabbix_agent role sets up)
+    - name: Install PostgreSQL plugin of the Zabbix agent
+      ansible.builtin.apt:
+        name: zabbix-agent2-plugin-postgresql
+        state: present
+      notify: Restart zabbix-agent2
 
-    # @TODO: this does not work with synchronize at the moment
-    - name: Set owner for sql PostgreSQL files
+    # A file of its own, so the configuration file of the package stays untouched
+    - name: Configure PostgreSQL plugin credentials
+      ansible.builtin.template:
+        src: zabbix_agent2_postgresql.conf.j2
+        dest: '{{ postgresql_zabbix_plugin_config }}'
+        owner: root
+        group: zabbix
+        mode: '0640'
+      no_log: '{{ hide_sensitive_data }}'
+      notify: Restart zabbix-agent2
+
+    # The old UserParameter based monitoring is replaced by the plugin
+    - name: Remove obsolete zabbix sql PostgreSQL files
       ansible.builtin.file:
         path: '{{ zabbix_agent_home }}/postgresql'
-        state: directory
-        recurse: true
-        owner: zabbix
-        group: zabbix
+        state: absent
 
 - name: Without zabbix monitoring
   when: not zabbix_monitoring
@@ -59,6 +64,11 @@
       community.postgresql.postgresql_user:
         login_port: "{{ _postgresql_login_port | default(postgresql_port) }}"
         name: '{{ postgresql_zabbix_user }}'
+        state: absent
+
+    - name: Remove PostgreSQL plugin credentials of the Zabbix agent
+      ansible.builtin.file:
+        path: '{{ postgresql_zabbix_plugin_config }}'
         state: absent
 
     - name: Remove zabbix sql postgresql files

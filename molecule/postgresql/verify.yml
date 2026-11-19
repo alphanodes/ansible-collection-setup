@@ -127,90 +127,54 @@
       ansible.builtin.assert:
         that: postgresql_operations.query_result[0].value == 42
 
-    - name: Grant monitoring permissions to the test user
+    - name: Read PostgreSQL plugin credentials of the Zabbix agent
+      ansible.builtin.stat:
+        path: /etc/zabbix/zabbix_agent2.d/plugins.d/postgresql_credentials.conf
+      register: postgresql_plugin_credentials
+
+    - name: Assert the credentials are readable for the agent only
+      ansible.builtin.assert:
+        that:
+          - postgresql_plugin_credentials.stat.exists
+          - postgresql_plugin_credentials.stat.pw_name == 'root'
+          - postgresql_plugin_credentials.stat.gr_name == 'zabbix'
+          - postgresql_plugin_credentials.stat.mode == '0640'
+
+    # Keys as the template "PostgreSQL by Zabbix agent 2" sends them: user
+    # zbx_monitor and an empty password, which the plugin takes from its
+    # default. Run as zabbix like the agent, so the file permissions count.
+    - name: Query the PostgreSQL plugin of the Zabbix agent
       become: true
-      become_user: postgres
-      community.postgresql.postgresql_membership:
-        login_port: '{{ postgresql_port }}'
-        group: pg_monitor
-        target_roles: molecule_user
-        state: present
-
-    - name: Install the monitoring SQL for verification
-      ansible.builtin.copy:
-        src: ../../roles/postgresql/files/zabbix/postgresql/pgsql.bgwriter.sql
-        dest: /tmp/molecule-pgsql.bgwriter.sql
-        mode: '0644'
-
-    - name: Execute monitoring SQL as an unprivileged monitoring role
+      become_user: zabbix
       ansible.builtin.command:
         argv:
-          - psql
-          - -h
-          - 127.0.0.1
-          - -p
-          - '{{ postgresql_port | string }}'
-          - -U
-          - molecule_user
-          - -d
-          - molecule_test
-          - -qtAX
-          - -v
-          - ON_ERROR_STOP=1
-          - -f
-          - /tmp/molecule-pgsql.bgwriter.sql
-      environment:
-        PGPASSWORD: molecule_password
-      changed_when: false
-      register: postgresql_bgwriter
-
-    - name: Assert monitoring JSON contains every expected numeric metric
-      ansible.builtin.assert:
-        that:
-          - item in (postgresql_bgwriter.stdout | from_json)
-          - (postgresql_bgwriter.stdout | from_json)[item] is number
-          - (postgresql_bgwriter.stdout | from_json)[item] >= 0
+          - zabbix_agent2
+          - -t
+          - 'pgsql.{{ item }}["tcp://localhost:{{ postgresql_port }}","zbx_monitor","","postgres"]'
       loop:
-        - checkpoints_timed
-        - checkpoints_req
-        - checkpoint_write_time
-        - checkpoint_sync_time
-        - buffers_checkpoint
-        - buffers_clean
-        - maxwritten_clean
-        - buffers_backend
-        - buffers_backend_fsync
-        - buffers_alloc
-
-    - name: Test monitoring aggregation with controlled worker statistics
-      ansible.builtin.command:
-        argv:
-          - psql
-          - -h
-          - 127.0.0.1
-          - -p
-          - '{{ postgresql_port | string }}'
-          - -U
-          - molecule_user
-          - -d
-          - molecule_test
-          - -qtAX
-          - -v
-          - ON_ERROR_STOP=1
-        stdin: |
-          {{ lookup('ansible.builtin.template', 'templates/bgwriter-fixture.sql.j2') }}
-          {{ lookup('ansible.builtin.file', '../../roles/postgresql/files/zabbix/postgresql/pgsql.bgwriter.sql') }}
-      environment:
-        PGPASSWORD: molecule_password
+        - ping
+        - bgwriter
+        - db.discovery
+      register: postgresql_plugin_keys
       changed_when: false
-      register: postgresql_bgwriter_fixture
 
-    - name: Assert worker writes are included and background writes are excluded
+    - name: Assert the plugin connects and returns data
       ansible.builtin.assert:
         that:
-          # Client (2), autovacuum (3) and parallel worker (5), each writing 8192-byte blocks.
-          - (postgresql_bgwriter_fixture.stdout | from_json).buffers_backend == 81920
-          - (postgresql_bgwriter_fixture.stdout | from_json).buffers_backend_fsync == 10
+          - postgresql_plugin_keys.results[0].stdout is search('\[s\|1(\.0+)?\]$')
+          - postgresql_plugin_keys.results[1].stdout is search('checkpoints_req')
+          - postgresql_plugin_keys.results[2].stdout is search('molecule_test')
+        fail_msg: "{{ postgresql_plugin_keys.results | map(attribute='stdout') | list }}"
+
+    - name: Read obsolete zabbix sql PostgreSQL files
+      ansible.builtin.stat:
+        path: /var/lib/zabbix/postgresql
+      register: postgresql_obsolete_sql
+
+    - name: Assert the obsolete sql files are removed
+      ansible.builtin.assert:
+        that:
+          - not postgresql_obsolete_sql.stat.exists
 
     - name: Read the baseline recorded before the CLI check step
       ansible.builtin.slurp:

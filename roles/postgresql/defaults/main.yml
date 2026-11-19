@@ -23,6 +23,10 @@ postgresql_with_pgvector: false
 postgresql_password_salt: "{{ common_password_salt | default('') }}"
 postgresql_zabbix_user: zbx_monitor
 postgresql_zabbix_password: '{{ [ansible_facts["machine_id"], ansible_facts["hostname"], postgresql_password_salt, "zabbix-agent-postgresql"] | join | hash("md5") }}'
+# Credentials of the Zabbix agent 2 PostgreSQL plugin (with zabbix_monitoring).
+# The template "PostgreSQL by Zabbix agent 2" connects to tcp://localhost:5432,
+# hosts on another port need the host macro {$PG.CONNSTRING.AGENT2}
+postgresql_zabbix_plugin_config: /etc/zabbix/zabbix_agent2.d/plugins.d/postgresql_credentials.conf
 
 # see http://pgtune.leopard.in.ua/ for calculation
 

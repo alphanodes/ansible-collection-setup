@@ -12,10 +12,20 @@
         cache_valid_time: 600
       changed_when: false
 
+  # The zabbix_agent role runs before postgresql on the servers (dependency of
+  # the server role there) and provides the Zabbix repository for the plugin
   roles:
+    - role: alphanodes.setup.zabbix_agent
     - role: alphanodes.setup.postgresql
 
   post_tasks:
+    # On a fresh server the agent configuration gets the PostgreSQL checks with
+    # the next rollout, as the zabbix_agent role detects PostgreSQL before the
+    # postgresql role installs it. Run it again to converge in one go.
+    - name: Configure the Zabbix agent for the installed PostgreSQL
+      ansible.builtin.include_role:
+        name: alphanodes.setup.zabbix_agent
+
     - name: Assert the CLI check step uses the original port for database checks
       ansible.builtin.assert:
         that:

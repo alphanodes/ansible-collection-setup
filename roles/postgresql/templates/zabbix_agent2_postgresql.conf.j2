@@ -1,0 +1,10 @@
+{{ managed_by_ansible | comment }}
+#
+# Credentials of the Zabbix agent 2 PostgreSQL plugin. The keys of the template
+# "PostgreSQL by Zabbix agent 2" pass the user ({$PG.USER}, zbx_monitor by
+# default) and an empty password ({$PG.PASSWORD}), so the plugin falls back to
+# the default password here and the password never has to be stored in Zabbix.
+# The plugin itself is set up in postgresql.conf of the package.
+
+Plugins.PostgreSQL.Default.User={{ postgresql_zabbix_user }}
+Plugins.PostgreSQL.Default.Password={{ postgresql_zabbix_password }}

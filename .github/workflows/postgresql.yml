@@ -9,6 +9,7 @@ name: "alphanodes.setup.postgresql"
       - 'roles/postgresql/**'
       - 'roles/common/**'
       - 'roles/postgresql_client/**'
+      - 'roles/zabbix_agent/**'
       - 'molecule/postgresql/**'
       - 'molecule/postgresql_client/**'
       - '.github/workflows/postgresql.yml'
