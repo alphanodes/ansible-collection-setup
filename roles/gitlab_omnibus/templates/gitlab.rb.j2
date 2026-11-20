@@ -181,6 +181,9 @@ pages_external_url '{{ gitlab_pages_external_url }}'
    the daemon bind those ports itself, which collides with the nginx. #}
 {% if gitlab_pages_with_tls %}
 pages_nginx['redirect_http_to_https'] = true
+{% if not gitlab_nginx_http2_enabled | bool %}
+pages_nginx['http2_enabled'] = false
+{% endif %}
 {% if gitlab_pages_nginx_ssl_certificate %}
 pages_nginx['ssl_certificate'] = '{{ gitlab_pages_nginx_ssl_certificate }}'
 pages_nginx['ssl_certificate_key'] = '{{ gitlab_pages_nginx_ssl_certificate_key }}'
@@ -202,6 +205,9 @@ gitlab_pages['auth_scope'] = 'read_api'
 ## nginx
 nginx['redirect_http_to_https'] = true
 nginx['ssl_protocols'] = '{{ gitlab_nginx_ssl_protocols }}'
+{% if not gitlab_nginx_http2_enabled | bool %}
+nginx['http2_enabled'] = false
+{% endif %}
 {% if gitlab_nginx_ssl_certificate is defined %}
 nginx['ssl_certificate'] = '{{ gitlab_nginx_ssl_certificate }}'
 {% endif %}

@@ -79,6 +79,12 @@ gitlab_nginx_listen_addresses:
 
 gitlab_nginx_ssl_protocols: "{{ nginx_ssl_protocols }}"
 
+# HTTP/2 of the bundled nginx for GitLab and Pages. Set to false only as a
+# temporary mitigation, when the bundled nginx has an HTTP/2 vulnerability and
+# GitLab has not shipped a fixed nginx yet. Browsers and git fall back to
+# HTTP/1.1, KAS over grpcs needs HTTP/2.
+gitlab_nginx_http2_enabled: true
+
 # User agents rejected by nginx with HTTP 403 before they reach Puma.
 # Entries are case-insensitive regex fragments joined into one alternation,
 # so plain substrings such as 'GPTBot' are sufficient.
