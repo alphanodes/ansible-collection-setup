@@ -40,6 +40,14 @@
         fail_msg: "backup_borg_excludes missing in backup playbook: {{ backup_playbook_vars }}"
         success_msg: "backup_borg_excludes is passed to the backup playbook"
 
+    - name: Verify owner, group and mode of the backup directory reach the backup playbook
+      ansible.builtin.assert:
+        that:
+          - backup_playbook_vars.backup_dir_owner == 'postgres'
+          - backup_playbook_vars.backup_dir_group == 'www-data'
+          - backup_playbook_vars.backup_dir_mode == '0750'
+        fail_msg: "backup_dir settings missing in backup playbook: {{ backup_playbook_vars }}"
+
     - name: Read matomo_geoip_update timer unit
       ansible.builtin.slurp:
         src: /etc/systemd/system/matomo-geoip-update.timer

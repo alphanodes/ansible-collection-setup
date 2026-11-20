@@ -52,7 +52,10 @@
     backup_dir: {{ backup_dir }}
 {% endif %}
 {% if backup_dir_mode is defined %}
-    backup_dir_mode: {{ backup_dir_mode }}
+    backup_dir_mode: '{{ backup_dir_mode }}'
+{% endif %}
+{% if backup_dir_owner is defined %}
+    backup_dir_owner: {{ backup_dir_owner }}
 {% endif %}
 {% if backup_dir_group is defined %}
     backup_dir_group: {{ backup_dir_group }}
