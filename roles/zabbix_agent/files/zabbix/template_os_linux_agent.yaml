@@ -38,16 +38,20 @@ zabbix_export:
           delay: 2h
           history: 2w
           value_type: CHAR
-          description: 'SSH should allow only key authentication for security.'
+          description: 'Effective PasswordAuthentication of sshd (sshd -T).'
           tags:
             - tag: Application
               value: Security
           triggers:
             - uuid: 32478be4afe340518d38a9ced0f9ca3e
-              expression: 'find(/Linux/linux[PasswordAuthentication,sshd_config],,"like","yes")=1'
-              name: 'SSH PasswordAuthentication = yes'
+              expression: 'last(/Linux/linux[PasswordAuthentication,sshd_config])<>"{$SSH.PASSWORD_AUTH}"'
+              name: 'SSH PasswordAuthentication = {ITEM.LASTVALUE}, expected {$SSH.PASSWORD_AUTH}'
               priority: WARNING
-              description: 'PasswordAuthentication should not be allowed because of security issues.'
+              description: |
+                The effective PasswordAuthentication of sshd differs from the
+                configured one. The zabbix_agent role sets {$SSH.PASSWORD_AUTH}
+                to yes on hosts with ssh_server_password_authentication, all
+                other hosts should allow only key authentication.
         - uuid: 70631fb4ec9b46d8bbbd3925641d5661
           name: 'SSH PermitEmptyPasswords'
           key: 'linux[PermitEmptyPasswords,sshd_config]'
@@ -240,6 +244,9 @@ zabbix_export:
       macros:
         - macro: '{$LOAD_AVG_PER_CPU.MAX.WARN}'
           value: '3'
+        - macro: '{$SSH.PASSWORD_AUTH}'
+          value: 'no'
+          description: 'Expected PasswordAuthentication of sshd, set per host by the zabbix_agent role'
         - macro: '{$SECURITY_LOG_HOURS}'
           value: '12'
           description: 'Time window in hours for the invalid logins check'

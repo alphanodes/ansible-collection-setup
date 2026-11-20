@@ -131,3 +131,30 @@
   throttle: 1
   tags:
     - api
+
+# Expected value of the trigger "SSH PasswordAuthentication" of the Linux
+# template (default no), so hosts that allow passwords on purpose (ssh role)
+# raise no warning
+- name: "Set expected SSH password authentication"
+  community.zabbix.zabbix_hostmacro:
+    host_name: "{{ zabbix_agent_hostname }}"
+    macro_name: SSH.PASSWORD_AUTH
+    macro_value: 'yes'
+    state: "{{ 'present' if ssh_server_password_authentication | default(false) | bool else 'absent' }}"
+  when:
+    - zabbix_api_create_hosts | bool
+  vars:
+    ansible_network_os: community.zabbix.zabbix
+    ansible_connection: httpapi
+    ansible_httpapi_port: 443
+    ansible_zabbix_url_path: '{{ zabbix_url_path }}'
+    ansible_httpapi_use_ssl: true
+    ansible_httpapi_validate_certs: "{{ zabbix_validate_certs | default(true) }}"
+    ansible_user: '{{ zabbix_api_user }}'
+    ansible_httpapi_pass: '{{ zabbix_api_pass }}'
+  delegate_to: '{{ zabbix_server_vhost }}'
+  # All hosts share one persistent httpapi connection to the Zabbix server,
+  # parallel forks break its socket
+  throttle: 1
+  tags:
+    - api
