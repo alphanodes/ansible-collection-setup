@@ -41,17 +41,18 @@
           - ansible_facts.packages.keys() | select('match', 'php8') | list == []
         fail_msg: "PHP 8 packages installed: {{ ansible_facts.packages.keys() | select('match', 'php8') | list }}"
 
-    # sury versions contain '+0~', Debian versions do not
+    # sury versions contain '+0~' (older builds) or 'debsuryorg' (current
+    # builds), Debian versions contain neither
     - name: Assert libraries come from Debian
       ansible.builtin.assert:
         that:
-          - ansible_facts.packages['libgd3'][0].version is not search('\+0~')
+          - ansible_facts.packages['libgd3'][0].version is not search('\+0~|debsuryorg')
         fail_msg: "libgd3 {{ ansible_facts.packages['libgd3'][0].version }} comes from sury"
 
     - name: Assert PHP 7.4 and php-common come from sury
       ansible.builtin.assert:
         that:
-          - ansible_facts.packages[item][0].version is search('\+0~')
+          - ansible_facts.packages[item][0].version is search('\+0~|debsuryorg')
         fail_msg: "{{ item }} {{ ansible_facts.packages[item][0].version }} does not come from sury"
       loop:
         - php7.4-fpm
