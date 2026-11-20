@@ -167,7 +167,7 @@
         fail_msg: "{{ postgresql_plugin_keys.results | map(attribute='stdout') | list }}"
 
     # Like the UserParameter pg_collation_mismatch of the agent: zabbix runs the
-    # query file through sudo as postgres
+    # query file through sudo as postgres (sudo-rs on Ubuntu)
     - name: Run the collation check as zabbix through sudo
       become: true
       become_user: zabbix
@@ -178,7 +178,8 @@
           - -u
           - postgres
           # No port: like the agent, pg_wrapper picks the port of the cluster
-          - psql
+          - /usr/bin/psql
+          - -X
           - -t
           - -A
           - -f

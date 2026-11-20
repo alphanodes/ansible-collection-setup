@@ -359,7 +359,7 @@ UserParameter=php[*], bash {{ zabbix_addons_dir }}/scripts/php_check.sh "$1" "$2
 UserParameter=drush[*], bash {{ zabbix_addons_dir }}/scripts/drush_check.sh "$1" "$2" "$3" "$4"
 {% endif %}
 {% if postgres_installed %}
-UserParameter=pg_collation_mismatch, sudo -u postgres psql -t -A -f /etc/zabbix/pg_collation_mismatch.sql
+UserParameter=pg_collation_mismatch, sudo -n -u postgres /usr/bin/psql -X -t -A -f /etc/zabbix/pg_collation_mismatch.sql
 {% endif %}
 {% if redmine_installed %}
 UserParameter=redmine_log[*], bash {{ zabbix_addons_dir }}/scripts/journal_check.sh redmine "$1"
