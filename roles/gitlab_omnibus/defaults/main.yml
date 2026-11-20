@@ -42,7 +42,10 @@ gitlab_backup_on_calendar: '02:30'
 gitlab_backup_owner: "{{ backup_dir_owner | default('git') }}"
 gitlab_backup_group: "{{ backup_dir_group | default('git') }}"
 gitlab_backup_pg_schema: public
-gitlab_backup_path_mode: '0750'
+# Follows backup_dir_mode like owner and group follow backup_dir_owner and
+# backup_dir_group, so this role and the backup role (alphanodes.tasks) set
+# the same mode. 0700 is also what GitLab uses when it manages the path.
+gitlab_backup_path_mode: "{{ backup_dir_mode | default('0700') }}"
 gitlab_backup_archive_permissions: '0644'
 # 7 days in seconds
 gitlab_backup_keep_time: 604800
