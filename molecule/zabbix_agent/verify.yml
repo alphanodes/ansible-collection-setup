@@ -286,6 +286,26 @@
         fail_msg: "sshd checks return no setting: {{ sshd_checks.results | map(attribute='stdout') | list }}"
         success_msg: "sshd checks read the effective sshd configuration"
 
+    - name: Run the other linux_check.sh checks as zabbix
+      ansible.builtin.command: /usr/share/zabbix_addons/scripts/linux_check.sh {{ item }}
+      become: true
+      become_user: zabbix
+      loop:
+        - world_write_etc perm
+        - server_name_in_hosts performance
+        - password_accounts users
+      register: linux_checks
+      changed_when: false
+
+    - name: Verify the other linux_check.sh checks return real values
+      ansible.builtin.assert:
+        that:
+          - linux_checks.results[0].stdout is regex('^[0-9]+$')
+          - linux_checks.results[1].stdout in ['yes', 'no']
+          - linux_checks.results[2].stdout is regex('^(none|[a-z_][a-z0-9_.-]*( [a-z_][a-z0-9_.-]*)*)$')
+        fail_msg: "linux_check.sh returns: {{ linux_checks.results | map(attribute='stdout') | list }}"
+        success_msg: "world_write_etc, server_name_in_hosts and password_accounts work as zabbix"
+
     # With fork_worker, workers 1..n are children of worker 0, so the check
     # must select the workers by process title, not by parent PID
     - name: Start fake puma processes as nobody
@@ -321,7 +341,7 @@
       loop:
         - /usr/bin/find /etc -type f -perm -002
         - /usr/bin/find /etc -type d -perm -002
-        - /usr/bin/passwd -S root
+        - /usr/bin/passwd -S -a
         - /usr/sbin/sshd -T
       changed_when: false
 
@@ -336,6 +356,7 @@
         - /usr/bin/stat /etc/shadow
         - /usr/bin/find /etc -maxdepth 0 -exec /bin/true ;
         - /usr/bin/find / -maxdepth 0
+        - /usr/bin/passwd -S root
         - /usr/bin/apt-get -qq update
       register: zabbix_forbidden_sudo
       changed_when: false

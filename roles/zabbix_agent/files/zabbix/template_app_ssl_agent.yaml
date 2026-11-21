@@ -12,9 +12,12 @@ zabbix_export:
         Alerts before the TLS certificate of {$SSL_HOST}:{$SSL_PORT} expires
         (30 days info, 10 days average). Set both macros on the host.
 
-        This template requires:
-        - Zabbix agent with UserParameter linux[*] configured by the
-          alphanodes.setup.zabbix_agent role
+        The expiry is read with web.certificate.get of Zabbix agent 2. It is
+        reported for every certificate, also for an internal CA, a self signed
+        certificate or a host name mismatch (only the verification result
+        differs, which this template ignores on purpose).
+
+        This template requires Zabbix agent 2.
       vendor:
         name: AlphaNodes
         version: 7.4-__DATE__
@@ -23,23 +26,53 @@ zabbix_export:
       items:
         - uuid: 32501cae20604696985d557c20cd3f98
           name: ssl_cert_valid_days
-          key: 'linux[ssl,ssl,{$SSL_HOST},{$SSL_PORT}]'
+          key: 'web.certificate.get[{$SSL_HOST},{$SSL_PORT}]'
           delay: 6m
           history: 2w
+          value_type: FLOAT
+          description: 'Days until the certificate of {$SSL_HOST}:{$SSL_PORT} expires, -0.9902 if it cannot be fetched.'
+          preprocessing:
+            # A failed fetch becomes the error value instead of an unsupported
+            # item, so the check failed trigger can report it
+            - type: CHECK_NOT_SUPPORTED
+              parameters:
+                - '-1'
+              error_handler: CUSTOM_VALUE
+              error_handler_params: '-0.9902'
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var data = JSON.parse(value);
+                  if (typeof data === 'number') {
+                      return data;
+                  }
+                  return Math.floor((data.x509.not_after.timestamp - Date.now() / 1000) / 86400);
           tags:
             - tag: Application
               value: SSL
           triggers:
             - uuid: 6951da77f1784fe2b4723c362dbe6dec
-              expression: 'last(/SSL/linux[ssl,ssl,{$SSL_HOST},{$SSL_PORT}])<10'
+              expression: 'last(/SSL/web.certificate.get[{$SSL_HOST},{$SSL_PORT}])<10 and last(/SSL/web.certificate.get[{$SSL_HOST},{$SSL_PORT}])<>-0.9902'
               name: 'SSL certificate expires in {ITEM.LASTVALUE} days for {$SSL_HOST}'
               priority: AVERAGE
               description: 'The SSL certificate expires in {ITEM.LASTVALUE} days for  {$SSL_HOST}. Renew this certificate to provide a secure connection to this webpage.'
+            - uuid: d4e431795ca44c8b820cd65ccb3a384d
+              expression: 'max(/SSL/web.certificate.get[{$SSL_HOST},{$SSL_PORT}],30m)=-0.9902'
+              name: 'SSL certificate check failed for {$SSL_HOST}'
+              priority: WARNING
+              description: |
+                The certificate of {$SSL_HOST}:{$SSL_PORT} could not be fetched
+                for 30 minutes, so its expiry is not monitored. Check the item
+                error and run zabbix_agent2 -t 'web.certificate.get[...]' on the host.
             - uuid: a92fef7cdd074bbc82052ecd2b327a87
-              expression: 'last(/SSL/linux[ssl,ssl,{$SSL_HOST},{$SSL_PORT}])<30'
+              expression: 'last(/SSL/web.certificate.get[{$SSL_HOST},{$SSL_PORT}])<30 and last(/SSL/web.certificate.get[{$SSL_HOST},{$SSL_PORT}])<>-0.9902'
               name: 'SSL certificate expires in {ITEM.LASTVALUE} days for {$SSL_HOST}'
               priority: INFO
               description: 'The SSL certificate expires in {ITEM.LASTVALUE} days for  {$SSL_HOST}. Renew this certificate to provide a secure connection to this webpage.'
               dependencies:
                 - name: 'SSL certificate expires in {ITEM.LASTVALUE} days for {$SSL_HOST}'
-                  expression: 'last(/SSL/linux[ssl,ssl,{$SSL_HOST},{$SSL_PORT}])<10'
+                  expression: 'last(/SSL/web.certificate.get[{$SSL_HOST},{$SSL_PORT}])<10 and last(/SSL/web.certificate.get[{$SSL_HOST},{$SSL_PORT}])<>-0.9902'
+      macros:
+        - macro: '{$SSL_PORT}'
+          value: '443'
+          description: 'TLS port of {$SSL_HOST}'

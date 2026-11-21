@@ -1,155 +1,77 @@
 #!/bin/bash
-##################################
-# Zabbix monitoring script
+{{ managed_by_ansible | comment }}
 #
-# nginx:
-#  - check ssh configuration
-#  - check login accounts
+# Zabbix checks that need root (through the sudoers rules of the
+# zabbix_agent role) or are not covered by the agent itself.
 #
-##################################
-
-# Zabbix requested parameter
-ZBX_REQ_DATA="$1"
-ZBX_REQ_DATA_SOURCE="$2"
-ZBX_REQ_DATA_PARAM="$3"
-ZBX_REQ_DATA_PARAM2="$4"
-
-# SSH server binary, sshd -T prints the effective configuration
-# including all sshd_config.d drop-ins (sshd_config itself is mode 0600)
-SSHD_BIN=/usr/sbin/sshd
-
+# Usage: linux_check.sh <key> <source>
+#   linux_check.sh PasswordAuthentication sshd_config
+#   linux_check.sh world_write_etc perm
+#   linux_check.sh server_name_in_hosts performance
+#   linux_check.sh password_accounts users
 #
-# Error handling:
-#  - need to be displayable in Zabbix (avoid NOT_SUPPORTED)
-#  - items need to be of type "float" (allow negative + float)
-#
-ERROR_WRONG_PARAM="-0.9902"
+# The TLS certificate check uses the agent key web.certificate.get.
 
-if [ -z "$ZBX_REQ_DATA_SOURCE" ]; then
-  ZBX_REQ_DATA_SOURCE='performance'
-fi
+# A failing sudo in a pipeline (e.g. sudo find | wc -l) has to fail the check
+set -o pipefail
 
-# get performance information
-get_performance(){
-	if [ -z "$ZBX_REQ_DATA" ]; then
-	  echo $ERROR_WRONG_PARAM
-	  exit 1
-	fi
-	if [ "$ZBX_REQ_DATA" == "server_name_in_hosts" ]; then
-    LBSA_HOSTNAME=`hostname`
-    if [ "`cat /etc/hosts | grep \"$LBSA_HOSTNAME\"`" = "" ]; then
-      value="no"
-    else
-      value="yes"
-    fi
-	else
-	  echo $ERROR_WRONG_PARAM
-	  exit 1
-	fi
-	[ -z "$value" ] && echo $ERROR_WRONG_PARAM || echo $value
+key="$1"
+source="$2"
+
+# Error value: displayable in Zabbix (no NOT_SUPPORTED) and distinguishable
+# from real values by the triggers
+ERROR_VALUE="-0.9902"
+
+fail() {
+  echo "$ERROR_VALUE"
+  exit 1
 }
 
-# get ssl age validation days
-get_ssl(){
-	if [ -z "$ZBX_REQ_DATA" ]; then
-	  echo $ERROR_WRONG_PARAM
-	  exit 1
-	fi
+# Effective sshd configuration value, sshd -T includes all sshd_config.d
+# drop-ins (keys are lower case there)
+get_sshd_config() {
+  local value
+  value=$(sudo -n /usr/sbin/sshd -T 2>/dev/null | awk -v k="${key,,}" '$1 == k { print $2; exit }')
+  [ -n "$value" ] || fail
+  echo "$value"
+}
 
-  if [ -z "$ZBX_REQ_DATA_PARAM" ]; then
- 	   echo $ERROR_WRONG_PARAM
-	   exit 1
+# Number of world writable files and directories in /etc
+get_file_permission() {
+  local files dirs
+  [ "$key" = "world_write_etc" ] || fail
+  files=$(sudo -n /usr/bin/find /etc -type f -perm -002 | wc -l) || fail
+  dirs=$(sudo -n /usr/bin/find /etc -type d -perm -002 | wc -l) || fail
+  echo $((files + dirs))
+}
+
+# Whether the host name has an entry in /etc/hosts
+get_performance() {
+  [ "$key" = "server_name_in_hosts" ] || fail
+  if grep -qw -- "$(hostname)" /etc/hosts; then
+    echo yes
   else
-	   SSL_HOST=$ZBX_REQ_DATA_PARAM
-  fi
-
-  if [ -z "$ZBX_REQ_DATA_PARAM2" ]; then
-     SSL_PORT=443
-  else
-     SSL_PORT=$ZBX_REQ_DATA_PARAM2
-  fi
-
-  end_date=`openssl s_client -servername $SSL_HOST -host $SSL_HOST -port $SSL_PORT -showcerts -prexit </dev/null 2>/dev/null |
-            sed -n '/BEGIN CERTIFICATE/,/END CERT/p' |
-            openssl x509 -text 2>/dev/null |
-            sed -n 's/ *Not After : *//p'`
-
-  if [ -n "$end_date" ]
-  then
-    end_date_seconds=`date '+%s' --date "$end_date"`
-    now_seconds=`date '+%s'`
-    echo "($end_date_seconds-$now_seconds)/24/3600" | bc
-  else
-    echo $ERROR_WRONG_PARAM
+    echo no
   fi
 }
 
-# get users
-get_users(){
-	if [ -z "$ZBX_REQ_DATA" ]; then
-	  echo $ERROR_WRONG_PARAM
-	  exit 1
-	fi
-	if [ "$ZBX_REQ_DATA" == "login_accounts" ]; then
-    USERLIST=`cat /etc/passwd | cut -f 1 -d ":"`
-    LOGINLIST=""
-    for USERNAME in $USERLIST
-    do
-        if [ "`sudo passwd -S $USERNAME | grep \" P \"`" != "" ]; then
-            if [ "$LOGINLIST" = "" ]; then
-                LOGINLIST="$USERNAME"
-            else
-                LOGINLIST="$LOGINLIST $USERNAME"
-            fi
-        fi
-    done
-    value=`echo $LOGINLIST | wc -w`
-	else
-	  echo $ERROR_WRONG_PARAM
-	  exit 1
-	fi
-	[ -z "$value" ] && echo $ERROR_WRONG_PARAM || echo $value
+# Accounts with a usable password, sorted and space separated ("none" if
+# there are none)
+get_users() {
+  local status accounts
+  [ "$key" = "password_accounts" ] || fail
+  status=$(sudo -n /usr/bin/passwd -S -a 2>/dev/null) || fail
+  [ -n "$status" ] || fail
+  accounts=$(awk '$2 == "P" { print $1 }' <<< "$status" | sort | paste -sd ' ')
+  echo "${accounts:-none}"
 }
 
-# get the effective sshd configuration value (keys are lower case in sshd -T)
-get_sshd_config(){
-	if [ -z "$ZBX_REQ_DATA" ]; then
-	  echo $ERROR_WRONG_PARAM
-	  exit 1
-	fi
-	key=`echo "$ZBX_REQ_DATA" | tr '[:upper:]' '[:lower:]'`
-	value=`sudo $SSHD_BIN -T 2>/dev/null | awk -v k="$key" '$1 == k {print $2; exit}'`
-	[ -z "$value" ] && echo $ERROR_WRONG_PARAM || echo $value
-}
+[ -n "$key" ] || fail
 
-# get file permission information
-get_file_permission(){
-
-	if [ -z "$ZBX_REQ_DATA" ]; then
-	  echo $ERROR_WRONG_PARAM
-	  exit 1
-	fi
-  if [ "$ZBX_REQ_DATA" == "world_write_etc" ]; then
-	  value_files=`sudo find /etc -type f -perm -002 | wc -l`
-	  value_dirs=`sudo find /etc -type d -perm -002 | wc -l`
-	  value=$(($value_files + $value_dirs))
-	else
-	  echo $ERROR_WRONG_PARAM
-	  exit 1
-	fi
-  [ -z "$value" ] && echo $ERROR_WRONG_PARAM || echo $value
-}
-
-#
-# Grab data for key ZBX_REQ_DATA
-#
-case $ZBX_REQ_DATA_SOURCE in
-  sshd_config)	get_sshd_config;;
-  ssl)          get_ssl;;
-  users)        get_users;;
-  perm)         get_file_permission;;
-  performance)  get_performance;;
-  *) echo $ERROR_WRONG_PARAM; exit 1;;
+case "$source" in
+  sshd_config) get_sshd_config ;;
+  perm) get_file_permission ;;
+  performance) get_performance ;;
+  users) get_users ;;
+  *) fail ;;
 esac
-
-exit 0

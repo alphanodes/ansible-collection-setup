@@ -10,8 +10,8 @@ zabbix_export:
       name: Linux
       description: |
         Base template for Linux hosts: sshd_config hardening, world-writable
-        files in /etc, the host name in /etc/hosts, memory per process group,
-        invalid logins and the overall systemd state.
+        files in /etc, the host name in /etc/hosts, accounts with a password,
+        memory per process group, invalid logins and the overall systemd state.
 
         It links the official "Linux by Zabbix agent" template and the Journal
         and Services templates of this collection, so a host only needs this
@@ -32,6 +32,26 @@ zabbix_export:
       groups:
         - name: 'Templates/Operating systems'
       items:
+        - uuid: fda76b21f6b14988bdb560b6aa186142
+          name: 'Accounts with password'
+          key: 'linux[password_accounts,users]'
+          delay: 2h
+          history: 90d
+          value_type: CHAR
+          description: 'Accounts with a usable password (passwd -S -a), "none" if all accounts are locked or key only.'
+          tags:
+            - tag: Application
+              value: Security
+          triggers:
+            - uuid: 7e800a13042c480fb64232096c521ea0
+              expression: 'last(/Linux/linux[password_accounts,users],#1)<>last(/Linux/linux[password_accounts,users],#2) and last(/Linux/linux[password_accounts,users],#1)<>"-0.9902" and last(/Linux/linux[password_accounts,users],#2)<>"-0.9902"'
+              name: 'Accounts with password changed: {ITEM.LASTVALUE}'
+              priority: WARNING
+              manual_close: 'YES'
+              description: |
+                The list of accounts with a usable password changed. A new entry
+                can be a backdoor or a password set by hand. Compare with the
+                previous value in the item history and run passwd -S -a on the host.
         - uuid: 477c21a343c94c36905084b2a09468eb
           name: 'SSH PasswordAuthentication'
           key: 'linux[PasswordAuthentication,sshd_config]'
