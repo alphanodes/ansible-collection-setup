@@ -65,10 +65,10 @@
         database: shadow
         key: root
 
-    # The hash set in converge stays behind the "!", so the lock is reversible
+    # No hash of the password set in converge stays behind
     - name: Verify the root password is locked
       ansible.builtin.assert:
         that:
           - common_root_status.stdout.split()[1] == 'L'
-          - ansible_facts.getent_shadow.root[0] is match('!\\$')
+          - ansible_facts.getent_shadow.root[0] == '!'
         fail_msg: "{{ common_root_status.stdout }}"

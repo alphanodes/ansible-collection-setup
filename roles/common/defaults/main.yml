@@ -57,9 +57,11 @@ common_apt_install_recommends: false
 common_remove_sudo_rs: false
 
 # Lock the password of root, so nobody can log in as root with a password
-# (console, su). Keys and sudo keep working. A password set later, e.g. by a
-# password reset in the console of the hoster, is locked again by the next
-# run. Opt-in: hosts run by others may rely on the root password
+# (console, su). Keys and sudo keep working. The hash is replaced with "!"
+# like on a fresh cloud image, so /etc/shadow shows at once that there is no
+# password. A password set later, e.g. by a password reset in the console of
+# the hoster, is removed again by the next run. Opt-in: hosts run by others
+# may rely on the root password
 common_lock_root_password: false
 
 # MySQL backend selection: mysql (Oracle MySQL) or mariadb (Debian/Ubuntu native)
