@@ -44,7 +44,7 @@ zabbix_export:
               value: Security
           triggers:
             - uuid: 32478be4afe340518d38a9ced0f9ca3e
-              expression: 'last(/Linux/linux[PasswordAuthentication,sshd_config])<>"{$SSH.PASSWORD_AUTH}"'
+              expression: '(last(/Linux/linux[PasswordAuthentication,sshd_config])="yes" or last(/Linux/linux[PasswordAuthentication,sshd_config])="no") and last(/Linux/linux[PasswordAuthentication,sshd_config])<>"{$SSH.PASSWORD_AUTH}"'
               name: 'SSH PasswordAuthentication = {ITEM.LASTVALUE}, expected {$SSH.PASSWORD_AUTH}'
               priority: WARNING
               description: |
@@ -52,6 +52,14 @@ zabbix_export:
                 configured one. The zabbix_agent role sets {$SSH.PASSWORD_AUTH}
                 to yes on hosts with ssh_server_password_authentication, all
                 other hosts should allow only key authentication.
+            - uuid: 831d2f0cf5cc4b74959781916c042046
+              expression: 'last(/Linux/linux[PasswordAuthentication,sshd_config])<>"yes" and last(/Linux/linux[PasswordAuthentication,sshd_config])<>"no"'
+              name: 'SSH configuration check failed'
+              priority: WARNING
+              description: |
+                sshd -T returned no PasswordAuthentication value, so all sshd_config
+                checks are blind. Check the sudoers rule for zabbix and run
+                sudo -u zabbix sudo -n /usr/sbin/sshd -T on the host.
         - uuid: 70631fb4ec9b46d8bbbd3925641d5661
           name: 'SSH PermitEmptyPasswords'
           key: 'linux[PermitEmptyPasswords,sshd_config]'
@@ -244,12 +252,12 @@ zabbix_export:
       macros:
         - macro: '{$LOAD_AVG_PER_CPU.MAX.WARN}'
           value: '3'
-        - macro: '{$SSH.PASSWORD_AUTH}'
-          value: 'no'
-          description: 'Expected PasswordAuthentication of sshd, set per host by the zabbix_agent role'
         - macro: '{$SECURITY_LOG_HOURS}'
           value: '12'
           description: 'Time window in hours for the invalid logins check'
+        - macro: '{$SSH.PASSWORD_AUTH}'
+          value: 'no'
+          description: 'Expected PasswordAuthentication of sshd, set per host by the zabbix_agent role'
       dashboards:
         - uuid: b71c4aee60884803b06044ffa9a577ab
           name: 'Memory overview'

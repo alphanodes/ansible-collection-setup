@@ -193,6 +193,20 @@
       register: postgresql_sudo_impl
       changed_when: false
 
+    - name: Read the distribution
+      ansible.builtin.command: grep -oP '^ID=\K.*' /etc/os-release
+      register: postgresql_distribution
+      changed_when: false
+
+    # converge installs sudo-rs on Ubuntu, otherwise the check silently runs
+    # with the classic sudo (sudo.ws) and the sudo-rs rules stay untested
+    - name: Assert the collation check runs with sudo-rs on Ubuntu
+      ansible.builtin.assert:
+        that:
+          - postgresql_sudo_impl.stdout is search('cargo|sudo-rs')
+        fail_msg: 'Expected sudo-rs on Ubuntu, found {{ postgresql_sudo_impl.stdout }}'
+      when: postgresql_distribution.stdout | trim == 'ubuntu'
+
     - name: Assert the collation check returns a count
       ansible.builtin.assert:
         that:

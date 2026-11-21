@@ -81,6 +81,11 @@
         path: /etc/zabbix/pg_collation_mismatch.sql
         state: absent
 
+    - name: Remove sudoer access for zabbix
+      ansible.builtin.file:
+        path: /etc/sudoers.d/postgresql
+        state: absent
+
     - name: Remove PostgreSQL plugin credentials of the Zabbix agent
       ansible.builtin.file:
         path: '{{ postgresql_zabbix_plugin_config }}'
