@@ -46,3 +46,10 @@
       ansible.builtin.apt:
         name: sudo-rs
         state: absent
+
+# password_lock prefixes the hash with "!", so a later unlock restores it
+- name: Lock the root password
+  ansible.builtin.user:
+    name: root
+    password_lock: true
+  when: common_lock_root_password | bool

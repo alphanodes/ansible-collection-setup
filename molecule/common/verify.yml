@@ -54,3 +54,21 @@
       ansible.builtin.command: sudo -n true
       changed_when: false
       when: ansible_facts['distribution'] == 'Ubuntu'
+
+    - name: Read the password status of root
+      ansible.builtin.command: passwd -S root
+      register: common_root_status
+      changed_when: false
+
+    - name: Read the password hash of root
+      ansible.builtin.getent:
+        database: shadow
+        key: root
+
+    # The hash set in converge stays behind the "!", so the lock is reversible
+    - name: Verify the root password is locked
+      ansible.builtin.assert:
+        that:
+          - common_root_status.stdout.split()[1] == 'L'
+          - ansible_facts.getent_shadow.root[0] is match('!\\$')
+        fail_msg: "{{ common_root_status.stdout }}"

@@ -29,7 +29,16 @@
       when: ansible_facts['distribution'] == 'Ubuntu'
       tags: molecule-idempotence-notest
 
+    # Like a password reset in the console of the hoster
+    - name: Set a root password
+      ansible.builtin.shell: set -o pipefail && echo 'root:molecule' | chpasswd
+      args:
+        executable: /bin/bash
+      changed_when: true
+      tags: molecule-idempotence-notest
+
   roles:
     - role: alphanodes.setup.common
       vars:
         common_remove_sudo_rs: true
+        common_lock_root_password: true
