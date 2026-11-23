@@ -8,12 +8,10 @@
 - name: Include git role
   ansible.builtin.include_role:
     name: alphanodes.setup.git
-  when: roundcube_git_install
 
 - name: Include composer role
   ansible.builtin.include_role:
     name: alphanodes.setup.composer
-  when: roundcube_git_install
 
 # Since 1.7 composer.json is part of the repository (composer.json-dist is gone)
 - name: Install roundcube
@@ -26,7 +24,29 @@
     - Run composer for roundcube
     - Update roundcube js
     - Build roundcube css
-  when: roundcube_git_install
+
+# Handlers notified by the checkout are lost if a run fails before they are
+# flushed, so missing build results trigger them on every following run
+- name: Check roundcube build results
+  ansible.builtin.stat:
+    path: '{{ roundcube_htdocs }}/{{ item }}'
+  loop:
+    - vendor/autoload.php
+    - program/js/jquery.min.js
+    - skins/elastic/styles/styles.min.css
+  register: roundcube_build_results
+
+- name: Rebuild roundcube, if build results are missing
+  ansible.builtin.debug:
+    msg: >-
+      Missing {{ roundcube_build_results.results | rejectattr('stat.exists')
+      | map(attribute='item') | join(', ') }}
+  changed_when: true
+  notify:
+    - Run composer for roundcube
+    - Update roundcube js
+    - Build roundcube css
+  when: roundcube_build_results.results | rejectattr('stat.exists') | list | length > 0
 
 - name: Include nodejs role
   ansible.builtin.include_role:

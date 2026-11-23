@@ -2,8 +2,6 @@
 
 - name: With carddav
   when: roundcube_with_carddav
-  vars:
-    rcmcarddav_version: v5.1.5
   block:
     # see https://github.com/mstilkerich/rcmcarddav
     # We use the release tarball (with bundled vendor) instead of git+composer
@@ -19,12 +17,12 @@
 
     - name: Install rcmcarddav from release tarball
       ansible.builtin.unarchive:
-        src: 'https://github.com/mstilkerich/rcmcarddav/releases/download/{{ rcmcarddav_version }}/carddav-{{ rcmcarddav_version }}.tar.gz'
+        src: 'https://github.com/mstilkerich/rcmcarddav/releases/download/{{ roundcube_rcmcarddav_version }}/carddav-{{ roundcube_rcmcarddav_version }}.tar.gz'
         dest: '{{ roundcube_plugins_dir }}/'
         remote_src: true
         owner: "{{ nginx_user }}"
         group: "{{ nginx_group }}"
-      when: rcmcarddav_version not in rcmcarddav_installed.stdout
+      when: roundcube_rcmcarddav_version not in rcmcarddav_installed.stdout
 
     - name: Configuration for rcmcarddav
       ansible.builtin.template:

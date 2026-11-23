@@ -11,6 +11,15 @@
       a public default would allow decrypting the IMAP passwords in sessions
     quiet: true
 
+- name: Ensure the removed roundcube_git_install is not disabled
+  ansible.builtin.assert:
+    that:
+      - roundcube_git_install is not defined or roundcube_git_install | bool
+    fail_msg: >-
+      roundcube_git_install has been removed, the role always installs
+      Roundcube from git. Remove the variable from your inventory.
+    quiet: true
+
 - name: Include setup tasks
   ansible.builtin.include_tasks: setup.yml
   tags:

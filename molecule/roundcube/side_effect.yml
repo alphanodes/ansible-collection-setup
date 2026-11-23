@@ -1,0 +1,14 @@
+---
+# Simulate a run that failed before the build handlers were flushed: the
+# checkout is unchanged, but a build result is missing
+- name: Remove a roundcube build result
+  hosts: all
+  become: true
+  tasks:
+    - name: Remove compiled elastic stylesheet
+      ansible.builtin.file:
+        path: /srv/roundcube/skins/elastic/styles/styles.min.css
+        state: absent
+
+- name: Converge again to rebuild the missing build result
+  ansible.builtin.import_playbook: converge.yml

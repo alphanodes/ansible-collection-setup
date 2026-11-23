@@ -30,9 +30,10 @@
     query: "SHOW TABLES LIKE 'system'"
   register: rcmail_schema
   changed_when: false
-  # Read-only query, also needed in check mode for the import condition
+  # Read-only query, also needed in check mode for the import condition.
+  # On a new host the database does not exist yet in check mode.
   check_mode: false
-  when: roundcube_git_install
+  ignore_errors: '{{ ansible_check_mode }}'
 
 - name: Import initial roundcube database schema
   ansible.mysql.mysql_db:
@@ -41,7 +42,7 @@
     state: import
     target: '{{ roundcube_htdocs }}/SQL/mysql.initial.sql'
   when:
-    - roundcube_git_install
+    - rcmail_schema.rowcount is defined
     - rcmail_schema.rowcount[0] == 0
 
 - name: Update roundcube database schema
@@ -50,4 +51,3 @@
     chdir: '{{ roundcube_htdocs }}'
   register: rcmail_updatedb
   changed_when: "'Updating database schema' in rcmail_updatedb.stdout"
-  when: roundcube_git_install

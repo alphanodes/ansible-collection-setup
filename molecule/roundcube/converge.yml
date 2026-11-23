@@ -36,9 +36,6 @@
     roundcube_vhost_letsencrypt: false
     roundcube_vhost_ssl_cert: roundcube
     roundcube_vhost_for_zabbix: false
-    # Real installation from git, so the test covers the 1.7 layout
-    # (public_html, static.php) and the build steps
-    roundcube_git_install: true
     roundcube_db_password: 'test_roundcube_password'
     roundcube_des_key: 'molecule-test-des-key-24'
     # Non-default value to verify the template uses the variable

@@ -159,6 +159,23 @@
           - roundcube_schema.stdout | length > 0
         fail_msg: "roundcube database schema not installed"
 
+    - name: Read role defaults for the expected versions
+      ansible.builtin.include_vars:
+        file: ../../roles/roundcube/defaults/main.yml
+        name: roundcube_defaults
+
+    - name: Check build results were rebuilt after the side effect
+      ansible.builtin.stat:
+        path: /srv/roundcube/skins/elastic/styles/styles.min.css
+      register: rebuilt_css
+
+    - name: Verify missing build results are rebuilt
+      ansible.builtin.assert:
+        that:
+          - rebuilt_css.stat.exists
+          - rebuilt_css.stat.size > 0
+        fail_msg: "styles.min.css was not rebuilt after it was removed"
+
     - name: Read installed rcmcarddav version
       ansible.builtin.command: grep -oE "PLUGIN_VERSION = '[^']+'" /srv/roundcube/plugins/carddav/carddav.php
       register: carddav_version
@@ -167,8 +184,8 @@
     - name: Verify rcmcarddav is installed
       ansible.builtin.assert:
         that:
-          - "'v5.1.5' in carddav_version.stdout"
-        fail_msg: "rcmcarddav v5.1.5 not installed"
+          - roundcube_defaults.roundcube_rcmcarddav_version in carddav_version.stdout
+        fail_msg: "rcmcarddav {{ roundcube_defaults.roundcube_rcmcarddav_version }} not installed"
 
     - name: Display test results
       ansible.builtin.debug:
