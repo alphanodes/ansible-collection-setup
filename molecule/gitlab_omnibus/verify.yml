@@ -50,6 +50,21 @@
           - "'/etc/gitlab/ssl/pages-wildcard.crt' in pages_nginx_conf.content | b64decode"
         fail_msg: nginx does not use the wildcard certificate for pages
 
+    - name: Read the generated GitLab nginx configuration
+      ansible.builtin.slurp:
+        src: /var/opt/gitlab/nginx/conf/service_conf/gitlab-rails.conf
+      register: rails_nginx_conf
+
+    - name: Assert nginx blocks the crawler networks and user agents
+      ansible.builtin.assert:
+        that:
+          - "'deny 192.0.2.0/24;' in rails_nginx_conf_content"
+          - "'deny 2001:db8::/32;' in rails_nginx_conf_content"
+          - "'if ($http_user_agent ~* \"(GPTBot|ClaudeBot)\") { return 403; }' in rails_nginx_conf_content"
+        fail_msg: the crawler blocks are missing in the GitLab nginx configuration
+      vars:
+        rails_nginx_conf_content: '{{ rails_nginx_conf.content | b64decode }}'
+
     - name: Assert the log group is set in gitlab.rb
       ansible.builtin.assert:
         that:

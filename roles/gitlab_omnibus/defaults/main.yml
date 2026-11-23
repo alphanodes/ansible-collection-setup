@@ -109,6 +109,15 @@ gitlab_nginx_http2_enabled: true
 #   - CCBot
 gitlab_nginx_blocked_user_agents: []
 
+# Networks (IPv4 or IPv6 CIDR) rejected by nginx with HTTP 403 before they
+# reach Puma. Meant for crawlers that hide behind a browser user agent and
+# rotate through thousands of addresses of one cloud provider, where neither
+# the user agent list nor a per-IP rate limit catches them. Feed it with the
+# announced prefixes of the provider's AS, e.g. from
+# https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS<number>
+# Git over HTTPS and the API are blocked for these networks as well.
+gitlab_nginx_blocked_networks: []
+
 gitlab_registry_nginx_listen_addresses: '{{ gitlab_nginx_listen_addresses }}'
 
 # Passthrough all downloads via GitLab instead of using Redirects to Object Storage.

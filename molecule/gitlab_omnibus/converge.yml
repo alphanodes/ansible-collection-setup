@@ -68,6 +68,14 @@
     gitlab_pages_domain: pages.example.com
     gitlab_pages_nginx_ssl_certificate: /etc/gitlab/ssl/pages-wildcard.crt
     gitlab_pages_nginx_ssl_certificate_key: /etc/gitlab/ssl/pages-wildcard.key
+    # Both crawler blocks share one omnibus setting, verify.yml checks that
+    # nginx gets all of them
+    gitlab_nginx_blocked_networks:
+      - 192.0.2.0/24
+      - 2001:db8::/32
+    gitlab_nginx_blocked_user_agents:
+      - GPTBot
+      - ClaudeBot
     # Project defaults timer, verify.yml checks the filled in settings
     gitlab_project_defaults_pipeline_cleanup: '180 days'
     gitlab_project_defaults_pipeline_cleanup_overrides:
