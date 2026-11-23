@@ -10,5 +10,15 @@
         path: /srv/roundcube/skins/elastic/styles/styles.min.css
         state: absent
 
+    # Simulate a host with plugins installed by an earlier role version
+    - name: Create directories of removed third-party plugins
+      ansible.builtin.file:
+        path: /srv/roundcube/plugins/{{ item }}
+        state: directory
+        mode: '0755'
+      loop:
+        - carddav
+        - contextmenu
+
 - name: Converge again to rebuild the missing build result
   ansible.builtin.import_playbook: converge.yml

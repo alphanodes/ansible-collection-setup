@@ -17,8 +17,6 @@ roundcube_plugins_dir: '{{ roundcube_htdocs }}/plugins'
 roundcube_git_version: release-1.7
 roundcube_git_repo: https://github.com/roundcube/roundcubemail.git
 
-# see https://github.com/mstilkerich/rcmcarddav/releases
-roundcube_rcmcarddav_version: v5.1.5
 
 roundcube_with_nginx: true
 roundcube_vhost_server: roundcube.local
@@ -53,8 +51,6 @@ roundcube_plugins:
   - emoticons
   - zipdownload
 
-roundcube_with_carddav: false
-roundcube_with_contextmenu: false
 
 roundcube_with_password: false
 roundcube_plugin_password_algorithm: clear
