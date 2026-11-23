@@ -9,14 +9,17 @@
     nginx_mono_service_enabled: true
     nginx_mono_service_config:
       server_name: "{{ roundcube_vhost_server }}"
-      root: "{{ roundcube_htdocs }}"
+      # Only public_html is exposed, all other directories stay outside the document root
+      root: "{{ roundcube_htdocs }}/public_html"
       index: "index.php index.html"
       with_fpm: true
       additional_headers:
         - "Referrer-Policy 'same-origin'"
       locations:
-        - name: "~ /(bin|config|temp|logs|installer|SQL|CHANGELOG|INSTALL|UPGRADING)"
-          action: "deny all"
+        # Static files are served via /static.php/<path>, which the
+        # default "\.php$" location does not match
+        - name: '~ ^/static\.php(/|$)'
+          with_fpm: true
       redirects: "{{ roundcube_redirects | default([]) }}"
       vhost_includes: "{{ roundcube_vhost_includes | default([]) }}"
       vhost_for_zabbix: "{{ roundcube_vhost_for_zabbix | default(false) }}"

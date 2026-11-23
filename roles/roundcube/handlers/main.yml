@@ -11,3 +11,18 @@
   ansible.builtin.command: bin/install-jsdeps.sh
   args:
     chdir: '{{ roundcube_htdocs }}'
+
+# Requires bootstrap from install-jsdeps.sh, so it has to run after the js handler
+- name: Build roundcube css
+  ansible.builtin.shell: >
+    {{ npm_config_prefix }}/bin/lessc --clean-css="--s1 --advanced"
+    styles/{{ item }}.less > styles/{{ item }}.min.css
+  args:
+    chdir: '{{ roundcube_htdocs }}/skins/elastic'
+  environment:
+    NODE_ENV: '{{ roundcube_node_env }}'
+    NPM_CONFIG_PREFIX: '{{ npm_config_prefix }}'
+  loop:
+    - styles
+    - print
+    - embed

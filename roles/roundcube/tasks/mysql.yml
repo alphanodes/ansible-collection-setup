@@ -21,6 +21,29 @@
 - name: Apply pending composer/js handlers before DB migration
   ansible.builtin.meta: flush_handlers
 
+# updatedb.sh only upgrades an existing schema, a new database needs the
+# initial schema first
+- name: Check if roundcube database schema exists
+  ansible.mysql.mysql_query:
+    login_unix_socket: "{{ mysql_login_unix_socket }}"
+    login_db: '{{ roundcube_db_name }}'
+    query: "SHOW TABLES LIKE 'system'"
+  register: rcmail_schema
+  changed_when: false
+  # Read-only query, also needed in check mode for the import condition
+  check_mode: false
+  when: roundcube_git_install
+
+- name: Import initial roundcube database schema
+  ansible.mysql.mysql_db:
+    login_unix_socket: "{{ mysql_login_unix_socket }}"
+    name: '{{ roundcube_db_name }}'
+    state: import
+    target: '{{ roundcube_htdocs }}/SQL/mysql.initial.sql'
+  when:
+    - roundcube_git_install
+    - rcmail_schema.rowcount[0] == 0
+
 - name: Update roundcube database schema
   ansible.builtin.command: bin/updatedb.sh --package=roundcube --dir=SQL
   args:

@@ -104,11 +104,71 @@
       changed_when: false
       failed_when: fpm_config.rc != 0
 
-    - name: Check vhost denies sensitive directories
-      ansible.builtin.command: grep -q "bin|config|temp|logs" /etc/nginx/sites-available/roundcube.conf
-      register: deny_config
+    - name: Check vhost uses public_html as document root
+      ansible.builtin.command: grep -q "root /srv/roundcube/public_html;" /etc/nginx/sites-available/roundcube.conf
+      register: root_config
       changed_when: false
-      failed_when: deny_config.rc != 0
+      failed_when: root_config.rc != 0
+
+    - name: Fetch roundcube login page
+      ansible.builtin.command: >
+        curl -sk -H 'Host: roundcube.local' https://127.0.0.1/
+      register: roundcube_login
+      changed_when: false
+
+    - name: Verify login page is rendered by roundcube 1.7
+      ansible.builtin.assert:
+        that:
+          - "'rcmloginuser' in roundcube_login.stdout"
+          - "'static.php/skins/elastic/' in roundcube_login.stdout"
+        fail_msg: "roundcube login page not rendered or static.php not used"
+
+    - name: Check static files are served via static.php
+      ansible.builtin.command: >
+        curl -sk -o /dev/null -w '%{http_code} %{content_type}' -H 'Host: roundcube.local'
+        https://127.0.0.1/static.php/{{ item }}
+      register: static_files
+      changed_when: false
+      failed_when: not static_files.stdout.startswith('200 ')
+      loop:
+        - skins/elastic/styles/styles.min.css
+        - program/js/app.js
+        - plugins/contextmenu/contextmenu.js
+
+    - name: Check files outside public_html are not reachable
+      ansible.builtin.command: >
+        curl -sk -o /dev/null -w '%{http_code}' -H 'Host: roundcube.local'
+        https://127.0.0.1/{{ item }}
+      register: hidden_files
+      changed_when: false
+      failed_when: hidden_files.stdout != '404'
+      loop:
+        - config/config.inc.php
+        - composer.json
+        - static.php/config/config.inc.php
+
+    - name: Read roundcube database schema version
+      ansible.builtin.command: >
+        mysql -N -e "SELECT value FROM roundcube.system WHERE name = 'roundcube-version';"
+      register: roundcube_schema
+      changed_when: false
+
+    - name: Verify roundcube database schema is installed
+      ansible.builtin.assert:
+        that:
+          - roundcube_schema.stdout | length > 0
+        fail_msg: "roundcube database schema not installed"
+
+    - name: Read installed rcmcarddav version
+      ansible.builtin.command: grep -oE "PLUGIN_VERSION = '[^']+'" /srv/roundcube/plugins/carddav/carddav.php
+      register: carddav_version
+      changed_when: false
+
+    - name: Verify rcmcarddav is installed
+      ansible.builtin.assert:
+        that:
+          - "'v5.1.5' in carddav_version.stdout"
+        fail_msg: "rcmcarddav v5.1.5 not installed"
 
     - name: Display test results
       ansible.builtin.debug:
@@ -124,5 +184,6 @@
           - "Roundcube database: {{ 'OK' if 'roundcube' in roundcube_db.stdout else 'FAILED' }}"
           - "Roundcube endpoint: {{ 'OK' if roundcube_endpoint.stdout in ['200', '302', '403'] else 'FAILED' }}"
           - "PHP-FPM config: {{ 'OK' if fpm_config.rc == 0 else 'FAILED' }}"
-          - "Deny sensitive dirs: {{ 'OK' if deny_config.rc == 0 else 'FAILED' }}"
+          - "public_html root: {{ 'OK' if root_config.rc == 0 else 'FAILED' }}"
+          - "Database schema: {{ roundcube_schema.stdout }}"
           - "=== ROUNDCUBE INTEGRATION SUCCESS ==="

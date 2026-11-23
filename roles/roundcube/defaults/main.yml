@@ -8,11 +8,14 @@ roundcube_db_password: '{{ [ansible_facts["machine_id"], ansible_facts["hostname
 
 roundcube_htdocs: /srv/roundcube
 roundcube_config_dir: '{{ roundcube_htdocs }}/config'
-roundcube_logo_dir: '{{ roundcube_htdocs }}/images'
+# Roundcube 1.7 serves static files only below plugins/, program/, skins/
+# and public_html/ via static.php, so the logo lives in the skin directory
+roundcube_logo_dir: '{{ roundcube_htdocs }}/skins/elastic/images'
 roundcube_plugins_dir: '{{ roundcube_htdocs }}/plugins'
 
 roundcube_git_install: false
-roundcube_git_version: release-1.6
+# 1.7 requires {{ roundcube_htdocs }}/public_html as web server document root
+roundcube_git_version: release-1.7
 roundcube_git_repo: https://github.com/roundcube/roundcubemail.git
 
 roundcube_with_nginx: true
@@ -35,7 +38,7 @@ roundcube_smtp_host: 'localhost:587'
 
 roundcube_support_url: ''
 roundcube_product_name: 'Webmail'
-roundcube_skin_logo: images/logo.png
+roundcube_skin_logo: skins/elastic/images/logo.png
 # Key to encrypt the IMAP password in the session, exactly 24 characters
 # for the default cipher method. Required, set a random value per host.
 roundcube_des_key: ''

@@ -9,3 +9,5 @@ roundcube_packages:
   - php-pear
   - php{{ php_version }}-enchant
   - php{{ php_version }}-intl
+  # Required by zipdownload, which composer resolves even with --no-dev
+  - php{{ php_version }}-zip

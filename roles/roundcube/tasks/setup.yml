@@ -5,30 +5,33 @@
     name: '{{ roundcube_packages }}'
     state: present
 
+- name: Include git role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.git
+  when: roundcube_git_install
+
+- name: Include composer role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.composer
+  when: roundcube_git_install
+
+# Since 1.7 composer.json is part of the repository (composer.json-dist is gone)
 - name: Install roundcube
   ansible.builtin.git:
     repo: '{{ roundcube_git_repo }}'
     dest: '{{ roundcube_htdocs }}'
     version: '{{ roundcube_git_version | default(omit) }}'
     accept_hostkey: true
-  notify: Run composer for roundcube
+  notify:
+    - Run composer for roundcube
+    - Update roundcube js
+    - Build roundcube css
   when: roundcube_git_install
 
 - name: Include nodejs role
   ansible.builtin.include_role:
     name: alphanodes.setup.nodejs
     public: true
-
-- name: Install composer.json
-  ansible.builtin.copy:
-    src: '{{ roundcube_htdocs }}/composer.json-dist'
-    dest: '{{ roundcube_htdocs }}/composer.json'
-    mode: '0644'
-    remote_src: true
-  notify:
-    - Run composer for roundcube
-    - Update roundcube js
-  when: roundcube_git_install
 
 - name: Check if roundcube configuration is provided by host
   ansible.builtin.stat:

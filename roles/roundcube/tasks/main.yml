@@ -11,21 +11,16 @@
       a public default would allow decrypting the IMAP passwords in sessions
     quiet: true
 
-- name: Include plugins tasks
-  ansible.builtin.include_tasks: plugins.yml
-  tags:
-    - roundcube
-
 - name: Include setup tasks
   ansible.builtin.include_tasks: setup.yml
   tags:
     - roundcube
 
-- name: Include css tasks
-  ansible.builtin.include_tasks: setup_css.yml
+# After setup, because the git checkout creates the plugins directory
+- name: Include plugins tasks
+  ansible.builtin.include_tasks: plugins.yml
   tags:
     - roundcube
-  when: roundcube_git_install
 
 - name: Include MySQL tasks
   ansible.builtin.include_tasks: mysql.yml

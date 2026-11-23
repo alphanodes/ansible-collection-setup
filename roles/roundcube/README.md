@@ -25,3 +25,7 @@ The role picks up optional files from the playbook directory, a file named after
 
 - `files/roundcube/logo/<inventory_hostname or group>.png` for a custom logo
 - `files/roundcube/config/<inventory_hostname or group>/config.inc.php` for additional configuration
+
+## Upgrading from 1.6 to 1.7
+
+Roundcube 1.7 only exposes `public_html/` as document root and serves all static files via `static.php`, the role configures nginx accordingly. The custom logo moved from `images/` to `skins/elastic/images/`, the old `images/` directory can be removed after the upgrade. The database schema is updated on the next run, take a database backup before, as there is no way back to 1.6 afterwards.
