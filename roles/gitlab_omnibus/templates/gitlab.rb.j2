@@ -216,7 +216,7 @@ nginx['ssl_certificate_key'] = '{{ gitlab_nginx_ssl_certificate_key }}'
 {% endif %}
 nginx['listen_addresses'] = {{ gitlab_nginx_listen_addresses | to_json }}
 nginx['status']['listen_addresses'] = {{ gitlab_nginx_status_listen_addresses | to_json }}
-{% if gitlab_nginx_blocked_networks | length > 0 or gitlab_nginx_blocked_user_agents | length > 0 %}
+{% if gitlab_nginx_blocked_networks | length > 0 or gitlab_nginx_blocked_user_agents | length > 0 or gitlab_nginx_sign_in_required_paths | length > 0 %}
 # Reject unwanted crawlers before they reach Puma. Single-quoted on the Ruby
 # side so the nginx variable and the regex quoting pass through untouched.
 nginx['custom_gitlab_server_config'] = [
@@ -226,6 +226,14 @@ nginx['custom_gitlab_server_config'] = [
 {% if gitlab_nginx_blocked_user_agents | length > 0 %}
   'if ($http_user_agent ~* "({{ gitlab_nginx_blocked_user_agents | join('|') }})") { return 403; }',
 {% endif %}
+{% for path in gitlab_nginx_sign_in_required_paths %}
+  'location ^~ {{ path }} {',
+  '  default_type text/html;',
+  '  if ($cookie_known_sign_in = "") { return 403 "<!DOCTYPE html><title>Sign in required</title><p>Please <a href=/users/sign_in>sign in</a> to browse this repository. Already signed in? Sign out and sign in again.</p>"; }',
+  '  proxy_cache off;',
+  '  proxy_pass http://gitlab-workhorse;',
+  '}',
+{% endfor %}
 ].join("\n")
 {% endif %}
 {% if gitlab_letsencrypt_enable is defined %}

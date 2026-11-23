@@ -76,6 +76,8 @@
     gitlab_nginx_blocked_user_agents:
       - GPTBot
       - ClaudeBot
+    gitlab_nginx_sign_in_required_paths:
+      - /root/mirror/-/
     # Project defaults timer, verify.yml checks the filled in settings
     gitlab_project_defaults_pipeline_cleanup: '180 days'
     gitlab_project_defaults_pipeline_cleanup_overrides:

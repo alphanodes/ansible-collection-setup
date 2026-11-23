@@ -118,6 +118,20 @@ gitlab_nginx_blocked_user_agents: []
 # Git over HTTPS and the API are blocked for these networks as well.
 gitlab_nginx_blocked_networks: []
 
+# Path prefixes of the web UI that nginx only serves to signed-in users, e.g.
+# ['/group/project/-/'] for blob, tree, commits, blame and raw of a public
+# project. Anonymous git clone keeps working, it uses /group/project.git/.
+# Meant for public mirrors that crawlers walk commit by commit with headless
+# browsers from thousands of addresses.
+#
+# nginx cannot ask GitLab whether a session is signed in (the bundled nginx
+# has no auth_request), and every visitor gets a _gitlab_session cookie. So
+# it checks the known_sign_in cookie, which GitLab only sets on a successful
+# sign-in (needs notify_on_unknown_sign_in, enabled by default) and which
+# expires 14 days later. A user signed in for longer has to sign in again.
+# This keeps crawlers off, it is no access control.
+gitlab_nginx_sign_in_required_paths: []
+
 gitlab_registry_nginx_listen_addresses: '{{ gitlab_nginx_listen_addresses }}'
 
 # Passthrough all downloads via GitLab instead of using Redirects to Object Storage.

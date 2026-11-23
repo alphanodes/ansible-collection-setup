@@ -61,9 +61,63 @@
           - "'deny 192.0.2.0/24;' in rails_nginx_conf_content"
           - "'deny 2001:db8::/32;' in rails_nginx_conf_content"
           - "'if ($http_user_agent ~* \"(GPTBot|ClaudeBot)\") { return 403; }' in rails_nginx_conf_content"
+          - "'location ^~ /root/mirror/-/ {' in rails_nginx_conf_content"
         fail_msg: the crawler blocks are missing in the GitLab nginx configuration
       vars:
         rails_nginx_conf_content: '{{ rails_nginx_conf.content | b64decode }}'
+
+    # nginx answers these without Rails, so they work while Puma still boots
+    - name: Request a sign-in protected path without the sign-in cookie
+      ansible.builtin.uri:
+        url: https://127.0.0.1/root/mirror/-/tree/main
+        headers:
+          Host: gitlab-test.example.com
+        validate_certs: false
+        return_content: true
+        status_code: 403
+      register: anonymous_request
+
+    - name: Assert the anonymous visitor gets the sign-in hint
+      ansible.builtin.assert:
+        that:
+          - "'<a href=/users/sign_in>sign in</a>' in anonymous_request.content"
+        fail_msg: the sign-in protected path does not show the sign-in hint
+
+    # Any status but the nginx 403 means the request was passed on to GitLab
+    - name: Request the same path with the sign-in cookie
+      ansible.builtin.uri:
+        url: https://127.0.0.1/root/mirror/-/tree/main
+        headers:
+          Host: gitlab-test.example.com
+          Cookie: known_sign_in=any
+        validate_certs: false
+        return_content: true
+        follow_redirects: none
+        status_code: [200, 302, 404, 502, 503]
+      register: signed_in_request
+
+    - name: Assert the signed-in request is passed on to GitLab
+      ansible.builtin.assert:
+        that:
+          - "'Sign in required' not in signed_in_request.content"
+        fail_msg: the sign-in protected path blocks requests with the sign-in cookie
+
+    - name: Request the anonymous git endpoint of the same project
+      ansible.builtin.uri:
+        url: https://127.0.0.1/root/mirror.git/info/refs?service=git-upload-pack
+        headers:
+          Host: gitlab-test.example.com
+        validate_certs: false
+        return_content: true
+        follow_redirects: none
+        status_code: [200, 302, 401, 404, 502, 503]
+      register: git_request
+
+    - name: Assert anonymous git is not blocked by the sign-in rule
+      ansible.builtin.assert:
+        that:
+          - "'Sign in required' not in git_request.content"
+        fail_msg: anonymous git requests are blocked by the sign-in rule
 
     - name: Assert the log group is set in gitlab.rb
       ansible.builtin.assert:
