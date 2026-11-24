@@ -284,6 +284,46 @@
           - "'The plugin Marketplace is already deactivated.' in marketplace_deactivate.stdout"
         fail_msg: "Marketplace plugin is still active: {{ marketplace_deactivate.stdout }}"
 
+    # === INSTALLED PLUGINS CHECK ===
+
+    - name: Read CustomVariables plugin.json
+      ansible.builtin.slurp:
+        src: /srv/matomo/plugins/CustomVariables/plugin.json
+      register: custom_variables_plugin_json
+
+    - name: Check for git checkout of CustomVariables plugin
+      ansible.builtin.stat:
+        path: /srv/matomo/plugins/CustomVariables/.git
+      register: custom_variables_git
+
+    - name: Check that the old CustomVariables copy was replaced
+      ansible.builtin.stat:
+        path: /srv/matomo/plugins/CustomVariables/marketplace-leftover.txt
+      register: custom_variables_leftover
+
+    - name: Verify CustomVariables was installed from git with the pinned version
+      ansible.builtin.assert:
+        that:
+          - custom_variables_git.stat.exists
+          - not custom_variables_leftover.stat.exists
+          - (custom_variables_plugin_json.content | b64decode | from_json).version == '6.0.1'
+        fail_msg: CustomVariables was not installed from git with version 6.0.1
+
+    - name: Activate CustomVariables again with matomo console
+      ansible.builtin.command:
+        cmd: php console --no-ansi -n plugin:activate CustomVariables
+        chdir: /srv/matomo
+      become: true
+      become_user: www-data
+      register: custom_variables_activate
+      changed_when: false
+
+    - name: Verify CustomVariables plugin is activated
+      ansible.builtin.assert:
+        that:
+          - "'The plugin CustomVariables is already activated.' in custom_variables_activate.stdout"
+        fail_msg: "CustomVariables plugin is not active: {{ custom_variables_activate.stdout }}"
+
     # === SSL CONFIGURATION CHECK ===
 
     - name: Check SSL certificate configuration in vhost
@@ -358,6 +398,7 @@
           - "PHP-FPM in vhost: {{ 'OK' if fpm_config.rc == 0 else 'FAILED' }}"
           - "SSL configured: {{ 'OK' if ssl_config.rc == 0 else 'FAILED' }}"
           - "Database exists: {{ 'OK' if 'matomo' in matomo_db.stdout else 'FAILED' }}"
+          - "CustomVariables from git and active: OK"
           - ""
           - "--- Security Locations (vhost config) ---"
           - "Deny hidden files: {{ 'OK' if deny_hidden.rc == 0 else 'FAILED' }}"

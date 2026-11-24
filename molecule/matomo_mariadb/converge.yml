@@ -52,6 +52,11 @@
     # Upgrade cleanup feature (tested only during actual upgrades)
     matomo_upgrade_cleanup_unexpected_files: true
 
+    # Installed from git and activated; the pre_tasks place an old copy
+    # without git checkout there, as the Marketplace would have left it
+    matomo_plugins:
+      - name: CustomVariables
+
   pre_tasks:
     - name: Update apt cache
       ansible.builtin.apt:
@@ -181,6 +186,31 @@
         mode: '0644'
         force: false
 
+    # Simulates a plugin installed earlier by hand or with the Marketplace.
+    # Only created as long as the role has not installed it from git.
+    - name: Check for git checkout of CustomVariables plugin
+      ansible.builtin.stat:
+        path: /srv/matomo/plugins/CustomVariables/.git
+      register: custom_variables_git
+
+    - name: Create CustomVariables plugin directory without git checkout
+      ansible.builtin.file:
+        path: /srv/matomo/plugins/CustomVariables
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+      when: not custom_variables_git.stat.exists
+
+    - name: Create file of the old CustomVariables copy
+      ansible.builtin.copy:
+        content: old copy
+        dest: /srv/matomo/plugins/CustomVariables/marketplace-leftover.txt
+        owner: www-data
+        group: www-data
+        mode: '0644'
+      when: not custom_variables_git.stat.exists
+
     - name: Create sensitive directories for deny testing
       # Note: console is NOT in this list because Matomo installs it as a file (PHP CLI)
       ansible.builtin.file:
@@ -222,16 +252,18 @@
         force: false
 
   tasks:
-    # plugin:deactivate writes to the option table, but the test database has
-    # no Matomo schema. Run the role once without deactivating plugins, create
-    # the core tables with Matomo's own schema code and run it again.
-    - name: Include matomo role without deactivating plugins
+    # plugin:activate and plugin:deactivate write to the database, but the
+    # test database has no Matomo schema. Run the role once without managing
+    # plugins, create the core tables with Matomo's own schema code and run
+    # it again.
+    - name: Include matomo role without managing plugins
       ansible.builtin.include_role:
         name: alphanodes.setup.matomo
       vars:
+        matomo_plugins: []
         matomo_deactivated_plugins: []
 
-    - name: Create Matomo core tables required by plugin:deactivate
+    - name: Create Matomo core tables required by plugin:activate and plugin:deactivate
       ansible.builtin.command:
         cmd: >-
           php -r "define('PIWIK_DOCUMENT_ROOT', '/srv/matomo');

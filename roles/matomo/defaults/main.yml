@@ -65,6 +65,11 @@ matomo_add_mysql_to_matomo_group: false
 # if yes, plugins cannot be enabled by gui
 matomo_multi_server_environment: false
 
+# Plugins from matomo_available_plugins (vars/main.yml). The role installs
+# them and activates them with matomo console plugin:activate, also after a
+# major upgrade deactivated them. A plugin directory that is no git checkout
+# (installed by hand or with the Marketplace) is replaced.
+# With state: absent the plugin directory is removed.
 matomo_plugins: []
 #  - name: SecurityInfo
 

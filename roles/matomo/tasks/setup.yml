@@ -74,6 +74,10 @@
     mode: '0644'
     owner: root
     group: root
+  register: matomo_archive_download
+  until: matomo_archive_download is succeeded
+  retries: 3
+  delay: 10
   when: not matomo_archive_file_exists.stat.exists
 
 - name: Include install tasks
@@ -217,11 +221,48 @@
     mode: '{{ matomo_config_file_mode }}'
   when: matomo_config_file_exists.stat.exists
 
+- name: Check that no matomo plugin is activated and deactivated at once
+  ansible.builtin.assert:
+    that:
+      - matomo_plugins | map(attribute='name') | intersect(matomo_deactivated_plugins) | length == 0
+    fail_msg: >-
+      Plugins in both matomo_plugins and matomo_deactivated_plugins:
+      {{ matomo_plugins | map(attribute='name') | intersect(matomo_deactivated_plugins) | join(', ') }}
+    quiet: true
+
+- name: Install git for matomo plugins
+  ansible.builtin.apt:
+    name: git
+    state: present
+  when: matomo_plugins | length > 0
+
 - name: Include plugin tasks
   ansible.builtin.include_tasks: setup_plugin.yml
   loop_control:
     loop_var: active_plugin
   loop: '{{ matomo_plugins }}'
+
+# A major upgrade deactivates plugins that are incompatible with the new core,
+# so activate them again once the compatible version is installed.
+# plugin:activate exits with 0 even if it cannot activate a plugin.
+- name: Activate matomo plugins
+  ansible.builtin.command:
+    cmd: php console --no-ansi -n plugin:activate {{ item.name }}
+    chdir: '{{ matomo_dir }}'
+  become: true
+  become_user: '{{ matomo_user }}'
+  register: matomo_plugin_activate
+  changed_when: "'Activated plugin' in matomo_plugin_activate.stdout"
+  failed_when: >-
+    matomo_plugin_activate.rc != 0
+    or ('Activated plugin' not in matomo_plugin_activate.stdout
+        and 'is already activated' not in matomo_plugin_activate.stdout)
+  loop: '{{ matomo_plugins }}'
+  loop_control:
+    label: '{{ item.name }}'
+  when:
+    - matomo_config_file_exists.stat.exists
+    - item.state | default('present') != 'absent'
 
 - name: Include console-based config tasks
   ansible.builtin.include_tasks: console_config.yml

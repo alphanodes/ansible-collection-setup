@@ -85,6 +85,19 @@
     - plugin_use_git
     - active_plugin.state is undefined or active_plugin.state != 'absent'
   block:
+    - name: Stats for git checkout of plugin - {{ plugin_name }}
+      ansible.builtin.stat:
+        path: '{{ plugin_dir }}/.git'
+      register: plugin_git_dir
+
+    # A plugin installed earlier by hand or with the Marketplace is no git
+    # checkout, and git refuses to clone into a directory that is not empty.
+    - name: Remove plugin directory without git checkout - {{ plugin_name }}
+      ansible.builtin.file:
+        path: '{{ plugin_dir }}'
+        state: absent
+      when: not plugin_git_dir.stat.exists
+
     - name: Install plugin - {{ plugin_name }}
       ansible.builtin.git:
         repo: '{{ plugin.repo }}'
