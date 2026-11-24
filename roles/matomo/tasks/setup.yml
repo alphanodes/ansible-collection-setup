@@ -236,11 +236,26 @@
     state: present
   when: matomo_plugins | length > 0
 
+- name: Reset changed plugin files
+  ansible.builtin.set_fact:
+    matomo_plugins_changed: false
+
 - name: Include plugin tasks
   ansible.builtin.include_tasks: setup_plugin.yml
   loop_control:
     loop_var: active_plugin
   loop: '{{ matomo_plugins }}'
+
+- name: Clear matomo caches after plugin changes
+  ansible.builtin.command:
+    cmd: php console --no-ansi -n cache:clear
+    chdir: '{{ matomo_dir }}'
+  become: true
+  become_user: '{{ matomo_user }}'
+  changed_when: true
+  when:
+    - matomo_plugins_changed
+    - matomo_config_file_exists.stat.exists
 
 # A major upgrade deactivates plugins that are incompatible with the new core,
 # so activate them again once the compatible version is installed.

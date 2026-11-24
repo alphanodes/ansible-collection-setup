@@ -296,6 +296,11 @@
         path: /srv/matomo/plugins/CustomVariables/.git
       register: custom_variables_git
 
+    - name: Find files of CustomVariables plugin not owned by www-data
+      ansible.builtin.command: find /srv/matomo/plugins/CustomVariables ! -user www-data
+      register: custom_variables_foreign_owner
+      changed_when: false
+
     - name: Check that the old CustomVariables copy was replaced
       ansible.builtin.stat:
         path: /srv/matomo/plugins/CustomVariables/marketplace-leftover.txt
@@ -306,8 +311,9 @@
         that:
           - custom_variables_git.stat.exists
           - not custom_variables_leftover.stat.exists
+          - custom_variables_foreign_owner.stdout | length == 0
           - (custom_variables_plugin_json.content | b64decode | from_json).version == '6.0.1'
-        fail_msg: CustomVariables was not installed from git with version 6.0.1
+        fail_msg: CustomVariables was not installed from git with version 6.0.1 and owner www-data
 
     - name: Activate CustomVariables again with matomo console
       ansible.builtin.command:

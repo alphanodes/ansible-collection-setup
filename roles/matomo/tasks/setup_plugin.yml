@@ -31,6 +31,26 @@
   when:
     - active_plugin.state is defined
     - active_plugin.state == 'absent'
+  register: plugin_removed
+
+- name: Stats for existing plugin directory - {{ plugin_name }}
+  ansible.builtin.stat:
+    path: '{{ plugin_dir }}'
+  register: plugin_existing_dir
+
+# Plugins belong to matomo_user like the rest of matomo_dir, so Matomo can
+# manage them. Older versions of this role installed them as root.
+- name: Set owner of existing plugin directory - {{ plugin_name }}
+  ansible.builtin.file:
+    path: '{{ plugin_dir }}'
+    state: directory
+    owner: '{{ matomo_user }}'
+    group: '{{ matomo_group }}'
+    recurse: true
+  when:
+    - plugin_existing_dir.stat.exists
+    - plugin_existing_dir.stat.isdir
+    - active_plugin.state | default('present') != 'absent'
 
 - name: Download installation of plugin - {{ plugin_name }}
   when: not plugin_use_git
@@ -73,9 +93,10 @@
           ansible.builtin.unarchive:
             src: '{{ software_path }}/{{ archive_filename }}'
             dest: '{{ matomo_plugin_path }}'
-            owner: '{{ nginx_user }}'
-            group: '{{ nginx_group }}'
+            owner: '{{ matomo_user }}'
+            group: '{{ matomo_group }}'
             remote_src: true
+          register: plugin_extracted
 
         - name: Corrent directory name - {{ plugin_name }}
           ansible.builtin.command: mv {{ tmp_plugin_dir }} {{ plugin_dir }}
@@ -105,3 +126,16 @@
         version: '{{ plugin.branch | default(omit) }}'
         force: true
         accept_hostkey: true
+      become: true
+      become_user: '{{ matomo_user }}'
+      register: plugin_git
+
+# Matomo caches plugin.json in its eager cache, so a new plugin version is
+# only loaded (and can only be activated) after the cache was cleared.
+- name: Remember changed plugin files - {{ plugin_name }}
+  ansible.builtin.set_fact:
+    matomo_plugins_changed: true
+  when: >-
+    plugin_removed | default({}) is changed
+    or plugin_extracted | default({}) is changed
+    or plugin_git | default({}) is changed
