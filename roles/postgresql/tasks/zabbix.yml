@@ -33,6 +33,14 @@
         group: root
         mode: '0644'
 
+    - name: Install extension version check for zabbix
+      ansible.builtin.copy:
+        src: zabbix/pg_extension_outdated.sh
+        dest: /etc/zabbix/pg_extension_outdated.sh
+        owner: root
+        group: root
+        mode: '0755'
+
     - name: Install sudoer access for zabbix
       ansible.builtin.copy:
         src: sudoers.d/postgresql
@@ -79,6 +87,11 @@
     - name: Remove collation check query for zabbix
       ansible.builtin.file:
         path: /etc/zabbix/pg_collation_mismatch.sql
+        state: absent
+
+    - name: Remove extension version check for zabbix
+      ansible.builtin.file:
+        path: /etc/zabbix/pg_extension_outdated.sh
         state: absent
 
     - name: Remove sudoer access for zabbix

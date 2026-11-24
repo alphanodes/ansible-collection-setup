@@ -11,14 +11,16 @@ zabbix_export:
       description: |
         Custom monitoring for PostgreSQL installations.
         Detects collation version mismatches after glibc upgrades using
-        the pg_collation_mismatch UserParameter.
+        the pg_collation_mismatch UserParameter and extensions older than
+        their installed package (pg_extension_outdated).
 
         Link this template alongside "PostgreSQL by Zabbix agent 2"
         for complete PostgreSQL monitoring.
 
         This template requires:
-        - Zabbix agent with UserParameter pg_collation_mismatch configured
-        - sudo access for zabbix user to run psql as postgres
+        - Zabbix agent with UserParameters pg_collation_mismatch and
+          pg_extension_outdated configured
+        - sudo access for zabbix user to run psql and the check script as postgres
       vendor:
         name: AlphaNodes
         version: 7.4-__DATE__
@@ -56,6 +58,43 @@ zabbix_export:
               priority: WARNING
               description: 'PostgreSQL collation version mismatch detected after glibc upgrade. Fix: sudo -u postgres psql -c "ALTER DATABASE <dbname> REFRESH COLLATION VERSION;" for each affected database. Check with: SELECT datname, datcollversion, pg_database_collation_actual_version(oid) FROM pg_database;'
               manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: maintenance
+        - uuid: e8fadb1f04c0443a8c8fd4f805ed2d78
+          name: 'PostgreSQL: Outdated extension count'
+          type: ZABBIX_ACTIVE
+          key: pg_extension_outdated
+          delay: 1h
+          history: 7d
+          trends: 180d
+          value_type: UNSIGNED
+          description: 'Number of installed extensions in all databases whose version is older than the one of the installed package. Package updates do not run ALTER EXTENSION ... UPDATE.'
+          tags:
+            - tag: component
+              value: postgresql
+          triggers:
+            - uuid: 7334b31420574c3789c3191b32206fb2
+              expression: 'nodata(/PostgreSQL Custom/pg_extension_outdated,3h)=1'
+              name: 'PostgreSQL: No extension version check data for 3h'
+              priority: INFO
+              description: 'The extension version check returns no data, e.g. because sudo or the script fails. Check the item error on the host.'
+              tags:
+                - tag: scope
+                  value: availability
+            - uuid: 397cb038d72e4624b8f03fc81edcf74c
+              expression: 'last(/PostgreSQL Custom/pg_extension_outdated)>0'
+              name: 'PostgreSQL: {ITEM.LASTVALUE} extensions older than the installed package'
+              priority: WARNING
+              description: |
+                The package of an extension was updated, but the extension in the
+                database still runs the old version (e.g. TimescaleDB 2.23.1 with
+                package 2.32.1 on PostgreSQL 18.7 broke all background jobs).
+                List them per database with:
+                SELECT name, installed_version, default_version FROM pg_available_extensions WHERE installed_version <> default_version;
+                Fix with ALTER EXTENSION <name> UPDATE; in each database. TimescaleDB
+                needs psql -X, the command as first one of the session and the
+                clients (zabbix-server) stopped.
               tags:
                 - tag: scope
                   value: maintenance

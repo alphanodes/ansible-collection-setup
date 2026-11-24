@@ -125,6 +125,7 @@
   community.postgresql.postgresql_ext:
     login_port: "{{ _postgresql_login_port | default(postgresql_port) }}"
     name: pg_stat_statements
+    version: latest
     login_db: template1
   when: postgresql_with_pg_stat_statements
 
@@ -134,6 +135,7 @@
   community.postgresql.postgresql_ext:
     login_port: "{{ _postgresql_login_port | default(postgresql_port) }}"
     name: vector
+    version: latest
     login_db: template1
   when: postgresql_with_pgvector
 

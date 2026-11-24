@@ -1,0 +1,24 @@
+---
+# Simulate a package update of an extension: pg_stat_statements in template1
+# runs an older version than the installed package. The next converge has to
+# update it (version: latest), so the extension check in verify returns 0.
+- name: Install an older pg_stat_statements in template1
+  hosts: all
+  become: true
+  vars_files:
+    - vars/main.yml
+  module_defaults:
+    community.postgresql.postgresql_query:
+      login_port: '{{ postgresql_port }}'
+  tasks:
+    - name: Recreate pg_stat_statements in version 1.10
+      become_user: postgres
+      community.postgresql.postgresql_query:
+        login_db: template1
+        query:
+          - DROP EXTENSION IF EXISTS pg_stat_statements
+          - CREATE EXTENSION pg_stat_statements VERSION '1.10'
+      changed_when: false
+
+- name: Converge again to update the extension
+  ansible.builtin.import_playbook: converge.yml

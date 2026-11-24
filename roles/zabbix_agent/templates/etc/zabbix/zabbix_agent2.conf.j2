@@ -360,6 +360,7 @@ UserParameter=drush[*], bash {{ zabbix_addons_dir }}/scripts/drush_check.sh "$1"
 {% endif %}
 {% if postgres_installed %}
 UserParameter=pg_collation_mismatch, sudo -n -u postgres /usr/bin/psql -X -t -A -f /etc/zabbix/pg_collation_mismatch.sql
+UserParameter=pg_extension_outdated, sudo -n -u postgres /etc/zabbix/pg_extension_outdated.sh
 {% endif %}
 {% if redmine_installed %}
 UserParameter=redmine_log[*], bash {{ zabbix_addons_dir }}/scripts/journal_check.sh redmine "$1"

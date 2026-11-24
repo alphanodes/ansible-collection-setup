@@ -206,6 +206,7 @@
   become: true
   community.postgresql.postgresql_ext:
     name: pg_buffercache
+    version: latest
     login_db: '{{ zabbix_server_db_name }}'
     state: present
   when:

@@ -36,6 +36,7 @@
   become: true
   community.postgresql.postgresql_ext:
     name: pg_stat_statements
+    version: latest
     login_db: '{{ redmine_db_name }}'
   when:
     - not skip_local_pg_setup
@@ -46,6 +47,7 @@
   become: true
   community.postgresql.postgresql_ext:
     name: pg_buffercache
+    version: "{{ 'latest' if postgresql_with_pg_buffercache else omit }}"
     login_db: '{{ redmine_db_name }}'
     state: "{{ 'present' if postgresql_with_pg_buffercache else 'absent' }}"
   when: not skip_local_pg_setup
@@ -55,6 +57,7 @@
   become: true
   community.postgresql.postgresql_ext:
     name: unaccent
+    version: latest
     login_db: '{{ redmine_db_name }}'
   when: not skip_local_pg_setup
 
@@ -63,6 +66,7 @@
   become: true
   community.postgresql.postgresql_ext:
     name: pg_trgm
+    version: latest
     login_db: '{{ redmine_db_name }}'
   when: not skip_local_pg_setup
 
@@ -71,6 +75,7 @@
   become: true
   community.postgresql.postgresql_ext:
     name: vector
+    version: latest
     login_db: '{{ redmine_db_name }}'
   when:
     - not skip_local_pg_setup

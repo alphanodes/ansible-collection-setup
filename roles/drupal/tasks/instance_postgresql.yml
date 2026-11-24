@@ -29,5 +29,6 @@
   become: true
   community.postgresql.postgresql_ext:
     name: pg_stat_statements
+    version: latest
     login_db: '{{ drupal_instance.db_user | default(drupal_instance.name) | replace("-", "_") }}'
   when: not drupal_instance.db_skip_db_setup and postgresql_with_pg_stat_statements

@@ -1,5 +1,6 @@
-# Only the collation check of the Zabbix agent (UserParameter
-# pg_collation_mismatch), never arbitrary commands as postgres. The query is
-# read from a root owned file: sudo-rs (Ubuntu 26.04) rejects escaped
+# Only the checks of the Zabbix agent (UserParameters pg_collation_mismatch
+# and pg_extension_outdated), never arbitrary commands as postgres. Query and
+# script are root owned files: sudo-rs (Ubuntu 26.04) rejects escaped
 # wildcards and does not match arguments containing spaces
 zabbix ALL = (postgres) NOPASSWD: /usr/bin/psql -X -t -A -f /etc/zabbix/pg_collation_mismatch.sql
+zabbix ALL = (postgres) NOPASSWD: /etc/zabbix/pg_extension_outdated.sh

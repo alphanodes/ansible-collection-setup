@@ -217,6 +217,65 @@
           rc={{ postgresql_collation_check.rc }}
           {{ postgresql_collation_check.stdout }} {{ postgresql_collation_check.stderr }}
 
+    # side_effect installed pg_stat_statements 1.10, converge updated it
+    - name: Read the version of pg_stat_statements in template1
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_query:
+        login_db: template1
+        query: SELECT installed_version, default_version FROM pg_available_extensions WHERE name = 'pg_stat_statements'
+      register: postgresql_pgss_version
+
+    - name: Assert pg_stat_statements was updated to the version of the package
+      ansible.builtin.assert:
+        that:
+          - postgresql_pgss_version.query_result[0].installed_version == postgresql_pgss_version.query_result[0].default_version
+        fail_msg: "{{ postgresql_pgss_version.query_result | to_json }}"
+
+    # Like the UserParameter pg_extension_outdated of the agent
+    - name: Run the extension version check as zabbix through sudo
+      become: true
+      become_user: zabbix
+      ansible.builtin.command:
+        argv: [sudo, -n, -u, postgres, /etc/zabbix/pg_extension_outdated.sh]
+        chdir: /
+      register: postgresql_extension_check
+      changed_when: false
+
+    - name: Install an old version of pg_trgm to simulate a missing extension update
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_query:
+        login_db: molecule_test
+        query: CREATE EXTENSION pg_trgm VERSION '1.5'
+      changed_when: false
+
+    - name: Run the extension version check with the old extension
+      become: true
+      become_user: zabbix
+      ansible.builtin.command:
+        argv: [sudo, -n, -u, postgres, /etc/zabbix/pg_extension_outdated.sh]
+        chdir: /
+      register: postgresql_extension_check_old
+      changed_when: false
+
+    - name: Remove the old pg_trgm again
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_query:
+        login_db: molecule_test
+        query: DROP EXTENSION pg_trgm
+      changed_when: false
+
+    - name: Assert the extension version check counts outdated extensions
+      ansible.builtin.assert:
+        that:
+          - postgresql_extension_check.stdout | trim == '0'
+          - postgresql_extension_check_old.stdout | trim == '1'
+        fail_msg: >-
+          expected 0 and 1, got {{ postgresql_extension_check.stdout }} and
+          {{ postgresql_extension_check_old.stdout }} {{ postgresql_extension_check_old.stderr }}
+
     - name: Read obsolete zabbix sql PostgreSQL files
       ansible.builtin.stat:
         path: /var/lib/zabbix/postgresql
