@@ -54,9 +54,7 @@
         path: /var/lib/radicale/.venv/bin/radicale
       register: radicale_venv
 
-    # The maintained passlib (>= 1.9, pinned by the libpass alias) may stay,
-    # the obsolete original (< 1.9) must be gone
-    - name: Check passlib module is importable and not the obsolete passlib
+    - name: Check passlib module is importable
       ansible.builtin.command:
         argv:
           - /var/lib/radicale/.venv/bin/python3
@@ -130,7 +128,7 @@
           - "Radicale rights exists: {{ 'OK' if radicale_rights.stat.exists else 'FAILED' }}"
           - "Radicale collections dir: {{ 'OK' if radicale_collections.stat.exists else 'FAILED' }}"
           - "Radicale venv exists: {{ 'OK' if radicale_venv.stat.exists else 'FAILED' }}"
-          - "No obsolete passlib, module importable ({{ libpass_import.stdout }}): OK"
+          - "Passlib module importable ({{ libpass_import.stdout }}): OK"
           - "Htpasswd file exists: {{ 'OK' if htpasswd_file.stat.exists else 'FAILED' }}"
           - "Radicale direct response: {{ 'OK' if radicale_response.status in [200, 302, 401] else 'FAILED' }}"
           - "Nginx proxy to radicale: {{ 'OK' if nginx_proxy.status in [200, 302, 401] else 'FAILED' }}"

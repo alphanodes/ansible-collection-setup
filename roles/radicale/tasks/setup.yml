@@ -30,11 +30,11 @@
   become_user: '{{ radicale_user }}'
   register: radicale_pip_result
 
-# The passlib module comes from one of two packages: libpass up to 1.9.4
-# ships it itself, since 1.9.5 libpass is only an alias that pins the
-# maintained passlib (>= 1.9). Only passlib below 1.9 is the obsolete
-# original, which overwrites the shared module files. Reports the installed
-# versions, whether passlib.hash is importable and the package providing it.
+# The passlib module comes from libpass up to 1.9.4, since 1.9.5 libpass is
+# only an alias that pins the maintained passlib. On the upgrade pip installs
+# passlib first and then uninstalls the old libpass, which deletes the shared
+# module files again. Reports whether passlib.hash is importable and the
+# package providing it.
 - name: Check passlib module in radicale virtualenv
   ansible.builtin.command:
     argv:
@@ -42,12 +42,10 @@
       - -c
       - |
         import importlib.metadata as m, json
-        def version(name):
-            try:
-                return m.version(name)
-            except m.PackageNotFoundError:
-                return None
-        libpass = version('libpass')
+        try:
+            libpass = m.version('libpass')
+        except m.PackageNotFoundError:
+            libpass = None
         requires = (m.requires('libpass') or []) if libpass else []
         pins = [r.replace(' ', '') for r in requires if r.replace(' ', '').startswith('passlib==')]
         try:
@@ -56,7 +54,7 @@
         except Exception:
             importable = False
         provider = pins[0] if pins else ('libpass==' + libpass if libpass else '')
-        print(json.dumps({'passlib': version('passlib'), 'provider': provider, 'importable': importable}))
+        print(json.dumps({'provider': provider, 'importable': importable}))
   become: true
   become_user: '{{ radicale_user }}'
   register: radicale_passlib_check
@@ -67,21 +65,8 @@
   ansible.builtin.set_fact:
     radicale_passlib_state: '{{ radicale_passlib_check.stdout | from_json }}'
 
-- name: Remove obsolete passlib from radicale virtualenv
-  ansible.builtin.pip:
-    name: passlib
-    virtualenv: '{{ radicale_pip_venv_path }}'
-    state: absent
-  become: true
-  become_user: '{{ radicale_user }}'
-  register: radicale_passlib_result
-  when:
-    - radicale_passlib_state.passlib is not none
-    - radicale_passlib_state.passlib is version('1.9', '<')
-
-# Uninstalling a package deletes the shared module files. Restore them with
-# the already installed version of the providing package, so no upgrade
-# happens outside of the radicale dependency resolution.
+# Restore the files with the already installed version of the providing
+# package, so no upgrade happens outside of the radicale dependency resolution
 - name: Reinstall the package providing the passlib module
   ansible.builtin.pip:
     name: '{{ radicale_passlib_state.provider }}'
@@ -92,7 +77,7 @@
   register: radicale_libpass_result
   when:
     - radicale_passlib_state.provider | length > 0
-    - not radicale_passlib_state.importable or radicale_passlib_result is changed
+    - not radicale_passlib_state.importable
 
 - name: Check folder exists for /etc/radicale
   ansible.builtin.file:
@@ -136,7 +121,6 @@
     name: "{{ radicale_service_name }}"
     state: >-
       {{ 'restarted' if (radicale_pip_result.changed
-                         or radicale_passlib_result.changed
                          or radicale_libpass_result.changed
                          or radicale_config_result.changed
                          or radicale_service_result.changed) else 'started' }}
