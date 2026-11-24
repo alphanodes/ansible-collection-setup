@@ -289,6 +289,9 @@ puma['min_threads'] = {{ gitlab_puma_min_threads | default(puma_min_threads) }}
 {% if gitlab_puma_max_threads is defined or puma_max_threads is defined %}
 puma['max_threads'] = {{ gitlab_puma_max_threads | default(puma_max_threads) }}
 {% endif %}
+{% if gitlab_puma_per_worker_max_memory_mb is defined %}
+puma['per_worker_max_memory_mb'] = {{ gitlab_puma_per_worker_max_memory_mb }}
+{% endif %}
 
 ## KAS
 gitlab_kas['enable'] = {{ gitlab_kas_enable | lower }}

@@ -119,6 +119,17 @@
           - "'Sign in required' not in git_request.content"
         fail_msg: anonymous git requests are blocked by the sign-in rule
 
+    - name: Read the puma memory limit of the memory watchdog
+      ansible.builtin.slurp:
+        src: /opt/gitlab/etc/gitlab-rails/env/PUMA_WORKER_MAX_MEMORY
+      register: puma_max_memory
+
+    - name: Assert the puma memory limit reached the memory watchdog
+      ansible.builtin.assert:
+        that:
+          - puma_max_memory.content | b64decode | trim == '2048'
+        fail_msg: 'unexpected puma memory limit: {{ puma_max_memory.content | b64decode }}'
+
     - name: Assert the log group is set in gitlab.rb
       ansible.builtin.assert:
         that:

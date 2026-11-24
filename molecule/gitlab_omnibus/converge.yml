@@ -78,6 +78,8 @@
       - ClaudeBot
     gitlab_nginx_sign_in_required_paths:
       - /root/mirror/-/
+    # verify.yml checks that reconfigure hands it to the memory watchdog
+    gitlab_puma_per_worker_max_memory_mb: 2048
     # Project defaults timer, verify.yml checks the filled in settings
     gitlab_project_defaults_pipeline_cleanup: '180 days'
     gitlab_project_defaults_pipeline_cleanup_overrides:
