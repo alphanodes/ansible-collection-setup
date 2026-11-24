@@ -52,6 +52,7 @@
         # Allowed by sudo, smartctl itself may fail without the device
         - /usr/sbin/smartctl -a /dev/sda -j
         - /usr/sbin/smartctl -a /dev/sda -d sat -j
+        - /usr/sbin/smartctl -a /dev/sda -d cciss,0 -j
       register: smart_allowed
       changed_when: false
       failed_when: smart_allowed.stderr is search('password is required')

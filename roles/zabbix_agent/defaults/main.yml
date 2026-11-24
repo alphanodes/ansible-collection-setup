@@ -111,12 +111,17 @@ zabbix_agent_smart_devices:
   - '/dev/nvme[0-9]'
   - '/dev/sd[a-z]'
 # Device types the plugin passes with -d <type> to --scan and -a (e.g. sat
-# for SATA disks).
-# Listed explicitly: a glob would also match additional arguments.
+# for SATA disks). During discovery it also probes RAID controllers with a
+# disk number (e.g. cciss,0). Listed explicitly: * would also match
+# additional arguments, [0-9] matches a single digit only.
 zabbix_agent_smart_device_types:
   - nvme
   - sat
   - scsi
+  - '3ware,[0-9]'
+  - 'areca,[0-9]'
+  - 'cciss,[0-9]'
+  - 'megaraid,[0-9]'
 
 zabbix_agent_journalctl_since: "4 hours ago"
 # Maximum number of lines returned by journalctl[*]. The trigger only checks
