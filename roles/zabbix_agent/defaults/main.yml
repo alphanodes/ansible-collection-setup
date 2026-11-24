@@ -72,6 +72,14 @@ zabbix_inventory_mode: manual
 zabbix_use_ip: 1
 zabbix_host_groups:
   - Linux servers
+
+# Host tags in Zabbix, list of tag (and optional value), e.g.
+#   - tag: app
+#     value: redmine
+# Problems inherit them, so they can be used to filter, for maintenances and
+# in action conditions. An empty list keeps the tags of the host in Zabbix.
+zabbix_agent_tags: []
+
 zabbix_link_templates:
   - Linux by Zabbix agent
 

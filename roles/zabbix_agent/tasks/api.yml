@@ -87,6 +87,7 @@
         port: "{{ zabbix_port_ext | default(zabbix_agent_listen_port) }}"
     visible_name: "{{ zabbix_visible_hostname | default(inventory_hostname) }}"
     description: "{{ zabbix_agent_description | default(host_description) | default(omit) }}"
+    tags: "{{ zabbix_agent_tags if zabbix_agent_tags | length > 0 else omit }}"
   when:
     - zabbix_api_create_hosts | bool
   vars:
