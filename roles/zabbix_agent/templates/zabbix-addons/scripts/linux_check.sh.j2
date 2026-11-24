@@ -9,6 +9,8 @@
 #   linux_check.sh world_write_etc perm
 #   linux_check.sh server_name_in_hosts performance
 #   linux_check.sh password_accounts users
+#   linux_check.sh queue_count postfix
+#   linux_check.sh queue_age postfix
 #
 # The TLS certificate check uses the agent key web.certificate.get.
 
@@ -66,6 +68,33 @@ get_users() {
   echo "${accounts:-none}"
 }
 
+# Mails in the postfix queue and age of the oldest one in seconds. Deferred
+# mails are ignored by the journal checks, a relay that keeps rejecting them
+# (wrong credentials, sender not allowed) only shows up here. postqueue needs
+# no root. Without postfix both values are 0.
+get_postfix() {
+  local queue oldest
+  if ! command -v postqueue > /dev/null; then
+    echo 0
+    return
+  fi
+  queue=$(postqueue -j 2>/dev/null) || fail
+  case "$key" in
+    queue_count)
+      grep -c . <<< "$queue" || true
+      ;;
+    queue_age)
+      oldest=$(grep -o '"arrival_time": *[0-9]*' <<< "$queue" | grep -o '[0-9]*$' | sort -n | head -1)
+      if [ -n "$oldest" ]; then
+        echo $(($(date +%s) - oldest))
+      else
+        echo 0
+      fi
+      ;;
+    *) fail ;;
+  esac
+}
+
 [ -n "$key" ] || fail
 
 case "$source" in
@@ -73,5 +102,6 @@ case "$source" in
   perm) get_file_permission ;;
   performance) get_performance ;;
   users) get_users ;;
+  postfix) get_postfix ;;
   *) fail ;;
 esac

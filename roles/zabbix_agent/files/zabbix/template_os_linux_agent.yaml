@@ -269,9 +269,52 @@ zabbix_export:
               name: 'Systemd global status'
               priority: AVERAGE
               description: 'Run ''systemctl --failed'' on server, to find out which services failed.'
+        - uuid: a426cd430ba1484f85b61bcd580d3e1c
+          name: 'Postfix: Mails in queue'
+          key: 'linux[queue_count,postfix]'
+          delay: 5m
+          history: 2w
+          description: 'Mails in the postfix queue (postqueue -j), 0 without postfix.'
+          tags:
+            - tag: component
+              value: mail
+          triggers:
+            - uuid: 1a00a0e872a7469c96cf789f943c5cdb
+              expression: 'min(/Linux/linux[queue_count,postfix],15m)>{$POSTFIX.QUEUE.COUNT.MAX}'
+              name: 'Postfix: More than {$POSTFIX.QUEUE.COUNT.MAX} mails in queue'
+              priority: WARNING
+              description: |
+                Many mails wait for delivery, e.g. a local process sends mails in a
+                loop or the relay rejects them. Run postqueue -p on the host.
+        - uuid: 09cf18c9b5654211985f60555dd35736
+          name: 'Postfix: Age of oldest mail in queue'
+          key: 'linux[queue_age,postfix]'
+          delay: 5m
+          history: 2w
+          units: s
+          description: 'Age of the oldest mail in the postfix queue, 0 if the queue is empty or without postfix.'
+          tags:
+            - tag: component
+              value: mail
+          triggers:
+            - uuid: 3f8fde3bedfe479c93a7615e8ad55994
+              expression: 'min(/Linux/linux[queue_age,postfix],15m)>{$POSTFIX.QUEUE.AGE.MAX}'
+              name: 'Postfix: Mail queue stuck (oldest mail older than {$POSTFIX.QUEUE.AGE.MAX})'
+              priority: WARNING
+              description: |
+                A mail could not be delivered for hours. The journal checks ignore
+                deferred deliveries, so a relay that keeps rejecting mails (wrong
+                credentials, sender not allowed) only shows up here. Run postqueue -p
+                on the host for the reason.
       macros:
         - macro: '{$LOAD_AVG_PER_CPU.MAX.WARN}'
           value: '3'
+        - macro: '{$POSTFIX.QUEUE.AGE.MAX}'
+          value: 4h
+          description: 'Age of the oldest mail in the postfix queue that triggers a problem'
+        - macro: '{$POSTFIX.QUEUE.COUNT.MAX}'
+          value: '100'
+          description: 'Number of mails in the postfix queue that triggers a problem'
         - macro: '{$SECURITY_LOG_HOURS}'
           value: '12'
           description: 'Time window in hours for the invalid logins check'
