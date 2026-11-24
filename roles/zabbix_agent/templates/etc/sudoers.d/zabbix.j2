@@ -9,5 +9,6 @@ zabbix ALL = NOPASSWD:SETENV: ZABBIX
 
 # Commands of the SMART plugin of zabbix-agent2
 Cmnd_Alias ZABBIX_SMART = /usr/sbin/smartctl -j -V, /usr/sbin/smartctl --scan -j, {{ zabbix_agent_smart_devices | map('regex_replace', '^(.*)$', '/usr/sbin/smartctl -a \\1 -j') | join(', ') }}
-zabbix ALL = NOPASSWD: ZABBIX_SMART
+Cmnd_Alias ZABBIX_SMART_TYPED = {{ zabbix_agent_smart_devices | product(zabbix_agent_smart_device_types) | map('join', ' -d ') | map('regex_replace', '^(.*)$', '/usr/sbin/smartctl -a \\1 -j') | join(', ') }}
+zabbix ALL = NOPASSWD: ZABBIX_SMART, ZABBIX_SMART_TYPED
 {% endif %}

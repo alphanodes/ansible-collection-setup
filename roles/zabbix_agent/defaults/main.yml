@@ -110,6 +110,12 @@ zabbix_agent_with_smart: false
 zabbix_agent_smart_devices:
   - '/dev/nvme[0-9]'
   - '/dev/sd[a-z]'
+# Device types the plugin passes with -d <type> (e.g. sat for SATA disks).
+# Listed explicitly: a glob would also match additional arguments.
+zabbix_agent_smart_device_types:
+  - nvme
+  - sat
+  - scsi
 
 zabbix_agent_journalctl_since: "4 hours ago"
 # Maximum number of lines returned by journalctl[*]. The trigger only checks
