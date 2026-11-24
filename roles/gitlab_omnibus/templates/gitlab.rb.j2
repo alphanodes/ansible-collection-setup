@@ -242,6 +242,9 @@ letsencrypt['enable'] = {{ gitlab_letsencrypt_enable | lower }}
 {% if gitlab_letsencrypt_alt_names is defined %}
 letsencrypt['alt_names'] = {{ gitlab_letsencrypt_alt_names }}
 {% endif %}
+{% if gitlab_letsencrypt_auto_renew_day_of_month | length > 0 %}
+letsencrypt['auto_renew_day_of_month'] = "{{ gitlab_letsencrypt_auto_renew_day_of_month }}"
+{% endif %}
 
 ## Prometheus
 prometheus['enable'] = {{ gitlab_prometheus_enable | lower }}

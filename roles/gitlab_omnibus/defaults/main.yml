@@ -235,6 +235,11 @@ gitlab_log_level: warn
 gitlab_env:
   GITLAB_LOG_LEVEL: '{{ gitlab_log_level }}'
 
+# Days of month for the Let's Encrypt renewal check (cron syntax). Omnibus
+# checks only every 4 days by default, so a certificate check that warns 30
+# days before expiry fires up to 4 days before GitLab renews.
+gitlab_letsencrypt_auto_renew_day_of_month: '*'
+
 gitlab_prometheus_enable: false
 
 gitlab_alertmanager_enable: false
