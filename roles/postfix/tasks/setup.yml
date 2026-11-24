@@ -39,11 +39,21 @@
     real_postfix_relayhost: "{{ real_postfix_relayhost }}:{{ postfix_relayhost_port }}"
   when: postfix_relayhost_port is defined
 
+# Postfix searches all maps with the full address before it tries the
+# @domain form of a hash map, so a regexp rule like /./ would always win over
+# a hash entry @host. The rule for local senders is therefore the first line
+# of the regexp map: exact hash entries still take precedence.
+- name: Set real_sender_canonical_regexp
+  ansible.builtin.set_fact:
+    real_sender_canonical_regexp: >-
+      {{ (['/@' ~ (postfix_myhostname | replace('.', '\\.')) ~ '$/ ' ~ postfix_local_sender] if postfix_local_sender | length > 0 else [])
+         + postfix_sender_canonical_regexp }}
+
 - name: Set real_sender_canonical_maps
   ansible.builtin.set_fact:
     real_sender_canonical_maps: >-
       {{ (['hash:/etc/postfix/sender-canonical'] if postfix_sender_canonicals | length > 0 else [])
-         + (['regexp:/etc/postfix/sender-canonical-regexp'] if postfix_sender_canonical_regexp | length > 0 else []) }}
+         + (['regexp:/etc/postfix/sender-canonical-regexp'] if real_sender_canonical_regexp | length > 0 else []) }}
 
 - name: Set real_smtpd_relay_restrictions
   ansible.builtin.set_fact:

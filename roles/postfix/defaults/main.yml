@@ -77,6 +77,13 @@ postfix_vimbadmin_packages:
 postfix_sender_access: []
 
 postfix_sender_canonicals: []
+# Sender for every mail of a local user (root, zabbix, cron jobs, bounces of
+# MAILER-DAEMON, ...): rewrites all addresses @postfix_myhostname before the
+# rules of postfix_sender_canonical_regexp, entries of
+# postfix_sender_canonicals take precedence. Set it if
+# the relay accepts only its own sender (e.g. Office 365 SendAs), otherwise
+# system mails of users without an own entry are rejected.
+postfix_local_sender: ''
 # Regular expression sender rewriting, one "/pattern/ replacement" per entry,
 # first match wins. Example to route bounces of web form mails with forged
 # senders to a local address instead of third parties:

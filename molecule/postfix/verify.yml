@@ -139,6 +139,49 @@
           - sender_canonical_lookup.results[1].stdout == 'webmaster@example.org'
         fail_msg: "{{ sender_canonical_lookup.results | map(attribute='stdout') | list }}"
 
+    - name: Look up local senders in the sender canonical maps
+      ansible.builtin.command: "postmap -q {{ item.address }} {{ item.map }}"
+      loop:
+        - address: "zabbix@{{ postfix_conf['myhostname'] }}"
+          map: regexp:/etc/postfix/sender-canonical-regexp
+        - address: "webmaster@{{ postfix_conf['myhostname'] }}"
+          map: hash:/etc/postfix/sender-canonical
+      register: local_sender_lookup
+      changed_when: false
+
+    - name: Verify the rule for local senders and the single entry
+      ansible.builtin.assert:
+        that:
+          - postfix_conf['sender_canonical_maps'] is search('hash:/etc/postfix/sender-canonical regexp:')
+          - local_sender_lookup.results[0].stdout == 'system@example.org'
+          - local_sender_lookup.results[1].stdout == 'webmaster@example.org'
+        fail_msg: "{{ local_sender_lookup.results | map(attribute='stdout') | list }}"
+
+    # A real mail shows the order postfix applies to all maps: the rule for
+    # local senders has to win over the catch-all /./ of the regexp test
+    # (the relay of the test is not reachable, so the mail stays queued)
+    - name: Send a mail as local user zabbix
+      ansible.builtin.shell: echo test | /usr/sbin/sendmail -f zabbix molecule@example.net
+      changed_when: false
+
+    - name: Read the sender of the queued mail
+      ansible.builtin.command: postqueue -j
+      register: local_sender_queue
+      until: local_sender_queue.stdout | length > 0
+      retries: 10
+      delay: 1
+      changed_when: false
+
+    - name: Remove the test mail from the queue
+      ansible.builtin.command: postsuper -d ALL
+      changed_when: false
+
+    - name: Verify the local user is sent as the local sender
+      ansible.builtin.assert:
+        that:
+          - (local_sender_queue.stdout_lines | map('from_json') | map(attribute='sender') | list) == ['system@example.org']
+        fail_msg: "queued senders: {{ local_sender_queue.stdout_lines | map('from_json') | map(attribute='sender') | list }}"
+
     - name: Verify SASL password map exists
       ansible.builtin.stat:
         path: /etc/postfix/sasl_passwd
@@ -242,7 +285,6 @@
         - /etc/postfix/mysql
         - /etc/postfix/submission_header_cleanup
         - /etc/postfix/sender-access
-        - /etc/postfix/sender-canonical
         - /etc/postfix/recipient-canonical
         - /etc/postfix/main.cf.proto
         - /etc/postfix/master.cf.proto

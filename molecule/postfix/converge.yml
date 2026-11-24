@@ -17,6 +17,10 @@
     postfix_sender_canonical_regexp:
       - '/^(.+@example\.org)$/ ${1}'
       - '/./ bounces@example.org'
+    # Every local sender goes out as one address, single entries win
+    postfix_local_sender: system@example.org
+    postfix_sender_canonicals:
+      - 'webmaster@{{ postfix_myhostname }} webmaster@example.org'
     postfix_relayhost: smtp.gmail.com
     postfix_relayhost_port: 587
     postfix_sasl_auth_enable: true
