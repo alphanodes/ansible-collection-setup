@@ -6,6 +6,12 @@ python_packages:
 
 python_with_dev: false
 
+# Disable the pip download cache system wide (/etc/pip.conf) and remove the
+# existing cache of the Ansible user. pip queries the package index on every
+# run anyway (state latest), so the cache saves hardly any traffic but grows
+# to several GB per host.
+python_pip_no_cache_dir: true
+
 # pip executable name, if not set the ansible/system default is used
 # python_pip_executable: pip3
 

@@ -13,11 +13,11 @@
   vars:
     # Use 'present' for idempotency tests, production uses 'latest'
     python_pip_default_state: present
-    pip_install_packages:
-      # Test installing a specific version of a package.
-      - name: ipaddress
-        version: '1.0.18'
-      - 'pymongo'
+    python_pip_packages:
+      # Test installing a specific version of a package
+      - name: six
+        version: '1.16.0'
+        virtualenv: /opt/molecule-venv
 
   roles:
     - role: alphanodes.setup.python

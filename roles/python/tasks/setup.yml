@@ -6,6 +6,27 @@
     state: present
 
 
+- name: Configure pip system wide
+  ansible.builtin.template:
+    src: pip.conf.j2
+    dest: /etc/pip.conf
+    owner: root
+    group: root
+    mode: '0644'
+  when: python_pip_no_cache_dir
+
+- name: Remove pip configuration (if unused)
+  ansible.builtin.file:
+    path: /etc/pip.conf
+    state: absent
+  when: not python_pip_no_cache_dir
+
+- name: Remove the pip cache of the Ansible user
+  ansible.builtin.file:
+    path: "{{ ansible_facts['env']['HOME'] }}/.cache/pip"
+    state: absent
+  when: python_pip_no_cache_dir
+
 - name: Make sure build tools are installed
   ansible.builtin.apt:
     name: python3-dev
@@ -19,7 +40,7 @@
     version: "{{ item.version | default(omit) }}"
     state: "{{ item.state | default(python_pip_default_state) }}"
     executable: "{{ python_pip_executable | default(omit) }}"
-    virtualenv: "{{ item.virtualenv | default(python_venv_parent + '/' + python_pip_default_venv) | default(omit) }}"
+    virtualenv: "{{ item.virtualenv | default((python_venv_parent ~ '/' ~ python_pip_default_venv) if python_pip_default_venv is defined else omit) }}"
     virtualenv_site_packages: "{{ item.virtualenv_site_packages | default(python_pip_virtualenv_site_packages) }}"
   loop: "{{ python_pip_packages }}"
   # see https://github.com/ansible/ansible/issues/77604

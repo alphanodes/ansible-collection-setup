@@ -1,0 +1,34 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Read pip configuration of the virtualenv pip
+      ansible.builtin.command: /opt/molecule-venv/bin/pip config list
+      register: pip_config
+      changed_when: false
+
+    - name: Verify the pip cache is disabled system wide
+      ansible.builtin.assert:
+        that:
+          - "\"global.no-cache-dir='true'\" in pip_config.stdout"
+        fail_msg: "pip config list: {{ pip_config.stdout }}"
+
+    - name: Read the installed package version
+      ansible.builtin.command: /opt/molecule-venv/bin/pip show six
+      register: pip_show
+      changed_when: false
+
+    - name: Stat the pip cache of root
+      ansible.builtin.stat:
+        path: /root/.cache/pip
+      register: pip_cache
+
+    - name: Verify the package was installed without a cache
+      ansible.builtin.assert:
+        that:
+          - pip_show.stdout is search('Version. 1\.16\.0')
+          - not pip_cache.stat.exists
+        fail_msg: "six installed: {{ pip_show.stdout_lines[:2] }}, cache exists: {{ pip_cache.stat.exists }}"
