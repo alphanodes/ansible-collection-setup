@@ -46,7 +46,7 @@
 - name: Set real_sender_canonical_regexp
   ansible.builtin.set_fact:
     real_sender_canonical_regexp: >-
-      {{ (['/@' ~ (postfix_myhostname | replace('.', '\\.')) ~ '$/ ' ~ postfix_local_sender] if postfix_local_sender | length > 0 else [])
+      {{ (['/@' ~ (postfix_myhostname | replace('.', '[.]')) ~ '$/ ' ~ postfix_local_sender] if postfix_local_sender | length > 0 else [])
          + postfix_sender_canonical_regexp }}
 
 - name: Set real_sender_canonical_maps

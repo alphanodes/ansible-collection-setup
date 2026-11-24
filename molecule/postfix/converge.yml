@@ -17,7 +17,9 @@
     postfix_sender_canonical_regexp:
       - '/^(.+@example\.org)$/ ${1}'
       - '/./ bounces@example.org'
-    # Every local sender goes out as one address, single entries win
+    # Every local sender goes out as one address, single entries win. A
+    # host name with dots tests the escaping in the regexp rule.
+    postfix_myhostname: mail.example.org
     postfix_local_sender: system@example.org
     postfix_sender_canonicals:
       - 'webmaster@{{ postfix_myhostname }} webmaster@example.org'

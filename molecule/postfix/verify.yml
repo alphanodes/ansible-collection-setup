@@ -161,7 +161,9 @@
     # local senders has to win over the catch-all /./ of the regexp test
     # (the relay of the test is not reachable, so the mail stays queued)
     - name: Send a mail as local user zabbix
-      ansible.builtin.shell: echo test | /usr/sbin/sendmail -f zabbix molecule@example.net
+      ansible.builtin.command:
+        cmd: /usr/sbin/sendmail -f zabbix molecule@example.net
+        stdin: test
       changed_when: false
 
     - name: Read the sender of the queued mail
