@@ -10,6 +10,33 @@
         cache_valid_time: 600
       changed_when: false
 
+    # Postfix for the queue checks of linux_check.sh. Mails to other hosts
+    # are deferred, so a test mail stays in the queue.
+    - name: Preseed the postfix configuration type
+      ansible.builtin.debconf:
+        name: postfix
+        question: postfix/main_mailer_type
+        value: Internet Site
+        vtype: select
+
+    - name: Install postfix
+      ansible.builtin.apt:
+        name: postfix
+        state: present
+
+    - name: Defer deliveries to other hosts
+      ansible.builtin.lineinfile:
+        path: /etc/postfix/main.cf
+        regexp: '^defer_transports'
+        line: defer_transports = smtp
+      notify: Restart postfix
+
+  handlers:
+    - name: Restart postfix
+      ansible.builtin.service:
+        name: postfix
+        state: restarted
+
   vars:
     # Zabbix configuration for testing
     zabbix_server_vhost: "zabbix.example.com"

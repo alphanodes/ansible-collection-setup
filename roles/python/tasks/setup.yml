@@ -21,9 +21,11 @@
     state: absent
   when: not python_pip_no_cache_dir
 
+# ~ is expanded on the target for the user the task runs as (become user),
+# the one pip runs as
 - name: Remove the pip cache of the Ansible user
   ansible.builtin.file:
-    path: "{{ ansible_facts['env']['HOME'] }}/.cache/pip"
+    path: ~/.cache/pip
     state: absent
   when: python_pip_no_cache_dir
 

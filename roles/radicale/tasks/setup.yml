@@ -59,11 +59,15 @@
   become_user: '{{ radicale_user }}'
   register: radicale_passlib_check
   changed_when: false
+  # In check mode on a new host the virtualenv does not exist yet
+  failed_when: false
   check_mode: false
 
 - name: Set passlib state of radicale virtualenv
   ansible.builtin.set_fact:
-    radicale_passlib_state: '{{ radicale_passlib_check.stdout | from_json }}'
+    radicale_passlib_state: >-
+      {{ radicale_passlib_check.stdout | from_json if radicale_passlib_check.rc == 0
+         else {'provider': '', 'importable': true} }}
 
 # Restore the files with the already installed version of the providing
 # package, so no upgrade happens outside of the radicale dependency resolution

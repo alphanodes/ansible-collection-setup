@@ -20,5 +20,15 @@
       become: true
       become_user: radicale
 
+    # Proves the scenario: without the repair task of the role the next
+    # converge would leave radicale without passlib
+    - name: Check the passlib module is broken now
+      ansible.builtin.command: /var/lib/radicale/.venv/bin/python3 -c 'import passlib.hash'
+      register: passlib_broken
+      changed_when: false
+      failed_when: passlib_broken.rc == 0
+      become: true
+      become_user: radicale
+
 - name: Converge again to restore the passlib module
   ansible.builtin.import_playbook: converge.yml

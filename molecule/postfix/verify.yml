@@ -169,7 +169,10 @@
     - name: Read the sender of the queued mail
       ansible.builtin.command: postqueue -j
       register: local_sender_queue
-      until: local_sender_queue.stdout | length > 0
+      # In maildrop the sender is not rewritten yet, wait for cleanup
+      until: >-
+        local_sender_queue.stdout_lines | length > 0
+        and (local_sender_queue.stdout_lines[0] | from_json).queue_name != 'maildrop'
       retries: 10
       delay: 1
       changed_when: false

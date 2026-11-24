@@ -208,6 +208,25 @@
       - www-data
     append: true
 
+- name: Read the sudo implementation for the SMART rules
+  ansible.builtin.command: readlink -f /usr/bin/sudo
+  register: zabbix_agent_sudo_impl
+  changed_when: false
+  check_mode: false
+  when: zabbix_agent_with_smart
+
+# sudo-rs takes [..] in arguments literally (newer releases reject the file)
+- name: Set whether the SMART sudo rules can be used
+  ansible.builtin.set_fact:
+    zabbix_agent_smart_sudo: >-
+      {{ zabbix_agent_with_smart
+         and not (zabbix_agent_sudo_impl.stdout | default('') is search('sudo-rs|cargo')) }}
+
+- name: Warn that SMART needs the classic sudo
+  ansible.builtin.debug:
+    msg: 'sudo-rs does not support the SMART sudo rules, the SMART plugin will get no data'
+  when: zabbix_agent_with_smart and not zabbix_agent_smart_sudo
+
 - name: Install suoder zabbix configuration
   ansible.builtin.template:
     src: etc/sudoers.d/zabbix.j2

@@ -10,6 +10,13 @@
         cache_valid_time: 600
       changed_when: false
 
+    # A cache from earlier pip runs, the role has to remove it. Only on the
+    # first converge, so the idempotence run finds nothing to remove.
+    - name: Create an old pip cache
+      ansible.builtin.command:
+        cmd: mkdir -p /root/.cache/pip/http-v2 /root/.molecule-pip-cache-seeded
+        creates: /root/.molecule-pip-cache-seeded
+
   vars:
     # Use 'present' for idempotency tests, production uses 'latest'
     python_pip_default_state: present

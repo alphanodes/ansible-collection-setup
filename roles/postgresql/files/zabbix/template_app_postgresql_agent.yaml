@@ -66,6 +66,8 @@ zabbix_export:
           type: ZABBIX_ACTIVE
           key: pg_extension_outdated
           delay: 1h
+          # One psql connection per database, more than the default agent timeout
+          timeout: 30s
           history: 7d
           trends: 180d
           value_type: UNSIGNED

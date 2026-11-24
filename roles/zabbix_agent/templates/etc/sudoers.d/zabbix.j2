@@ -5,7 +5,7 @@
 # accounts, sshd -T only prints the effective configuration.
 Cmnd_Alias ZABBIX = /usr/bin/find /etc -type f -perm -002, /usr/bin/find /etc -type d -perm -002, /usr/bin/passwd -S -a, /usr/sbin/sshd -T
 zabbix ALL = NOPASSWD:SETENV: ZABBIX
-{% if zabbix_agent_with_smart %}
+{% if zabbix_agent_smart_sudo | default(false) %}
 {# sudoers separates commands by comma, so a comma in an argument (cciss,0) needs a backslash #}
 {% set smart_types = zabbix_agent_smart_device_types | map('replace', ',', '\\,') | list %}
 

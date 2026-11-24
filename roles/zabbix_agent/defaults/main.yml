@@ -112,7 +112,9 @@ zabbix_agent_systemd_failed_ignore: []
 # to run smartctl as root, installs smartmontools. Without it, the plugin
 # fails and classic sudo mails every denied call to root (mail_badpass).
 # Only the exact commands of the plugin are allowed, smartctl can also
-# change device settings as root.
+# change device settings as root. The rules use globs in arguments, which
+# sudo-rs (default on Ubuntu 26.04) does not support: there the role skips
+# them with a warning (use the classic sudo, e.g. common_remove_sudo_rs).
 zabbix_agent_with_smart: false
 # Device globs for smartctl -a <device> -j
 zabbix_agent_smart_devices:
@@ -121,7 +123,8 @@ zabbix_agent_smart_devices:
 # Device types the plugin passes with -d <type> to --scan and -a (e.g. sat
 # for SATA disks). During discovery it also probes RAID controllers with a
 # disk number (e.g. cciss,0). Listed explicitly: * would also match
-# additional arguments, [0-9] matches a single digit only.
+# additional arguments, [0-9] matches a single digit only. MegaRAID is not
+# covered: the plugin queries /dev/bus/N with ids above 9.
 zabbix_agent_smart_device_types:
   - nvme
   - sat
@@ -129,7 +132,6 @@ zabbix_agent_smart_device_types:
   - '3ware,[0-9]'
   - 'areca,[0-9]'
   - 'cciss,[0-9]'
-  - 'megaraid,[0-9]'
 
 zabbix_agent_journalctl_since: "4 hours ago"
 # Maximum number of lines returned by journalctl[*]. The trigger only checks
