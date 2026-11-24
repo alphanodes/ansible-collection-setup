@@ -8,6 +8,7 @@ matomo_available_plugins:
     repo: https://github.com/matomo-org/plugin-CustomVariables.git
     download: https://github.com/matomo-org/plugin-CustomVariables/archive/%%version%%.tar.gz
     version: 6.0.1
+    branch: 6.0.1
   QueuedTracking:
     use_git: false
     repo: https://github.com/matomo-org/plugin-QueuedTracking.git
@@ -30,13 +31,16 @@ matomo_available_plugins:
     repo: https://github.com/matomo-org/plugin-Migration.git
     download: https://github.com/matomo-org/plugin-Migration/archive/%%version%%.tar.gz
     version: 6.1.0
+    branch: 6.1.0
   Provider:
     use_git: true
     repo: https://github.com/matomo-org/plugin-Provider.git
     download: https://github.com/matomo-org/plugin-Provider/archive/%%version%%.tar.gz
     version: 6.0.2
+    branch: 6.0.2
   SecurityInfo:
     use_git: true
     repo: https://github.com/matomo-org/plugin-SecurityInfo.git
     download: https://github.com/matomo-org/plugin-SecurityInfo/archive/%%version%%.tar.gz
     version: 6.0.2
+    branch: 6.0.2
