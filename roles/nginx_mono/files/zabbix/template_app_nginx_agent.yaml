@@ -1,0 +1,41 @@
+---
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
+      name: Templates/Applications
+  templates:
+    - uuid: 62e0b5b350c943d2819aa801d9442ba9
+      template: Nginx
+      name: Nginx
+      description: |
+        Wrapper for the Nginx by Zabbix agent template shipped with Zabbix.
+        Link this template to hosts with nginx instead of the vendor template.
+
+        {$NGINX.PROCESS_NAME} is anchored: the vendor default nginx also
+        matches short lived processes like the dpkg maintainer script
+        nginx-common.postinst (process name nginx-common.po), which process
+        discovery picks up during nginx updates and reports as not running.
+
+        This template requires:
+        - Nginx by Zabbix agent (part of the Zabbix server installation)
+        - the status page of the alphanodes.setup.nginx_mono vhost with
+          vhost_for_zabbix
+      vendor:
+        name: AlphaNodes
+        version: 7.4-__DATE__
+      templates:
+        - name: 'Nginx by Zabbix agent'
+      groups:
+        - name: Templates/Applications
+      items:
+        - uuid: 4a3d88acae6e480493de439859653115
+          name: 'nginx: error_log'
+          key: 'log[/var/log/nginx/access.log]'
+          history: 2w
+          value_type: LOG
+          status: DISABLED
+      macros:
+        - macro: '{$NGINX.PROCESS_NAME}'
+          value: '^nginx$'
+          description: 'Process name regex for process discovery, anchored to skip nginx-common.postinst during updates'
