@@ -374,7 +374,9 @@ UserParameter=services.systemctl,echo "{\"data\":[$(systemctl list-unit-files --
 UserParameter=fail2ban.status[*],sudo /usr/bin/fail2ban-client status '$1' | grep 'Currently banned:' | grep -E -o '[0-9]+'
 UserParameter=fail2ban.discovery,sudo /usr/bin/fail2ban-client status | grep 'Jail list:' | sed -e 's/^.*:\W\+//' -e 's/\(\(\w\|-\)\+\)/{"{#JAIL}":"\1"}/g' -e 's/.*/{"data":[\0]}/'
 {% endraw %}
-UserParameter=systemctl.status[*], systemctl status $1
+# The trailing Type line lets the Services template skip oneshot units, which
+# are inactive (dead) after a successful run
+UserParameter=systemctl.status[*], systemctl status $1; systemctl show -p Type $1
 UserParameter=systemctl.status_rc[*], systemctl status $1; echo $?
 UserParameter=systemctl.global_status, bash {{ zabbix_addons_dir }}/scripts/systemd_status.sh
 

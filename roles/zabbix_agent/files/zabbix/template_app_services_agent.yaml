@@ -122,6 +122,25 @@ zabbix_export:
                   expression: 'last(/Services/status[{#NAME}])=4'
                   name: 'Service "{#NAME}" is not in healthy state'
                   priority: HIGH
+            - uuid: 50465c4896814435af402eaef7ac8fab
+              name: 'type {#NAME}'
+              type: DEPENDENT
+              key: 'type[{#NAME}]'
+              history: 2w
+              description: 'Oneshot units are inactive (dead) after a successful run. Agents without the Type line in systemctl.status report 0.'
+              valuemap:
+                name: systemctl.type
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var m = value.match(/\nType=(\w+)\s*$/);
+                      return m && m[1] === 'oneshot' ? 1 : 0;
+              master_item:
+                key: 'systemctl.status[{#NAME}]'
+              tags:
+                - tag: Application
+                  value: 'systemctl type'
             - uuid: 0dfb58f6c9a3489e8310d653f326b515
               name: 'status of "{#NAME}"'
               type: ZABBIX_ACTIVE
@@ -134,7 +153,7 @@ zabbix_export:
                   value: 'systemctl raw'
           trigger_prototypes:
             - uuid: c6bda6d3c7bb45f49362e908f8fa0159
-              expression: 'last(/Services/status[{#NAME}])=0 and last(/Services/startup[{#NAME}])=1 and last(/Services/contains.condition[{#NAME}])=0'
+              expression: 'last(/Services/status[{#NAME}])=0 and last(/Services/startup[{#NAME}])=1 and last(/Services/contains.condition[{#NAME}])=0 and last(/Services/type[{#NAME}])=0'
               name: 'Service "{#NAME}" is not running but configured at startup'
               priority: AVERAGE
               description: |
@@ -145,6 +164,7 @@ zabbix_export:
                 * rhel-loadmodules
                 * systemd-readahead-collect
                 contains a triggered start. A workaround has been made to detect if the service contains even an condition
+                Oneshot units (type 1) are skipped, a failed run is reported by "not in healthy state".
             - uuid: 6386941c42224f5da810869933402a96
               expression: 'last(/Services/status[{#NAME}])=1 and last(/Services/startup[{#NAME}])=0'
               name: 'Service "{#NAME}" is running but not enabled at startup'
@@ -184,3 +204,10 @@ zabbix_export:
               newvalue: static
             - value: '3'
               newvalue: indirect
+        - uuid: 54efb6cbf4714066a5ed4d3bfb378596
+          name: systemctl.type
+          mappings:
+            - value: '0'
+              newvalue: other
+            - value: '1'
+              newvalue: oneshot

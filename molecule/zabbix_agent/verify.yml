@@ -86,6 +86,20 @@
         fail_msg: "journal UserParameters do not call journal_check.sh"
         success_msg: "journal UserParameters call journal_check.sh"
 
+    - name: Run systemctl.status UserParameter
+      ansible.builtin.command:
+        cmd: zabbix_agent2 -c /etc/zabbix/zabbix_agent2.conf -t 'systemctl.status[zabbix-agent2]'
+      register: systemctl_status_test
+      changed_when: false
+
+    # The Services template reads the unit type from the last line
+    - name: Verify systemctl.status ends with the unit type
+      ansible.builtin.assert:
+        that:
+          - systemctl_status_test.stdout is search('Type=simple\s*\]?\s*$')
+        fail_msg: "systemctl.status does not end with the Type line: {{ systemctl_status_test.stdout }}"
+        success_msg: "systemctl.status ends with the Type line"
+
     - name: Verify no configuration line exceeds the agent limit of 2048 bytes
       ansible.builtin.assert:
         that:
