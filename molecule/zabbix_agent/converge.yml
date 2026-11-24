@@ -34,6 +34,8 @@
       molecule: {}
     zabbix_agent_systemd_failed_ignore:
       - 'sentinel-agent-task-.*\.service'
+    # Sudo rules for the SMART plugin of zabbix-agent2
+    zabbix_agent_with_smart: true
 
   roles:
     - role: alphanodes.setup.zabbix_agent

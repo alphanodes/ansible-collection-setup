@@ -34,6 +34,11 @@
     name: '{{ zabbix_agent_packages }}'
     state: '{{ zabbix_agent_packages_mode }}'
 
+- name: Ensure smartmontools is installed for the SMART plugin
+  ansible.builtin.apt:
+    name: smartmontools
+  when: zabbix_agent_with_smart
+
 - name: Install binary, if provided
   when: zabbix_agent_binary | length > 0
   block:

@@ -5,3 +5,9 @@
 # accounts, sshd -T only prints the effective configuration.
 Cmnd_Alias ZABBIX = /usr/bin/find /etc -type f -perm -002, /usr/bin/find /etc -type d -perm -002, /usr/bin/passwd -S -a, /usr/sbin/sshd -T
 zabbix ALL = NOPASSWD:SETENV: ZABBIX
+{% if zabbix_agent_with_smart %}
+
+# Commands of the SMART plugin of zabbix-agent2
+Cmnd_Alias ZABBIX_SMART = /usr/sbin/smartctl -j -V, /usr/sbin/smartctl --scan -j, {{ zabbix_agent_smart_devices | map('regex_replace', '^(.*)$', '/usr/sbin/smartctl -a \\1 -j') | join(', ') }}
+zabbix ALL = NOPASSWD: ZABBIX_SMART
+{% endif %}

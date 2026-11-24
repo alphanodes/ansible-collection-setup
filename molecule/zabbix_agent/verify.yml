@@ -41,6 +41,32 @@
       register: zabbix_sudoers
       failed_when: not zabbix_sudoers.stat.exists
 
+    # The SMART plugin of zabbix-agent2 calls sudo -n smartctl
+    - name: Run the smartctl commands of the SMART plugin as zabbix
+      ansible.builtin.command:
+        cmd: sudo -n -u zabbix sudo -n {{ item }}
+      loop:
+        - /usr/sbin/smartctl -j -V
+        - /usr/sbin/smartctl --scan -j
+      register: smart_allowed
+      changed_when: false
+      failed_when: smart_allowed.stderr is search('password is required')
+
+    - name: Run smartctl with other arguments as zabbix
+      ansible.builtin.command:
+        cmd: sudo -n -u zabbix sudo -n /usr/sbin/smartctl -s on -a /dev/sda -j
+      register: smart_denied
+      changed_when: false
+      failed_when: false
+
+    - name: Verify sudo denies smartctl with other arguments
+      ansible.builtin.assert:
+        that:
+          - smart_denied.rc != 0
+          - smart_denied.stderr is search('password is required')
+        fail_msg: "zabbix may run smartctl with arbitrary arguments: {{ smart_denied.stderr }}"
+        success_msg: "sudo allows only the smartctl commands of the SMART plugin"
+
     - name: Check zabbix user exists
       ansible.builtin.getent:
         database: passwd

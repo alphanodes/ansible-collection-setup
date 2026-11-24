@@ -100,6 +100,17 @@ zabbix_host:
 # (extended regex, matched against the full unit name)
 zabbix_agent_systemd_failed_ignore: []
 
+# Allow the SMART plugin of zabbix-agent2 (template "SMART by Zabbix agent 2")
+# to run smartctl as root, installs smartmontools. Without it, the plugin
+# fails and classic sudo mails every denied call to root (mail_badpass).
+# Only the exact commands of the plugin are allowed, smartctl can also
+# change device settings as root.
+zabbix_agent_with_smart: false
+# Device globs for smartctl -a <device> -j
+zabbix_agent_smart_devices:
+  - '/dev/nvme[0-9]'
+  - '/dev/sd[a-z]'
+
 zabbix_agent_journalctl_since: "4 hours ago"
 # Maximum number of lines returned by journalctl[*]. The trigger only checks
 # for a non-empty value, the latest lines are enough for diagnosis and keep
