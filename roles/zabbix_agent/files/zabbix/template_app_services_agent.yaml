@@ -37,9 +37,10 @@ zabbix_export:
               - macro: '{#UNIT.NAME}'
                 value: (cloud-init|cloud-init-main|e2scrub_reap|grub-common|grub2-common|grub-initrd-fallback|hc-net-scan|hv-fcopy-daemon|secureboot-db|unbound-resolvconf)
                 operator: NOT_MATCHES_REGEX
-              # Template instances (getty@tty1) come and go with their trigger
+              # Template instances (getty@tty1) come and go with their trigger.
+              # A value starting with @ names a global regular expression.
               - macro: '{#UNIT.NAME}'
-                value: '@'
+                value: '[@]'
                 operator: NOT_MATCHES_REGEX
               # static, masked, alias and generated units have no start setting
               - macro: '{#UNIT.UNITFILESTATE}'
