@@ -14,3 +14,11 @@
     - /etc/default/fail2ban
     - /etc/fail2ban
     - /etc/sudoers.d/fail2ban
+
+# The checks would fail without fail2ban
+- name: Remove Zabbix UserParameters for fail2ban
+  ansible.builtin.file:
+    path: '{{ fail2ban_zabbix_userparameter_file }}'
+    state: absent
+  notify: Restart zabbix-agent2
+  when: zabbix_monitoring

@@ -108,14 +108,16 @@
         port: 10050
         timeout: 5
 
-    - name: Read zabbix_agent2.conf content
-      ansible.builtin.slurp:
-        src: /etc/zabbix/zabbix_agent2.conf
+    # The main configuration and the included files, the UserParameters live
+    # in zabbix_agent2.d
+    - name: Read the agent configuration with its included files
+      ansible.builtin.shell: cat /etc/zabbix/zabbix_agent2.conf /etc/zabbix/zabbix_agent2.d/*.conf
       register: zabbix_conf_content
+      changed_when: false
 
-    - name: Decode zabbix_agent2.conf content
+    - name: Keep the agent configuration content
       ansible.builtin.set_fact:
-        zabbix_conf_decoded: "{{ zabbix_conf_content.content | b64decode }}"
+        zabbix_conf_decoded: "{{ zabbix_conf_content.stdout }}"
 
     - name: Verify journal UserParameters use the wrapper script
       ansible.builtin.assert:
@@ -181,7 +183,7 @@
       ansible.builtin.assert:
         that:
           - zabbix_conf_decoded.split('\n') | map('length') | max <= 2048
-        fail_msg: "zabbix_agent2.conf contains a line longer than 2048 bytes, agent will not start"
+        fail_msg: "the agent configuration contains a line longer than 2048 bytes, agent will not start"
         success_msg: "all configuration lines within 2048 bytes"
 
     - name: Read journal pattern files
@@ -396,6 +398,53 @@
           - linux_checks.results[2].stdout is regex('^(none|[a-z_][a-z0-9_.-]*( [a-z_][a-z0-9_.-]*)*)$')
         fail_msg: "linux_check.sh returns: {{ linux_checks.results | map(attribute='stdout') | list }}"
         success_msg: "world_write_etc, server_name_in_hosts and password_accounts work as zabbix"
+
+    - name: Read the UserParameters of the main agent configuration
+      ansible.builtin.command: grep -c '^UserParameter=' /etc/zabbix/zabbix_agent2.conf
+      register: userparameter_main
+      changed_when: false
+      failed_when: userparameter_main.rc not in [0, 1]
+
+    - name: Read the UserParameter files
+      ansible.builtin.stat:
+        path: '/etc/zabbix/zabbix_agent2.d/{{ item }}.conf'
+      loop:
+        - userparameter_journal
+        - userparameter_linux
+        - userparameter_systemd
+        - userparameter_redmine
+        - fail2ban
+        # Groups not active on this host, php was left over by prepare
+        - userparameter_php
+        - userparameter_drupal
+      register: userparameter_files
+
+    - name: Verify each group has its own file and inactive groups are removed
+      ansible.builtin.assert:
+        that:
+          - userparameter_main.stdout | trim == '0'
+          - userparameter_files.results[:5] | map(attribute='stat.exists') | select | list | length == 5
+          - userparameter_files.results[5:] | map(attribute='stat.exists') | select | list | length == 0
+        fail_msg: >-
+          main configuration has {{ userparameter_main.stdout | trim }} UserParameters, files:
+          {{ userparameter_files.results | map(attribute='item') | zip(userparameter_files.results | map(attribute='stat.exists')) | list }}
+
+    # The file of the fail2ban role and its sudo rule, as zabbix like the agent
+    - name: Run the fail2ban discovery through the agent
+      ansible.builtin.command:
+        argv: [zabbix_agent2, -c, /etc/zabbix/zabbix_agent2.conf, -t, fail2ban.discovery]
+        chdir: /
+      become: true
+      become_user: zabbix
+      register: fail2ban_discovery
+      changed_when: false
+
+    - name: Verify the fail2ban discovery lists the jails
+      ansible.builtin.assert:
+        that:
+          # The LLD macro starts with a Jinja comment tag, match around it
+          - fail2ban_discovery.stdout is search('JAIL\}":"sshd"')
+        fail_msg: "fail2ban.discovery returns: {{ fail2ban_discovery.stdout }}"
 
     # With fork_worker, workers 1..n are children of worker 0, so the Puma
     # template selects the workers by process title, not by parent PID

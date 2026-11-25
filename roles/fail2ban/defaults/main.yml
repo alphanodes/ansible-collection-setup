@@ -1,6 +1,9 @@
 ---
 # defaults file for fail2ban
 
+# UserParameters of the Zabbix template Fail2ban (with zabbix_monitoring)
+fail2ban_zabbix_userparameter_file: /etc/zabbix/zabbix_agent2.d/fail2ban.conf
+
 # Bans are nftables sets in an own table (f2b-table), iptables is not needed.
 # nftables actions of fail2ban exist since 0.9.4, the dedicated table since
 # 0.10.5 (Debian 11 and later).

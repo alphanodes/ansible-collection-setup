@@ -1,0 +1,11 @@
+{{ managed_by_ansible | comment }}
+#
+# Checks of the Services and Linux templates
+
+{% raw %}
+UserParameter=services.systemctl,echo "{\"data\":[$(systemctl list-unit-files --type=service|grep \.service|grep -v "@"|sed -E -e "s/\.service\s+/\",\"{#STATUS}\":\"/;s/(\s+)?$/\"},/;s/^/{\"{#NAME}\":\"/;$ s/.$//")]}"
+{% endraw %}
+# The trailing Type line lets the Services template skip oneshot units, which
+# are inactive (dead) after a successful run
+UserParameter=systemctl.status[*], systemctl status $1; systemctl show -p Type $1
+UserParameter=systemctl.global_status, bash {{ zabbix_addons_dir }}/scripts/systemd_status.sh

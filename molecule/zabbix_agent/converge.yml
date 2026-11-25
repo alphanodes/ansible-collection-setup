@@ -63,6 +63,9 @@
       - 'sentinel-agent-task-.*\.service'
     # Sudo rules for the SMART plugin of zabbix-agent2
     zabbix_agent_with_smart: true
+    # fail2ban installs its own UserParameter file with monitoring
+    zabbix_monitoring: true
 
   roles:
     - role: alphanodes.setup.zabbix_agent
+    - role: alphanodes.setup.fail2ban

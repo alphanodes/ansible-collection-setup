@@ -133,6 +133,57 @@
     mode: '0644'
   notify: Restart zabbix-agent
 
+# UserParameters live in /etc/zabbix/zabbix_agent2.d, never in the main
+# configuration. A check belongs to the role that provides what it needs:
+# - here, as userparameter_<group>.conf: checks that use scripts or settings
+#   of this role, or whose software has no single role (PHP comes from
+#   php_fpm or php_cli, pulled in by many roles). This role detects the
+#   software, so it removes the file even when the other role no longer
+#   runs on the host.
+# - in the other role (e.g. fail2ban.conf, gitlab.conf): checks that only
+#   need what that role installs (sudo rule, template), removed by its
+#   remove tasks or without zabbix_monitoring.
+- name: Set the UserParameter groups of this host
+  ansible.builtin.set_fact:
+    zabbix_agent_userparameter_groups: >-
+      {{ ['journal', 'linux', 'systemd']
+         + (['php'] if php_installed else [])
+         + (['drupal'] if drupal_installed | bool else [])
+         + (['redmine'] if redmine_installed else []) }}
+
+- name: Set the UserParameter files of this host
+  ansible.builtin.set_fact:
+    zabbix_agent_userparameter_paths: >-
+      {{ ['/etc/zabbix/zabbix_agent2.d/userparameter_'] | product(zabbix_agent_userparameter_groups)
+         | map('join') | map('regex_replace', '$', '.conf') | list }}
+
+- name: Install UserParameter files
+  ansible.builtin.template:
+    src: 'etc/zabbix/zabbix_agent2.d/userparameter_{{ item }}.conf.j2'
+    dest: '/etc/zabbix/zabbix_agent2.d/userparameter_{{ item }}.conf'
+    owner: root
+    group: root
+    mode: '0644'
+  loop: '{{ zabbix_agent_userparameter_groups }}'
+  notify: Restart zabbix-agent
+
+# Only the userparameter_ prefix of this role, other roles keep their files
+# (e.g. fail2ban.conf, gitlab.conf)
+- name: Find UserParameter files of this role
+  ansible.builtin.find:
+    paths: /etc/zabbix/zabbix_agent2.d
+    patterns: userparameter_*.conf
+  register: zabbix_agent_userparameter_files
+
+- name: Remove UserParameter files of groups not active on this host
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop: >-
+    {{ zabbix_agent_userparameter_files.files | map(attribute='path') | list
+       | difference(zabbix_agent_userparameter_paths) }}
+  notify: Restart zabbix-agent
+
 - name: Remove old mysql configuration query files
   ansible.builtin.file:
     path: /etc/zabbix/zabbix_agentd.d/{{ item }}

@@ -1,0 +1,5 @@
+{{ managed_by_ansible | comment }}
+#
+# Checks of the Drupal template, on hosts with Drupal instances
+
+UserParameter=drush[*], bash {{ zabbix_addons_dir }}/scripts/drush_check.sh "$1" "$2" "$3" "$4"

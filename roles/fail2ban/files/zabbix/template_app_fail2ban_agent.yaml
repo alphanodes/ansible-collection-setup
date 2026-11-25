@@ -12,12 +12,9 @@ zabbix_export:
         Checks that fail2ban is running and discovers all jails with the
         number of banned IPs and its change.
 
-        This template requires:
-        - Zabbix agent with UserParameter fail2ban.discovery and
-          fail2ban.status[*] configured by the
-          alphanodes.setup.zabbix_agent role
-        - the sudo rule for fail2ban-client installed by the
-          alphanodes.setup.fail2ban role
+        This template requires the alphanodes.setup.fail2ban role with
+        zabbix_monitoring: it installs the UserParameters fail2ban.discovery
+        and fail2ban.status[*] and the sudo rule for fail2ban-client.
       vendor:
         name: AlphaNodes
         version: 7.4-__DATE__

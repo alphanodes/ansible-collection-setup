@@ -1,0 +1,7 @@
+{{ managed_by_ansible | comment }}
+#
+# Checks of the Redmine and Puma templates, on hosts with Redmine instances
+
+UserParameter=redmine_log[*], bash {{ zabbix_addons_dir }}/scripts/journal_check.sh redmine "$1"
+UserParameter=redmine_journal[*], bash {{ zabbix_addons_dir }}/scripts/journal_check.sh redmine_json "$1"
+UserParameter=puma_stats[*], curl -s --max-time 3 --unix-socket /run/$1/redmine-pumactl.sock http://localhost/stats

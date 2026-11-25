@@ -1,0 +1,7 @@
+{{ managed_by_ansible | comment }}
+#
+# Checks of the PHP templates, on hosts with PHP
+
+UserParameter=php_log[*], journalctl {{ zabbix_agent_journalctl_options }} -t php -p 4 --since "{{ zabbix_agent_journalctl_since }}" | grep -Ei "error|RuntimeException"
+UserParameter=phpfpm_log, journalctl {{ zabbix_agent_journalctl_options }} -t php-fpm --since "{{ zabbix_agent_journalctl_since }}" | grep -E '\[(ERROR|ALERT)\]|exited on signal [0-9]+ \(SIG(SEGV|BUS|ABRT|KILL)\)'
+UserParameter=php[*], bash {{ zabbix_addons_dir }}/scripts/php_check.sh "$1" "$2" "$3"

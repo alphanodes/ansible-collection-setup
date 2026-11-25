@@ -48,6 +48,20 @@
         dest: /etc/nginx/sites-available/old.conf
         mode: '0644'
 
+    # Left over from a host that had PHP: the role removes UserParameter files
+    # of groups that are not active
+    - name: Create the agent include directory
+      ansible.builtin.file:
+        path: /etc/zabbix/zabbix_agent2.d
+        state: directory
+        mode: '0755'
+
+    - name: Create a UserParameter file of an inactive group
+      ansible.builtin.copy:
+        content: "UserParameter=molecule.stale,echo stale\n"
+        dest: /etc/zabbix/zabbix_agent2.d/userparameter_php.conf
+        mode: '0644'
+
     # linux_check.sh reads the effective sshd configuration with sshd -T
     - name: Install OpenSSH server for the sshd configuration check
       ansible.builtin.apt:

@@ -6,3 +6,8 @@
   ansible.builtin.systemd_service:
     name: fail2ban
     state: restarted
+
+- name: Restart zabbix-agent2
+  ansible.builtin.systemd_service:
+    name: zabbix-agent2
+    state: restarted

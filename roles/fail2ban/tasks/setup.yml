@@ -77,6 +77,22 @@
     dest: /etc/sudoers.d/fail2ban
     mode: '0440'
 
+- name: Install Zabbix UserParameters for fail2ban
+  ansible.builtin.template:
+    src: zabbix_userparameter.conf.j2
+    dest: '{{ fail2ban_zabbix_userparameter_file }}'
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart zabbix-agent2
+  when: zabbix_monitoring
+
+- name: Remove Zabbix UserParameters for fail2ban without monitoring
+  ansible.builtin.file:
+    path: '{{ fail2ban_zabbix_userparameter_file }}'
+    state: absent
+  when: not zabbix_monitoring
+
 - name: Start the fail2ban service
   ansible.builtin.systemd_service:
     name: fail2ban
