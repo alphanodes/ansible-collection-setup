@@ -194,56 +194,47 @@
           - postgresql_plugin_keys.results[2].stdout is search('molecule_test')
         fail_msg: "{{ postgresql_plugin_keys.results | map(attribute='stdout') | list }}"
 
-    # Like the UserParameter pg_collation_mismatch of the agent: zabbix runs the
-    # query file through sudo as postgres (sudo-rs on Ubuntu)
-    - name: Run the collation check as zabbix through sudo
+    # The custom queries of the template PostgreSQL Custom, through the plugin
+    # like the server asks for them (zbx_monitor, grants on pg_file_settings)
+    - name: Run the custom queries through the Zabbix agent
       become: true
       become_user: zabbix
       ansible.builtin.command:
         argv:
-          - sudo
-          - -n
-          - -u
-          - postgres
-          # No port: like the agent, pg_wrapper picks the port of the cluster
-          - /usr/bin/psql
-          - -X
+          - zabbix_agent2
           - -t
-          - -A
-          - -f
-          - /etc/zabbix/pg_collation_mismatch.sql
-      register: postgresql_collation_check
-      changed_when: false
-      failed_when: false
-
-    - name: Read the active sudo implementation
-      ansible.builtin.command: readlink -f /usr/bin/sudo
-      register: postgresql_sudo_impl
-      changed_when: false
-
-    - name: Read the distribution
-      ansible.builtin.command: grep -oP '^ID=\K.*' /etc/os-release
-      register: postgresql_distribution
+          - 'pgsql.custom.query["tcp://localhost:{{ postgresql_port }}","zbx_monitor","","{{ item.db }}",{{ item.query }}]'
+        chdir: /
+      loop:
+        - {query: server_health, db: postgres}
+        - {query: databases, db: postgres}
+        - {query: database_health, db: molecule_test}
+      loop_control:
+        label: '{{ item.query }}'
+      register: postgresql_custom_queries
       changed_when: false
 
-    # converge installs sudo-rs on Ubuntu, otherwise the check silently runs
-    # with the classic sudo (sudo.ws) and the sudo-rs rules stay untested
-    - name: Assert the collation check runs with sudo-rs on Ubuntu
+    - name: Assert the custom queries report a healthy server
+      vars:
+        # -t prints the key and [s|<value>], the value is a JSON array of rows
+        server: "{{ (postgresql_custom_queries.results[0].stdout | regex_search('\\[\\{.*\\}\\]') | from_json)[0] }}"
+        databases: "{{ postgresql_custom_queries.results[1].stdout | regex_search('\\[\\{.*\\}\\]') | from_json }}"
+        database: "{{ (postgresql_custom_queries.results[2].stdout | regex_search('\\[\\{.*\\}\\]') | from_json)[0] }}"
       ansible.builtin.assert:
         that:
-          - postgresql_sudo_impl.stdout is search('cargo|sudo-rs')
-        fail_msg: 'Expected sudo-rs on Ubuntu, found {{ postgresql_sudo_impl.stdout }}'
-      when: postgresql_distribution.stdout | trim == 'ubuntu'
+          - server.config_errors == 0
+          - server.pending_restart == 0
+          - server.inactive_slots == 0
+          - server.slot_retained_bytes == 0
+          - server.collation_mismatch == 0
+          - server.autovacuum_max_workers == 3
+          # Without template1, the plugin would keep a connection to it
+          - databases | map(attribute='datname') | list == ['molecule_test', 'postgres']
+          - database.invalid_indexes == 0
+          - database.outdated_extensions == 0
+          - database.timescaledb_failed_jobs == 0
+        fail_msg: "{{ postgresql_custom_queries.results | map(attribute='stdout') | list }}"
 
-    - name: Assert the collation check returns a count
-      ansible.builtin.assert:
-        that:
-          - postgresql_collation_check.rc == 0
-          - postgresql_collation_check.stdout | trim is match('^[0-9]+$')
-        fail_msg: >-
-          Collation check failed with {{ postgresql_sudo_impl.stdout }}:
-          rc={{ postgresql_collation_check.rc }}
-          {{ postgresql_collation_check.stdout }} {{ postgresql_collation_check.stderr }}
 
     # side_effect installed pg_stat_statements 1.10, converge updated it
     - name: Read the version of pg_stat_statements in template1
@@ -260,16 +251,8 @@
           - postgresql_pgss_version.query_result[0].installed_version == postgresql_pgss_version.query_result[0].default_version
         fail_msg: "{{ postgresql_pgss_version.query_result | to_json }}"
 
-    # Like the UserParameter pg_extension_outdated of the agent
-    - name: Run the extension version check as zabbix through sudo
-      become: true
-      become_user: zabbix
-      ansible.builtin.command:
-        argv: [sudo, -n, -u, postgres, /etc/zabbix/pg_extension_outdated.sh]
-        chdir: /
-      register: postgresql_extension_check
-      changed_when: false
-
+    # Each problem the custom queries report, undone again below. Replication
+    # slots need postgresql_with_barman (max_replication_slots), not set up here
     - name: Install an old version of pg_trgm to simulate a missing extension update
       become: true
       become_user: postgres
@@ -278,59 +261,6 @@
         query: CREATE EXTENSION pg_trgm VERSION '1.5'
       changed_when: false
 
-    - name: Run the extension version check with the old extension
-      become: true
-      become_user: zabbix
-      ansible.builtin.command:
-        argv: [sudo, -n, -u, postgres, /etc/zabbix/pg_extension_outdated.sh]
-        chdir: /
-      register: postgresql_extension_check_old
-      changed_when: false
-
-    - name: Remove the old pg_trgm again
-      become: true
-      become_user: postgres
-      community.postgresql.postgresql_query:
-        login_db: molecule_test
-        query: DROP EXTENSION pg_trgm
-      changed_when: false
-
-    - name: Assert the extension version check counts outdated extensions
-      ansible.builtin.assert:
-        that:
-          - postgresql_extension_check.stdout | trim == '0'
-          - postgresql_extension_check_old.stdout | trim == '1'
-        fail_msg: >-
-          expected 0 and 1, got {{ postgresql_extension_check.stdout }} and
-          {{ postgresql_extension_check_old.stdout }} {{ postgresql_extension_check_old.stderr }}
-
-    # Through the agent like the server would ask for it, so the UserParameter
-    # line, sudo and the script are tested together. -t prints key [s|value]
-    - name: Run the health check through the Zabbix agent
-      become: true
-      become_user: zabbix
-      ansible.builtin.command:
-        argv: [zabbix_agent2, -c, /etc/zabbix/zabbix_agent2.conf, -t, pg_health]
-        chdir: /
-      register: postgresql_health_agent
-      changed_when: false
-
-    - name: Assert the health check reports a healthy server
-      vars:
-        health: "{{ postgresql_health_agent.stdout | regex_search('\\{.*\\}') | from_json }}"
-      ansible.builtin.assert:
-        that:
-          - health.config_errors == 0
-          - health.pending_restart == 0
-          - health.inactive_slots == 0
-          - health.slot_retained_bytes == 0
-          - health.invalid_indexes == 0
-          - health.timescaledb_failed_jobs == 0
-          - health.autovacuum_max_workers == 3
-        fail_msg: "{{ postgresql_health_agent.stdout }} {{ postgresql_health_agent.stderr }}"
-
-    # Each problem the health check reports, undone again below. Replication
-    # slots need postgresql_with_barman (max_replication_slots), not set up here
     - name: Change a setting that needs a restart
       become: true
       become_user: postgres
@@ -373,17 +303,32 @@
       changed_when: false
 
     # The reload reaches the server processes asynchronously
-    - name: Run the health check with the problems
+    - name: Run the server health query with the problems
       become: true
       become_user: zabbix
       ansible.builtin.command:
-        argv: [sudo, -n, -u, postgres, /etc/zabbix/pg_health.sh]
+        argv:
+          - zabbix_agent2
+          - -t
+          - 'pgsql.custom.query["tcp://localhost:{{ postgresql_port }}","zbx_monitor","","postgres",server_health]'
         chdir: /
-      register: postgresql_health_problems
+      register: postgresql_server_problems
       changed_when: false
-      until: (postgresql_health_problems.stdout | from_json).pending_restart > 0
+      until: (postgresql_server_problems.stdout | regex_search('\[\{.*\}\]') | from_json)[0].pending_restart > 0
       retries: 5
       delay: 1
+
+    - name: Run the database health query with the problems
+      become: true
+      become_user: zabbix
+      ansible.builtin.command:
+        argv:
+          - zabbix_agent2
+          - -t
+          - 'pgsql.custom.query["tcp://localhost:{{ postgresql_port }}","zbx_monitor","","molecule_test",database_health]'
+        chdir: /
+      register: postgresql_database_problems
+      changed_when: false
 
     - name: Remove the invalid setting
       ansible.builtin.lineinfile:
@@ -406,25 +351,48 @@
         query: SELECT pg_reload_conf()
       changed_when: false
 
-    - name: Drop the table with the invalid index
+    - name: Drop the table with the invalid index and the old pg_trgm
       become: true
       become_user: postgres
       community.postgresql.postgresql_query:
         login_db: molecule_test
-        query: DROP TABLE molecule_health
+        query:
+          - DROP TABLE molecule_health
+          - DROP EXTENSION pg_trgm
       changed_when: false
 
-    - name: Assert the health check counts each problem
+    - name: Assert the custom queries count each problem
       vars:
-        health: "{{ postgresql_health_problems.stdout | from_json }}"
+        server: "{{ (postgresql_server_problems.stdout | regex_search('\\[\\{.*\\}\\]') | from_json)[0] }}"
+        database: "{{ (postgresql_database_problems.stdout | regex_search('\\[\\{.*\\}\\]') | from_json)[0] }}"
       ansible.builtin.assert:
         that:
-          - health.config_errors == 1
-          - health.pending_restart == 1
-          - health.inactive_slots == 0
-          - health.invalid_indexes == 1
-          - health.timescaledb_failed_jobs == 0
-        fail_msg: "{{ postgresql_health_problems.stdout }} {{ postgresql_health_problems.stderr }}"
+          # The setting waiting for a restart is not counted twice
+          - server.config_errors == 1
+          - server.pending_restart == 1
+          - server.inactive_slots == 0
+          - database.invalid_indexes == 1
+          - database.outdated_extensions == 1
+          - database.timescaledb_failed_jobs == 0
+        fail_msg: "{{ postgresql_server_problems.stdout }} {{ postgresql_database_problems.stdout }}"
+
+    - name: Read the checks of older role versions run through sudo
+      ansible.builtin.stat:
+        path: '{{ item }}'
+      loop:
+        - /etc/sudoers.d/postgresql
+        - /etc/zabbix/pg_collation_mismatch.sql
+        - /etc/zabbix/pg_extension_outdated.sh
+        - /etc/zabbix/pg_health.sh
+      register: postgresql_obsolete_checks
+
+    - name: Assert the checks run through sudo are removed
+      ansible.builtin.assert:
+        that: not item.stat.exists
+        fail_msg: 'Obsolete check left: {{ item.item }}'
+      loop: '{{ postgresql_obsolete_checks.results }}'
+      loop_control:
+        label: '{{ item.item }}'
 
     - name: Read obsolete zabbix sql PostgreSQL files
       ansible.builtin.stat:

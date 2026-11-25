@@ -7,7 +7,6 @@
   ansible.builtin.set_fact:
     php_installed: "{{ true if zabbix_agent_check_php_package in ansible_facts.packages else false }}"
     redmine_installed: "{{ true if redmine_instances is defined and redmine_instances | length > 0 else false }}"
-    postgres_installed: "{{ true if 'postgresql-common' in ansible_facts.packages else false }}"
     drupal_installed: "{{ True if drupal_instances is defined and drupal_instances | length > 0 else False }}"
 
 - name: Include rsync role

@@ -9,111 +9,36 @@ zabbix_export:
       template: 'PostgreSQL Custom'
       name: 'PostgreSQL Custom'
       description: |
-        Custom monitoring for PostgreSQL installations.
-        Detects collation version mismatches after glibc upgrades using
-        the pg_collation_mismatch UserParameter, extensions older than
-        their installed package (pg_extension_outdated) and states the
-        agent 2 plugin does not report (pg_health): errors in the
-        configuration files, settings waiting for a restart, replication
-        slots holding WAL, invalid indexes and failed TimescaleDB jobs.
+        Custom monitoring for PostgreSQL installations, with custom queries
+        of the agent 2 PostgreSQL plugin (pgsql.custom.query) for states the
+        plugin keys do not report: errors in the configuration files,
+        settings waiting for a restart, replication slots holding WAL,
+        collation version mismatches after glibc upgrades, and per database
+        invalid indexes, extensions older than their installed package and
+        failed TimescaleDB jobs.
 
         Linked by the wrapper "PostgreSQL" together with
-        "PostgreSQL by Zabbix agent 2", link the wrapper to hosts.
+        "PostgreSQL by Zabbix agent 2", link the wrapper to hosts. Uses the
+        connection macros of the vendor template.
 
-        This template requires:
-        - Zabbix agent with UserParameters pg_collation_mismatch,
-          pg_extension_outdated and pg_health configured
-        - sudo access for zabbix user to run psql and the check scripts as postgres
+        This template requires the alphanodes.setup.postgresql role with
+        zabbix_monitoring: it installs the queries server_health,
+        databases and database_health, enables custom queries in the plugin
+        and grants zbx_monitor read access to pg_file_settings.
       vendor:
         name: AlphaNodes
         version: 7.4-__DATE__
       groups:
         - name: Templates/Databases
       items:
-        - uuid: 7f4660849f824d26b26bb0dc3b74f9f0
-          name: 'PostgreSQL: Collation version mismatch count'
-          type: ZABBIX_ACTIVE
-          key: pg_collation_mismatch
-          delay: 1h
-          history: 7d
-          trends: 180d
-          value_type: UNSIGNED
-          description: 'Number of databases with a collation version mismatch. Non-zero means glibc was upgraded without running ALTER DATABASE ... REFRESH COLLATION VERSION.'
-          tags:
-            - tag: component
-              value: postgresql
-            - tag: log-type
-              value: warning
-          triggers:
-            - uuid: 9cfbdd44affc4931adf44a84dc315980
-              expression: 'nodata(/PostgreSQL Custom/pg_collation_mismatch,3h)=1'
-              name: 'PostgreSQL: No collation check data for 3h'
-              priority: INFO
-              description: 'The collation check returns no data, e.g. because sudo or psql fails. Check the item error on the host.'
-              tags:
-                - tag: scope
-                  value: availability
-            - uuid: c9c61309ffcd4e14b3918cffb6b17320
-              expression: 'last(/PostgreSQL Custom/pg_collation_mismatch)>0'
-              recovery_mode: RECOVERY_EXPRESSION
-              recovery_expression: 'max(/PostgreSQL Custom/pg_collation_mismatch,2h)=0'
-              name: 'PostgreSQL: Collation version mismatch detected'
-              priority: WARNING
-              description: 'PostgreSQL collation version mismatch detected after glibc upgrade. Fix: sudo -u postgres psql -c "ALTER DATABASE <dbname> REFRESH COLLATION VERSION;" for each affected database. Check with: SELECT datname, datcollversion, pg_database_collation_actual_version(oid) FROM pg_database;'
-              manual_close: 'YES'
-              tags:
-                - tag: scope
-                  value: maintenance
-        - uuid: e8fadb1f04c0443a8c8fd4f805ed2d78
-          name: 'PostgreSQL: Outdated extension count'
-          type: ZABBIX_ACTIVE
-          key: pg_extension_outdated
-          delay: 1h
-          # One psql connection per database, more than the default agent timeout
-          timeout: 30s
-          history: 7d
-          trends: 180d
-          value_type: UNSIGNED
-          description: 'Number of installed extensions in all databases whose version is older than the one of the installed package. Package updates do not run ALTER EXTENSION ... UPDATE.'
-          tags:
-            - tag: component
-              value: postgresql
-          triggers:
-            - uuid: 7334b31420574c3789c3191b32206fb2
-              expression: 'nodata(/PostgreSQL Custom/pg_extension_outdated,3h)=1'
-              name: 'PostgreSQL: No extension version check data for 3h'
-              priority: INFO
-              description: 'The extension version check returns no data, e.g. because sudo or the script fails. Check the item error on the host.'
-              tags:
-                - tag: scope
-                  value: availability
-            - uuid: 397cb038d72e4624b8f03fc81edcf74c
-              expression: 'last(/PostgreSQL Custom/pg_extension_outdated)>0'
-              name: 'PostgreSQL: {ITEM.LASTVALUE} extensions older than the installed package'
-              priority: WARNING
-              description: |
-                The package of an extension was updated, but the extension in the
-                database still runs the old version (e.g. TimescaleDB 2.23.1 with
-                package 2.32.1 on PostgreSQL 18.7 broke all background jobs).
-                List them per database with:
-                SELECT name, installed_version, default_version FROM pg_available_extensions WHERE installed_version <> default_version;
-                Fix with ALTER EXTENSION <name> UPDATE; in each database. TimescaleDB
-                needs psql -X, the command as first one of the session and the
-                clients (zabbix-server) stopped.
-              tags:
-                - tag: scope
-                  value: maintenance
         - uuid: d64254a9e7c74ebc9bad529818458733
           name: 'PostgreSQL: Get health state'
-          type: ZABBIX_ACTIVE
-          key: pg_health
+          key: 'pgsql.custom.query["{$PG.CONNSTRING.AGENT2}","{$PG.USER}","{$PG.PASSWORD}","{$PG.DATABASE}",server_health]'
           delay: 15m
-          # One psql connection per database, more than the default agent timeout
-          timeout: 30s
           # Only feeds the dependent items, which keep the values
           history: '0'
           value_type: TEXT
-          description: 'JSON with server and database state the agent 2 plugin does not report, from /etc/zabbix/pg_health.sh.'
+          description: 'One row of server state the plugin keys do not report, from the custom query server_health.'
           tags:
             - tag: component
               value: raw
@@ -128,12 +53,43 @@ zabbix_export:
           preprocessing:
             - type: JSONPATH
               parameters:
-                - $.autovacuum_max_workers
+                - '$[0].autovacuum_max_workers'
           master_item:
-            key: pg_health
+            key: 'pgsql.custom.query["{$PG.CONNSTRING.AGENT2}","{$PG.USER}","{$PG.PASSWORD}","{$PG.DATABASE}",server_health]'
           tags:
             - tag: component
               value: postgresql
+        - uuid: 7f4660849f824d26b26bb0dc3b74f9f0
+          name: 'PostgreSQL: Collation version mismatch count'
+          type: DEPENDENT
+          key: pg_collation_mismatch
+          history: 7d
+          trends: 180d
+          value_type: UNSIGNED
+          description: 'Number of databases with a collation version mismatch. Non-zero means glibc was upgraded without running ALTER DATABASE ... REFRESH COLLATION VERSION.'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$[0].collation_mismatch'
+          master_item:
+            key: 'pgsql.custom.query["{$PG.CONNSTRING.AGENT2}","{$PG.USER}","{$PG.PASSWORD}","{$PG.DATABASE}",server_health]'
+          tags:
+            - tag: component
+              value: postgresql
+            - tag: log-type
+              value: warning
+          triggers:
+            - uuid: c9c61309ffcd4e14b3918cffb6b17320
+              expression: 'last(/PostgreSQL Custom/pg_collation_mismatch)>0'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/PostgreSQL Custom/pg_collation_mismatch,2h)=0'
+              name: 'PostgreSQL: Collation version mismatch detected'
+              priority: WARNING
+              description: 'PostgreSQL collation version mismatch detected after glibc upgrade. Fix: sudo -u postgres psql -c "ALTER DATABASE <dbname> REFRESH COLLATION VERSION;" for each affected database. Check with: SELECT datname, datcollversion, pg_database_collation_actual_version(oid) FROM pg_database;'
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: maintenance
         - uuid: 2c4cd2ff209741cc8d7b34370f6a33a0
           name: 'PostgreSQL: Configuration file errors'
           type: DEPENDENT
@@ -141,13 +97,13 @@ zabbix_export:
           history: 7d
           trends: 180d
           value_type: UNSIGNED
-          description: 'Lines of postgresql.conf, conf.d and postgresql.auto.conf that PostgreSQL rejects (pg_file_settings.error), the server keeps the previous value.'
+          description: 'Lines of postgresql.conf, conf.d and postgresql.auto.conf that PostgreSQL rejects (pg_file_settings.error), the server keeps the previous value. Settings waiting for a restart are counted by pending_restart only.'
           preprocessing:
             - type: JSONPATH
               parameters:
-                - $.config_errors
+                - '$[0].config_errors'
           master_item:
-            key: pg_health
+            key: 'pgsql.custom.query["{$PG.CONNSTRING.AGENT2}","{$PG.USER}","{$PG.PASSWORD}","{$PG.DATABASE}",server_health]'
           tags:
             - tag: component
               value: postgresql
@@ -175,9 +131,9 @@ zabbix_export:
           preprocessing:
             - type: JSONPATH
               parameters:
-                - $.pending_restart
+                - '$[0].pending_restart'
           master_item:
-            key: pg_health
+            key: 'pgsql.custom.query["{$PG.CONNSTRING.AGENT2}","{$PG.USER}","{$PG.PASSWORD}","{$PG.DATABASE}",server_health]'
           tags:
             - tag: component
               value: postgresql
@@ -187,7 +143,7 @@ zabbix_export:
               expression: 'nodata(/PostgreSQL Custom/pg_health.pending_restart,1h)=1'
               name: 'PostgreSQL: No health check data for 1h'
               priority: INFO
-              description: 'The health check returns no data, e.g. because sudo or the script fails. Check the item error of "PostgreSQL: Get health state" on the host.'
+              description: 'The custom query server_health returns no data, e.g. because custom queries are not enabled in the plugin or zbx_monitor lacks the grants on pg_file_settings. Check the item error of "PostgreSQL: Get health state" on the host.'
               tags:
                 - tag: scope
                   value: availability
@@ -215,9 +171,9 @@ zabbix_export:
           preprocessing:
             - type: JSONPATH
               parameters:
-                - $.inactive_slots
+                - '$[0].inactive_slots'
           master_item:
-            key: pg_health
+            key: 'pgsql.custom.query["{$PG.CONNSTRING.AGENT2}","{$PG.USER}","{$PG.PASSWORD}","{$PG.DATABASE}",server_health]'
           tags:
             - tag: component
               value: replication
@@ -247,9 +203,9 @@ zabbix_export:
           preprocessing:
             - type: JSONPATH
               parameters:
-                - $.slot_retained_bytes
+                - '$[0].slot_retained_bytes'
           master_item:
-            key: pg_health
+            key: 'pgsql.custom.query["{$PG.CONNSTRING.AGENT2}","{$PG.USER}","{$PG.PASSWORD}","{$PG.DATABASE}",server_health]'
           tags:
             - tag: component
               value: replication
@@ -265,68 +221,140 @@ zabbix_export:
               tags:
                 - tag: scope
                   value: capacity
-        - uuid: 6d5debd7667348288204983b6bbf4c26
-          name: 'PostgreSQL: Invalid indexes'
-          type: DEPENDENT
-          key: pg_health.invalid_indexes
-          history: 7d
-          trends: 180d
-          value_type: UNSIGNED
-          description: 'Indexes in all databases marked invalid (pg_index.indisvalid), left behind by a failed CREATE INDEX CONCURRENTLY or REINDEX CONCURRENTLY.'
-          preprocessing:
-            - type: JSONPATH
-              parameters:
-                - $.invalid_indexes
-          master_item:
-            key: pg_health
-          tags:
-            - tag: component
-              value: postgresql
-          triggers:
-            - uuid: c163a1338f554a0f941dac830cb70ed9
-              expression: 'min(/PostgreSQL Custom/pg_health.invalid_indexes,1h)>0'
-              name: 'PostgreSQL: {ITEM.LASTVALUE} invalid indexes'
-              priority: WARNING
-              description: |
-                Invalid indexes are not used by queries, but still updated on
-                every write, and a unique index does not enforce uniqueness. List
-                them in each database with:
-                SELECT indexrelid::regclass FROM pg_index WHERE NOT indisvalid;
-                Fix with REINDEX INDEX CONCURRENTLY <name>; or drop and create the index again.
+      discovery_rules:
+        - uuid: 0aaf0b312b664e9a9bb403e35bc93726
+          name: 'Database health discovery'
+          key: 'pgsql.custom.query["{$PG.CONNSTRING.AGENT2}","{$PG.USER}","{$PG.PASSWORD}","{$PG.DATABASE}",databases]'
+          delay: 1h
+          description: 'Databases that allow connections, without the templates (custom query databases).'
+          item_prototypes:
+            - uuid: ffd1311f01d04083a416b02b69e24087
+              name: 'DB [{#DBNAME}]: Get health state'
+              key: 'pgsql.custom.query["{$PG.CONNSTRING.AGENT2}","{$PG.USER}","{$PG.PASSWORD}","{#DBNAME}",database_health]'
+              delay: 15m
+              # Only feeds the dependent items, which keep the values
+              history: '0'
+              value_type: TEXT
+              description: 'One row of database state, from the custom query database_health.'
               tags:
-                - tag: scope
-                  value: notice
-        - uuid: fdf5dd7dc75c45a5b6fd149b5fa46be0
-          name: 'PostgreSQL: Failed TimescaleDB jobs'
-          type: DEPENDENT
-          key: pg_health.timescaledb_failed_jobs
-          history: 7d
-          trends: 180d
-          value_type: UNSIGNED
-          description: 'TimescaleDB background jobs (compression, retention, continuous aggregates) whose last run failed, in all databases with the extension. Always 0 without TimescaleDB.'
-          preprocessing:
-            - type: JSONPATH
-              parameters:
-                - $.timescaledb_failed_jobs
-          master_item:
-            key: pg_health
-          tags:
-            - tag: component
-              value: timescaledb
-          triggers:
-            - uuid: 4be2311a0c8440b7a0d065e85ea32fa8
-              expression: 'last(/PostgreSQL Custom/pg_health.timescaledb_failed_jobs)>0'
-              name: 'PostgreSQL: {ITEM.LASTVALUE} TimescaleDB jobs failed'
-              priority: WARNING
-              description: |
-                The last run of TimescaleDB background jobs failed, e.g. after a
-                package update without ALTER EXTENSION timescaledb UPDATE or with
-                too few background workers. List them with:
-                SELECT job_id, hypertable_name, last_run_status, total_failures FROM timescaledb_information.job_stats WHERE last_run_status = 'Failed';
-                and read the error in the journal of PostgreSQL.
+                - tag: component
+                  value: raw
+                - tag: database
+                  value: '{#DBNAME}'
+            - uuid: 42234db09f8445bcb7b2c69129c12f9a
+              name: 'DB [{#DBNAME}]: Invalid indexes'
+              type: DEPENDENT
+              key: 'pg_db.invalid_indexes["{#DBNAME}"]'
+              history: 7d
+              trends: 180d
+              value_type: UNSIGNED
+              description: 'Indexes marked invalid (pg_index.indisvalid), left behind by a failed CREATE INDEX CONCURRENTLY or REINDEX CONCURRENTLY.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[0].invalid_indexes'
+              master_item:
+                key: 'pgsql.custom.query["{$PG.CONNSTRING.AGENT2}","{$PG.USER}","{$PG.PASSWORD}","{#DBNAME}",database_health]'
               tags:
-                - tag: scope
-                  value: notice
+                - tag: component
+                  value: postgresql
+                - tag: database
+                  value: '{#DBNAME}'
+              trigger_prototypes:
+                - uuid: 5fca6a4c1e7746e382271e1bfd6029b7
+                  expression: 'min(/PostgreSQL Custom/pg_db.invalid_indexes["{#DBNAME}"],1h)>0'
+                  name: 'PostgreSQL: DB [{#DBNAME}]: {ITEM.LASTVALUE} invalid indexes'
+                  priority: WARNING
+                  description: |
+                    Invalid indexes are not used by queries, but still updated on
+                    every write, and a unique index does not enforce uniqueness. List
+                    them in the database with:
+                    SELECT indexrelid::regclass FROM pg_index WHERE NOT indisvalid;
+                    Fix with REINDEX INDEX CONCURRENTLY <name>; or drop and create the index again.
+                  tags:
+                    - tag: scope
+                      value: notice
+            - uuid: bb2afe8c5b3249aab944e23ad79cea8b
+              name: 'DB [{#DBNAME}]: Outdated extensions'
+              type: DEPENDENT
+              key: 'pg_db.outdated_extensions["{#DBNAME}"]'
+              history: 7d
+              trends: 180d
+              value_type: UNSIGNED
+              description: 'Installed extensions whose version is older than the one of the installed package. Package updates do not run ALTER EXTENSION ... UPDATE.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[0].outdated_extensions'
+              master_item:
+                key: 'pgsql.custom.query["{$PG.CONNSTRING.AGENT2}","{$PG.USER}","{$PG.PASSWORD}","{#DBNAME}",database_health]'
+              tags:
+                - tag: component
+                  value: postgresql
+                - tag: database
+                  value: '{#DBNAME}'
+              trigger_prototypes:
+                # On a dependent item, the master item keeps no history
+                - uuid: 9d06a0e7771147d6ba66c12a4990253b
+                  expression: 'nodata(/PostgreSQL Custom/pg_db.outdated_extensions["{#DBNAME}"],1h)=1'
+                  name: 'PostgreSQL: DB [{#DBNAME}]: No health check data for 1h'
+                  priority: INFO
+                  description: 'The custom query database_health returns no data for this database, e.g. because zbx_monitor may not connect to it. Check the item error of "DB [{#DBNAME}]: Get health state" on the host.'
+                  tags:
+                    - tag: scope
+                      value: availability
+                - uuid: bfcde640b02d40c4a2833b107c48b1e3
+                  expression: 'last(/PostgreSQL Custom/pg_db.outdated_extensions["{#DBNAME}"])>0'
+                  name: 'PostgreSQL: DB [{#DBNAME}]: {ITEM.LASTVALUE} extensions older than the installed package'
+                  priority: WARNING
+                  description: |
+                    The package of an extension was updated, but the extension in the
+                    database still runs the old version (e.g. TimescaleDB 2.23.1 with
+                    package 2.32.1 on PostgreSQL 18.7 broke all background jobs).
+                    List them with:
+                    SELECT name, installed_version, default_version FROM pg_available_extensions WHERE installed_version <> default_version;
+                    Fix with ALTER EXTENSION <name> UPDATE; in the database. TimescaleDB
+                    needs psql -X, the command as first one of the session and the
+                    clients (zabbix-server) stopped.
+                  tags:
+                    - tag: scope
+                      value: maintenance
+            - uuid: 45479d56e72d45dfa97ced52c3798524
+              name: 'DB [{#DBNAME}]: Failed TimescaleDB jobs'
+              type: DEPENDENT
+              key: 'pg_db.timescaledb_failed_jobs["{#DBNAME}"]'
+              history: 7d
+              trends: 180d
+              value_type: UNSIGNED
+              description: 'TimescaleDB background jobs (compression, retention, continuous aggregates) whose last run failed. Always 0 without TimescaleDB.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$[0].timescaledb_failed_jobs'
+              master_item:
+                key: 'pgsql.custom.query["{$PG.CONNSTRING.AGENT2}","{$PG.USER}","{$PG.PASSWORD}","{#DBNAME}",database_health]'
+              tags:
+                - tag: component
+                  value: timescaledb
+                - tag: database
+                  value: '{#DBNAME}'
+              trigger_prototypes:
+                - uuid: 69a14190eb72458fbbb7084412f7b6b7
+                  expression: 'last(/PostgreSQL Custom/pg_db.timescaledb_failed_jobs["{#DBNAME}"])>0'
+                  name: 'PostgreSQL: DB [{#DBNAME}]: {ITEM.LASTVALUE} TimescaleDB jobs failed'
+                  priority: WARNING
+                  description: |
+                    The last run of TimescaleDB background jobs failed, e.g. after a
+                    package update without ALTER EXTENSION timescaledb UPDATE or with
+                    too few background workers. List them with:
+                    SELECT job_id, hypertable_name, last_run_status, total_failures FROM timescaledb_information.job_stats WHERE last_run_status = 'Failed';
+                    and read the error in the journal of PostgreSQL.
+                  tags:
+                    - tag: scope
+                      value: notice
+          lld_macro_paths:
+            - lld_macro: '{#DBNAME}'
+              path: $.datname
       tags:
         - tag: class
           value: software

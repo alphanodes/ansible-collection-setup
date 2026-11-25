@@ -8,3 +8,7 @@
 
 Plugins.PostgreSQL.Default.User={{ postgresql_zabbix_user }}
 Plugins.PostgreSQL.Default.Password={{ postgresql_zabbix_password }}
+
+# Queries of pgsql.custom.query for the template "PostgreSQL Custom"
+Plugins.PostgreSQL.CustomQueriesEnabled=true
+Plugins.PostgreSQL.CustomQueriesPath={{ postgresql_zabbix_queries_dir }}

@@ -23,38 +23,56 @@
       become_user: postgres
       become: true
 
-    # Root owned and outside the home of zabbix, so zabbix cannot replace the
-    # query that sudo runs as postgres
-    - name: Install collation check query for zabbix
+    # pg_file_settings (errors in the configuration files) is readable by
+    # superusers only. A view checks the functions it calls against the user
+    # of the view, so the function needs the grant as well. Only in the
+    # database the template connects to ({$PG.DATABASE}).
+    - name: Allow zabbix to read pg_file_settings
+      become_user: postgres
+      become: true
+      community.postgresql.postgresql_privs:
+        login_port: "{{ _postgresql_login_port | default(postgresql_port) }}"
+        login_db: '{{ postgresql_zabbix_database }}'
+        roles: '{{ postgresql_zabbix_user }}'
+        type: table
+        schema: pg_catalog
+        objs: pg_file_settings
+        privs: SELECT
+
+    - name: Allow zabbix to call pg_show_all_file_settings
+      become_user: postgres
+      become: true
+      community.postgresql.postgresql_privs:
+        login_port: "{{ _postgresql_login_port | default(postgresql_port) }}"
+        login_db: '{{ postgresql_zabbix_database }}'
+        roles: '{{ postgresql_zabbix_user }}'
+        type: function
+        schema: pg_catalog
+        objs: pg_show_all_file_settings()
+        privs: EXECUTE
+
+    # Queries of pgsql.custom.query, root owned so zabbix cannot change them.
+    # The plugin reads them on start.
+    - name: Install custom queries for zabbix
       ansible.builtin.copy:
-        src: zabbix/pg_collation_mismatch.sql
-        dest: /etc/zabbix/pg_collation_mismatch.sql
+        src: zabbix/queries/
+        dest: '{{ postgresql_zabbix_queries_dir }}/'
         owner: root
         group: root
         mode: '0644'
+        directory_mode: '0755'
+      notify: Restart zabbix-agent2
 
-    - name: Install extension version check for zabbix
-      ansible.builtin.copy:
-        src: zabbix/pg_extension_outdated.sh
-        dest: /etc/zabbix/pg_extension_outdated.sh
-        owner: root
-        group: root
-        mode: '0755'
-
-    - name: Install health check for zabbix
-      ansible.builtin.copy:
-        src: zabbix/pg_health.sh
-        dest: /etc/zabbix/pg_health.sh
-        owner: root
-        group: root
-        mode: '0755'
-
-    - name: Install sudoer access for zabbix
-      ansible.builtin.copy:
-        src: sudoers.d/postgresql
-        dest: /etc/sudoers.d/postgresql
-        mode: '0440'
-        validate: visudo -cf %s
+    # Replaced by the custom queries of the PostgreSQL plugin
+    - name: Remove obsolete checks run through sudo
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: absent
+      loop:
+        - /etc/sudoers.d/postgresql
+        - /etc/zabbix/pg_collation_mismatch.sql
+        - /etc/zabbix/pg_extension_outdated.sh
+        - /etc/zabbix/pg_health.sh
 
     # Provides the pgsql.* keys of the template "PostgreSQL by Zabbix agent 2"
     # (from the Zabbix repository, which the zabbix_agent role sets up)
@@ -92,25 +110,16 @@
         name: '{{ postgresql_zabbix_user }}'
         state: absent
 
-    - name: Remove collation check query for zabbix
+    - name: Remove custom queries and obsolete checks for zabbix
       ansible.builtin.file:
-        path: /etc/zabbix/pg_collation_mismatch.sql
+        path: '{{ item }}'
         state: absent
-
-    - name: Remove extension version check for zabbix
-      ansible.builtin.file:
-        path: /etc/zabbix/pg_extension_outdated.sh
-        state: absent
-
-    - name: Remove health check for zabbix
-      ansible.builtin.file:
-        path: /etc/zabbix/pg_health.sh
-        state: absent
-
-    - name: Remove sudoer access for zabbix
-      ansible.builtin.file:
-        path: /etc/sudoers.d/postgresql
-        state: absent
+      loop:
+        - '{{ postgresql_zabbix_queries_dir }}'
+        - /etc/sudoers.d/postgresql
+        - /etc/zabbix/pg_collation_mismatch.sql
+        - /etc/zabbix/pg_extension_outdated.sh
+        - /etc/zabbix/pg_health.sh
 
     - name: Remove PostgreSQL plugin credentials of the Zabbix agent
       ansible.builtin.file:

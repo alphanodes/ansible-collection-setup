@@ -1,7 +1,0 @@
-# Only the checks of the Zabbix agent (UserParameters pg_collation_mismatch,
-# pg_extension_outdated and pg_health), never arbitrary commands as postgres.
-# Query and scripts are root owned files: sudo-rs (Ubuntu 26.04) rejects
-# escaped wildcards and does not match arguments containing spaces
-zabbix ALL = (postgres) NOPASSWD: /usr/bin/psql -X -t -A -f /etc/zabbix/pg_collation_mismatch.sql
-zabbix ALL = (postgres) NOPASSWD: /etc/zabbix/pg_extension_outdated.sh
-zabbix ALL = (postgres) NOPASSWD: /etc/zabbix/pg_health.sh

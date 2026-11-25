@@ -27,6 +27,12 @@ postgresql_zabbix_password: '{{ [ansible_facts["machine_id"], ansible_facts["hos
 # The template "PostgreSQL by Zabbix agent 2" connects to tcp://localhost:5432,
 # hosts on another port need the host macro {$PG.CONNSTRING.AGENT2}
 postgresql_zabbix_plugin_config: /etc/zabbix/zabbix_agent2.d/plugins.d/postgresql_credentials.conf
+# Directory of the custom queries (pgsql.custom.query) of the template
+# PostgreSQL Custom
+postgresql_zabbix_queries_dir: /etc/zabbix/postgresql_queries
+# Database the template connects to ({$PG.DATABASE}), gets the grants for
+# pg_file_settings
+postgresql_zabbix_database: postgres
 
 # see http://pgtune.leopard.in.ua/ for calculation
 
