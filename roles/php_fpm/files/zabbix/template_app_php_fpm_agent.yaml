@@ -9,8 +9,9 @@ zabbix_export:
       template: PHP-fpm
       name: PHP-fpm
       description: |
-        Extends the official PHP-FPM template with an alert on errors in the
-        journal of all php*-fpm services, independent of the PHP version.
+        Extends the official PHP-FPM template with an alert on errors of the
+        FPM daemon itself (startup errors, crashed workers), independent of
+        the PHP version. Script errors are reported by the PHP template.
 
         This template requires:
         - Zabbix agent with UserParameter phpfpm_log[*] configured by the

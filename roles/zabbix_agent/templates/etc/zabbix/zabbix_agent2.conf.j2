@@ -352,7 +352,7 @@ UserParameter=journalctl[*], bash {{ zabbix_addons_dir }}/scripts/journal_check.
 UserParameter=linux[*], bash {{ zabbix_addons_dir }}/scripts/linux_check.sh "$1" "$2" "$3" "$4"
 {% if php_installed %}
 UserParameter=php_log[*], journalctl {{ zabbix_agent_journalctl_options }} -t php -p 4 --since "{{ zabbix_agent_journalctl_since }}" | grep -Ei "error|RuntimeException"
-UserParameter=phpfpm_log, journalctl {{ zabbix_agent_journalctl_options }} -u 'php*-fpm.service' --since "{{ zabbix_agent_journalctl_since }}" | grep -Ei "error\:|RuntimeException"
+UserParameter=phpfpm_log, journalctl {{ zabbix_agent_journalctl_options }} -t php-fpm --since "{{ zabbix_agent_journalctl_since }}" | grep -E '\[(ERROR|ALERT)\]|exited on signal [0-9]+ \(SIG(SEGV|BUS|ABRT|KILL)\)'
 UserParameter=php[*], bash {{ zabbix_addons_dir }}/scripts/php_check.sh "$1" "$2" "$3"
 {% endif %}
 {% if drupal_installed %}
