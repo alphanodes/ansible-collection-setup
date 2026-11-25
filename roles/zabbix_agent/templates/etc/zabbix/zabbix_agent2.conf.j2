@@ -344,8 +344,8 @@ PluginSocket={{ zabbix_agent_plugin_socket }}
 # Default:
 # UserParameter=
 
-# UserParameters are in /etc/zabbix/zabbix_agent2.d: userparameter_<group>.conf
-# of this role and the files of the roles they belong to (e.g. fail2ban.conf)
+# UserParameters are in /etc/zabbix/zabbix_agent2.d, one file per role or
+# group named after it (e.g. journal.conf, fail2ban.conf)
 
 ### Option: UserParameterDir
 #	Directory to execute UserParameter commands from. Only one entry is allowed.

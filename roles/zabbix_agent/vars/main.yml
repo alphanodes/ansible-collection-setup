@@ -1,2 +1,13 @@
 ---
 zabbix_apt_key_file: /etc/apt/trusted.gpg.d/zabbix.gpg
+
+# All UserParameter groups of this role, each a file <group>.conf in
+# /etc/zabbix/zabbix_agent2.d. The role removes the files of the groups that
+# are not active on a host. A dropped group goes to zabbix_cleanup_files.
+zabbix_agent_userparameter_all_groups:
+  - drupal
+  - journal
+  - linux
+  - php
+  - redmine
+  - systemd

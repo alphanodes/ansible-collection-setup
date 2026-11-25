@@ -409,14 +409,16 @@
       ansible.builtin.stat:
         path: '/etc/zabbix/zabbix_agent2.d/{{ item }}.conf'
       loop:
-        - userparameter_journal
-        - userparameter_linux
-        - userparameter_systemd
-        - userparameter_redmine
+        - journal
+        - linux
+        - systemd
+        - redmine
         - fail2ban
-        # Groups not active on this host, php was left over by prepare
-        - userparameter_php
-        - userparameter_drupal
+        # Groups not active on this host and the old prefix, prepare left
+        # php.conf and userparameter_journal.conf
+        - php
+        - drupal
+        - userparameter_journal
       register: userparameter_files
 
     - name: Verify each group has its own file and inactive groups are removed

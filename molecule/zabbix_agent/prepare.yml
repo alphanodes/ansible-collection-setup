@@ -48,19 +48,23 @@
         dest: /etc/nginx/sites-available/old.conf
         mode: '0644'
 
-    # Left over from a host that had PHP: the role removes UserParameter files
-    # of groups that are not active
+    # Left over from a host that had PHP and from the old userparameter_
+    # prefix: the role removes files of groups that are not active and the
+    # files of zabbix_cleanup_files
     - name: Create the agent include directory
       ansible.builtin.file:
         path: /etc/zabbix/zabbix_agent2.d
         state: directory
         mode: '0755'
 
-    - name: Create a UserParameter file of an inactive group
+    - name: Create UserParameter files of an inactive group and with the old prefix
       ansible.builtin.copy:
-        content: "UserParameter=molecule.stale,echo stale\n"
-        dest: /etc/zabbix/zabbix_agent2.d/userparameter_php.conf
+        content: "UserParameter=molecule.{{ item | basename | splitext | first }},echo stale\n"
+        dest: '{{ item }}'
         mode: '0644'
+      loop:
+        - /etc/zabbix/zabbix_agent2.d/php.conf
+        - /etc/zabbix/zabbix_agent2.d/userparameter_journal.conf
 
     # linux_check.sh reads the effective sshd configuration with sshd -T
     - name: Install OpenSSH server for the sshd configuration check

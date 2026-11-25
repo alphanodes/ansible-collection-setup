@@ -95,6 +95,13 @@ zabbix_cleanup_files:
   - /etc/zabbix/zabbix_agentd.d
   - /etc/logrotate.d/zabbix-agent
   - /var/log/zabbix-agent
+  # UserParameter files of the role with the old userparameter_ prefix
+  - /etc/zabbix/zabbix_agent2.d/userparameter_drupal.conf
+  - /etc/zabbix/zabbix_agent2.d/userparameter_journal.conf
+  - /etc/zabbix/zabbix_agent2.d/userparameter_linux.conf
+  - /etc/zabbix/zabbix_agent2.d/userparameter_php.conf
+  - /etc/zabbix/zabbix_agent2.d/userparameter_redmine.conf
+  - /etc/zabbix/zabbix_agent2.d/userparameter_systemd.conf
   - /var/log/zabbix/zabbix_agent2.log
   - /var/log/zabbix_log_monitor.log
 
