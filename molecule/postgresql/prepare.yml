@@ -1,0 +1,12 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: false
+  tasks:
+    # Older role versions installed postgresqltuner.pl, the role removes it.
+    # Prepare runs once, so the converge stays idempotent.
+    - name: Simulate postgresqltuner.pl from an older role version
+      ansible.builtin.copy:
+        src: postgresqltuner.pl
+        dest: /usr/local/bin/postgresqltuner.pl
+        mode: '0755'

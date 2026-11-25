@@ -78,6 +78,11 @@ postgresql_checkpoint_completion_target: 0.9
 # with barman replica is required, at least
 postgresql_wal_level: replica
 postgresql_wal_buffers: -1
+# Compress full-page writes in the WAL (off, pglz, lz4, zstd), lz4 costs little
+# CPU and reduces the WAL volume. Only used with PostgreSQL 18+.
+postgresql_wal_compression: lz4
+# Compression of new TOAST values (pglz or lz4). Only used with PostgreSQL 18+.
+postgresql_default_toast_compression: lz4
 
 # default: 1000
 # reduce it if error like "Too many open files in system; release and retry"
@@ -149,6 +154,9 @@ postgresql_log_disconnections: false
 postgresql_log_lock_waits: false
 postgresql_log_temp_files: -1
 postgresql_log_autovacuum_min_duration: -1
+# Measure I/O wait times in the statistics, needed to tell slow storage from slow
+# queries. Only used with PostgreSQL 18+.
+postgresql_track_io_timing: true
 
 # or Europe/Berlin
 postgresql_log_timezone: localtime

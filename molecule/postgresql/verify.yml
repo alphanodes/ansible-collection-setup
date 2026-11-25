@@ -63,6 +63,34 @@
           - "'auto_explain' in postgresql_settings.query_result[0].preload.split(',')"
           - postgresql_settings.query_result[0].explain_duration == '200ms'
 
+    - name: Read WAL, TOAST and I/O timing settings
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_query:
+        query: >-
+          SELECT current_setting('wal_compression') AS wal_compression,
+          current_setting('default_toast_compression') AS toast_compression,
+          current_setting('track_io_timing') AS track_io_timing
+      register: postgresql_compression_settings
+
+    - name: Assert WAL, TOAST and I/O timing settings (PostgreSQL 18+ template)
+      ansible.builtin.assert:
+        that:
+          - postgresql_compression_settings.query_result[0].wal_compression == 'lz4'
+          - postgresql_compression_settings.query_result[0].toast_compression == 'lz4'
+          - postgresql_compression_settings.query_result[0].track_io_timing == 'on'
+      when: postgresql_version | int >= 18
+
+    - name: Inspect the removed postgresqltuner.pl
+      ansible.builtin.stat:
+        path: /usr/local/bin/postgresqltuner.pl
+      register: postgresql_tuner
+
+    - name: Assert postgresqltuner.pl was removed
+      ansible.builtin.assert:
+        that: not postgresql_tuner.stat.exists
+        fail_msg: /usr/local/bin/postgresqltuner.pl from older role versions was not removed
+
     - name: Read the configured database and owner
       become: true
       become_user: postgres

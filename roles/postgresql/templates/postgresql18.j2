@@ -275,6 +275,7 @@ synchronous_commit = {{ 'on' if postgresql_synchronous_commit else 'off' }}		# s
 					# (change requires restart)
 #wal_compression = off			# enables compression of full-page writes;
 					# off, pglz, lz4, zstd, or on
+wal_compression = {{ postgresql_wal_compression }}
 #wal_init_zero = on			# zero-fill new WAL files
 #wal_recycle = on			# recycle WAL files
 wal_buffers = {{ postgresql_wal_buffers }}			# min 32kB, -1 sets based on shared_buffers
@@ -714,6 +715,7 @@ cluster_name = '{{ postgresql_cluster_name }}'			# added to process titles if no
 #track_counts = on
 #track_cost_delay_timing = off
 #track_io_timing = off
+track_io_timing = {{ 'on' if postgresql_track_io_timing else 'off' }}
 #track_wal_io_timing = off
 #track_functions = none			# none, pl, all
 #stats_fetch_consistency = cache	# cache, none, snapshot
@@ -817,6 +819,7 @@ autovacuum_vacuum_cost_limit = {{ postgresql_autovacuum_vacuum_cost_limit }}	# d
 #default_table_access_method = 'heap'
 #default_tablespace = ''		# a tablespace name, '' uses the default
 #default_toast_compression = 'pglz'	# 'pglz' or 'lz4'
+default_toast_compression = '{{ postgresql_default_toast_compression }}'
 #temp_tablespaces = ''			# a list of tablespace names, '' uses
 					# only default tablespace
 #check_function_bodies = on
