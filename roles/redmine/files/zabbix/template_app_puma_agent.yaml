@@ -411,20 +411,48 @@ zabbix_export:
               tags:
                 - tag: scope
                   value: availability
+        # Selected by process title, not by parent PID: with fork_worker,
+        # workers 1..n are children of worker 0
+        - uuid: c74299ccde7347f290c21525ed86ef5f
+          name: 'Puma: Largest cluster worker RSS'
+          type: ZABBIX_ACTIVE
+          key: 'proc.mem[,{$PUMA.INSTANCE},max,"puma: cluster worker",rss]'
+          delay: '{$PUMA.UPDATE.INTERVAL}'
+          # Only feeds the calculated item Worker max RSS
+          history: 1d
+          trends: '0'
+          value_type: UNSIGNED
+          units: B
+          description: 'Resident set size of the largest process of the instance user with the title "puma: cluster worker", 0 in single mode.'
+          tags:
+            - tag: component
+              value: raw
+        - uuid: dc4152b86c6d412985d0b1df8dcf35e5
+          name: 'Puma: Master RSS'
+          type: ZABBIX_ACTIVE
+          key: 'proc.mem[,{$PUMA.INSTANCE},max,"^puma [0-9]",rss]'
+          delay: '{$PUMA.UPDATE.INTERVAL}'
+          # Only feeds the calculated item Worker max RSS
+          history: 1d
+          trends: '0'
+          value_type: UNSIGNED
+          units: B
+          description: 'Resident set size of the Puma master process (title "puma <version> (...)"), which serves the requests itself in single mode.'
+          tags:
+            - tag: component
+              value: raw
         - uuid: b6b66b001df54d69a23a433de07956ba
           name: 'Puma: Worker max RSS'
-          type: ZABBIX_ACTIVE
+          type: CALCULATED
           key: 'puma_worker_rss_max[{$PUMA.INSTANCE}]'
           delay: '{$PUMA.UPDATE.INTERVAL}'
           history: 7d
           trends: 365d
           value_type: UNSIGNED
           units: B
-          description: 'Resident set size of the largest Puma worker process (single mode: the master). The agent reports KB, preprocessing converts to bytes.'
-          preprocessing:
-            - type: MULTIPLIER
-              parameters:
-                - '1024'
+          # The largest worker, in single mode (no workers) the master
+          params: 'last(//proc.mem[,{$PUMA.INSTANCE},max,"puma: cluster worker",rss])+(last(//proc.mem[,{$PUMA.INSTANCE},max,"puma: cluster worker",rss])=0)*last(//proc.mem[,{$PUMA.INSTANCE},max,"^puma [0-9]",rss])'
+          description: 'Resident set size of the largest Puma worker process (single mode: the master), from the native proc.mem items.'
           tags:
             - tag: component
               value: puma

@@ -16,8 +16,8 @@ Zabbix version: 7.4 and higher.
 
 ### Prerequisites
 
-- Zabbix agent with **UserParameters `puma_stats` and `puma_worker_rss_max`**
-  configured by the `alphanodes.setup.zabbix_agent` role
+- Zabbix agent with the **UserParameter `puma_stats`** configured by the
+  `alphanodes.setup.zabbix_agent` role
 - Puma **control app enabled** (`activate_control_app` in puma.rb) with its
   socket at `/run/<instance>/redmine-pumactl.sock`
 
@@ -30,9 +30,11 @@ socket:
 curl -s --unix-socket /run/<instance>/redmine-pumactl.sock http://localhost/stats
 ```
 
-The worker memory comes from `ps -u <instance>` over all `puma: cluster worker`
-processes. With `fork_worker`, workers 1..n are children of worker 0, not of
-the master, so the parent PID is no reliable selector.
+The worker memory comes from the native agent key `proc.mem` over all
+processes of the instance user titled `puma: cluster worker`, a calculated item
+falls back to the master in single mode. With `fork_worker`, workers 1..n are
+children of worker 0, not of the master, so the parent PID is no reliable
+selector.
 
 ## Tested versions
 
@@ -74,7 +76,9 @@ is handled automatically by the `zabbix_agent` Ansible role when
 | Puma: Total requests | Dependent | Cumulative requests served (counter) |
 | Puma: Requests per second | Dependent | Request rate (change per second) |
 | Puma: Thread utilization | Dependent | Percentage of thread capacity in use |
-| Puma: Worker max RSS | Active | Memory of the largest worker in bytes (single mode: master) |
+| Puma: Largest cluster worker RSS | Active (proc.mem) | Largest `puma: cluster worker` process, 0 in single mode |
+| Puma: Master RSS | Active (proc.mem) | Puma master process |
+| Puma: Worker max RSS | Calculated | Memory of the largest worker in bytes (single mode: master) |
 
 ### Triggers
 

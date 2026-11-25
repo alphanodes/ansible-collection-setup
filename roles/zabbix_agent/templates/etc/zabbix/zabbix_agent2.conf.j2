@@ -362,7 +362,6 @@ UserParameter=drush[*], bash {{ zabbix_addons_dir }}/scripts/drush_check.sh "$1"
 UserParameter=redmine_log[*], bash {{ zabbix_addons_dir }}/scripts/journal_check.sh redmine "$1"
 UserParameter=redmine_journal[*], bash {{ zabbix_addons_dir }}/scripts/journal_check.sh redmine_json "$1"
 UserParameter=puma_stats[*], curl -s --max-time 3 --unix-socket /run/$1/redmine-pumactl.sock http://localhost/stats
-UserParameter=puma_worker_rss_max[*], ps -u $1 -o rss=,args= | awk '/puma: cluster worker/ {w=1; if ($$1 > m) m = $$1} /^ *[0-9]+ puma [0-9]/ {s = $$1} END {print (w ? m : s) + 0}'
 {% endif %}
 
 ### Parameter for systemctl monitoring

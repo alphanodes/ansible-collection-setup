@@ -397,8 +397,8 @@
         fail_msg: "linux_check.sh returns: {{ linux_checks.results | map(attribute='stdout') | list }}"
         success_msg: "world_write_etc, server_name_in_hosts and password_accounts work as zabbix"
 
-    # With fork_worker, workers 1..n are children of worker 0, so the check
-    # must select the workers by process title, not by parent PID
+    # With fork_worker, workers 1..n are children of worker 0, so the Puma
+    # template selects the workers by process title, not by parent PID
     - name: Start fake puma processes as nobody
       ansible.builtin.shell: |
         setsid runuser -u nobody -- bash -c 'exec -a "puma 8.0.0 (unix:///run/x/redmine.sock) [x]" sleep 300' > /dev/null 2>&1 &
@@ -407,21 +407,60 @@
         sleep 1
       changed_when: true
 
-    - name: Run puma worker memory item through the agent
-      ansible.builtin.command: zabbix_agent2 -c /etc/zabbix/zabbix_agent2.conf -t 'puma_worker_rss_max[{{ item }}]'
+    # The native keys of the Puma template, as zabbix like the agent: the
+    # largest worker and the master (for single mode)
+    - name: Run puma memory items through the agent
+      ansible.builtin.command:
+        argv:
+          - zabbix_agent2
+          - -c
+          - /etc/zabbix/zabbix_agent2.conf
+          - -t
+          - 'proc.mem[,{{ item.user }},max,"{{ item.title }}",rss]'
+        chdir: /
+      become: true
+      become_user: zabbix
       loop:
-        - nobody
-        - daemon
+        - {user: nobody, title: 'puma: cluster worker'}
+        - {user: nobody, title: '^puma [0-9]'}
+        - {user: daemon, title: 'puma: cluster worker'}
       register: puma_rss
       changed_when: false
 
-    - name: Verify puma worker memory is a number for cluster and missing workers
+    - name: Verify puma memory items find the workers and the master
       ansible.builtin.assert:
         that:
           - puma_rss.results[0].stdout is regex('\\[[a-z]\\|[1-9][0-9]*\\]')
-          - puma_rss.results[1].stdout is regex('\\[[a-z]\\|0\\]')
-        fail_msg: "puma worker memory is wrong: {{ puma_rss.results | map(attribute='stdout') | list }}"
-        success_msg: "puma worker memory covers all workers and reports 0 without puma"
+          - puma_rss.results[1].stdout is regex('\\[[a-z]\\|[1-9][0-9]*\\]')
+          - puma_rss.results[2].stdout is regex('\\[[a-z]\\|0\\]')
+        fail_msg: "puma memory is wrong: {{ puma_rss.results | map(attribute='stdout') | list }}"
+        success_msg: "puma memory finds workers and master by title and reports 0 without puma"
+
+    # Each title selects only its own processes: the master pattern must not
+    # catch the workers, or the master item would report the largest worker
+    - name: Count the puma processes per title through the agent
+      ansible.builtin.command:
+        argv:
+          - zabbix_agent2
+          - -c
+          - /etc/zabbix/zabbix_agent2.conf
+          - -t
+          - 'proc.num[,nobody,,"{{ item }}"]'
+        chdir: /
+      become: true
+      become_user: zabbix
+      loop:
+        - '^puma [0-9]'
+        - 'puma: cluster worker'
+      register: puma_count
+      changed_when: false
+
+    - name: Verify the titles select one master and two workers
+      ansible.builtin.assert:
+        that:
+          - puma_count.results[0].stdout is regex('\\[[a-z]\\|1\\]')
+          - puma_count.results[1].stdout is regex('\\[[a-z]\\|2\\]')
+        fail_msg: "puma process selection is wrong: {{ puma_count.results | map(attribute='stdout') | list }}"
 
     # zabbix may only run the exact root commands of linux_check.sh, generic
     # tools like cat or find with arbitrary arguments would grant root access
