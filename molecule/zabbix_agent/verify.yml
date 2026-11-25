@@ -127,19 +127,37 @@
         fail_msg: "journal UserParameters do not call journal_check.sh"
         success_msg: "journal UserParameters call journal_check.sh"
 
-    - name: Run systemctl.status UserParameter
+    # The keys of the Services template, as zabbix like the agent
+    - name: Run the systemd plugin keys of the Services template
       ansible.builtin.command:
-        cmd: zabbix_agent2 -c /etc/zabbix/zabbix_agent2.conf -t 'systemctl.status[zabbix-agent2]'
-      register: systemctl_status_test
+        argv: [zabbix_agent2, -c, /etc/zabbix/zabbix_agent2.conf, -t, '{{ item }}']
+        chdir: /
+      become: true
+      become_user: zabbix
+      loop:
+        - 'systemd.unit.discovery[service]'
+        - 'systemd.unit.get[zabbix-agent2.service]'
+      register: systemd_plugin_test
       changed_when: false
 
-    # The Services template reads the unit type from the last line
-    - name: Verify systemctl.status ends with the unit type
+    # The discovery needs the unit file state and type also of inactive units,
+    # the triggers need the condition fields
+    - name: Verify the systemd plugin returns what the Services template uses
+      vars:
+        # -t prints the key and [s|<value>]
+        unit: "{{ systemd_plugin_test.results[1].stdout | regex_search('\\{.*\\}') | from_json }}"
       ansible.builtin.assert:
         that:
-          - systemctl_status_test.stdout is search('Type=simple\s*\]?\s*$')
-        fail_msg: "systemctl.status does not end with the Type line: {{ systemctl_status_test.stdout }}"
-        success_msg: "systemctl.status ends with the Type line"
+          # The LLD macros start with a Jinja comment tag and contain a dot,
+          # match the discovery as text
+          - systemd_plugin_test.results[0].stdout is search('zabbix-agent2\.service".*?UNITFILESTATE\}":"enabled".*?SERVICETYPE\}":"simple"')
+          - systemd_plugin_test.results[0].stdout is search('ACTIVESTATE\}":"inactive"')
+          - unit.ActiveState.text == 'active'
+          - unit.SubState == 'running'
+          - unit.UnitFileState.state == 1
+          - unit.ConditionResult
+          - unit.ConditionTimestamp > 0
+        fail_msg: "{{ systemd_plugin_test.results | map(attribute='stdout') | map('truncate', 500) | list }}"
 
     # converge defers deliveries to other hosts, so the mail stays queued
     - name: Queue a test mail

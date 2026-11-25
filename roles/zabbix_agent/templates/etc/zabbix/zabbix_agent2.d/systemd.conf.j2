@@ -1,11 +1,13 @@
 {{ managed_by_ansible | comment }}
 #
-# Checks of the Services and Linux templates
+# Overall systemd state for the Linux template. The Services template uses
+# the systemd plugin of the agent (systemd.unit.discovery, systemd.unit.get).
 
+UserParameter=systemctl.global_status, bash {{ zabbix_addons_dir }}/scripts/systemd_status.sh
+
+# Used by the Services template before the systemd plugin, kept until the old
+# discovery rule "systemctl list-unit-files" is deleted on the Zabbix server
 {% raw %}
 UserParameter=services.systemctl,echo "{\"data\":[$(systemctl list-unit-files --type=service|grep \.service|grep -v "@"|sed -E -e "s/\.service\s+/\",\"{#STATUS}\":\"/;s/(\s+)?$/\"},/;s/^/{\"{#NAME}\":\"/;$ s/.$//")]}"
 {% endraw %}
-# The trailing Type line lets the Services template skip oneshot units, which
-# are inactive (dead) after a successful run
 UserParameter=systemctl.status[*], systemctl status $1; systemctl show -p Type $1
-UserParameter=systemctl.global_status, bash {{ zabbix_addons_dir }}/scripts/systemd_status.sh

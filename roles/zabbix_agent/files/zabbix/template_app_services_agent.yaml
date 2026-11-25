@@ -9,205 +9,227 @@ zabbix_export:
       template: Services
       name: Services
       description: |
-        Discovers all systemd services and alerts on services that are enabled
-        but not running, running but not enabled, or not in a healthy state.
+        Discovers the enabled and disabled systemd services and alerts on
+        services that are enabled but not running, running but not enabled,
+        hanging in start or failed.
 
-        Exclude services with the regular expression in the discovery filter.
+        Uses the systemd plugin of Zabbix agent 2 (systemd.unit.discovery,
+        systemd.unit.get). Unlike "Systemd by Zabbix agent 2" it also keeps
+        stopped services, so an enabled service that stays down keeps its
+        problem, and it reports no restarts. Exclude services with the
+        regular expression in the discovery filter.
 
-        This template requires:
-        - Zabbix agent with UserParameter services.systemctl and
-          systemctl.status[*] configured by the alphanodes.setup.zabbix_agent role
+        This template requires Zabbix agent 2 with its systemd plugin.
       vendor:
         name: AlphaNodes
         version: 7.4-__DATE__
       groups:
         - name: Templates/Linux
       discovery_rules:
-        - uuid: 5fbc59339be14d86bb4a2e91ab541493
-          name: 'systemctl list-unit-files'
+        - uuid: 5c264ddf4a834cbba16ae5a7f34c491b
+          name: 'Systemd service discovery'
           type: ZABBIX_ACTIVE
-          key: services.systemctl
+          key: 'systemd.unit.discovery[service]'
           delay: 1h
           filter:
+            evaltype: AND
             conditions:
-              - macro: '{#NAME}'
+              - macro: '{#UNIT.NAME}'
                 value: (cloud-init|cloud-init-main|e2scrub_reap|grub-common|grub2-common|grub-initrd-fallback|hc-net-scan|hv-fcopy-daemon|secureboot-db|unbound-resolvconf)
                 operator: NOT_MATCHES_REGEX
-              - macro: '{#STATUS}'
-                value: '^(enabled|disabled)(\s|$)'
+              # Template instances (getty@tty1) come and go with their trigger
+              - macro: '{#UNIT.NAME}'
+                value: '@'
+                operator: NOT_MATCHES_REGEX
+              # static, masked, alias and generated units have no start setting
+              - macro: '{#UNIT.UNITFILESTATE}'
+                value: '^(enabled|disabled)$'
           lifetime_type: DELETE_IMMEDIATELY
+          description: 'All service units the systemd plugin reports, also inactive ones, so a stopped service stays monitored.'
           item_prototypes:
-            - uuid: a699466247e241dd8a79bb2c625f724e
-              name: 'contains condition {#NAME}'
-              type: DEPENDENT
-              key: 'contains.condition[{#NAME}]'
-              history: 2w
-              valuemap:
-                name: systemctl.condition
-              preprocessing:
-                - type: REGEX
-                  parameters:
-                    - '((.*)(\n)?)+'
-                    - '\0:Condition= no'
-                - type: REGEX
-                  parameters:
-                    - 'Condition..(.*)'
-                    - '\1:no=0:start=1'
-                - type: REGEX
-                  parameters:
-                    - '(no|start)(?=.*:\1=(\d))'
-                    - \2
-              master_item:
-                key: 'systemctl.status[{#NAME}]'
+            - uuid: 9dc2918f37504b0094c963f9adf91a3d
+              name: 'Service {#UNIT.NAME}: Get unit info'
+              type: ZABBIX_ACTIVE
+              key: 'systemd.unit.get[{#UNIT.NAME}]'
+              delay: 10m
+              # Only feeds the dependent items, which keep the values
+              history: '0'
+              value_type: TEXT
+              description: 'Properties of the unit (interface org.freedesktop.systemd1.Unit) as JSON.'
               tags:
-                - tag: Application
-                  value: 'systemctl contains condition'
-            - uuid: 86fce803f345460498211270c15e6065
-              name: 'startup {#NAME}'
+                - tag: component
+                  value: raw
+                - tag: service
+                  value: '{#UNIT.NAME}'
+            - uuid: 4585ebc6477c474fb8cadd1b3ae45392
+              name: 'Service {#UNIT.NAME}: State'
               type: DEPENDENT
-              key: 'startup[{#NAME}]'
+              key: 'service.state[{#UNIT.NAME}]'
               history: 2w
+              description: 'ActiveState with the SubState of active units: running for a daemon, exited for a unit that finished its start.'
               valuemap:
-                name: systemctl.loaded
-              preprocessing:
-                - type: REGEX
-                  parameters:
-                    - '(Loaded.*)(\n)?'
-                    - \1
-                - type: REGEX
-                  parameters:
-                    - ';.(.*);'
-                    - '\1:disabled=0:enabled=1:static=2:indirect=3'
-                - type: REGEX
-                  parameters:
-                    - '(disabled|enabled|static|indirect)(?=.*:\1=(\d))'
-                    - \2
-              master_item:
-                key: 'systemctl.status[{#NAME}]'
-              tags:
-                - tag: Application
-                  value: 'systemctl startup'
-            - uuid: 1604b8556f6d402ab6cab0de1fadb10c
-              name: 'status {#NAME}'
-              type: DEPENDENT
-              key: 'status[{#NAME}]'
-              history: 2w
-              valuemap:
-                name: systemctl.active
-              preprocessing:
-                - type: REGEX
-                  parameters:
-                    - 'Active..(.*)(\n)?'
-                    - \1
-                - type: REGEX
-                  parameters:
-                    - '\((.*)\)'
-                    - '\1;dead=0;running=1;exited=2;start=3;Result: exit-code=4'
-                - type: REGEX
-                  parameters:
-                    - '(dead|running|exited|start|Result: exit-code)(?=.*;\1=(\d))'
-                    - \2
-              master_item:
-                key: 'systemctl.status[{#NAME}]'
-              tags:
-                - tag: Application
-                  value: 'systemctl status'
-              trigger_prototypes:
-                - uuid: 9e5640cdde444e58ab69b34a41baa180
-                  expression: 'last(/Services/status[{#NAME}],{$SERVICE_STARTUP_WINDOW})=3'
-                  name: 'Service "{#NAME}" is not completely started in last {$SERVICE_STARTUP_WINDOW}'
-                  priority: WARNING
-                  description: 'Maybe the pid file do not match from config with the startup init file'
-                - uuid: f5eb2218656544ce8b09e36a10e01a16
-                  expression: 'last(/Services/status[{#NAME}])=4'
-                  name: 'Service "{#NAME}" is not in healthy state'
-                  priority: HIGH
-            - uuid: 50465c4896814435af402eaef7ac8fab
-              name: 'type {#NAME}'
-              type: DEPENDENT
-              key: 'type[{#NAME}]'
-              history: 2w
-              description: 'Oneshot units are inactive (dead) after a successful run. Agents without the Type line in systemctl.status report 0.'
-              valuemap:
-                name: systemctl.type
+                name: 'Service state'
               preprocessing:
                 - type: JAVASCRIPT
                   parameters:
                     - |
-                      var m = value.match(/\nType=(\w+)\s*$/);
-                      return m && m[1] === 'oneshot' ? 1 : 0;
+                      var unit = JSON.parse(value);
+                      var state = unit.ActiveState.text;
+                      if (state === 'active') {
+                        return unit.SubState === 'running' ? 1 : 2;
+                      }
+                      if (state === 'inactive') {
+                        return 0;
+                      }
+                      if (state === 'reloading') {
+                        return 1;
+                      }
+                      if (state === 'activating') {
+                        return 3;
+                      }
+                      return state === 'failed' ? 4 : 5;
               master_item:
-                key: 'systemctl.status[{#NAME}]'
+                key: 'systemd.unit.get[{#UNIT.NAME}]'
               tags:
-                - tag: Application
-                  value: 'systemctl type'
-            - uuid: 0dfb58f6c9a3489e8310d653f326b515
-              name: 'status of "{#NAME}"'
-              type: ZABBIX_ACTIVE
-              key: 'systemctl.status[{#NAME}]'
-              delay: 10m
-              history: '0'
-              value_type: TEXT
+                - tag: component
+                  value: systemd
+                - tag: service
+                  value: '{#UNIT.NAME}'
+              trigger_prototypes:
+                - uuid: eb18490aca574bd2afa4a041463e25b8
+                  expression: 'count(/Services/service.state[{#UNIT.NAME}],#2,"eq",3)=2'
+                  name: 'Service "{#UNIT.NAME}" is not completely started'
+                  priority: WARNING
+                  description: 'The service is activating in two checks in a row (10 minutes), e.g. a start that waits for a PID file that the configuration does not create.'
+                  tags:
+                    - tag: scope
+                      value: availability
+                - uuid: 42be9606e6ea4c04b1876b20b56e772f
+                  expression: 'last(/Services/service.state[{#UNIT.NAME}])=4'
+                  name: 'Service "{#UNIT.NAME}" is not in healthy state'
+                  priority: HIGH
+                  description: 'The service failed (systemctl status shows the result), reset after the fix with systemctl reset-failed.'
+                  tags:
+                    - tag: scope
+                      value: availability
+            - uuid: 26973b4f48e946e283f996144d12c466
+              name: 'Service {#UNIT.NAME}: Unit file state'
+              type: DEPENDENT
+              key: 'service.unitfile_state[{#UNIT.NAME}]'
+              history: 2w
+              valuemap:
+                name: 'Unit file state'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.UnitFileState.state
+              master_item:
+                key: 'systemd.unit.get[{#UNIT.NAME}]'
               tags:
-                - tag: Application
-                  value: 'systemctl raw'
+                - tag: component
+                  value: systemd
+                - tag: service
+                  value: '{#UNIT.NAME}'
+            - uuid: 35a6b6d6d0374fc0b87207cb534421cd
+              name: 'Service {#UNIT.NAME}: Start condition failed'
+              type: DEPENDENT
+              key: 'service.condition_failed[{#UNIT.NAME}]'
+              history: 2w
+              description: 'A start condition (ConditionPathExists= and the like) was checked and not met, so systemd skipped the start on purpose. 0 for a unit whose conditions were never checked, it was not started at all.'
+              valuemap:
+                name: 'Service start condition'
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var unit = JSON.parse(value);
+                      return unit.ConditionTimestamp > 0 && !unit.ConditionResult ? 1 : 0;
+              master_item:
+                key: 'systemd.unit.get[{#UNIT.NAME}]'
+              tags:
+                - tag: component
+                  value: systemd
+                - tag: service
+                  value: '{#UNIT.NAME}'
           trigger_prototypes:
-            - uuid: c6bda6d3c7bb45f49362e908f8fa0159
-              expression: 'last(/Services/status[{#NAME}])=0 and last(/Services/startup[{#NAME}])=1 and last(/Services/contains.condition[{#NAME}])=0 and last(/Services/type[{#NAME}])=0'
-              name: 'Service "{#NAME}" is not running but configured at startup'
+            - uuid: f9fe361170414542872cc9530755bc32
+              expression: 'last(/Services/service.state[{#UNIT.NAME}])=0 and last(/Services/service.unitfile_state[{#UNIT.NAME}])=1 and last(/Services/service.condition_failed[{#UNIT.NAME}])=0'
+              name: 'Service "{#UNIT.NAME}" is not running but configured at startup'
               priority: AVERAGE
               description: |
-                some services like:
-                * rhel-autorelabel
-                * rhel-autorelabel-mark
-                * rhel-configure
-                * rhel-loadmodules
-                * systemd-readahead-collect
-                contains a triggered start. A workaround has been made to detect if the service contains even an condition
-                Oneshot units (type 1) are skipped, a failed run is reported by "not in healthy state".
-            - uuid: 6386941c42224f5da810869933402a96
-              expression: 'last(/Services/status[{#NAME}])=1 and last(/Services/startup[{#NAME}])=0'
-              name: 'Service "{#NAME}" is running but not enabled at startup'
+                The service is enabled but inactive. Not for services whose start
+                condition was not met (systemd skipped them on purpose) and not
+                for oneshot services (override in the discovery), which are
+                inactive after a successful run, a failed run is reported by
+                "not in healthy state".
+              tags:
+                - tag: scope
+                  value: availability
+            - uuid: c0c879fedf494351bcf40193bb6ab38c
+              expression: 'last(/Services/service.state[{#UNIT.NAME}])=1 and last(/Services/service.unitfile_state[{#UNIT.NAME}])=8'
+              name: 'Service "{#UNIT.NAME}" is running but not enabled at startup'
               priority: INFO
-      macros:
-        - macro: '{$SERVICE_STARTUP_WINDOW}'
-          value: 8m
+              description: 'The service runs, but is disabled and will not start after a reboot.'
+              tags:
+                - tag: scope
+                  value: notice
+          overrides:
+            - name: 'Oneshot services'
+              step: '1'
+              filter:
+                conditions:
+                  - macro: '{#UNIT.SERVICETYPE}'
+                    value: ^oneshot$
+                    formulaid: A
+              operations:
+                - operationobject: TRIGGER_PROTOTYPE
+                  operator: LIKE
+                  value: 'is not running but configured at startup'
+                  discover: NO_DISCOVER
       valuemaps:
-        - uuid: 58d9ba8a1a2f480c805ea1f6de799f9b
-          name: systemctl.active
+        - uuid: d346bdf9a5d9418dab3a578201d358b8
+          name: 'Service state'
           mappings:
             - value: '0'
-              newvalue: dead
+              newvalue: inactive
             - value: '1'
               newvalue: running
             - value: '2'
               newvalue: exited
             - value: '3'
-              newvalue: start
+              newvalue: activating
             - value: '4'
-              newvalue: 'something wrong'
-        - uuid: 5793323fe1a54a75addaa7b88496f3c9
-          name: systemctl.condition
+              newvalue: failed
+            - value: '5'
+              newvalue: other
+        - uuid: 3c79c0c6de8a43879d5ebcb4e96b5d65
+          name: 'Service start condition'
           mappings:
             - value: '0'
-              newvalue: 'no'
+              newvalue: 'met or not checked'
             - value: '1'
-              newvalue: 'yes'
-        - uuid: b9ad14c53ea5484db9f56298a57ab284
-          name: systemctl.loaded
+              newvalue: failed
+        # Numbers of the systemd plugin, as in "Systemd by Zabbix agent 2"
+        - uuid: a48551266b6341818775ab8bacd2cb21
+          name: 'Unit file state'
           mappings:
             - value: '0'
-              newvalue: disabled
+              newvalue: unknown
             - value: '1'
               newvalue: enabled
             - value: '2'
-              newvalue: static
+              newvalue: enabled-runtime
             - value: '3'
-              newvalue: indirect
-        - uuid: 54efb6cbf4714066a5ed4d3bfb378596
-          name: systemctl.type
-          mappings:
-            - value: '0'
-              newvalue: other
-            - value: '1'
-              newvalue: oneshot
+              newvalue: linked
+            - value: '4'
+              newvalue: linked-runtime
+            - value: '5'
+              newvalue: masked
+            - value: '6'
+              newvalue: masked-runtime
+            - value: '7'
+              newvalue: static
+            - value: '8'
+              newvalue: disabled
+            - value: '9'
+              newvalue: invalid
