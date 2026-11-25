@@ -29,7 +29,7 @@ zabbix_export:
         - uuid: 5c264ddf4a834cbba16ae5a7f34c491b
           name: 'Systemd service discovery'
           type: ZABBIX_ACTIVE
-          key: 'systemd.unit.discovery[service]'
+          key: 'systemd.unit.discovery["service"]'
           delay: 1h
           filter:
             evaltype: AND
