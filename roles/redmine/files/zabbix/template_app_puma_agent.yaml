@@ -13,11 +13,12 @@ zabbix_export:
         the Puma control app. Collects worker, thread and request metrics
         using UserParameter puma_stats (curl on the control socket).
 
-        Supports both cluster mode (multiple workers) and single mode.
+        Supports both cluster mode (multiple workers) and single mode. The
+        worker memory comes from the native agent key proc.mem.
 
         This template requires:
-        - Zabbix agent with UserParameter puma_stats and puma_worker_rss_max
-          configured by the alphanodes.setup.zabbix_agent role
+        - Zabbix agent with UserParameter puma_stats configured by the
+          alphanodes.setup.zabbix_agent role
         - Puma control app enabled (activate_control_app in puma.rb) with its
           socket at /run/<instance>/redmine-pumactl.sock
       vendor:
