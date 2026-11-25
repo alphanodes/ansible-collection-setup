@@ -34,21 +34,10 @@ zabbix_export:
           history: '0'
           trends: '0'
           value_type: TEXT
-          description: 'Raw JSON from the stats endpoint of the Puma control app. Master item for all dependent Puma metrics.'
+          description: 'Raw JSON from the stats endpoint of the Puma control app. Master item for all dependent Puma metrics. No triggers here: without history Zabbix cannot evaluate trigger functions on it.'
           tags:
             - tag: component
               value: puma
-          triggers:
-            - uuid: d96e5bfe0a1149a8a328307c91a388cd
-              expression: 'nodata(/Puma/puma_stats[{$PUMA.INSTANCE}],{$PUMA.NODATA.TIMEOUT})=1'
-              name: 'Puma: No stats data received'
-              event_name: 'Puma: No stats data for {$PUMA.NODATA.TIMEOUT}'
-              priority: HIGH
-              description: 'No data received from the Puma stats endpoint. Puma may be down or the control socket is missing.'
-              manual_close: 'YES'
-              tags:
-                - tag: scope
-                  value: availability
         - uuid: cc95065b70304ab08946b3b1136b0d9d
           name: 'Puma: Responding'
           type: DEPENDENT
@@ -71,6 +60,16 @@ zabbix_export:
             - tag: component
               value: puma
           triggers:
+            - uuid: d96e5bfe0a1149a8a328307c91a388cd
+              expression: 'nodata(/Puma/puma.up,{$PUMA.NODATA.TIMEOUT})=1'
+              name: 'Puma: No stats data received'
+              event_name: 'Puma: No stats data for {$PUMA.NODATA.TIMEOUT}'
+              priority: HIGH
+              description: 'No data received from the Puma stats endpoint. The agent cannot run the UserParameter puma_stats or does not send data. Uses the dependent item puma.up, which gets a value on every check, because the master item keeps no history.'
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: availability
             - uuid: 07bd71b4a1fb4fe6aa2c153d36695a8a
               expression: 'max(/Puma/puma.up,3m)=0'
               name: 'Puma: Not responding'

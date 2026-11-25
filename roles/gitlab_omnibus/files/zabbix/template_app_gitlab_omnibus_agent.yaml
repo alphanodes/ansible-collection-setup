@@ -192,19 +192,10 @@ zabbix_export:
           key: gitlab.readiness
           history: '0'
           value_type: TEXT
-          description: 'Raw JSON of the GitLab readiness endpoint (/-/readiness?all=1), queried on 127.0.0.1. Master item for the readiness status.'
+          description: 'Raw JSON of the GitLab readiness endpoint (/-/readiness?all=1), queried on 127.0.0.1. Master item for the readiness status. No triggers here: without history Zabbix cannot evaluate trigger functions on it.'
           tags:
             - tag: component
               value: health
-          triggers:
-            - uuid: e15ee949607e417591900533f612c177
-              expression: 'nodata(/GitLab/gitlab.readiness,{$GITLAB.NODATA.TIMEOUT})=1'
-              name: 'GitLab: No readiness data for {$GITLAB.NODATA.TIMEOUT}'
-              priority: WARNING
-              description: 'The readiness check returns no data. Check that the UserParameter gitlab.readiness is deployed and the agent is running.'
-              tags:
-                - tag: scope
-                  value: availability
         - uuid: 6c4b2ceb453c4e1fad12a1e70e005e84
           name: 'GitLab: Readiness status'
           type: DEPENDENT
@@ -224,6 +215,14 @@ zabbix_export:
             - tag: component
               value: health
           triggers:
+            - uuid: e15ee949607e417591900533f612c177
+              expression: 'nodata(/GitLab/gitlab.readiness.status,{$GITLAB.NODATA.TIMEOUT})=1'
+              name: 'GitLab: No readiness data for {$GITLAB.NODATA.TIMEOUT}'
+              priority: WARNING
+              description: 'The readiness check returns no data. Check that the UserParameter gitlab.readiness is deployed and the agent is running. Uses the dependent readiness status, which gets a value on every check, because the master item keeps no history.'
+              tags:
+                - tag: scope
+                  value: availability
             - uuid: 6df70209bb5146ca9ce82d2325a4906b
               expression: 'count(/GitLab/gitlab.readiness.status,#5,"eq","ok")=0'
               name: 'GitLab: Not ready'

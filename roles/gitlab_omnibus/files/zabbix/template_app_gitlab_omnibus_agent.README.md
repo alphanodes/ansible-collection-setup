@@ -89,7 +89,7 @@ setting. All monitoring logic is contained in this template.
 | High Sidekiq job failure rate | WARNING | Sidekiq failure count exceeds threshold |
 | High Gitaly error rate | WARNING | Gitaly error count exceeds threshold |
 | Not ready | HIGH | Readiness not ok for 5 checks in a row (short restarts are ignored) |
-| No readiness data | WARNING | No readiness data for `{$GITLAB.NODATA.TIMEOUT}` |
+| No readiness data | WARNING | No readiness data for `{$GITLAB.NODATA.TIMEOUT}`, checked on the readiness status because the master item keeps no history |
 
 ### Graphs
 

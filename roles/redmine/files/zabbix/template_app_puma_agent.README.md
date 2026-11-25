@@ -80,7 +80,7 @@ is handled automatically by the `zabbix_agent` Ansible role when
 
 | Name | Severity | Description |
 | ---- | -------- | ----------- |
-| No stats data received | HIGH | Puma may be down or UserParameter misconfigured |
+| No stats data received | HIGH | The agent sends no stats (UserParameter missing or agent down), checked on `puma.up` because the master item keeps no history |
 | Not responding | HIGH | No valid stats for 3 minutes (Puma down or hanging) |
 | Workers not fully booted | WARNING | Not all workers are running (crash or boot failure) |
 | Old workers present | INFO | Stuck phased restart (old workers for > 10 min) |
