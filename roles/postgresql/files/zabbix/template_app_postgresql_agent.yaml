@@ -11,16 +11,19 @@ zabbix_export:
       description: |
         Custom monitoring for PostgreSQL installations.
         Detects collation version mismatches after glibc upgrades using
-        the pg_collation_mismatch UserParameter and extensions older than
-        their installed package (pg_extension_outdated).
+        the pg_collation_mismatch UserParameter, extensions older than
+        their installed package (pg_extension_outdated) and states the
+        agent 2 plugin does not report (pg_health): errors in the
+        configuration files, settings waiting for a restart, replication
+        slots holding WAL, invalid indexes and failed TimescaleDB jobs.
 
-        Link this template alongside "PostgreSQL by Zabbix agent 2"
-        for complete PostgreSQL monitoring.
+        Linked by the wrapper "PostgreSQL" together with
+        "PostgreSQL by Zabbix agent 2", link the wrapper to hosts.
 
         This template requires:
-        - Zabbix agent with UserParameters pg_collation_mismatch and
-          pg_extension_outdated configured
-        - sudo access for zabbix user to run psql and the check script as postgres
+        - Zabbix agent with UserParameters pg_collation_mismatch,
+          pg_extension_outdated and pg_health configured
+        - sudo access for zabbix user to run psql and the check scripts as postgres
       vendor:
         name: AlphaNodes
         version: 7.4-__DATE__
@@ -100,6 +103,230 @@ zabbix_export:
               tags:
                 - tag: scope
                   value: maintenance
+        - uuid: d64254a9e7c74ebc9bad529818458733
+          name: 'PostgreSQL: Get health state'
+          type: ZABBIX_ACTIVE
+          key: pg_health
+          delay: 15m
+          # One psql connection per database, more than the default agent timeout
+          timeout: 30s
+          # Only feeds the dependent items, which keep the values
+          history: '0'
+          value_type: TEXT
+          description: 'JSON with server and database state the agent 2 plugin does not report, from /etc/zabbix/pg_health.sh.'
+          tags:
+            - tag: component
+              value: raw
+        - uuid: a32417b465ff4d8cbd40faf6130921b1
+          name: 'PostgreSQL: Autovacuum max workers'
+          type: DEPENDENT
+          key: pg_health.autovacuum_max_workers
+          history: 7d
+          trends: 180d
+          value_type: UNSIGNED
+          description: 'Setting autovacuum_max_workers, used by the trigger on busy autovacuum workers of the wrapper "PostgreSQL".'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.autovacuum_max_workers
+          master_item:
+            key: pg_health
+          tags:
+            - tag: component
+              value: postgresql
+        - uuid: 2c4cd2ff209741cc8d7b34370f6a33a0
+          name: 'PostgreSQL: Configuration file errors'
+          type: DEPENDENT
+          key: pg_health.config_errors
+          history: 7d
+          trends: 180d
+          value_type: UNSIGNED
+          description: 'Lines of postgresql.conf, conf.d and postgresql.auto.conf that PostgreSQL rejects (pg_file_settings.error), the server keeps the previous value.'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.config_errors
+          master_item:
+            key: pg_health
+          tags:
+            - tag: component
+              value: postgresql
+          triggers:
+            - uuid: af935440f3064e3b9dc38834d0f7013c
+              expression: 'last(/PostgreSQL Custom/pg_health.config_errors)>0'
+              name: 'PostgreSQL: {ITEM.LASTVALUE} errors in the configuration files'
+              priority: WARNING
+              description: |
+                PostgreSQL rejects settings of its configuration files and keeps
+                running with the previous values, often a wrong value rendered by
+                the role. List them with:
+                SELECT sourcefile, sourceline, name, error FROM pg_file_settings WHERE error IS NOT NULL;
+              tags:
+                - tag: scope
+                  value: notice
+        - uuid: 3c33eb5f76e34e4bb15fd1cb0555e907
+          name: 'PostgreSQL: Settings pending a restart'
+          type: DEPENDENT
+          key: pg_health.pending_restart
+          history: 7d
+          trends: 180d
+          value_type: UNSIGNED
+          description: 'Settings changed in the configuration files that only take effect after a restart (pg_settings.pending_restart).'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.pending_restart
+          master_item:
+            key: pg_health
+          tags:
+            - tag: component
+              value: postgresql
+          triggers:
+            # On a dependent item, the master item keeps no history
+            - uuid: 5663e14de3854c11813531a5bce20b1f
+              expression: 'nodata(/PostgreSQL Custom/pg_health.pending_restart,1h)=1'
+              name: 'PostgreSQL: No health check data for 1h'
+              priority: INFO
+              description: 'The health check returns no data, e.g. because sudo or the script fails. Check the item error of "PostgreSQL: Get health state" on the host.'
+              tags:
+                - tag: scope
+                  value: availability
+            - uuid: f392de34e6d64689b4972588babda76f
+              expression: 'min(/PostgreSQL Custom/pg_health.pending_restart,30m)>0'
+              name: 'PostgreSQL: {ITEM.LASTVALUE} settings wait for a restart'
+              priority: WARNING
+              description: |
+                Changed settings are not active yet, they need a restart of
+                PostgreSQL. The role restarts on every configuration change, so
+                a restart failed or was skipped, or the setting was changed by
+                hand (ALTER SYSTEM). List them with:
+                SELECT name, setting FROM pg_settings WHERE pending_restart;
+              tags:
+                - tag: scope
+                  value: notice
+        - uuid: ad8502d270654e3b93260218f3019e74
+          name: 'PostgreSQL: Inactive replication slots'
+          type: DEPENDENT
+          key: pg_health.inactive_slots
+          history: 7d
+          trends: 180d
+          value_type: UNSIGNED
+          description: 'Replication slots without a connected client. They keep WAL until the client returns or the slot is dropped.'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.inactive_slots
+          master_item:
+            key: pg_health
+          tags:
+            - tag: component
+              value: replication
+          triggers:
+            - uuid: 3b9f15f4a05146b7a98ddd060afa25de
+              expression: 'min(/PostgreSQL Custom/pg_health.inactive_slots,1h)>0'
+              name: 'PostgreSQL: {ITEM.LASTVALUE} inactive replication slots'
+              priority: WARNING
+              description: |
+                A replication slot has no connected client for 1h, e.g. of a
+                removed standby or barman streaming. It keeps all WAL from its
+                position on, until the disk is full. Check with:
+                SELECT slot_name, slot_type, active, restart_lsn FROM pg_replication_slots;
+                and drop unused slots with SELECT pg_drop_replication_slot('<name>');
+              tags:
+                - tag: scope
+                  value: capacity
+        - uuid: b620a19e8d6a4a51a67190c59d11bc8b
+          name: 'PostgreSQL: WAL retained by replication slots'
+          type: DEPENDENT
+          key: pg_health.slot_retained_bytes
+          history: 7d
+          trends: 180d
+          value_type: UNSIGNED
+          units: B
+          description: 'WAL between the current position and the oldest restart_lsn of all replication slots.'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.slot_retained_bytes
+          master_item:
+            key: pg_health
+          tags:
+            - tag: component
+              value: replication
+          triggers:
+            - uuid: 8287c8012ae64833958d066ce8d29831
+              expression: 'min(/PostgreSQL Custom/pg_health.slot_retained_bytes,1h)>{$PG.SLOT_RETAINED.MAX.WARN}'
+              name: 'PostgreSQL: Replication slots retain {ITEM.LASTVALUE} of WAL'
+              priority: WARNING
+              description: |
+                Replication slots keep more WAL than {$PG.SLOT_RETAINED.MAX.WARN} bytes
+                for 1h, the client of a slot falls behind or is gone. Check with:
+                SELECT slot_name, active, pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn)) FROM pg_replication_slots;
+              tags:
+                - tag: scope
+                  value: capacity
+        - uuid: 6d5debd7667348288204983b6bbf4c26
+          name: 'PostgreSQL: Invalid indexes'
+          type: DEPENDENT
+          key: pg_health.invalid_indexes
+          history: 7d
+          trends: 180d
+          value_type: UNSIGNED
+          description: 'Indexes in all databases marked invalid (pg_index.indisvalid), left behind by a failed CREATE INDEX CONCURRENTLY or REINDEX CONCURRENTLY.'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.invalid_indexes
+          master_item:
+            key: pg_health
+          tags:
+            - tag: component
+              value: postgresql
+          triggers:
+            - uuid: c163a1338f554a0f941dac830cb70ed9
+              expression: 'min(/PostgreSQL Custom/pg_health.invalid_indexes,1h)>0'
+              name: 'PostgreSQL: {ITEM.LASTVALUE} invalid indexes'
+              priority: WARNING
+              description: |
+                Invalid indexes are not used by queries, but still updated on
+                every write, and a unique index does not enforce uniqueness. List
+                them in each database with:
+                SELECT indexrelid::regclass FROM pg_index WHERE NOT indisvalid;
+                Fix with REINDEX INDEX CONCURRENTLY <name>; or drop and create the index again.
+              tags:
+                - tag: scope
+                  value: notice
+        - uuid: fdf5dd7dc75c45a5b6fd149b5fa46be0
+          name: 'PostgreSQL: Failed TimescaleDB jobs'
+          type: DEPENDENT
+          key: pg_health.timescaledb_failed_jobs
+          history: 7d
+          trends: 180d
+          value_type: UNSIGNED
+          description: 'TimescaleDB background jobs (compression, retention, continuous aggregates) whose last run failed, in all databases with the extension. Always 0 without TimescaleDB.'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.timescaledb_failed_jobs
+          master_item:
+            key: pg_health
+          tags:
+            - tag: component
+              value: timescaledb
+          triggers:
+            - uuid: 4be2311a0c8440b7a0d065e85ea32fa8
+              expression: 'last(/PostgreSQL Custom/pg_health.timescaledb_failed_jobs)>0'
+              name: 'PostgreSQL: {ITEM.LASTVALUE} TimescaleDB jobs failed'
+              priority: WARNING
+              description: |
+                The last run of TimescaleDB background jobs failed, e.g. after a
+                package update without ALTER EXTENSION timescaledb UPDATE or with
+                too few background workers. List them with:
+                SELECT job_id, hypertable_name, last_run_status, total_failures FROM timescaledb_information.job_stats WHERE last_run_status = 'Failed';
+                and read the error in the journal of PostgreSQL.
+              tags:
+                - tag: scope
+                  value: notice
       tags:
         - tag: class
           value: software
@@ -107,3 +334,7 @@ zabbix_export:
           value: database
         - tag: target
           value: postgresql
+      macros:
+        - macro: '{$PG.SLOT_RETAINED.MAX.WARN}'
+          value: '4294967296'
+          description: 'Bytes of WAL that replication slots may keep for 1h, twice the max_wal_size of the role (2GB)'

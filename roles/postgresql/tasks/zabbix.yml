@@ -41,6 +41,14 @@
         group: root
         mode: '0755'
 
+    - name: Install health check for zabbix
+      ansible.builtin.copy:
+        src: zabbix/pg_health.sh
+        dest: /etc/zabbix/pg_health.sh
+        owner: root
+        group: root
+        mode: '0755'
+
     - name: Install sudoer access for zabbix
       ansible.builtin.copy:
         src: sudoers.d/postgresql
@@ -92,6 +100,11 @@
     - name: Remove extension version check for zabbix
       ansible.builtin.file:
         path: /etc/zabbix/pg_extension_outdated.sh
+        state: absent
+
+    - name: Remove health check for zabbix
+      ansible.builtin.file:
+        path: /etc/zabbix/pg_health.sh
         state: absent
 
     - name: Remove sudoer access for zabbix

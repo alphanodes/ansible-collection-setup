@@ -1,0 +1,122 @@
+---
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: 748ad4d098d447d492bb935c907f652f
+      name: Templates/Databases
+  templates:
+    - uuid: 399bd1ee587245ecac6f39beaa99886f
+      template: PostgreSQL
+      name: PostgreSQL
+      description: |
+        Wrapper for the PostgreSQL by Zabbix agent 2 template shipped with
+        Zabbix and the template PostgreSQL Custom. Link this template to hosts
+        with PostgreSQL instead of the two templates.
+
+        The triggers of this template use items of the vendor template that
+        have no trigger there. They mostly point to settings of the role that
+        do not fit the load of the host (shared_buffers, max_wal_size,
+        autovacuum) or to WAL archiving that does not work.
+
+        This template requires:
+        - PostgreSQL by Zabbix agent 2 (part of the Zabbix server installation)
+        - PostgreSQL Custom, imported before this template
+        - the alphanodes.setup.postgresql role with zabbix_monitoring
+      vendor:
+        name: AlphaNodes
+        version: 7.4-__DATE__
+      templates:
+        - name: 'PostgreSQL by Zabbix agent 2'
+        - name: 'PostgreSQL Custom'
+      groups:
+        - name: Templates/Databases
+      tags:
+        - tag: class
+          value: software
+        - tag: subclass
+          value: database
+        - tag: target
+          value: postgresql
+      macros:
+        - macro: '{$PG.ARCHIVE_QUEUE.MAX.WARN}'
+          value: '10'
+          description: 'WAL files waiting for archive_command for 30 minutes'
+        - macro: '{$PG.CACHE_HIT.MIN.WARN}'
+          value: '95'
+          description: 'Lowest hourly average of the cache hit ratio in %, the fleet stays above 96'
+        - macro: '{$PG.CHECKPOINTS_REQ.PCT.MAX.WARN}'
+          value: '20'
+          description: 'Highest share in % of requested (WAL size) checkpoints in all checkpoints of a day, the fleet stays below 9'
+  triggers:
+    - uuid: 127a1637104647e5af171c707d102452
+      expression: 'avg(/PostgreSQL/pgsql.cache.hit,1h)<{$PG.CACHE_HIT.MIN.WARN}'
+      name: 'PostgreSQL: Cache hit ratio below {$PG.CACHE_HIT.MIN.WARN}% for 1h'
+      priority: INFO
+      description: |
+        Many blocks are read from disk instead of shared_buffers or the page
+        cache. shared_buffers (postgresql_shared_buffers) may be too small for
+        the working set, or a query reads large tables without an index.
+      tags:
+        - tag: scope
+          value: performance
+    - uuid: 2a64c948d71b4c3da35300382fa8f055
+      expression: >-
+        sum(/PostgreSQL/pgsql.bgwriter.checkpoints_req.rate,1d)*60>10
+        and sum(/PostgreSQL/pgsql.bgwriter.checkpoints_req.rate,1d)*100>{$PG.CHECKPOINTS_REQ.PCT.MAX.WARN}*(sum(/PostgreSQL/pgsql.bgwriter.checkpoints_req.rate,1d)+sum(/PostgreSQL/pgsql.bgwriter.checkpoints_timed.rate,1d))
+      name: 'PostgreSQL: More than {$PG.CHECKPOINTS_REQ.PCT.MAX.WARN}% requested checkpoints in a day'
+      priority: INFO
+      description: |
+        Checkpoints run because the WAL reaches max_wal_size before
+        checkpoint_timeout, which writes more full page images and causes I/O
+        peaks. Raise postgresql_max_wal_size for this host. The rates are per
+        second of one minute samples, so the sum times 60 is the count.
+        Compare in pg_stat_checkpointer: num_timed and num_requested.
+      tags:
+        - tag: scope
+          value: performance
+    - uuid: 30a206cee5c64d93b86cfbb632e73ec7
+      expression: 'min(/PostgreSQL/pgsql.autovacuum.count["{$PG.CONNSTRING.AGENT2}","{$PG.USER}","{$PG.PASSWORD}","{$PG.DATABASE}"],1h)>=last(/PostgreSQL/pg_health.autovacuum_max_workers)'
+      name: 'PostgreSQL: All autovacuum workers busy for 1h'
+      priority: INFO
+      description: |
+        All autovacuum_max_workers workers run for an hour, further tables
+        wait for vacuum and bloat. Raise postgresql_autovacuum_max_workers or
+        postgresql_autovacuum_vacuum_cost_limit for this host.
+      tags:
+        - tag: scope
+          value: performance
+    - uuid: bd637f23b57a487a92b42b1968247dd1
+      expression: 'min(/PostgreSQL/pgsql.connections.sum.idle_in_transaction,15m)>0'
+      name: 'PostgreSQL: Connections idle in transaction for 15m'
+      priority: WARNING
+      description: |
+        A client opened a transaction and does not finish it. It holds locks
+        and keeps vacuum from removing dead rows. Find it with:
+        SELECT pid, usename, application_name, state_change, query FROM pg_stat_activity WHERE state = 'idle in transaction';
+        Setting idle_in_transaction_session_timeout ends such sessions.
+      tags:
+        - tag: scope
+          value: notice
+    - uuid: 5da85e9866c84afc8b8de7df44026a62
+      expression: 'changecount(/PostgreSQL/pgsql.archive.failed_trying_to_archive,1h,"inc")>=5'
+      name: 'PostgreSQL: WAL archiving fails repeatedly'
+      priority: WARNING
+      description: |
+        archive_command failed in at least 5 samples of the last hour, a
+        single failure that the next attempt fixes does not count. Check
+        last_failed_wal and last_failed_time in pg_stat_archiver and the
+        journal of PostgreSQL (e.g. barman not reachable via rsync).
+      tags:
+        - tag: scope
+          value: availability
+    - uuid: 3e3987695adc4375a93f59a7c39bd8fc
+      expression: 'min(/PostgreSQL/pgsql.archive.count_files_to_archive,30m)>{$PG.ARCHIVE_QUEUE.MAX.WARN}'
+      name: 'PostgreSQL: {ITEM.LASTVALUE} WAL files wait for archiving'
+      priority: WARNING
+      description: |
+        WAL files pile up in pg_wal/archive_status, archive_command fails or
+        is too slow. Point in time recovery misses these files, and pg_wal
+        grows until the disk is full.
+      tags:
+        - tag: scope
+          value: capacity
