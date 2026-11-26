@@ -5,7 +5,8 @@
 # (PasswordAuthentication, KbdInteractiveAuthentication,
 # ChallengeResponseAuthentication or PermitEmptyPasswords yes). sshd -T only
 # shows the global values, so this follows the Include lines of sshd_config
-# as sshd does. A Match block ends with its file. Runs as root through the
+# as sshd does. A Match block ends with its file, an Include inside a Match
+# block passes the block on to the included file. Runs as root through the
 # sudoers rule of the zabbix_agent role, because drop-ins can be root only.
 
 set -o pipefail
@@ -13,13 +14,19 @@ shopt -s nullglob
 export LC_ALL=C
 
 ERROR_VALUE="-0.9902"
+# sshd stops at the same depth
+MAX_DEPTH=16
 count=0
+# per depth: whether an included file allowed passwords for the Match block
+# that contains its Include line
+declare -a handback
 
-# parse <file> <depth>
+# parse <file> <depth> <inside a Match block of the including file: 0|1>
 parse() {
-  local file=$1 depth=$2 line keyword args in_match=0 allows=0 pattern included
+  local file=$1 depth=$2 in_match=$3 inherited=$3 allows=0
+  local line keyword args pattern included
   local -a patterns
-  [ "$depth" -le 8 ] || return 1
+  [ "$depth" -le "$MAX_DEPTH" ] || return 1
   [ -r "$file" ] || return 1
   while IFS= read -r line || [ -n "$line" ]; do
     [[ $line =~ ^[[:space:]]*(#|$) ]] && continue
@@ -36,12 +43,15 @@ parse() {
           # sshd skips patterns without a matching file
           for included in $pattern; do
             [ -e "$included" ] || continue
-            parse "$included" $((depth + 1)) || return 1
+            handback[depth+1]=0
+            parse "$included" $((depth + 1)) "$in_match" || return 1
+            [ "${handback[depth + 1]}" = 1 ] && allows=1
           done
         done
         ;;
       match)
-        count=$((count + allows))
+        finish_block
+        inherited=0
         in_match=1
         allows=0
         ;;
@@ -52,10 +62,20 @@ parse() {
         ;;
     esac
   done < "$file"
-  count=$((count + allows))
+  finish_block
 }
 
-if parse /etc/ssh/sshd_config 0; then
+# End of a Match block: count it, or hand it back if it belongs to the block
+# of the including file. Uses the variables of the calling parse().
+finish_block() {
+  if [ "$inherited" = 1 ]; then
+    handback[depth]=$allows
+  else
+    count=$((count + allows))
+  fi
+}
+
+if parse /etc/ssh/sshd_config 0 0; then
   echo "$count"
 else
   echo "$ERROR_VALUE"

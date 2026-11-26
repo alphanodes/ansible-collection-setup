@@ -74,8 +74,9 @@ zabbix_export:
                 to yes on hosts with ssh_server_password_authentication, all
                 other hosts should allow only key authentication. sshd -T reads
                 the files, so if only this problem is open (not "SSH offers
-                password login"), the change is written but not loaded yet and
-                becomes active with the next restart of ssh.
+                password login"), the setting is written but not in effect: not
+                loaded yet (active after the next restart of ssh) or blocked by
+                AuthenticationMethods publickey.
               dependencies:
                 - name: 'SSH offers password login: {ITEM.LASTVALUE}'
                   expression: 'find(/Linux/linux[auth_methods,sshd],,"regexp","(^|,)(password|keyboard-interactive)(,|$)")=1 and "{$SSH.PASSWORD_AUTH}"="no"'
@@ -108,13 +109,15 @@ zabbix_export:
                 authentication only. Check sshd -T and the files of sshd_config.d,
                 lines above the Include of sshd_config win against the ssh role.
             - uuid: 9888c6d1e6134f8ea4b8ee17e1f1b3f1
-              expression: 'last(/Linux/linux[auth_methods,sshd])="-0.9902"'
+              expression: 'count(/Linux/linux[auth_methods,sshd],#2,"eq","-0.9902")=2'
               name: 'SSH login check failed'
               priority: WARNING
               description: |
                 The local login without authentication returned no list of
-                methods. Run sudo -u zabbix bash linux_check.sh auth_methods sshd
-                on the host, sshd may not listen on the address of sshd -T.
+                methods in two checks in a row (a single one can be a connection
+                dropped by MaxStartups). Run sudo -u zabbix bash linux_check.sh
+                auth_methods sshd on the host, sshd may not listen on the address
+                of sshd -T.
         - uuid: e479846dd0ac4b2e9e11debbb319ec48
           name: 'SSH AuthorizedKeysCommand'
           key: 'linux[AuthorizedKeysCommand,sshd_config]'

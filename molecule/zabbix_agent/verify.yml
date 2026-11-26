@@ -417,6 +417,34 @@
         fail_msg: "sshd checks: {{ sshd_extra_checks.results | map(attribute='stdout') | list }}"
         success_msg: "sshd checks read the running sshd and the Match blocks of all included files"
 
+    # An Include loop makes the Match check fail, Zabbix must get one error
+    # value (two lines would make the item unsupported)
+    - name: Add an sshd Include loop
+      ansible.builtin.copy:
+        content: "Include /etc/ssh/sshd_config.d/90-molecule-loop.conf\n"
+        dest: /etc/ssh/sshd_config.d/90-molecule-loop.conf
+        mode: '0600'
+
+    - name: Read the Match check with the Include loop as zabbix
+      ansible.builtin.command: /usr/share/zabbix_addons/scripts/linux_check.sh match_password sshd
+      become: true
+      become_user: zabbix
+      register: sshd_match_loop
+      changed_when: false
+      failed_when: false
+
+    - name: Remove the sshd Include loop
+      ansible.builtin.file:
+        path: /etc/ssh/sshd_config.d/90-molecule-loop.conf
+        state: absent
+
+    - name: Verify the Match check reports one error value
+      ansible.builtin.assert:
+        that:
+          - sshd_match_loop.stdout == '-0.9902'
+          - sshd_match_loop.rc == 1
+        fail_msg: "Match check with Include loop: rc={{ sshd_match_loop.rc }} {{ sshd_match_loop.stdout }}"
+
     - name: Run the other linux_check.sh checks as zabbix
       ansible.builtin.command: /usr/share/zabbix_addons/scripts/linux_check.sh {{ item }}
       become: true
@@ -578,6 +606,11 @@
         - /usr/bin/find / -maxdepth 0
         - /usr/bin/passwd -S root
         - /usr/bin/apt-get -qq update
+        # no SETENV: variables would run code as root
+        - BASH_ENV=/tmp/molecule.sh /usr/share/zabbix_addons/scripts/sshd_match_check.sh
+        - LD_PRELOAD=/tmp/molecule.so /usr/bin/passwd -S -a
+        # the script is allowed without arguments only
+        - /usr/share/zabbix_addons/scripts/sshd_match_check.sh /etc/shadow
       register: zabbix_forbidden_sudo
       changed_when: false
       failed_when: false

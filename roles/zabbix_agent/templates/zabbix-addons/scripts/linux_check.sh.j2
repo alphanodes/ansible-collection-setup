@@ -66,11 +66,18 @@ get_sshd_auth_methods() {
   echo "$methods"
 }
 
+# Match blocks that allow passwords, sshd -T only shows global values. The
+# script prints the error value itself, so only its exit code counts here.
+get_sshd_match_password() {
+  local value
+  value=$(sudo -n {{ zabbix_addons_dir }}/scripts/sshd_match_check.sh) || fail
+  echo "$value"
+}
+
 get_sshd() {
   case "$key" in
     auth_methods) get_sshd_auth_methods ;;
-    # Match blocks that allow passwords, sshd -T only shows global values
-    match_password) sudo -n {{ zabbix_addons_dir }}/scripts/sshd_match_check.sh || fail ;;
+    match_password) get_sshd_match_password ;;
     *) fail ;;
   esac
 }
