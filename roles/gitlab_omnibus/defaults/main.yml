@@ -203,6 +203,10 @@ gitlab_pages_domain: ''
 # gitlab_pages_external_http/https itself, which requires a secondary IP
 # because the bundled nginx already holds port 80 and 443.
 gitlab_pages_behind_nginx: true
+# Addresses the pages vhost of the bundled nginx binds to (behind_nginx mode).
+# Omnibus defaults to IPv4 only, so AAAA records for the pages domain would
+# land on the GitLab vhost and its certificate.
+gitlab_pages_nginx_listen_addresses: '{{ gitlab_nginx_listen_addresses }}'
 
 gitlab_pages_external_http: ["{{ gitlab_pages_domain }}:80"]
 gitlab_pages_external_https: ["{{ gitlab_pages_domain }}:443"]

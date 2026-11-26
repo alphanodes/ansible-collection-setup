@@ -179,6 +179,7 @@ pages_external_url '{{ gitlab_pages_external_url }}'
 {# The bundled nginx proxies to the pages daemon, so pages shares the GitLab
    IP address. external_http/external_https must stay unset here - they make
    the daemon bind those ports itself, which collides with the nginx. #}
+pages_nginx['listen_addresses'] = {{ gitlab_pages_nginx_listen_addresses | to_json }}
 {% if gitlab_pages_with_tls %}
 pages_nginx['redirect_http_to_https'] = true
 {% if not gitlab_nginx_http2_enabled | bool %}

@@ -50,6 +50,15 @@
           - "'/etc/gitlab/ssl/pages-wildcard.crt' in pages_nginx_conf.content | b64decode"
         fail_msg: nginx does not use the wildcard certificate for pages
 
+    # Omnibus binds the pages vhost to IPv4 only by default. Over IPv6 the
+    # GitLab vhost would answer with its own certificate.
+    - name: Assert the pages vhost also listens on IPv6
+      ansible.builtin.assert:
+        that:
+          - "\"pages_nginx['listen_addresses'] = [\\\"*\\\", \\\"[::]\\\"]\" in gitlab_rb_content"
+          - "'listen [::]:443 ssl' in pages_nginx_conf.content | b64decode"
+        fail_msg: the pages vhost of the bundled nginx does not listen on IPv6
+
     - name: Read the generated GitLab nginx configuration
       ansible.builtin.slurp:
         src: /var/opt/gitlab/nginx/conf/service_conf/gitlab-rails.conf
