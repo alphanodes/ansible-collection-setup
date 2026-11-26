@@ -29,7 +29,8 @@ roundcube_config_files:
   - managesieve.inc.php
 
 roundcube_vhost_letsencrypt: false
-roundcube_vhost_ssl_cert: '{{ ssl_certs[0].name | default(omit) }}'
+# Certificate name in /etc/ssl, empty: vhost_ssl_cert of nginx_mono (the first of ssl_certs)
+roundcube_vhost_ssl_cert: ''
 roundcube_vhost_letsencrypt_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/fullchain.pem
 roundcube_vhost_letsencrypt_key: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/privkey.pem
 

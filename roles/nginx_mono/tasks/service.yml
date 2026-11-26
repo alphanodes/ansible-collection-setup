@@ -39,6 +39,11 @@
         - nginx_reuseport_primary_service is not defined
         - reuseport_check.results | selectattr('rc', 'equalto', 0) | list | length > 0
 
+- name: Include TLS certificate tasks for service
+  ansible.builtin.include_tasks: tls_cert.yml
+  vars:
+    instance: "{{ nginx_mono_instance }}"
+
 - name: Calculate listen configuration for service
   ansible.builtin.include_tasks: calculate_listen_config.yml
 

@@ -111,6 +111,20 @@
           - "'ssl_certificate' in docs_config.content | b64decode"
         fail_msg: "docs vhost missing SSL configuration"
 
+    # Each instance serves its own certificate, an instance without one the
+    # first of ssl_certs
+    - name: Read the certificate each vhost serves
+      ansible.builtin.command: grep -h 'ssl_certificate ' /etc/nginx/sites-available/{{ item.vhost }}.conf
+      register: vhost_certs
+      changed_when: false
+      failed_when: >-
+        vhost_certs.stdout_lines | map('trim') | unique | list
+        != ['ssl_certificate /etc/ssl/certs/' ~ item.cert ~ '.crt;']
+      loop:
+        - {vhost: docs, cert: jekyll_docs}
+        - {vhost: blog, cert: jekyll_blog}
+        - {vhost: custom, cert: jekyll_docs}
+
     - name: Verify docs vhost has HTTP to HTTPS redirect
       ansible.builtin.assert:
         that:

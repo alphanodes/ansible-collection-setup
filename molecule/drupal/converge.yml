@@ -172,7 +172,7 @@
           vhost_default: true
           vhost_for_zabbix: true
           letsencrypt: false
-          ssl_cert: drupal
+          vhost_ssl_cert: drupal
           upstream_name: drupal
           upstream_servers:
             - "unix:{{ php_fpm_listen }}"

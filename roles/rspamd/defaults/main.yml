@@ -46,7 +46,8 @@ rspamd_remove: false
 rspamd_vhost_server: rspamd.local
 rspamd_vhost_location: /
 rspamd_vhost_letsencrypt: false
-rspamd_vhost_ssl_cert: "{{ ssl_certs[0].name | default('') }}"
+# Certificate name in /etc/ssl, empty disables SSL without Let's Encrypt
+rspamd_vhost_ssl_cert: "{{ vhost_ssl_cert | default(ssl_certs[0].name | default('')) }}"
 rspamd_vhost_letsencrypt_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/fullchain.pem
 rspamd_vhost_letsencrypt_key: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/privkey.pem
 rspamd_vhost_for_zabbix: false

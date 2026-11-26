@@ -57,4 +57,4 @@
           vhost_users: []
           vhost_for_zabbix: false
           letsencrypt: "{{ test_vhost_letsencrypt }}"
-          ssl_cert: "{{ test_vhost_ssl_cert }}"
+          vhost_ssl_cert: "{{ test_vhost_ssl_cert }}"

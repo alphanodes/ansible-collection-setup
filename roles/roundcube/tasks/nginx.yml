@@ -26,4 +26,4 @@
       letsencrypt: "{{ roundcube_vhost_letsencrypt | default(false) }}"
       letsencrypt_cert: "{{ roundcube_vhost_letsencrypt_cert | default('') }}"
       letsencrypt_key: "{{ roundcube_vhost_letsencrypt_key | default('') }}"
-      ssl_cert: "{{ roundcube_vhost_ssl_cert | default('') }}"
+      vhost_ssl_cert: "{{ roundcube_vhost_ssl_cert | default('') }}"

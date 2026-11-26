@@ -72,7 +72,7 @@
       - name: custom
         server_name: custom.example.com
         letsencrypt: false
-        ssl_cert: jekyll_custom
+        # no ssl_cert: falls back to the first of ssl_certs
         locations:
           - name: '= /downloads'
             return: 403

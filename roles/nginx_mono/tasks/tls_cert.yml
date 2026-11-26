@@ -1,0 +1,35 @@
+---
+# TLS certificate of one vhost, used by vhost and service mode. Runs for each
+# instance, as vhost_ssl_with_trusted_cert is a fact and would otherwise be
+# left over from the previous instance with another certificate.
+
+- name: Fail on the old ssl_cert key, nginx_mono reads vhost_ssl_cert
+  ansible.builtin.fail:
+    msg: >-
+      {{ instance.name | default(nginx_mono_service_name | default('vhost')) }}
+      sets ssl_cert, which nginx_mono ignores. Rename it to vhost_ssl_cert.
+  when: instance.ssl_cert is defined
+
+- name: Check trusted TLS cert
+  ansible.builtin.stat:
+    path: /etc/ssl/certs/{{ instance.vhost_ssl_cert | default(vhost_ssl_cert, true) }}_trusted.crt
+  register: trusted_cert
+  when:
+    - nginx_with_ssl
+    - instance.letsencrypt_cert is undefined or not instance.letsencrypt_cert
+
+- name: Set TLS files
+  ansible.builtin.set_fact:
+    vhost_ssl_with_trusted_cert: "{{ trusted_cert.stat.exists | bool }}"
+  when:
+    - nginx_with_ssl
+    - instance.letsencrypt_cert is undefined or not instance.letsencrypt_cert
+
+# Reset vhost_ssl_with_trusted_cert for letsencrypt instances
+# Let's Encrypt ends OCSP support in 2025, so ssl_trusted_certificate is not needed
+- name: Disable trusted cert for letsencrypt instances
+  ansible.builtin.set_fact:
+    vhost_ssl_with_trusted_cert: false
+  when:
+    - nginx_with_ssl
+    - instance.letsencrypt is defined and instance.letsencrypt | bool

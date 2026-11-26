@@ -18,7 +18,7 @@
       letsencrypt: "{{ element_web_vhost_letsencrypt | default(false) }}"
       letsencrypt_cert: "{{ element_web_vhost_letsencrypt_cert | default('') }}"
       letsencrypt_key: "{{ element_web_vhost_letsencrypt_key | default('') }}"
-      ssl_cert: "{{ element_web_vhost_ssl_cert | default('') }}"
+      vhost_ssl_cert: "{{ element_web_vhost_ssl_cert | default('') }}"
       vhost_includes: "{{ element_web_vhost_includes | default([]) }}"
       static_service: true
       additional_headers:

@@ -110,7 +110,7 @@
       letsencrypt: "{{ redmine_instance.letsencrypt | default(false) }}"
       letsencrypt_cert: "{{ redmine_instance.letsencrypt_cert | default(omit) }}"
       letsencrypt_key: "{{ redmine_instance.letsencrypt_key | default(omit) }}"
-      ssl_cert: "{{ redmine_instance.vhost_ssl_cert | default(omit) }}"
+      vhost_ssl_cert: "{{ redmine_instance.vhost_ssl_cert | default(omit) }}"
       redirects: "{{ redmine_instance.redirects | default([]) }}"
       external_redirects: "{{ redmine_instance.external_redirects | default([]) }}"
       error_404_enabled: true

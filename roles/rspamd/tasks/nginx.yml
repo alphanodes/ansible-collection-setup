@@ -31,7 +31,7 @@
     - name: Add SSL certificate path if defined
       when: rspamd_vhost_ssl_cert | length > 0
       ansible.builtin.set_fact:
-        rspamd_nginx_config: "{{ rspamd_nginx_config | combine({'ssl_cert': rspamd_vhost_ssl_cert}) }}"
+        rspamd_nginx_config: "{{ rspamd_nginx_config | combine({'vhost_ssl_cert': rspamd_vhost_ssl_cert}) }}"
 
     - name: Determine effective SSL setting for rspamd
       ansible.builtin.set_fact:

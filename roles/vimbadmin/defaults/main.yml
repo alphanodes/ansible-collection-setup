@@ -61,4 +61,5 @@ vimbadmin_vhost_letsencrypt: false
 vimbadmin_letsencrypt_cert_name: "{{ vimbadmin_vhost_server }}"
 vimbadmin_vhost_letsencrypt_cert: /etc/letsencrypt/live/{{ vimbadmin_letsencrypt_cert_name }}/fullchain.pem
 vimbadmin_vhost_letsencrypt_key: /etc/letsencrypt/live/{{ vimbadmin_letsencrypt_cert_name }}/privkey.pem
-vimbadmin_vhost_ssl_cert: '{{ ssl_certs[0].name | default(omit) }}'
+# Certificate name in /etc/ssl, empty: vhost_ssl_cert of nginx_mono (the first of ssl_certs)
+vimbadmin_vhost_ssl_cert: ''

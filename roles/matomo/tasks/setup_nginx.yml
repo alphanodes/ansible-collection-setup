@@ -45,7 +45,7 @@
       letsencrypt: "{{ matomo_vhost_letsencrypt | default(false) }}"
       letsencrypt_cert: "{{ matomo_vhost_letsencrypt_cert | default('') }}"
       letsencrypt_key: "{{ matomo_vhost_letsencrypt_key | default('') }}"
-      ssl_cert: "{{ matomo_vhost_ssl_cert | default('') }}"
+      vhost_ssl_cert: "{{ matomo_vhost_ssl_cert | default('') }}"
       ssl_only: "{{ matomo_vhost_ssl_only | default(true) }}"
       access_log: "{{ matomo_with_access_log | default(true) }}"
       block_hidden_files: true

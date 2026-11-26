@@ -56,7 +56,7 @@
           vhost_users: []
           vhost_for_zabbix: false
           letsencrypt: false
-          ssl_cert: test-ssl
+          vhost_ssl_cert: test-ssl
 
     # Test 2: Custom SSL port (8443) - should create redirect from port 80 to 8443
     - name: Setup custom SSL port vhost (port 8443)
@@ -73,4 +73,4 @@
           vhost_users: []
           vhost_for_zabbix: false
           letsencrypt: false
-          ssl_cert: test-ssl
+          vhost_ssl_cert: test-ssl

@@ -65,7 +65,7 @@
       letsencrypt: "{{ drupal_instance.letsencrypt | default(false) }}"
       letsencrypt_cert: "{{ drupal_instance.letsencrypt_cert | default(omit) }}"
       letsencrypt_key: "{{ drupal_instance.letsencrypt_key | default(omit) }}"
-      ssl_cert: "{{ drupal_instance.vhost_ssl_cert | default(omit) }}"
+      vhost_ssl_cert: "{{ drupal_instance.vhost_ssl_cert | default(omit) }}"
       redirects: "{{ drupal_instance.redirects | default([]) }}"
       external_redirects: "{{ drupal_instance.external_redirects | default([]) }}"
       upstream_name: "drupal"

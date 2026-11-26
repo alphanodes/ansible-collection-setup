@@ -13,7 +13,7 @@
       letsencrypt: "{{ mail_autoconfig_vhost_letsencrypt }}"
       letsencrypt_cert: "{{ mail_autoconfig_vhost_letsencrypt_cert }}"
       letsencrypt_key: "{{ mail_autoconfig_vhost_letsencrypt_key }}"
-      ssl_cert: "{{ mail_autoconfig_vhost_ssl_cert }}"
+      vhost_ssl_cert: "{{ mail_autoconfig_vhost_ssl_cert }}"
       additional_headers:
         - "Content-Type text/xml"
         - "Referrer-Policy 'no-referrer'"

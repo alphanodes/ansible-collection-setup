@@ -80,7 +80,8 @@ mail_autoconfig_webmail:
 
 # SSL/TLS configuration
 mail_autoconfig_vhost_letsencrypt: false
-mail_autoconfig_vhost_ssl_cert: "{{ mail_autoconfig_vhost_server }}"
+# Certificate name in /etc/ssl, empty: vhost_ssl_cert of nginx_mono (the first of ssl_certs)
+mail_autoconfig_vhost_ssl_cert: ''
 
 # Let's Encrypt certificate name (for shared certificates, e.g., mail.example.com)
 # Override this when using a multi-domain certificate

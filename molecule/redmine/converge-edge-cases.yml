@@ -216,7 +216,7 @@
           index: index.html
           vhost_for_zabbix: false
           letsencrypt: false
-          ssl_cert: redmine
+          vhost_ssl_cert: redmine
           upstream_name: redmine_custom_port
           upstream_servers:
             - "unix:/run/redmine_custom_port/redmine.sock"
@@ -244,7 +244,7 @@
           index: index.html
           vhost_for_zabbix: false
           letsencrypt: false
-          ssl_cert: redmine
+          vhost_ssl_cert: redmine
           upstream_name: redmine_protected
           upstream_servers:
             - "unix:/run/redmine_protected/redmine.sock"
@@ -277,7 +277,7 @@
           index: index.html
           vhost_for_zabbix: false
           letsencrypt: false
-          ssl_cert: redmine
+          vhost_ssl_cert: redmine
           upstream_name: redmine_redirects
           upstream_servers:
             - "unix:/run/redmine_redirects/redmine.sock"
@@ -308,7 +308,7 @@
           index: index.html
           vhost_for_zabbix: false
           letsencrypt: false
-          ssl_cert: redmine
+          vhost_ssl_cert: redmine
           upstream_name: redmine_proxy
           upstream_servers:
             - "unix:/run/redmine_proxy/redmine.sock"

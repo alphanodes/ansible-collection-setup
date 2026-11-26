@@ -286,7 +286,7 @@
           vhost_default: true
           vhost_for_zabbix: false
           letsencrypt: false
-          ssl_cert: redmine
+          vhost_ssl_cert: redmine
           upstream_name: redmine
           upstream_servers:
             - "unix:/run/redmine/redmine.sock"
@@ -316,7 +316,7 @@
           index: index.html
           vhost_for_zabbix: false
           letsencrypt: false
-          ssl_cert: redmine
+          vhost_ssl_cert: redmine
           upstream_name: redmine_agile
           upstream_servers:
             - "unix:/run/redmine_agile/redmine.sock"

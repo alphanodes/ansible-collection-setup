@@ -4,10 +4,10 @@
   ssl_certificate_key {{ instance.letsencrypt_key | default(vhost_letsencrypt_key) }};
 {# Note: ssl_trusted_certificate for OCSP stapling removed - Let's Encrypt ends OCSP support in 2025 #}
 {% else %}
-  ssl_certificate /etc/ssl/certs/{{ instance.vhost_ssl_cert | default(vhost_ssl_cert) }}.crt;
-  ssl_certificate_key /etc/ssl/private/{{ instance.vhost_ssl_cert | default(vhost_ssl_cert) }}.key;
+  ssl_certificate /etc/ssl/certs/{{ instance.vhost_ssl_cert | default(vhost_ssl_cert, true) }}.crt;
+  ssl_certificate_key /etc/ssl/private/{{ instance.vhost_ssl_cert | default(vhost_ssl_cert, true) }}.key;
 {% if vhost_ssl_with_trusted_cert is defined and vhost_ssl_with_trusted_cert and (nginx_with_ssl_stapling is undefined or nginx_with_ssl_stapling) %}
-  ssl_trusted_certificate /etc/ssl/certs/{{ instance.vhost_ssl_cert | default(vhost_ssl_cert) }}_trusted.crt;
+  ssl_trusted_certificate /etc/ssl/certs/{{ instance.vhost_ssl_cert | default(vhost_ssl_cert, true) }}_trusted.crt;
 {% endif %}
 {% endif %}
 {% if nginx_force_ssl %}

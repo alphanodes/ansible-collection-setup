@@ -23,7 +23,8 @@ element_web_vhost_users: []
 element_web_vhost_for_zabbix: false
 
 element_web_vhost_letsencrypt: false
-element_web_vhost_ssl_cert: '{{ ssl_certs[0].name | default(omit) }}'
+# Certificate name in /etc/ssl, empty: vhost_ssl_cert of nginx_mono (the first of ssl_certs)
+element_web_vhost_ssl_cert: ''
 element_web_vhost_letsencrypt_cert: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/fullchain.pem
 element_web_vhost_letsencrypt_key: /etc/letsencrypt/live/{{ letsencrypt_default_cert | default(ansible_host) }}/privkey.pem
 

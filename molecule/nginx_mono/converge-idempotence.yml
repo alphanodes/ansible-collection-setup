@@ -72,7 +72,7 @@
           index: index.html
           vhost_for_zabbix: false  # Requires zabbix role, disabled for idempotence test
           letsencrypt: false
-          ssl_cert: test-cert
+          vhost_ssl_cert: test-cert
 
     # ==========================================================================
     # TEST 2: Redmine-like configuration (production pattern)
@@ -103,4 +103,4 @@
               password: testpass
           vhost_for_zabbix: false
           letsencrypt: false
-          ssl_cert: test-cert
+          vhost_ssl_cert: test-cert
