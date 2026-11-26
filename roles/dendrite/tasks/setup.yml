@@ -39,7 +39,7 @@
 
 - name: Make sure data directories exist
   ansible.builtin.file:
-    path: '{{ dendrite_sync_api_search_index_path }}'
+    path: '{{ item }}'
     state: directory
     mode: '0775'
     owner: "{{ dendrite_service_user }}"
@@ -47,16 +47,17 @@
   loop:
     - '{{ dendrite_sync_api_search_index_path }}'
     - '{{ dendrite_media_api_base_path }}'
-    - 'dendrite_jetstream_storage_path'
+    - '{{ dendrite_jetstream_storage_path }}'
 
+# An empty checksum lets the golang role verify against the mirror's .sha256 file
 - name: Include Go role
   ansible.builtin.include_role:
     name: alphanodes.setup.golang
   vars:
-    golang_version: '{{ dendrite_go_version | default(omit) }}'
-    golang_sha256_checksum: '{{ dendrite_go_sha256_checksum | default(omit) }}'
+    golang_version: '{{ dendrite_go_version }}'
+    golang_sha256_checksum: '{{ dendrite_go_sha256_checksum | default("") }}'
 
-# see https://github.com/matrix-org/dendrite?tab=readme-ov-file#get-started
+# see https://github.com/element-hq/dendrite?tab=readme-ov-file#get-started
 - name: Ensure Dendrite is installed {{ dendrite_version }}
   ansible.builtin.git:
     repo: "{{ dendrite_repository }}"
@@ -80,7 +81,7 @@
   block:
     - name: Remove previous binaries
       ansible.builtin.file:
-        name: "{{ dendrite_app_dir }}/bin }}"
+        name: "{{ dendrite_app_dir }}/bin"
         state: absent
 
     - name: Build Dendrite
@@ -89,6 +90,7 @@
       delay: 5
       args:
         chdir: "{{ dendrite_app_dir }}"
+      notify: Restart Dendrite
 
 - name: Ensure Dendrite configuration installed
   ansible.builtin.template:
@@ -97,6 +99,7 @@
     mode: '0640'
     owner: "{{ dendrite_service_user }}"
     group: "{{ dendrite_service_group }}"
+  notify: Restart Dendrite
 
 - name: Create private matrix signing key for federation
   ansible.builtin.command: "{{ dendrite_app_dir }}/bin/generate-keys --private-key {{ dendrite_private_key_file }}"

@@ -14,10 +14,6 @@
         golang_real_version: "{{ lookup('url', golang_latest_version_url, wantlist=True) | first }}"
       when: golang_version == 'latest'
 
-    - name: Show backup volkstheater
-      ansible.builtin.debug:
-        var: golang_real_version
-
     - name: Set golang_real_version with fixed version
       ansible.builtin.set_fact:
         golang_real_version: "go{{ golang_version }}"
@@ -54,7 +50,9 @@
         url: '{{ golang_mirror }}/{{ golang_file }}'
         dest: '{{ software_path }}/{{ golang_file }}'
         mode: '0644'
-        checksum: "{{ ('sha256:' + golang_sha256_checksum) | default(omit) }}"
+        # Without a pinned checksum, verify against the .sha256 file the mirror
+        # publishes next to every archive
+        checksum: "sha256:{{ golang_sha256_checksum | default(golang_mirror + '/' + golang_file + '.sha256', true) }}"
         force: false
         use_proxy: '{{ golang_mirror_use_proxy }}'
         validate_certs: '{{ golang_mirror_validate_certs }}'

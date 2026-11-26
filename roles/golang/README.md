@@ -12,9 +12,8 @@ Available variables can be found in [defaults/main.yml](defaults/main.yml)
     - hosts: all
 
       vars:
-        golang_version: '1.20.10'
-        golang_sha256_checksum: d355c5ae3a8f7763c9ec9dc25153aae373958cbcb60dd09e91a8b56c7621b2fc
+        golang_version: '1.27.4'
 
       roles:
-        - alphanodes.setup.go
+        - alphanodes.setup.golang
 ```

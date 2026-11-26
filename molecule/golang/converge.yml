@@ -4,8 +4,9 @@
   become: true
 
   vars:
-    golang_version: '1.21.4'
-    golang_sha256_checksum: 73cac0215254d0c7d1241fa40837851f3b9a8a742d0b54714cbdfb3feaf8f0af
+    # latest without a pinned checksum: the role verifies the download
+    # against the .sha256 file of the mirror
+    golang_version: latest
 
   roles:
     - role: alphanodes.setup.golang
@@ -16,6 +17,13 @@
       changed_when: false
       register: go_version_info
 
-    - name: Show instaled go version
+    - name: Show installed go version
       ansible.builtin.debug:
         var: go_version_info.stdout
+
+    - name: Assert the latest Go release is installed
+      ansible.builtin.assert:
+        that:
+          - go_version_info.stdout.startswith('go version ' + golang_real_version + ' ')
+        fail_msg: "expected {{ golang_real_version }}, got {{ go_version_info.stdout }}"
+        quiet: true

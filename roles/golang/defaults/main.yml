@@ -5,7 +5,9 @@
 # see https://go.dev/dl/
 golang_version: latest
 golang_arch: "{{ 'arm64' if ansible_facts['architecture'] == 'aarch64' else 'amd64' }}"
-# use it with fixed version
+# Optional pinned checksum of the archive for golang_arch, only useful with a
+# fixed version. Without it, the download is verified against the .sha256 file
+# that golang_mirror publishes next to every archive.
 # golang_sha256_checksum: ef79a11aa095a08772d2a69e4f152f897c4e96ee297b0dc20264b7dec2961abe
 
 # Mirror to download the Go language SDK redistributable package from

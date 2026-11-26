@@ -1,6 +1,6 @@
 # Ansible Role: dendrite
 
-An Ansible Role that installs the [Matrix Dendrite](https://github.com/matrix-org/dendrite) homeserver on Debian and Ubuntu servers.
+An Ansible Role that installs the [Matrix Dendrite](https://github.com/element-hq/dendrite) homeserver on Debian and Ubuntu servers.
 
 ## Role Variables
 
