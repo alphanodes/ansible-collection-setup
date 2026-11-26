@@ -1,0 +1,55 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  become: true
+
+  tasks:
+    - name: Check the Synapse package is removed
+      ansible.builtin.command: dpkg-query -W -f='${Status}' matrix-synapse-py3
+      register: synapse_pkg
+      changed_when: false
+      failed_when: "'install ok installed' in synapse_pkg.stdout"
+
+    - name: Check systemd no longer knows the Synapse unit
+      ansible.builtin.command: systemctl show matrix-synapse.service -p LoadState --value
+      register: synapse_unit
+      changed_when: false
+      failed_when: synapse_unit.stdout != 'not-found'
+
+    - name: Check the repository, the role configuration and the vhost are gone
+      ansible.builtin.stat:
+        path: '{{ item }}'
+      register: synapse_gone
+      failed_when: synapse_gone.stat.exists
+      loop:
+        - /etc/apt/sources.list.d/matrix-org.sources
+        - /etc/matrix-synapse/conf.d/alphanodes.yaml
+        - /etc/matrix-synapse/log_journald.yaml
+        - /etc/nginx/sites-enabled/synapse.conf
+
+    - name: Check nginx still has a valid configuration
+      ansible.builtin.command: nginx -t
+      changed_when: false
+
+    # A reinstall with the same server_name continues with this data
+    - name: Check the signing key and the media store are kept
+      ansible.builtin.stat:
+        path: '{{ item }}'
+      register: synapse_kept
+      failed_when: not synapse_kept.stat.exists
+      loop:
+        - /etc/matrix-synapse/homeserver.signing.key
+        - /var/lib/matrix-synapse/media
+
+    - name: Check the Synapse user is kept
+      ansible.builtin.command: id matrix-synapse
+      changed_when: false
+
+    - name: Check the Synapse database is kept
+      become: true
+      become_user: postgres
+      ansible.builtin.command: psql -Atc "SELECT 1 FROM pg_database WHERE datname = 'synapse'"
+      register: synapse_db
+      changed_when: false
+      failed_when: synapse_db.stdout != '1'

@@ -33,6 +33,15 @@
     state: present
     update_cache: '{{ synapse_repo.changed }}'
 
+# Synapse creates the default path itself, a custom one has to exist
+- name: Ensure the Synapse media store exists
+  ansible.builtin.file:
+    path: '{{ synapse_media_store_path }}'
+    state: directory
+    owner: '{{ synapse_service_user }}'
+    group: '{{ synapse_service_user }}'
+    mode: '0755'
+
 - name: Deploy the Synapse configuration files kept in sync with debconf
   ansible.builtin.template:
     src: '{{ item.src }}'

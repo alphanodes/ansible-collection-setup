@@ -36,8 +36,8 @@
             - 'add_header "Access-Control-Allow-Origin" *'
             - >-
               return 200 '{ "m.homeserver": { "base_url": "{{ synapse_public_baseurl | regex_replace('/$', '') }}" } }'
-      redirects: "{{ synapse_redirects | default([]) }}"
-      vhost_includes: "{{ synapse_vhost_includes | default([]) }}"
+      redirects: "{{ synapse_redirects }}"
+      vhost_includes: "{{ synapse_vhost_includes }}"
       vhost_for_zabbix: "{{ synapse_vhost_for_zabbix | default(false) }}"
       letsencrypt: "{{ synapse_vhost_letsencrypt | default(false) }}"
       vhost_ssl_cert: "{{ synapse_vhost_ssl_cert | default(omit) }}"

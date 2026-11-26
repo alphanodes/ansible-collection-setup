@@ -1,10 +1,13 @@
 ---
 
-- name: Ensure the Synapse registration shared secret is configured
+- name: Ensure the Synapse server name and registration secret are configured
   ansible.builtin.assert:
     that:
+      - synapse_server_name | length > 0
       - synapse_registration_shared_secret | length > 0
-    fail_msg: synapse_registration_shared_secret is required, register_new_matrix_user needs it to create users
+    fail_msg: >-
+      synapse_server_name and synapse_registration_shared_secret are required,
+      the server name can never change and register_new_matrix_user needs the secret
     quiet: true
   when: not synapse_remove | bool
   tags:

@@ -16,9 +16,11 @@ synapse_packages:
   # low-level postgres library, the package ships the python bindings
   - libpq5
 
-# The Matrix domain of all user IDs (@user:server_name). It can not be changed
-# after the first start without starting over with a new database.
-synapse_server_name: '{{ ansible_host }}'
+# Required, the Matrix domain of all user IDs (@user:server_name). It can not
+# be changed after the first start without starting over with a new database.
+# The role serves it on the same host, delegation to another domain is not
+# supported.
+synapse_server_name: ''
 synapse_public_baseurl: 'https://{{ synapse_server_name }}/'
 
 # nginx is the only client, Synapse listens on loopback only
@@ -65,6 +67,8 @@ synapse_validation_url: 'https://{{ synapse_server_name }}'
 # $proxy_add_x_forwarded_for there and make sure the proxy sets the header.
 synapse_vhost_forwarded_for: $remote_addr
 synapse_vhost_for_zabbix: false
+synapse_redirects: []
+synapse_vhost_includes: []
 synapse_vhost_letsencrypt: false
 synapse_vhost_ssl_cert: '{{ ssl_certs[0].name | default(omit) }}'
 # Serve a web client like element-web at the root of the vhost, e.g.

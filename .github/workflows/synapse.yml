@@ -14,6 +14,7 @@ name: "alphanodes.setup.synapse"
       - 'roles/ssl/**'
       - 'roles/common/**'
       - 'molecule/synapse/**'
+      - 'molecule/synapse_remove/**'
       - '.github/workflows/synapse.yml'
 
 defaults:
@@ -53,5 +54,6 @@ jobs:
         run: |
           molecule --version
           molecule test -s synapse
+          molecule test -s synapse_remove
         env:
           MOLECULE_DISTRO: ${{ matrix.distro }}

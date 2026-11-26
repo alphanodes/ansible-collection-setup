@@ -1,0 +1,42 @@
+---
+- name: Converge - Install Synapse
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+  vars:
+    # nginx without TLS in the container
+    nginx_with_ssl: false
+    nginx_with_ipv6: false
+    nginx_force_ssl: false
+    nginx_with_http3: false
+    nginx_resolver: ['8.8.8.8', '8.8.4.4']
+    hoster: 'local'
+    ssl_certs: []
+
+    synapse_server_name: synapse.local
+    synapse_registration_shared_secret: molecule-test-secret
+    # no TLS in the container, the role checks Synapse directly
+    synapse_validation_url: http://127.0.0.1:8008
+
+  roles:
+    - role: alphanodes.setup.synapse
+
+- name: Converge - Remove Synapse
+  hosts: all
+  become: true
+
+  vars:
+    nginx_with_ssl: false
+    ssl_certs: []
+    synapse_server_name: synapse.local
+    synapse_remove: true
+
+  roles:
+    - role: alphanodes.setup.synapse

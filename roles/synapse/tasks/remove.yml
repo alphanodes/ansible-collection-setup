@@ -1,4 +1,8 @@
 ---
+# Removes the service and keeps the data: the PostgreSQL database, the media
+# store, the signing key and the user owning them. A later reinstall with the
+# same server_name continues where it stopped. Drop them by hand once they are
+# no longer needed.
 
 - name: Gather installed packages
   ansible.builtin.package_facts:
@@ -26,32 +30,16 @@
     name: matrix-org
     state: absent
 
-# The postinst registers these, the package has no postrm to drop them and dpkg
-# complains about the unknown owner once the user is gone
-- name: Remove the dpkg ownership overrides of Synapse
-  ansible.builtin.command: dpkg-statoverride --remove {{ item }}
-  register: synapse_statoverride
-  changed_when: synapse_statoverride.rc == 0
-  failed_when: synapse_statoverride.rc not in [0, 2]
-  loop:
-    - /var/lib/matrix-synapse
-    - /var/log/matrix-synapse
-    - '{{ synapse_config_dir }}'
-
-# The database stays, drop it by hand once it is no longer needed
-- name: Remove Synapse files and directories
+# homeserver.signing.key stays next to them
+- name: Remove the Synapse configuration of this role
   ansible.builtin.file:
     path: '{{ item }}'
     state: absent
   loop:
-    - '{{ synapse_config_dir }}'
-    - /var/lib/matrix-synapse
-    - /var/log/matrix-synapse
-
-- name: Remove Synapse user
-  ansible.builtin.user:
-    name: '{{ synapse_service_user }}'
-    state: absent
+    - '{{ synapse_config_file }}'
+    - '{{ synapse_server_name_file }}'
+    - '{{ synapse_report_stats_file }}'
+    - '{{ synapse_log_config_file }}'
 
 - name: Remove the Synapse vhost
   ansible.builtin.file:
