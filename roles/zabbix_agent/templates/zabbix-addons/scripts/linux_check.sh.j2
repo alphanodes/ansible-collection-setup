@@ -6,6 +6,8 @@
 #
 # Usage: linux_check.sh <key> <source>
 #   linux_check.sh PasswordAuthentication sshd_config
+#   linux_check.sh auth_methods sshd
+#   linux_check.sh match_password sshd
 #   linux_check.sh world_write_etc perm
 #   linux_check.sh server_name_in_hosts performance
 #   linux_check.sh password_accounts users
@@ -36,6 +38,41 @@ get_sshd_config() {
   value=$(sudo -n /usr/sbin/sshd -T 2>/dev/null | awk -v k="${key,,}" '$1 == k { print $2; exit }')
   [ -n "$value" ] || fail
   echo "$value"
+}
+
+# Authentication methods the running sshd offers, comma separated: the
+# "Permission denied (...)" list of a local login without authentication.
+# Unlike sshd -T this is the loaded configuration and includes PAM
+# keyboard-interactive. A wildcard listener is reached on localhost.
+get_sshd_auth_methods() {
+  local config listen address host port reply methods
+  config=$(sudo -n /usr/sbin/sshd -T 2>/dev/null) || fail
+  listen=$(awk '$1 == "listenaddress" { print $2 }' <<< "$config")
+  address=$(grep -m1 -E '^0\.0\.0\.0:' <<< "$listen" || grep -m1 -E '^\[::\]:' <<< "$listen" || head -1 <<< "$listen")
+  [ -n "$address" ] || fail
+  port=${address##*:}
+  host=${address%:*}
+  host=${host#[}
+  host=${host%]}
+  case "$host" in
+    0.0.0.0) host=127.0.0.1 ;;
+    ::) host=::1 ;;
+  esac
+  reply=$(ssh -F /dev/null -p "$port" -o BatchMode=yes -o ConnectTimeout=3 \
+    -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o GlobalKnownHostsFile=/dev/null \
+    -o PreferredAuthentications=none -o LogLevel=ERROR "zabbix@$host" true 2>&1 < /dev/null)
+  methods=$(sed -n 's/.*Permission denied (\([^)]*\)).*/\1/p' <<< "$reply" | head -1)
+  [ -n "$methods" ] || fail
+  echo "$methods"
+}
+
+get_sshd() {
+  case "$key" in
+    auth_methods) get_sshd_auth_methods ;;
+    # Match blocks that allow passwords, sshd -T only shows global values
+    match_password) sudo -n {{ zabbix_addons_dir }}/scripts/sshd_match_check.sh || fail ;;
+    *) fail ;;
+  esac
 }
 
 # Number of world writable files and directories in /etc
@@ -99,6 +136,7 @@ get_postfix() {
 
 case "$source" in
   sshd_config) get_sshd_config ;;
+  sshd) get_sshd ;;
   perm) get_file_permission ;;
   performance) get_performance ;;
   users) get_users ;;

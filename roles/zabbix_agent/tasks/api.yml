@@ -159,3 +159,41 @@
   throttle: 1
   tags:
     - api
+
+# Expected values of further SSH triggers of the Linux template, a macro
+# only exists where the value differs from the template default
+- name: "Set expected SSH Match blocks and key sources"
+  community.zabbix.zabbix_hostmacro:
+    host_name: "{{ zabbix_agent_hostname }}"
+    macro_name: "{{ item.macro }}"
+    macro_value: "{{ item.value }}"
+    state: "{{ 'present' if item.value | string != item.default else 'absent' }}"
+  loop:
+    - macro: SSH.MATCH_PASSWORD_AUTH
+      value: "{{ zabbix_agent_ssh_match_password_auth }}"
+      default: '0'
+    - macro: SSH.AUTHORIZED_KEYS_COMMAND
+      value: "{{ zabbix_agent_ssh_authorized_keys_command }}"
+      default: none
+    - macro: SSH.TRUSTED_USER_CA_KEYS
+      value: "{{ zabbix_agent_ssh_trusted_user_ca_keys }}"
+      default: none
+  loop_control:
+    label: "{{ item.macro }}"
+  when:
+    - zabbix_api_create_hosts | bool
+  vars:
+    ansible_network_os: community.zabbix.zabbix
+    ansible_connection: httpapi
+    ansible_httpapi_port: 443
+    ansible_zabbix_url_path: '{{ zabbix_url_path }}'
+    ansible_httpapi_use_ssl: true
+    ansible_httpapi_validate_certs: "{{ zabbix_validate_certs | default(true) }}"
+    ansible_user: '{{ zabbix_api_user }}'
+    ansible_httpapi_pass: '{{ zabbix_api_pass }}'
+  delegate_to: '{{ zabbix_server_vhost }}'
+  # All hosts share one persistent httpapi connection to the Zabbix server,
+  # parallel forks break its socket
+  throttle: 1
+  tags:
+    - api

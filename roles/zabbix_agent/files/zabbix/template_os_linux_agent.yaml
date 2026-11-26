@@ -9,7 +9,8 @@ zabbix_export:
       template: Linux
       name: Linux
       description: |
-        Base template for Linux hosts: sshd_config hardening, world-writable
+        Base template for Linux hosts: sshd hardening (effective settings,
+        offered login methods, Match blocks, key sources), world-writable
         files in /etc, the host name in /etc/hosts, accounts with a password,
         memory per process group, invalid logins and the overall systemd state.
 
@@ -71,7 +72,13 @@ zabbix_export:
                 The effective PasswordAuthentication of sshd differs from the
                 configured one. The zabbix_agent role sets {$SSH.PASSWORD_AUTH}
                 to yes on hosts with ssh_server_password_authentication, all
-                other hosts should allow only key authentication.
+                other hosts should allow only key authentication. sshd -T reads
+                the files, so if only this problem is open (not "SSH offers
+                password login"), the change is written but not loaded yet and
+                becomes active with the next restart of ssh.
+              dependencies:
+                - name: 'SSH offers password login: {ITEM.LASTVALUE}'
+                  expression: 'find(/Linux/linux[auth_methods,sshd],,"regexp","(^|,)(password|keyboard-interactive)(,|$)")=1 and "{$SSH.PASSWORD_AUTH}"="no"'
             - uuid: 831d2f0cf5cc4b74959781916c042046
               expression: 'last(/Linux/linux[PasswordAuthentication,sshd_config])<>"yes" and last(/Linux/linux[PasswordAuthentication,sshd_config])<>"no"'
               name: 'SSH configuration check failed'
@@ -80,6 +87,98 @@ zabbix_export:
                 sshd -T returned no PasswordAuthentication value, so all sshd_config
                 checks are blind. Check the sudoers rule for zabbix and run
                 sudo -u zabbix sudo -n /usr/sbin/sshd -T on the host.
+        - uuid: 34d19a2c402e4f6ba74f0f83c8e575c7
+          name: 'SSH offered authentication methods'
+          key: 'linux[auth_methods,sshd]'
+          delay: 1h
+          history: 2w
+          value_type: CHAR
+          description: 'Authentication methods the running sshd offers, from a local login without authentication. Unlike sshd -T this is the loaded configuration and includes keyboard-interactive (PAM).'
+          tags:
+            - tag: Application
+              value: Security
+          triggers:
+            - uuid: bf0a3698b787484bb39af0e5b7ebbb52
+              expression: 'find(/Linux/linux[auth_methods,sshd],,"regexp","(^|,)(password|keyboard-interactive)(,|$)")=1 and "{$SSH.PASSWORD_AUTH}"="no"'
+              name: 'SSH offers password login: {ITEM.LASTVALUE}'
+              priority: AVERAGE
+              description: |
+                The running sshd accepts passwords (password or PAM
+                keyboard-interactive), although {$SSH.PASSWORD_AUTH} expects key
+                authentication only. Check sshd -T and the files of sshd_config.d,
+                lines above the Include of sshd_config win against the ssh role.
+            - uuid: 9888c6d1e6134f8ea4b8ee17e1f1b3f1
+              expression: 'last(/Linux/linux[auth_methods,sshd])="-0.9902"'
+              name: 'SSH login check failed'
+              priority: WARNING
+              description: |
+                The local login without authentication returned no list of
+                methods. Run sudo -u zabbix bash linux_check.sh auth_methods sshd
+                on the host, sshd may not listen on the address of sshd -T.
+        - uuid: e479846dd0ac4b2e9e11debbb319ec48
+          name: 'SSH AuthorizedKeysCommand'
+          key: 'linux[AuthorizedKeysCommand,sshd_config]'
+          delay: 2h
+          history: 2w
+          value_type: CHAR
+          description: 'Effective AuthorizedKeysCommand of sshd (sshd -T), a source of keys besides authorized_keys.'
+          tags:
+            - tag: Application
+              value: Security
+          triggers:
+            - uuid: 387834d30e6d49ca9c6ed5930b428ddd
+              expression: 'last(/Linux/linux[AuthorizedKeysCommand,sshd_config])<>"{$SSH.AUTHORIZED_KEYS_COMMAND}" and last(/Linux/linux[AuthorizedKeysCommand,sshd_config])<>"-0.9902"'
+              name: 'SSH AuthorizedKeysCommand = {ITEM.LASTVALUE}, expected {$SSH.AUTHORIZED_KEYS_COMMAND}'
+              priority: WARNING
+              description: |
+                sshd takes keys from a command besides authorized_keys, e.g. Google
+                OS Login. Users of that source can log in without a key managed
+                by the ssh role. Hosts that use it on purpose get the expected
+                value from zabbix_agent_ssh_authorized_keys_command.
+        - uuid: f44748e54de6402287423fb618a29220
+          name: 'SSH TrustedUserCAKeys'
+          key: 'linux[TrustedUserCAKeys,sshd_config]'
+          delay: 2h
+          history: 2w
+          value_type: CHAR
+          description: 'Effective TrustedUserCAKeys of sshd (sshd -T), certificates of these CAs log in without authorized_keys.'
+          tags:
+            - tag: Application
+              value: Security
+          triggers:
+            - uuid: 2f119e0947544e91b7fa6466242a5094
+              expression: 'last(/Linux/linux[TrustedUserCAKeys,sshd_config])<>"{$SSH.TRUSTED_USER_CA_KEYS}" and last(/Linux/linux[TrustedUserCAKeys,sshd_config])<>"-0.9902"'
+              name: 'SSH TrustedUserCAKeys = {ITEM.LASTVALUE}, expected {$SSH.TRUSTED_USER_CA_KEYS}'
+              priority: WARNING
+              description: |
+                sshd accepts user certificates of a CA, e.g. Google OS Login. Hosts
+                that use it on purpose get the expected value from
+                zabbix_agent_ssh_trusted_user_ca_keys.
+        - uuid: 14506fc69a544ed283e4a01063c48f2a
+          name: 'SSH Match blocks allowing passwords'
+          key: 'linux[match_password,sshd]'
+          delay: 2h
+          history: 2w
+          value_type: FLOAT
+          description: 'Match blocks that set PasswordAuthentication, KbdInteractiveAuthentication, ChallengeResponseAuthentication or PermitEmptyPasswords to yes, in sshd_config and all files of its Include lines. sshd -T only shows the global values.'
+          tags:
+            - tag: Application
+              value: Security
+          triggers:
+            - uuid: 26c67685ccf340618e69f94e742aeb64
+              expression: 'last(/Linux/linux[match_password,sshd])>=0 and last(/Linux/linux[match_password,sshd])<>{$SSH.MATCH_PASSWORD_AUTH}'
+              name: 'SSH {ITEM.LASTVALUE} Match blocks allow passwords, expected {$SSH.MATCH_PASSWORD_AUTH}'
+              priority: WARNING
+              description: |
+                A Match block allows passwords for some users or addresses. The
+                zabbix_agent role sets the expected number from the Match blocks
+                of the ssh role that allow passwords. Search sshd_config and the
+                files of its Include lines for Match.
+            - uuid: e7253255f04e4d349756819da5753ff9
+              expression: 'last(/Linux/linux[match_password,sshd])<0'
+              name: 'SSH Match check failed'
+              priority: WARNING
+              description: 'sshd_match_check.sh could not read sshd_config or a file of its Include lines. Run sudo -u zabbix sudo -n sshd_match_check.sh on the host.'
         - uuid: 70631fb4ec9b46d8bbbd3925641d5661
           name: 'SSH PermitEmptyPasswords'
           key: 'linux[PermitEmptyPasswords,sshd_config]'
@@ -318,9 +417,18 @@ zabbix_export:
         - macro: '{$SECURITY_LOG_HOURS}'
           value: '12'
           description: 'Time window in hours for the invalid logins check'
+        - macro: '{$SSH.AUTHORIZED_KEYS_COMMAND}'
+          value: none
+          description: 'Expected AuthorizedKeysCommand of sshd, set per host by the zabbix_agent role'
+        - macro: '{$SSH.MATCH_PASSWORD_AUTH}'
+          value: '0'
+          description: 'Expected number of Match blocks that allow passwords, set per host by the zabbix_agent role'
         - macro: '{$SSH.PASSWORD_AUTH}'
           value: 'no'
           description: 'Expected PasswordAuthentication of sshd, set per host by the zabbix_agent role'
+        - macro: '{$SSH.TRUSTED_USER_CA_KEYS}'
+          value: none
+          description: 'Expected TrustedUserCAKeys of sshd, set per host by the zabbix_agent role'
       dashboards:
         - uuid: b71c4aee60884803b06044ffa9a577ab
           name: 'Memory overview'

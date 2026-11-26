@@ -397,6 +397,26 @@
         fail_msg: "sshd checks return no setting: {{ sshd_checks.results | map(attribute='stdout') | list }}"
         success_msg: "sshd checks read the effective sshd configuration"
 
+    - name: Read login methods, Match blocks and key sources via linux_check.sh as zabbix
+      ansible.builtin.command: /usr/share/zabbix_addons/scripts/linux_check.sh {{ item }}
+      become: true
+      become_user: zabbix
+      loop:
+        - auth_methods sshd
+        - match_password sshd
+        - AuthorizedKeysCommand sshd_config
+        - TrustedUserCAKeys sshd_config
+      register: sshd_extra_checks
+      changed_when: false
+
+    # prepare disables passwords globally and adds two Match blocks with them
+    - name: Verify login methods, Match blocks and key sources
+      ansible.builtin.assert:
+        that:
+          - sshd_extra_checks.results | map(attribute='stdout') | list == ['publickey', '2', 'none', 'none']
+        fail_msg: "sshd checks: {{ sshd_extra_checks.results | map(attribute='stdout') | list }}"
+        success_msg: "sshd checks read the running sshd and the Match blocks of all included files"
+
     - name: Run the other linux_check.sh checks as zabbix
       ansible.builtin.command: /usr/share/zabbix_addons/scripts/linux_check.sh {{ item }}
       become: true
@@ -542,6 +562,7 @@
         - /usr/bin/find /etc -type d -perm -002
         - /usr/bin/passwd -S -a
         - /usr/sbin/sshd -T
+        - /usr/share/zabbix_addons/scripts/sshd_match_check.sh
       changed_when: false
 
     - name: Try forbidden root commands as zabbix via sudo

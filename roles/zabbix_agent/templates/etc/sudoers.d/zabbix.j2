@@ -2,8 +2,9 @@
 # Only the exact root commands used by linux_check.sh. Never allow generic
 # tools like cat or find with arbitrary arguments, they grant root access
 # (e.g. find -exec). passwd -S -a only prints the password status of all
-# accounts, sshd -T only prints the effective configuration.
-Cmnd_Alias ZABBIX = /usr/bin/find /etc -type f -perm -002, /usr/bin/find /etc -type d -perm -002, /usr/bin/passwd -S -a, /usr/sbin/sshd -T
+# accounts, sshd -T only prints the effective configuration. The root owned
+# sshd_match_check.sh takes no arguments and only prints a number.
+Cmnd_Alias ZABBIX = /usr/bin/find /etc -type f -perm -002, /usr/bin/find /etc -type d -perm -002, /usr/bin/passwd -S -a, /usr/sbin/sshd -T, {{ zabbix_addons_dir }}/scripts/sshd_match_check.sh
 zabbix ALL = NOPASSWD:SETENV: ZABBIX
 {% if zabbix_agent_smart_sudo | default(false) %}
 {# sudoers separates commands by comma, so a comma in an argument (cciss,0) needs a backslash #}

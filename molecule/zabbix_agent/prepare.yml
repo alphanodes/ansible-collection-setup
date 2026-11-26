@@ -72,3 +72,41 @@
         name: openssh-server
         state: present
         update_cache: true
+
+    # Two Match blocks allow passwords (one in a nested Include, root only),
+    # one does not, and a file outside the Include lines is ignored
+    - name: Create directory of a nested sshd Include
+      ansible.builtin.file:
+        path: /etc/ssh/molecule.d
+        state: directory
+        mode: '0700'
+
+    - name: Create sshd drop-ins with Match blocks
+      ansible.builtin.copy:
+        content: "{{ item.content }}"
+        dest: "{{ item.dest }}"
+        mode: '0600'
+      loop:
+        - dest: /etc/ssh/sshd_config.d/10-molecule.conf
+          content: |
+            PasswordAuthentication no
+            Include molecule.d/*
+            Match Group sftp
+                PasswordAuthentication yes
+            Match User molecule
+                X11Forwarding yes
+        - dest: /etc/ssh/molecule.d/address
+          content: |
+            Match Address 10.0.0.0/8
+                KbdInteractiveAuthentication=yes
+        - dest: /etc/ssh/not-included.conf
+          content: |
+            Match all
+                PasswordAuthentication yes
+      loop_control:
+        label: "{{ item.dest }}"
+
+    - name: Restart ssh with the drop-ins
+      ansible.builtin.systemd_service:
+        name: ssh.service
+        state: restarted

@@ -207,6 +207,7 @@
     group: zabbix
   loop:
     - linux_check.sh
+    - sshd_match_check.sh
     - journal_check.sh
     - systemd_status.sh
     - php_check.sh

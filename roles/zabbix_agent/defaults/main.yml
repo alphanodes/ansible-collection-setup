@@ -115,6 +115,14 @@ zabbix_host:
 # (extended regex, matched against the full unit name)
 zabbix_agent_systemd_failed_ignore: []
 
+# Expected values of the SSH triggers of the Linux template, set as host
+# macros. Match blocks that allow passwords default to those of the ssh role.
+zabbix_agent_ssh_match_password_auth: "{{ ((ssh_server_match_user | default(false) or []) + (ssh_server_match_group | default(false) or [])) | selectattr('rules', 'search', '(?im)^\\s*(PasswordAuthentication|KbdInteractiveAuthentication|ChallengeResponseAuthentication|PermitEmptyPasswords)\\s+yes') | list | length }}"
+# Key sources besides authorized_keys (sshd -T), e.g. for Google OS Login
+# /usr/bin/google_authorized_keys and /etc/ssh/oslogin_trustedca.pub
+zabbix_agent_ssh_authorized_keys_command: none
+zabbix_agent_ssh_trusted_user_ca_keys: none
+
 # Allow the SMART plugin of zabbix-agent2 (template "SMART by Zabbix agent 2")
 # to run smartctl as root, installs smartmontools. Without it, the plugin
 # fails and classic sudo mails every denied call to root (mail_badpass).
