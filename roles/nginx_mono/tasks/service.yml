@@ -30,7 +30,7 @@
           Current service: {{ nginx_mono_service_name }}
 
           SOLUTION: Set the primary service for reuseport in your configuration:
-          nginx_reuseport_primary_service: "grafana"  # or "loki" or "{{ nginx_mono_service_name }}"
+          nginx_reuseport_primary_service: "{{ nginx_mono_service_name }}"  # or the name of another service on this server
 
           Only ONE service per server can use reuseport on the same port (443).
           This prevents nginx "duplicate listen options" errors.

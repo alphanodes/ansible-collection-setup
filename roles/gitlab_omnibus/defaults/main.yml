@@ -317,7 +317,7 @@ gitlab_postgresql_log_disconnections: "{{ postgresql_log_disconnections | defaul
 
 # Group of the runit managed log directories (nginx, puma, sidekiq, gitaly,
 # ...), which GitLab then creates with mode 0750 on every reconfigure. Its
-# members (zabbix, alloy) can read the logs. Empty keeps the GitLab default
+# members (e.g. zabbix) can read the logs. Empty keeps the GitLab default
 # of 0700. The group must exist.
 gitlab_log_group: adm
 
