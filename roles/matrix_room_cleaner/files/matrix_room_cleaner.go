@@ -1,6 +1,6 @@
 // matrix_room_cleaner.go
 
-// Purpose: Redact old events (> MAX_AGE_DAYS) in a Matrix room on Dendrite/Synapse.
+// Purpose: Redact old events (> MAX_AGE_DAYS) in a Matrix room on any homeserver.
 // Sources (spec):
 //   - https://spec.matrix.org/v1.11/client-server-api/#get_matrixclientv3sync
 //   - https://spec.matrix.org/v1.11/client-server-api/#get_matrixclientv3roomsroomidmessages
