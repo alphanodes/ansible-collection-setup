@@ -11,13 +11,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
 	"time"
-	"io"
 )
 
 type SyncResp struct {
@@ -25,11 +25,15 @@ type SyncResp struct {
 }
 
 type Event struct {
-    EventID          string `json:"event_id"`
-    Type             string `json:"type"`
-    OriginServerTS   int64  `json:"origin_server_ts"`
-    // state_key is present for state events; absence => message/ephemeral
-    StateKey         *string `json:"state_key"`
+	EventID        string `json:"event_id"`
+	Type           string `json:"type"`
+	OriginServerTS int64  `json:"origin_server_ts"`
+	// state_key is present for state events; absence => message/ephemeral
+	StateKey *string `json:"state_key"`
+	// redacted events keep type, id and timestamp, the redaction is listed here
+	Unsigned struct {
+		RedactedBecause json.RawMessage `json:"redacted_because"`
+	} `json:"unsigned"`
 }
 
 type MessagesResp struct {
@@ -97,17 +101,17 @@ func doJSON[T any](client *http.Client, req *http.Request, out *T) error {
 }
 
 func resolveAlias(client *http.Client, base, token, alias string) (string, error) {
-    esc := url.PathEscape(alias)
-    u := fmt.Sprintf("%s/_matrix/client/v3/directory/room/%s", base, esc)
-    req, _ := authReq(http.MethodGet, u, token, nil)
-    var dr DirectoryResp
-    if err := doJSON(client, req, &dr); err != nil {
-        return "", err
-    }
-    if dr.RoomID == "" {
-        return "", fmt.Errorf("alias not found: %s", alias)
-    }
-    return dr.RoomID, nil
+	esc := url.PathEscape(alias)
+	u := fmt.Sprintf("%s/_matrix/client/v3/directory/room/%s", base, esc)
+	req, _ := authReq(http.MethodGet, u, token, nil)
+	var dr DirectoryResp
+	if err := doJSON(client, req, &dr); err != nil {
+		return "", err
+	}
+	if dr.RoomID == "" {
+		return "", fmt.Errorf("alias not found: %s", alias)
+	}
+	return dr.RoomID, nil
 }
 
 func main() {
@@ -119,6 +123,7 @@ func main() {
 	limit, _ := strconv.Atoi(getenv("BATCH_LIMIT", "500"))              // messages page size
 	maxRedactions, _ := strconv.Atoi(getenv("MAX_REDACTIONS", "10000")) // safety cap per run
 	sleepMs, _ := strconv.Atoi(getenv("SLEEP_MS", "25"))                // tiny pause between redactions
+	maxAttempts, _ := strconv.Atoi(getenv("MAX_ATTEMPTS", "10"))        // tries per redaction when rate limited
 
 	cutoff := time.Now().Add(-time.Duration(maxAgeDays) * 24 * time.Hour).UnixMilli()
 
@@ -175,47 +180,51 @@ func main() {
 			break
 		}
 
-        // redact candidates (< cutoff, non-state)
-        for _, ev := range chunk {
-            // skip if no id
-            if ev.EventID == "" {
-                continue
-            }
-            // skip state events (those have a state_key)
-            if ev.StateKey != nil {
-                continue
-            }
-            // optionally skip redaction events themselves
-            if ev.Type == "m.room.redaction" {
-                continue
-            }
-            if ev.OriginServerTS >= cutoff {
-                continue
-            }
+		// redact candidates (< cutoff, non-state)
+		for _, ev := range chunk {
+			// skip if no id
+			if ev.EventID == "" {
+				continue
+			}
+			// skip state events (those have a state_key)
+			if ev.StateKey != nil {
+				continue
+			}
+			// optionally skip redaction events themselves
+			if ev.Type == "m.room.redaction" {
+				continue
+			}
+			if ev.OriginServerTS >= cutoff {
+				continue
+			}
+			// already redacted on an earlier run
+			if rb := ev.Unsigned.RedactedBecause; len(rb) > 0 && string(rb) != "null" {
+				continue
+			}
 			txnID := "redact-" + strings.TrimPrefix(ev.EventID, "$")
 			redURL := fmt.Sprintf("%s/_matrix/client/v3/rooms/%s/redact/%s/%s",
 				base, roomEsc, url.PathEscape(ev.EventID), url.PathEscape(txnID))
-            body := strings.NewReader(`{"reason":"auto-retention"}`)
-            // CS API requires PUT for idempotent redact with txnId
-            rreq, _ := authReq(http.MethodPut, redURL, token, body)
-
-			// retry on 429 inside doJSON
-            success := false
-            for {
-                if err := doJSON[map[string]any](client, rreq, nil); err != nil {
-                    if strings.Contains(err.Error(), "rate limited") {
-                        continue
-                    }
-                    // log and stop retrying this event
-                    fmt.Fprintf(os.Stderr, "redact failed %s: %v\n", ev.EventID, err)
-                } else {
-                    success = true
-                }
-                break
-            }
-            if success {
-                redacted++
-            }
+			// the request is built per attempt, a body can only be read once
+			success := false
+			for attempt := 1; attempt <= maxAttempts; attempt++ {
+				body := strings.NewReader(`{"reason":"auto-retention"}`)
+				// CS API requires PUT for idempotent redact with txnId
+				rreq, _ := authReq(http.MethodPut, redURL, token, body)
+				err := doJSON[map[string]any](client, rreq, nil)
+				if err == nil {
+					success = true
+					break
+				}
+				// doJSON already waited for Retry-After
+				if strings.Contains(err.Error(), "rate limited") && attempt < maxAttempts {
+					continue
+				}
+				fmt.Fprintf(os.Stderr, "redact failed %s: %v\n", ev.EventID, err)
+				break
+			}
+			if success {
+				redacted++
+			}
 			if sleepMs > 0 {
 				time.Sleep(time.Duration(sleepMs) * time.Millisecond)
 			}

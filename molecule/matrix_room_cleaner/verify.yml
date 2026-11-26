@@ -31,6 +31,12 @@
       register: cleaner_binary
       failed_when: not (cleaner_binary.stat.exists and cleaner_binary.stat.executable)
 
+    - name: Check the cleaner binary runs and asks for its environment
+      ansible.builtin.command: /usr/local/bin/matrix_room_cleaner
+      register: cleaner_run
+      changed_when: false
+      failed_when: cleaner_run.rc != 2 or 'missing required env' not in cleaner_run.stderr
+
     - name: Check the environment file is readable by root only
       ansible.builtin.stat:
         path: /etc/matrix_room_cleaner.env
