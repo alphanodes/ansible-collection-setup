@@ -61,10 +61,10 @@ synapse_with_validation: true
 # Base URL the validation queries, nginx with TLS on a real host
 synapse_validation_url: 'https://{{ synapse_server_name }}'
 
-# Synapse takes the first X-Forwarded-For entry as the client IP. Directly on
-# the internet $remote_addr keeps clients from choosing their own IP (rate
-# limits, admin API). Behind another proxy $remote_addr is that proxy, use
-# $proxy_add_x_forwarded_for there and make sure the proxy sets the header.
+# Synapse takes the first X-Forwarded-For entry as the client IP, so
+# $remote_addr keeps clients from choosing their own IP (rate limits, admin
+# API). Behind another proxy list it in nginx_real_ip_from, $remote_addr is
+# then the client behind it.
 synapse_vhost_forwarded_for: $remote_addr
 synapse_vhost_for_zabbix: false
 synapse_redirects: []
