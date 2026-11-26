@@ -1,0 +1,75 @@
+---
+- name: Converge - Install Alloy
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+
+    - name: Install gnupg for GPG key handling
+      ansible.builtin.apt:
+        name:
+          - gnupg
+          - curl
+        state: present
+
+  vars:
+    alloy_loki_url: "https://loki.example.com"
+    alloy_basic_pass: testsecret123
+
+  roles:
+    - role: alphanodes.setup.alloy
+
+- name: Converge - Remove Alloy without other Grafana packages
+  hosts: all
+  become: true
+
+  vars:
+    alloy_remove: true
+
+  roles:
+    - role: alphanodes.setup.alloy
+
+  post_tasks:
+    - name: Check the Grafana apt repository is removed
+      ansible.builtin.stat:
+        path: /etc/apt/sources.list.d/grafana.sources
+      register: alloy_test_repo
+      failed_when: alloy_test_repo.stat.exists
+
+    - name: Check the Grafana apt key is removed
+      ansible.builtin.stat:
+        path: /etc/apt/keyrings/grafana.asc
+      register: alloy_test_key
+      failed_when: alloy_test_key.stat.exists
+
+- name: Converge - Install Alloy and Loki from the shared repository
+  hosts: all
+  become: true
+
+  vars:
+    alloy_loki_url: "https://loki.example.com"
+    alloy_basic_pass: testsecret123
+
+  roles:
+    - role: alphanodes.setup.alloy
+
+  post_tasks:
+    - name: Install loki package from the Grafana repository
+      ansible.builtin.apt:
+        name: loki
+        state: present
+
+- name: Converge - Remove Alloy while Loki still needs the repository
+  hosts: all
+  become: true
+
+  vars:
+    alloy_remove: true
+
+  roles:
+    - role: alphanodes.setup.alloy

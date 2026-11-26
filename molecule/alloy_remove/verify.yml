@@ -1,0 +1,52 @@
+---
+# The removal without other Grafana packages is checked in converge.yml,
+# this checks the final state: Alloy removed, Loki keeps the shared repository
+- name: Verify Alloy removal
+  hosts: all
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Check alloy service is not active
+      ansible.builtin.command: systemctl is-active alloy
+      register: alloy_service
+      changed_when: false
+      failed_when: alloy_service.rc == 0
+
+    - name: Check alloy package is removed
+      ansible.builtin.command: dpkg-query -W -f='${Status}' alloy
+      register: alloy_package
+      changed_when: false
+      failed_when: "'install ok installed' in alloy_package.stdout"
+
+    - name: Check alloy files and directories are removed
+      ansible.builtin.stat:
+        path: '{{ item }}'
+      register: alloy_paths
+      failed_when: alloy_paths.stat.exists
+      loop:
+        - /etc/alloy
+        - /var/lib/alloy
+
+    - name: Check alloy user is removed
+      ansible.builtin.command: id alloy
+      register: alloy_user
+      changed_when: false
+      failed_when: alloy_user.rc == 0
+
+    - name: Check alloy group is removed
+      ansible.builtin.command: getent group alloy
+      register: alloy_group
+      changed_when: false
+      failed_when: alloy_group.rc == 0
+
+    - name: Check the Grafana apt repository is kept for Loki
+      ansible.builtin.stat:
+        path: /etc/apt/sources.list.d/grafana.sources
+      register: grafana_repo
+      failed_when: not grafana_repo.stat.exists
+
+    - name: Check the Grafana apt key is kept for Loki
+      ansible.builtin.stat:
+        path: /etc/apt/keyrings/grafana.asc
+      register: grafana_key
+      failed_when: not grafana_key.stat.exists

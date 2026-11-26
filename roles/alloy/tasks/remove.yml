@@ -2,13 +2,48 @@
 
 - name: Remove alloy package
   ansible.builtin.apt:
-    name: alloy
+    name: '{{ alloy_packages }}'
     purge: true
     state: absent
 
-- name: Remove configuration
+# The alloy package ships no postrm, a purge keeps its user, group and data
+- name: Remove alloy files and directories
   ansible.builtin.file:
-    name: '{{ item }}'
+    path: '{{ item }}'
     state: absent
   loop:
     - /etc/alloy
+    - /var/lib/alloy
+
+- name: Remove alloy user
+  ansible.builtin.user:
+    name: alloy
+    state: absent
+
+- name: Remove alloy group
+  ansible.builtin.group:
+    name: alloy
+    state: absent
+
+- name: Gather installed packages
+  ansible.builtin.package_facts:
+    manager: apt
+
+# Grafana and Loki install from the same repository, keep it for them
+- name: Remove Grafana apt repository and key
+  when:
+    - "'grafana' not in ansible_facts.packages"
+    - "'loki' not in ansible_facts.packages"
+  block:
+    - name: Remove Grafana apt repository
+      ansible.builtin.deb822_repository:
+        name: grafana
+        state: absent
+
+    - name: Remove Grafana apt keys
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: absent
+      loop:
+        - '{{ alloy_apt_signed_by }}'
+        - /etc/apt/keyrings/grafana.gpg
