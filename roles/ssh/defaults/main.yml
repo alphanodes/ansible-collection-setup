@@ -28,8 +28,10 @@ ssh_server_authentication_methods: "{{ 'any' if ssh_server_password_authenticati
 # Time to log in, a connection without login keeps a MaxStartups slot that long
 ssh_server_login_grace_time: 30s
 
-# Public keys (one line each, as in authorized_keys) refused for every user,
-# also if an authorized_keys file the role does not manage contains them
+# Public keys refused for every user, also if an authorized_keys file the
+# role does not manage contains them. Plain "type base64 [comment]" lines
+# only, without authorized_keys options: sshd refuses every key if it cannot
+# parse a line, so the role checks the format.
 ssh_server_revoked_keys: []
 
 # Remove DH groups below this size (column 5 of /etc/ssh/moduli is the size
@@ -108,7 +110,8 @@ ssh_client_host_key_algorithms:
   - ecdsa-sha2-nistp384
   - ecdsa-sha2-nistp256
 
-# true to enable sftp configuration (required for ansible sftp usage)
+# true to enable sftp configuration (required for ansible sftp usage), false
+# sets /bin/false, the distribution sshd_config enables sftp-server otherwise
 ssh_server_sftp_enabled: true
 ssh_server_sftp_umask: '0027'
 # original debian subsystem for sftp:

@@ -16,6 +16,7 @@
         content: |
           # Ansible managed: this file is managed by AlphaNodes, all changes will be lost.
           Port 2222
+          Protocol 2
           PasswordAuthentication yes
           Subsystem sftp internal-sftp
       when: inventory_hostname == 'instance-legacy'
@@ -42,6 +43,14 @@
             insertbefore: BOF
             block: |
               TrustedUserCAKeys /etc/ssh/oslogin_trustedca.pub
+
+        # the default marker of blockinfile must not count as sshd_config of
+        # a former role version
+        - name: Add a block of blockinfile
+          ansible.builtin.blockinfile:
+            path: /etc/ssh/sshd_config
+            block: |
+              MaxSessions 10
 
         - name: Add per user includes of Google OS Login
           ansible.builtin.lineinfile:

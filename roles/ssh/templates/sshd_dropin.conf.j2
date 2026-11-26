@@ -61,10 +61,13 @@ ClientAliveCountMax {{ ssh_server_client_alive_count_max }}
 
 # Allow client to pass locale environment variables
 AcceptEnv LANG LC_*
-{% if ssh_server_sftp_enabled %}
 
+{% if ssh_server_sftp_enabled %}
 # Log sftp level file access (read/write/etc.) that would not be easily logged otherwise.
 Subsystem sftp {{ ssh_server_subsystem_sftp }}
+{% else %}
+# Disabled, the first value wins against sftp-server of sshd_config
+Subsystem sftp /bin/false
 {% endif %}
 {% if ssh_server_match_user or ssh_server_match_group %}
 

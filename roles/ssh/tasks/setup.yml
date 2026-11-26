@@ -35,16 +35,28 @@
   ansible.builtin.assert:
     that:
       - ssh_server_authentication_methods != 'publickey'
-        or item.rules is not search('(?im)^\\s*PasswordAuthentication\\s+yes')
-        or item.rules is search('(?im)^\\s*AuthenticationMethods\\s')
+        or item.rules is not search('(?im)^\\s*(PasswordAuthentication|KbdInteractiveAuthentication|ChallengeResponseAuthentication)[\\s=]+yes')
+        or item.rules is search('(?im)^\\s*AuthenticationMethods[\\s=]')
     fail_msg: >-
-      Match {{ item.user | default(item.group) }} sets PasswordAuthentication yes,
-      but AuthenticationMethods publickey still refuses passwords. Add
+      Match {{ item.user | default(item.group) }} allows passwords, but
+      AuthenticationMethods publickey still refuses them. Add
       "AuthenticationMethods any" to its rules.
     quiet: true
   loop: "{{ (ssh_server_match_user or []) + (ssh_server_match_group or []) }}"
   loop_control:
     label: "{{ item.user | default(item.group) }}"
+
+# sshd refuses every key if a line of RevokedKeys cannot be parsed, so only
+# plain public keys (no authorized_keys options) are allowed
+- name: Check revoked ssh keys
+  ansible.builtin.assert:
+    that:
+      - item is match('^(ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp(256|384|521)|sk-ssh-ed25519@openssh\\.com|sk-ecdsa-sha2-nistp256@openssh\\.com) [A-Za-z0-9+/]+={0,3}( .*)?$')
+    fail_msg: "Not a plain public key in ssh_server_revoked_keys: {{ item }}"
+    quiet: true
+  loop: "{{ ssh_server_revoked_keys }}"
+  loop_control:
+    label: "{{ item | truncate(40) }}"
 
 - name: Update revoked ssh keys
   ansible.builtin.template:
@@ -67,8 +79,13 @@
 # sshd_config of a former version of this role is replaced by the file of
 # the distribution, which includes sshd_config.d at the top. The drop-in is
 # written before, so a run that fails in between keeps a complete configuration.
+# Ansible marker plus "Protocol 2", which only the former template has (a
+# marker alone also matches blocks of blockinfile)
 - name: Check for sshd_config of a former role version
-  ansible.builtin.command: grep -qiE 'ansible managed|managed by ansible' /etc/ssh/sshd_config
+  ansible.builtin.command: >-
+    awk 'tolower($0) ~ /ansible managed|managed by ansible/ { marker = 1 }
+    $0 == "Protocol 2" { protocol = 1 }
+    END { exit !(marker && protocol) }' /etc/ssh/sshd_config
   register: ssh_legacy_sshd_config
   changed_when: false
   failed_when: ssh_legacy_sshd_config.rc > 1
@@ -82,6 +99,8 @@
     owner: root
     group: root
     mode: '0644'
+    # the Include path is absolute, so this checks it with all drop-ins
+    validate: sshd -t -f %s
   when: ssh_legacy_sshd_config.rc == 0
   notify: Restart ssh
 
@@ -93,6 +112,7 @@
     regexp: '^\s*Include\s+/etc/ssh/sshd_config\.d/\*\.conf\s*$'
     line: Include /etc/ssh/sshd_config.d/*.conf
     insertbefore: BOF
+    validate: sshd -t -f %s
   notify: Restart ssh
 
 # Port adds a listener for each line, cloud-init of new hosts sets it there
@@ -101,6 +121,7 @@
     path: /etc/ssh/sshd_config
     regexp: '^\s*Port\s'
     state: absent
+    validate: sshd -t -f %s
   notify: Restart ssh
 
 # The drop-in is validated on its own, a restart with an invalid combination

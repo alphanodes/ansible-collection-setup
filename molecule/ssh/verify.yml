@@ -73,6 +73,7 @@
           - "lines[0] == '#### BEGIN Google OS Login control section. ####'"
           - lines.index('Include /etc/ssh/sshd_config.d/*.conf') > 2
           - lines[-1] == 'Include /var/google-users.d/*'
+          - "'# BEGIN ANSIBLE MANAGED BLOCK' in lines"
           - "'trustedusercakeys /etc/ssh/oslogin_trustedca.pub' in sshd_root.stdout_lines"
       vars:
         lines: "{{ (sshd_config_raw.content | b64decode).splitlines() }}"
@@ -143,3 +144,15 @@
       register: revoked_login
       changed_when: false
       failed_when: revoked_login.rc == 0
+
+    # sshd also refuses all keys if it cannot parse revoked_keys
+    - name: Read the reason of the refused login
+      ansible.builtin.command: journalctl -u ssh --no-pager -o cat
+      register: revoked_log
+      changed_when: false
+
+    - name: Verify the key was refused as revoked
+      ansible.builtin.assert:
+        that:
+          - revoked_log.stdout is search('revoked by file /etc/ssh/revoked_keys')
+          - revoked_log.stdout is not search('Error checking authentication key')
