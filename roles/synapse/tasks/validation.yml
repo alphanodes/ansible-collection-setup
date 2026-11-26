@@ -2,6 +2,10 @@
 
 # Use this for a federation test: https://federationtester.matrix.org/
 
+# nginx_mono restarts nginx in a handler, the new vhost only answers after it
+- name: Apply pending handlers before the validation
+  ansible.builtin.meta: flush_handlers
+
 - name: Get the client versions
   ansible.builtin.uri:
     url: '{{ synapse_validation_url }}/_matrix/client/versions'
