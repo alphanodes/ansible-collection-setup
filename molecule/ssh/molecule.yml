@@ -4,7 +4,17 @@ dependency:
 driver:
   name: docker
 platforms:
-  - name: instance
+  # sshd_config of a former role version, replaced by the distribution file
+  - name: instance-legacy
+    image: "geerlingguy/docker-${MOLECULE_DISTRO:-debian13}-ansible:latest"
+    command: ${MOLECULE_DOCKER_COMMAND:-""}
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    privileged: true
+    pre_build_image: true
+    cgroupns_mode: host
+  # distribution sshd_config changed by Google OS Login and cloud-init
+  - name: instance-google
     image: "geerlingguy/docker-${MOLECULE_DISTRO:-debian13}-ansible:latest"
     command: ${MOLECULE_DOCKER_COMMAND:-""}
     volumes:

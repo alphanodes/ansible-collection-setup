@@ -15,6 +15,10 @@ Available variables can be found in [defaults/main.yml](defaults/main.yml)
         - alphanodes.setup.ssh
 ```
 
+## sshd configuration
+
+The role keeps `/etc/ssh/sshd_config` of the distribution and writes its settings to `/etc/ssh/sshd_config.d/10-alphanodes.conf`. A `sshd_config` written by former versions of this role is replaced by the distribution file once. Otherwise the role only makes sure that `sshd_config` includes `sshd_config.d` and sets no `Port`, so changes of others (e.g. Google OS Login, which adds lines at the top and the bottom on each boot) stay. sshd uses the first value it reads, so the drop-in wins against the rest of `sshd_config` and later drop-ins, but not against lines above the `Include`.
+
 ## Example Playbook with key management
 
 ```yaml

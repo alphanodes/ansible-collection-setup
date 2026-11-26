@@ -5,16 +5,6 @@
     name: '{{ ssh_server_packages }}'
     state: present
 
-- name: Get openssh-version
-  ansible.builtin.command: ssh -V
-  register: sshd_version_raw
-  changed_when: false
-  check_mode: false
-
-- name: Parse openssh-version
-  ansible.builtin.set_fact:
-    sshd_version: "{{ sshd_version_raw.stderr | regex_replace('.*_([0-9]*.[0-9]).*', '\\1') }}"
-
 - name: Remove ssh service systemd-socket file
   ansible.builtin.file:
     path: /etc/systemd/system/ssh.service.d/00-socket.conf
@@ -41,25 +31,100 @@
     state: started
     enabled: true
 
-- name: Set kex according to openssh-version if openssh >= 8.5
-  ansible.builtin.set_fact:
-    ssh_kex: '{{ ssh_kex_85 }}'
-  when: sshd_version is version('8.5', '>=')
+- name: Check Match rules that allow passwords
+  ansible.builtin.assert:
+    that:
+      - ssh_server_authentication_methods != 'publickey'
+        or item.rules is not search('(?im)^\\s*PasswordAuthentication\\s+yes')
+        or item.rules is search('(?im)^\\s*AuthenticationMethods\\s')
+    fail_msg: >-
+      Match {{ item.user | default(item.group) }} sets PasswordAuthentication yes,
+      but AuthenticationMethods publickey still refuses passwords. Add
+      "AuthenticationMethods any" to its rules.
+    quiet: true
+  loop: "{{ (ssh_server_match_user or []) + (ssh_server_match_group or []) }}"
+  loop_control:
+    label: "{{ item.user | default(item.group) }}"
 
-- name: Set kex according to openssh-version if openssh < 8.5
-  ansible.builtin.set_fact:
-    ssh_kex: '{{ ssh_kex_80 }}'
-  when: sshd_version is version('8.5', '<')
-
+- name: Update revoked ssh keys
+  ansible.builtin.template:
+    src: revoked_keys.j2
+    dest: /etc/ssh/revoked_keys
+    owner: root
+    group: root
+    mode: '0644'
 
 - name: Update ssh server configuration
   ansible.builtin.template:
-    src: sshd_config.j2
-    dest: /etc/ssh/sshd_config
+    src: sshd_dropin.conf.j2
+    dest: '{{ ssh_server_config_file }}'
     owner: root
     group: root
     mode: '0600'
-    validate: 'sshd -T -f %s -C user=root'
+    validate: sshd -T -f %s -C user=root,host=localhost,addr=127.0.0.1,lport={{ ssh_server_port }}
+  notify: Restart ssh
+
+# sshd_config of a former version of this role is replaced by the file of
+# the distribution, which includes sshd_config.d at the top. The drop-in is
+# written before, so a run that fails in between keeps a complete configuration.
+- name: Check for sshd_config of a former role version
+  ansible.builtin.command: grep -qiE 'ansible managed|managed by ansible' /etc/ssh/sshd_config
+  register: ssh_legacy_sshd_config
+  changed_when: false
+  failed_when: ssh_legacy_sshd_config.rc > 1
+  check_mode: false
+
+- name: Restore sshd_config of the distribution
+  ansible.builtin.copy:
+    src: /usr/share/openssh/sshd_config
+    dest: /etc/ssh/sshd_config
+    remote_src: true
+    owner: root
+    group: root
+    mode: '0644'
+  when: ssh_legacy_sshd_config.rc == 0
+  notify: Restart ssh
+
+# Others (e.g. Google OS Login) add lines above it, so an existing Include
+# stays where it is
+- name: Include sshd_config.d in sshd_config
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^\s*Include\s+/etc/ssh/sshd_config\.d/\*\.conf\s*$'
+    line: Include /etc/ssh/sshd_config.d/*.conf
+    insertbefore: BOF
+  notify: Restart ssh
+
+# Port adds a listener for each line, cloud-init of new hosts sets it there
+- name: Remove Port from sshd_config, the drop-in sets it
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^\s*Port\s'
+    state: absent
+  notify: Restart ssh
+
+# The drop-in is validated on its own, a restart with an invalid combination
+# with sshd_config or other drop-ins would leave sshd stopped
+- name: Validate complete ssh server configuration
+  ansible.builtin.command: sshd -t
+  changed_when: false
+
+- name: Check for small DH groups
+  ansible.builtin.command: awk '!/^#/ && $5 < {{ ssh_server_moduli_minimum }}' /etc/ssh/moduli
+  register: ssh_small_moduli
+  changed_when: false
+  check_mode: false
+  when: ssh_server_moduli_minimum | int > 0
+
+- name: Remove small DH groups
+  ansible.builtin.shell: >-
+    awk '/^#/ || $5 >= {{ ssh_server_moduli_minimum }}' /etc/ssh/moduli > /etc/ssh/moduli.new
+    && test -s /etc/ssh/moduli.new
+    && mv /etc/ssh/moduli.new /etc/ssh/moduli
+  changed_when: true
+  when:
+    - ssh_server_moduli_minimum | int > 0
+    - ssh_small_moduli.stdout | length > 0
   notify: Restart ssh
 
 - name: Remove debian dist files, if available

@@ -1,0 +1,145 @@
+---
+- name: Verify
+  hosts: all
+
+  vars:
+    connection_spec: host=localhost,addr=127.0.0.1,lport=2222
+
+  tasks:
+    - name: Read effective sshd configuration
+      ansible.builtin.command: sshd -T -C user=root,{{ connection_spec }}
+      register: sshd_root
+      changed_when: false
+
+    - name: Read effective sshd configuration of the Match user
+      ansible.builtin.command: sshd -T -C user=app,{{ connection_spec }}
+      register: sshd_app
+      changed_when: false
+
+    - name: Verify effective sshd configuration
+      ansible.builtin.assert:
+        that:
+          # one listener, a Port line in sshd_config would add a second one
+          - sshd_root.stdout_lines | select('match', '^port ') | list == ['port 2222']
+          - "'authenticationmethods publickey' in sshd_root.stdout_lines"
+          # 50-cloud-init.conf on instance-google sets yes, the drop-in wins
+          - "'passwordauthentication no' in sshd_root.stdout_lines"
+          - "'kbdinteractiveauthentication no' in sshd_root.stdout_lines"
+          - "'logingracetime 30' in sshd_root.stdout_lines"
+          - "'revokedkeys /etc/ssh/revoked_keys' in sshd_root.stdout_lines"
+          - sshd_root.stdout is search('(?m)^kexalgorithms mlkem768x25519-sha256,sntrup761x25519-sha512@openssh.com,')
+          - "'passwordauthentication yes' in sshd_app.stdout_lines"
+          - "'authenticationmethods any' in sshd_app.stdout_lines"
+
+    - name: Stat drop-in
+      ansible.builtin.stat:
+        path: /etc/ssh/sshd_config.d/10-alphanodes.conf
+      register: dropin
+
+    - name: Read sshd_config
+      ansible.builtin.slurp:
+        src: /etc/ssh/sshd_config
+      register: sshd_config_raw
+
+    - name: Stat sshd_config of the distribution
+      ansible.builtin.stat:
+        path: /usr/share/openssh/sshd_config
+      register: dist_sshd_config
+
+    - name: Stat sshd_config
+      ansible.builtin.stat:
+        path: /etc/ssh/sshd_config
+      register: sshd_config_stat
+
+    - name: Verify configuration files
+      ansible.builtin.assert:
+        that:
+          - dropin.stat.exists
+          - dropin.stat.mode == '0600'
+          - sshd_config_lines is not search('(?m)^\s*Port\s')
+          - sshd_config_lines is search('(?m)^Include /etc/ssh/sshd_config\.d/\*\.conf$')
+      vars:
+        sshd_config_lines: "{{ sshd_config_raw.content | b64decode }}"
+
+    - name: Verify sshd_config of a former role version was replaced
+      ansible.builtin.assert:
+        that:
+          - sshd_config_stat.stat.checksum == dist_sshd_config.stat.checksum
+      when: inventory_hostname == 'instance-legacy'
+
+    - name: Verify lines of Google OS Login stay above the Include
+      ansible.builtin.assert:
+        that:
+          - "lines[0] == '#### BEGIN Google OS Login control section. ####'"
+          - lines.index('Include /etc/ssh/sshd_config.d/*.conf') > 2
+          - lines[-1] == 'Include /var/google-users.d/*'
+          - "'trustedusercakeys /etc/ssh/oslogin_trustedca.pub' in sshd_root.stdout_lines"
+      vars:
+        lines: "{{ (sshd_config_raw.content | b64decode).splitlines() }}"
+      when: inventory_hostname == 'instance-google'
+
+    - name: Check for small DH groups
+      ansible.builtin.command: awk '!/^#/ && $5 < 3071' /etc/ssh/moduli
+      register: small_moduli
+      changed_when: false
+
+    - name: Check for remaining DH groups
+      ansible.builtin.command: awk '!/^#/ && $5 >= 3071' /etc/ssh/moduli
+      register: large_moduli
+      changed_when: false
+
+    - name: Verify moduli
+      ansible.builtin.assert:
+        that:
+          - small_moduli.stdout_lines | length == 0
+          - large_moduli.stdout_lines | length > 0
+
+    - name: Create test key
+      ansible.builtin.command: ssh-keygen -q -t ed25519 -N '' -f /root/test_key
+      args:
+        creates: /root/test_key
+
+    - name: Read test key
+      ansible.builtin.slurp:
+        src: /root/test_key.pub
+      register: test_key
+
+    - name: Allow test key for root
+      ansible.builtin.lineinfile:
+        path: /root/.ssh/authorized_keys
+        line: "{{ test_key.content | b64decode | trim }}"
+        create: true
+        mode: '0600'
+
+    - name: Log in with test key
+      ansible.builtin.command: >-
+        ssh -p 2222 -i /root/test_key -o BatchMode=yes -o StrictHostKeyChecking=no
+        -o UserKnownHostsFile=/dev/null root@127.0.0.1 true
+      changed_when: false
+
+    - name: Read authentication methods the running sshd offers
+      ansible.builtin.command: >-
+        ssh -p 2222 -o BatchMode=yes -o StrictHostKeyChecking=no
+        -o UserKnownHostsFile=/dev/null -o PreferredAuthentications=none nobody@127.0.0.1 true
+      register: offered_methods
+      changed_when: false
+      failed_when: offered_methods.rc == 0
+
+    - name: Verify that the running sshd offers only public keys
+      ansible.builtin.assert:
+        that:
+          - offered_methods.stderr is search('Permission denied \(publickey\)')
+
+    # with the header of revoked_keys.j2, which sshd must skip
+    - name: Revoke test key
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/revoked_keys
+        line: "{{ test_key.content | b64decode | trim }}"
+
+    - name: Log in with revoked test key
+      ansible.builtin.command: >-
+        ssh -p 2222 -i /root/test_key -o BatchMode=yes -o StrictHostKeyChecking=no
+        -o UserKnownHostsFile=/dev/null root@127.0.0.1 true
+      register: revoked_login
+      changed_when: false
+      failed_when: revoked_login.rc == 0

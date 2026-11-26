@@ -4,16 +4,40 @@
 ssh_server_packages:
   - openssh-server
 
-# Include /etc/ssh/sshd_config.d/*.conf, which can overwrite settings of this role
-ssh_server_include_sshd_config_d: false
+# The role keeps /etc/ssh/sshd_config of the distribution (it replaces a
+# sshd_config of former versions of this role once) and writes its settings
+# to this drop-in, which the Include at the top of sshd_config reads. sshd
+# uses the first value it reads, so the drop-in wins against the rest of
+# sshd_config and against drop-ins sorted after it (e.g. 50-cloud-init.conf).
+# Lines above the Include line (e.g. Google OS Login) win against it.
+ssh_server_config_file: /etc/ssh/sshd_config.d/10-alphanodes.conf
 
 ssh_server_port: 22
 ssh_server_password_authentication: false
+# KbdInteractiveAuthentication, with PAM another way to log in with a password
 ssh_server_challenge_response_authentication: false
 ssh_server_use_pam: true
 
-# see https://manpages.debian.org/testing/manpages-de/sshd_config.5.de.html#LogLevel
-# default: VERBOSE
+# Only these methods are allowed, also if a line above the Include of
+# sshd_config enables PasswordAuthentication or KbdInteractiveAuthentication
+# (later files lose against the drop-in anyway). A Match block that allows
+# passwords needs its own AuthenticationMethods (e.g. any), otherwise the
+# role fails.
+ssh_server_authentication_methods: "{{ 'any' if ssh_server_password_authentication | bool or ssh_server_challenge_response_authentication | bool else 'publickey' }}"
+
+# Time to log in, a connection without login keeps a MaxStartups slot that long
+ssh_server_login_grace_time: 30s
+
+# Public keys (one line each, as in authorized_keys) refused for every user,
+# also if an authorized_keys file the role does not manage contains them
+ssh_server_revoked_keys: []
+
+# Remove DH groups below this size (column 5 of /etc/ssh/moduli is the size
+# in bits minus one) for diffie-hellman-group-exchange-sha256, 0 keeps all
+ssh_server_moduli_minimum: 3071
+
+# INFO logs the fingerprint of the key for each login, VERBOSE adds failed keys
+# see https://manpages.debian.org/trixie/openssh-server/sshd_config.5.en.html#LogLevel
 ssh_server_log_level: INFO
 
 ssh_server_allow_tcp_forwarding: false
@@ -40,7 +64,9 @@ ssh_server_hostkeys:
   - /etc/ssh/ssh_host_rsa_key
   - /etc/ssh/ssh_host_ecdsa_key
 
-# Match blocks: keywords below a matching line override the global sshd settings
+# Match blocks: keywords below a matching line override the global sshd
+# settings. Rules with "PasswordAuthentication yes" also need
+# "AuthenticationMethods any" if ssh_server_authentication_methods is publickey.
 ssh_server_match_group: false
 ssh_server_match_user: false
 

@@ -4,6 +4,12 @@
 
   vars:
     ssh_server_port: 2222
+    # sftp access with password, as a Match block allows it
+    ssh_server_match_user:
+      - user: app
+        rules: |
+          PasswordAuthentication yes
+          AuthenticationMethods any
     ssh_users:
       - name: root
       # user without access keys, its .ssh directory is created by the role
@@ -25,10 +31,6 @@
     - role: alphanodes.setup.ssh
 
   post_tasks:
-    - name: Test ssh configuration
-      ansible.builtin.command: sshd -T
-      changed_when: false
-
     - name: Stat .ssh directory of user without access keys
       ansible.builtin.stat:
         path: /srv/app/.ssh/known_hosts

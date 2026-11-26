@@ -1,0 +1,60 @@
+---
+- name: Prepare
+  hosts: all
+
+  tasks:
+    - name: Install openssh-server
+      ansible.builtin.apt:
+        name: openssh-server
+        update_cache: true
+        cache_valid_time: 600
+
+    - name: Write sshd_config of a former role version
+      ansible.builtin.copy:
+        dest: /etc/ssh/sshd_config
+        mode: '0600'
+        content: |
+          # Ansible managed: this file is managed by AlphaNodes, all changes will be lost.
+          Port 2222
+          PasswordAuthentication yes
+          Subsystem sftp internal-sftp
+      when: inventory_hostname == 'instance-legacy'
+
+    - name: Simulate Google OS Login and cloud-init
+      when: inventory_hostname == 'instance-google'
+      block:
+        - name: Create directories of Google OS Login
+          ansible.builtin.file:
+            path: /var/google-users.d
+            state: directory
+            mode: '0750'
+
+        - name: Create CA file of Google OS Login
+          ansible.builtin.copy:
+            dest: /etc/ssh/oslogin_trustedca.pub
+            content: ''
+            mode: '0644'
+
+        - name: Add Google OS Login block above all lines
+          ansible.builtin.blockinfile:
+            path: /etc/ssh/sshd_config
+            marker: '#### {mark} Google OS Login control section. ####'
+            insertbefore: BOF
+            block: |
+              TrustedUserCAKeys /etc/ssh/oslogin_trustedca.pub
+
+        - name: Add per user includes of Google OS Login
+          ansible.builtin.lineinfile:
+            path: /etc/ssh/sshd_config
+            line: Include /var/google-users.d/*
+
+        # same as runcmd of cloud-init for new hosts
+        - name: Set port like cloud-init
+          ansible.builtin.command: sed -i -e '/^#Port 22/s/^.*$/Port 2222/' /etc/ssh/sshd_config
+          changed_when: true
+
+        - name: Add drop-in of cloud-init
+          ansible.builtin.copy:
+            dest: /etc/ssh/sshd_config.d/50-cloud-init.conf
+            content: "PasswordAuthentication yes\n"
+            mode: '0600'
