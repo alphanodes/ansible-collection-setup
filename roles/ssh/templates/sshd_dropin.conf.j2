@@ -1,5 +1,4 @@
 {{ managed_by_ansible | comment }}
-#
 # Included at the top of /etc/ssh/sshd_config. sshd uses the first value it
 # reads for most keywords, so these settings win against the rest of
 # sshd_config and against drop-ins sorted after this file.
@@ -12,7 +11,9 @@ HostKey {{ key }}
 
 {% if ssh_max_secure %}
 # see https://infosec.mozilla.org/guidelines/openssh#modern-openssh-67
-{{ "HostKeyAlgorithms " ~ ssh_host_key_algorithms | join(',') if ssh_host_key_algorithms else "HostKeyAlgorithms" | comment }}
+{% if ssh_host_key_algorithms %}
+HostKeyAlgorithms {{ ssh_host_key_algorithms | join(',') }}
+{% endif %}
 {{ 'Ciphers ' ~ ssh_ciphers | join(',') }}
 {{ 'MACs ' ~ ssh_macs | join(',') }}
 {{ 'KexAlgorithms ' ~ ssh_kex | join(',') }}
