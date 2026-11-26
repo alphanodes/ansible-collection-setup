@@ -31,10 +31,30 @@
   vars:
     alloy_remove: true
 
+  pre_tasks:
+    # A plain purge, as the role did before, leaves the enablement link behind
+    - name: Purge alloy without disabling it first
+      ansible.builtin.apt:
+        name: alloy
+        purge: true
+        state: absent
+
+    - name: Check the dangling enablement link is left behind
+      ansible.builtin.stat:
+        path: /etc/systemd/system/multi-user.target.wants/alloy.service
+      register: alloy_test_link
+      failed_when: not alloy_test_link.stat.islnk | default(false)
+
   roles:
     - role: alphanodes.setup.alloy
 
   post_tasks:
+    - name: Check systemd no longer knows the alloy unit
+      ansible.builtin.command: systemctl show alloy.service -p LoadState --value
+      register: alloy_test_load_state
+      changed_when: false
+      failed_when: alloy_test_load_state.stdout != 'not-found'
+
     - name: Check the Grafana apt repository is removed
       ansible.builtin.stat:
         path: /etc/apt/sources.list.d/grafana.sources

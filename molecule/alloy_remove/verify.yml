@@ -12,6 +12,21 @@
       changed_when: false
       failed_when: alloy_service.rc == 0
 
+    - name: Check systemd no longer knows the alloy unit
+      ansible.builtin.command: systemctl show alloy.service -p LoadState --value
+      register: alloy_load_state
+      changed_when: false
+      failed_when: alloy_load_state.stdout != 'not-found'
+
+    - name: Check no alloy unit links are left
+      ansible.builtin.find:
+        paths: /etc/systemd/system
+        patterns: alloy.service
+        file_type: link
+        recurse: true
+      register: alloy_links
+      failed_when: alloy_links.matched > 0
+
     - name: Check alloy package is removed
       ansible.builtin.command: dpkg-query -W -f='${Status}' alloy
       register: alloy_package
