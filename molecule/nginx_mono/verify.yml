@@ -1014,6 +1014,50 @@
       changed_when: false
       failed_when: client_ip_location.rc != 0
 
+    # nginx_real_ip_from: the address from Client-IP of a trusted proxy reaches
+    # the backend as X-Forwarded-For, an untrusted client can not choose its own
+    - name: Test Client-IP of a trusted proxy is passed on as X-Forwarded-For
+      ansible.builtin.command: >
+        curl -s -H 'Host: forwarded.local' -H 'Client-IP: 192.0.2.10'
+        http://127.0.0.1/xff
+      register: real_ip_trusted
+      changed_when: false
+      failed_when: real_ip_trusted.stdout != 'xff=[192.0.2.10]'
+
+    - name: Test Client-IP of an untrusted client is ignored
+      ansible.builtin.command: >
+        curl -s --interface 192.0.2.1 -H 'Host: forwarded.local' -H 'Client-IP: 192.0.2.10'
+        http://127.0.0.1/xff
+      register: real_ip_untrusted
+      changed_when: false
+      failed_when: real_ip_untrusted.stdout != 'xff=[192.0.2.1]'
+
+    # allow 127.0.0.1 alone would let it in, as $remote_addr is 127.0.0.1 now
+    - name: Test a client behind a trusted proxy can not reach monitoring as 127.0.0.1
+      ansible.builtin.command: >
+        curl -s -o /dev/null -w '%{http_code}' --interface 192.0.2.2
+        -H 'Host: localhost' -H 'Client-IP: 127.0.0.1' http://127.0.0.1/basic_status
+      register: real_ip_monitoring_spoof
+      changed_when: false
+      failed_when: real_ip_monitoring_spoof.stdout != '403'
+
+    - name: Test monitoring still answers the host itself
+      ansible.builtin.command: >
+        curl -s -o /dev/null -w '%{http_code}' -H 'Host: localhost' http://127.0.0.1/basic_status
+      register: real_ip_monitoring_local
+      changed_when: false
+      failed_when: real_ip_monitoring_local.stdout != '200'
+
+    - name: Verify nginx.conf trusts the configured proxy
+      ansible.builtin.shell: |
+        set -o pipefail
+        grep -qF 'set_real_ip_from 127.0.0.1;' /etc/nginx/nginx.conf
+        grep -qF 'real_ip_header Client-IP;' /etc/nginx/nginx.conf
+      args:
+        executable: /bin/bash
+      changed_when: false
+
+    # Client-IP turns the address into a public one, the proxy stays trusted
     - name: Test Forwarded header is still passed on from a local proxy together with Client-IP
       ansible.builtin.command: >
         curl -s -H 'Host: forwarded.local' -H 'Forwarded: for=192.0.2.10' -H 'Client-IP: 192.0.2.11'

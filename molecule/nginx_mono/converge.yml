@@ -48,17 +48,21 @@
         state: directory
         mode: '0755'
 
-    # Requests from this address count as direct clients (not a trusted proxy)
-    - name: Add an untrusted address to the loopback interface
+    # 192.0.2.1 counts as a direct client (not a trusted proxy), 192.0.2.2 as
+    # a trusted proxy in nginx_real_ip_from that is not the host itself
+    - name: Add test addresses to the loopback interface
       ansible.builtin.shell: |
         set -o pipefail
-        ip -4 addr show dev lo | grep -qF 192.0.2.1/32 && exit 0
-        ip addr add 192.0.2.1/32 dev lo
+        ip -4 addr show dev lo | grep -qF {{ item }}/32 && exit 0
+        ip addr add {{ item }}/32 dev lo
         echo added
       args:
         executable: /bin/bash
-      register: forwarded_untrusted_ip
-      changed_when: "'added' in forwarded_untrusted_ip.stdout"
+      register: forwarded_test_ip
+      changed_when: "'added' in forwarded_test_ip.stdout"
+      loop:
+        - 192.0.2.1
+        - 192.0.2.2
 
     - name: Create Forwarded echo backend
       ansible.builtin.copy:
@@ -72,11 +76,20 @@
             location = /client-ip {
               return 200 "client_ip=[$http_client_ip]";
             }
+            location = /xff {
+              return 200 "xff=[$http_x_forwarded_for]";
+            }
           }
         dest: /etc/nginx/conf.d/zz_forwarded_echo.conf
         mode: '0644'
 
   vars:
+    # The loopback address is the upstream proxy that only sends Client-IP
+    nginx_real_ip_from:
+      - 127.0.0.1
+      - 192.0.2.2
+    nginx_real_ip_header: Client-IP
+
     # nodejs configuration (fix for Docker container)
     nodejs_install_npm_user: root
     npm_config_prefix: /root/.npm-global

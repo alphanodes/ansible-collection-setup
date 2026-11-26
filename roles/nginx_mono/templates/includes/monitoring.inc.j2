@@ -7,6 +7,12 @@ server {
 {% endif %}
   server_name localhost;
 
+  # allow 127.0.0.1 below checks $remote_addr, which a client behind a proxy
+  # in nginx_real_ip_from can set
+  if ($local_connection = 0) {
+    return 403;
+  }
+
   location = /basic_status {
     access_log off;
     stub_status on;
