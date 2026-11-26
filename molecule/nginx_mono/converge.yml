@@ -372,7 +372,7 @@
           vhost_for_zabbix: false
           letsencrypt: false
 
-    # Test 14: Vhost mode with proxy_pass and vhost_users but NO auth_basic_realm (like Grafana)
+    # Test 14: Vhost mode with proxy_pass and vhost_users but NO auth_basic_realm (proxy behind basic auth)
     # When a normal vhost has proxy_pass and vhost_users defined (but no auth_basic_realm),
     # auth_basic should be set at location level in proxy.inc.j2 with default realm.
     - role: alphanodes.setup.nginx_mono

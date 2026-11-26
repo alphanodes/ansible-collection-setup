@@ -770,7 +770,7 @@
 
     # proxy_auth_test tests (Test 14)
     # Verifies that vhost mode with proxy_pass and vhost_users (but NO auth_basic_realm)
-    # still has auth_basic in proxy location with default realm (like Grafana pattern)
+    # still has auth_basic in proxy location with default realm (proxy behind basic auth)
     - name: Check if proxy_auth_test vhost exists
       ansible.builtin.stat:
         path: /etc/nginx/sites-available/proxy_auth_test.conf
@@ -932,7 +932,7 @@
           - "htpasswd file exists: {{ 'OK' if htpasswd_only_file.stat.exists else 'FAILED' }}"
           - "NO auth_basic at server level: {{ 'OK' if htpasswd_only_no_auth.rc == 0 else 'FAILED' }}"
           - "NO auth_basic_user_file at server level: {{ 'OK' if htpasswd_only_no_userfile.rc == 0 else 'FAILED' }}"
-          - "=== proxy_auth (Grafana pattern) Tests ==="
+          - "=== proxy_auth (proxy behind basic auth) Tests ==="
           - "proxy_auth vhost exists: {{ 'OK' if proxy_auth_vhost.stat.exists else 'FAILED' }}"
           - "proxy_auth htpasswd exists: {{ 'OK' if proxy_auth_htpasswd.stat.exists else 'FAILED' }}"
           - "proxy_auth has auth_basic: {{ 'OK' if proxy_auth_has_auth.rc == 0 else 'FAILED' }}"
