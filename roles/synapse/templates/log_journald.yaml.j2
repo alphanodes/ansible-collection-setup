@@ -1,0 +1,23 @@
+# {{ ansible_managed }}
+# Logs to stdout, journald keeps them: journalctl -u {{ synapse_service_name }}
+version: 1
+
+formatters:
+  precise:
+    format: '%(name)s - %(lineno)d - %(levelname)s - %(request)s - %(message)s'
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    formatter: precise
+
+loggers:
+  # logs every SQL statement on DEBUG
+  synapse.storage.SQL:
+    level: WARNING
+
+root:
+  level: {{ synapse_log_level }}
+  handlers: [console]
+
+disable_existing_loggers: false

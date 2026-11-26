@@ -1,0 +1,18 @@
+---
+
+- name: Remove matrix room cleaner timer
+  ansible.builtin.include_role:
+    name: alphanodes.setup.systemd_timer
+  vars:
+    timers:
+      matrix_room_cleaner:
+        state: absent
+
+- name: Remove cleaner binary and source
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ matrix_room_cleaner_bin }}"
+    - "{{ matrix_room_cleaner_src_dir }}"
+    - "{{ matrix_room_cleaner_env_file }}"

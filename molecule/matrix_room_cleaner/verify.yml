@@ -25,13 +25,30 @@
           - cleaner_timer_unit.stat.exists
         fail_msg: "matrix-room-cleaner units are missing"
 
-    - name: Validate Environment variables in service unit
+    - name: Check the cleaner binary was built
+      ansible.builtin.stat:
+        path: /usr/local/bin/matrix_room_cleaner
+      register: cleaner_binary
+      failed_when: not (cleaner_binary.stat.exists and cleaner_binary.stat.executable)
+
+    - name: Check the environment file is readable by root only
+      ansible.builtin.stat:
+        path: /etc/matrix_room_cleaner.env
+      register: cleaner_env_file
+      failed_when: >-
+        not cleaner_env_file.stat.exists
+        or cleaner_env_file.stat.mode != '0600'
+        or cleaner_env_file.stat.pw_name != 'root'
+
+    - name: Validate the environment file and that the unit only references it
       ansible.builtin.shell: |
         set -euo pipefail
-        grep -q 'Environment="MATRIX_BASE=https://dendrite.local"' "{{ service_unit }}"
-        grep -q 'Environment="MATRIX_TOKEN=TEST_TOKEN"' "{{ service_unit }}"
-        grep -q 'Environment="ROOM_ID=!room:example.org"' "{{ service_unit }}"
-        grep -q 'Environment="MAX_AGE_DAYS=7"' "{{ service_unit }}"
+        grep -qx 'MATRIX_BASE=https://matrix.example.org' /etc/matrix_room_cleaner.env
+        grep -qx 'MATRIX_TOKEN=TEST_TOKEN' /etc/matrix_room_cleaner.env
+        grep -qx 'ROOM_ID=!room:example.org' /etc/matrix_room_cleaner.env
+        grep -qx 'MAX_AGE_DAYS=7' /etc/matrix_room_cleaner.env
+        grep -qx 'EnvironmentFile=/etc/matrix_room_cleaner.env' "{{ service_unit }}"
+        ! grep -q 'TEST_TOKEN' "{{ service_unit }}"
       args:
         executable: /bin/bash
       register: env_check

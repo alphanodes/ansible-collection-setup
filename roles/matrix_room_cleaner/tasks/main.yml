@@ -1,0 +1,26 @@
+---
+
+- name: Ensure the matrix room cleaner is configured
+  ansible.builtin.assert:
+    that:
+      - matrix_room_cleaner_base | length > 0
+      - matrix_room_cleaner_token | length > 0
+      - matrix_room_cleaner_room_id | length > 0
+    fail_msg: matrix_room_cleaner_base, matrix_room_cleaner_token and matrix_room_cleaner_room_id are required
+    quiet: true
+  when: not matrix_room_cleaner_remove | bool
+  tags:
+    - matrix_room_cleaner
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  when: not matrix_room_cleaner_remove | bool
+  tags:
+    - matrix_room_cleaner
+
+- name: Include remove tasks
+  ansible.builtin.include_tasks: remove.yml
+  when: matrix_room_cleaner_remove | bool
+  tags:
+    - matrix_room_cleaner
+    - remove

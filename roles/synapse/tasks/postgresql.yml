@@ -1,0 +1,29 @@
+---
+
+- name: Include postgresql role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.postgresql
+
+- name: Create synapse postgresql database user
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_user:
+    login_port: '{{ synapse_db_port }}'
+    name: '{{ synapse_db_user }}'
+    password: '{{ synapse_db_password }}'
+    role_attr_flags: NOSUPERUSER,NOCREATEDB,NOCREATEROLE,NOREPLICATION
+  no_log: '{{ hide_sensitive_data }}'
+
+# Synapse refuses to start on a database without C collation and ctype
+- name: Create synapse postgresql database
+  become_user: postgres
+  become: true
+  community.postgresql.postgresql_db:
+    login_port: '{{ synapse_db_port }}'
+    name: '{{ synapse_db_name }}'
+    owner: '{{ synapse_db_user }}'
+    encoding: UTF8
+    lc_collate: C
+    lc_ctype: C
+    template: template0
+    state: present

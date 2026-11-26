@@ -1,0 +1,109 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  become: true
+  vars:
+    synapse_test_host: synapse.local
+    synapse_test_user: moleculetest
+    synapse_test_password: molecule-test-password
+
+  tasks:
+    - name: Check Synapse is running
+      ansible.builtin.command: systemctl is-active matrix-synapse
+      register: synapse_active
+      changed_when: false
+      failed_when: synapse_active.stdout != 'active'
+
+    - name: Check nginx configuration syntax
+      ansible.builtin.command: nginx -t
+      changed_when: false
+
+    - name: Check Synapse listens on loopback only
+      ansible.builtin.shell: |
+        set -o pipefail
+        ss -ltnH 'sport = :8008' | awk '{print $4}'
+      args:
+        executable: /bin/bash
+      register: synapse_listen
+      changed_when: false
+      failed_when: synapse_listen.stdout_lines != ['127.0.0.1:8008']
+
+    - name: Check the database uses C collation
+      become: true
+      become_user: postgres
+      ansible.builtin.command: psql -Atc "SELECT datcollate || '/' || datctype FROM pg_database WHERE datname = 'synapse'"
+      register: synapse_db_locale
+      changed_when: false
+      failed_when: synapse_db_locale.stdout != 'C/C'
+
+    - name: Get the client versions through nginx
+      ansible.builtin.uri:
+        url: http://127.0.0.1/_matrix/client/versions
+        headers:
+          Host: '{{ synapse_test_host }}'
+        return_content: true
+      register: synapse_versions
+      failed_when: not (synapse_versions.json.unstable_features['org.matrix.simplified_msc3575'] | default(false))
+
+    - name: Get the client well-known through nginx
+      ansible.builtin.uri:
+        url: http://127.0.0.1/.well-known/matrix/client
+        headers:
+          Host: '{{ synapse_test_host }}'
+        return_content: true
+      register: synapse_wellknown_client
+      failed_when: synapse_wellknown_client.json['m.homeserver'].base_url != 'https://synapse.local'
+
+    - name: Get the server well-known through nginx
+      ansible.builtin.uri:
+        url: http://127.0.0.1/.well-known/matrix/server
+        headers:
+          Host: '{{ synapse_test_host }}'
+        return_content: true
+      register: synapse_wellknown_server
+      failed_when: synapse_wellknown_server.json['m.server'] != 'synapse.local:443'
+
+    # Proves the shared secret from the role configuration works
+    - name: Register a test user
+      ansible.builtin.command: >-
+        register_new_matrix_user --no-admin --exists-ok
+        -c /etc/matrix-synapse/conf.d/alphanodes.yaml
+        -u {{ synapse_test_user }} -p {{ synapse_test_password }}
+        http://127.0.0.1:8008
+      changed_when: true
+
+    # Element X logs in with a password when the server offers no OAuth
+    - name: Log in with the password through nginx
+      ansible.builtin.uri:
+        url: http://127.0.0.1/_matrix/client/v3/login
+        method: POST
+        headers:
+          Host: '{{ synapse_test_host }}'
+        body_format: json
+        body:
+          type: m.login.password
+          identifier:
+            type: m.id.user
+            user: '{{ synapse_test_user }}'
+          password: '{{ synapse_test_password }}'
+        return_content: true
+      register: synapse_login
+
+    - name: Run a Simplified Sliding Sync request like Element X
+      ansible.builtin.uri:
+        url: http://127.0.0.1/_matrix/client/unstable/org.matrix.simplified_msc3575/sync
+        method: POST
+        headers:
+          Host: '{{ synapse_test_host }}'
+          Authorization: 'Bearer {{ synapse_login.json.access_token }}'
+        body_format: json
+        body:
+          lists:
+            all:
+              ranges: [[0, 10]]
+              timeline_limit: 1
+              required_state: []
+        return_content: true
+      register: synapse_sliding_sync
+      failed_when: synapse_sliding_sync.json.pos is not defined

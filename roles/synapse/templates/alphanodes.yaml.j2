@@ -1,0 +1,50 @@
+# {{ ansible_managed }}
+# Overrides the packaged homeserver.yaml: Synapse reads conf.d in
+# alphabetical order and a top-level key replaces the same key read before.
+# server_name and report_stats live in their own files, the package keeps
+# them in sync with debconf.
+
+public_baseurl: "{{ synapse_public_baseurl }}"
+# nginx serves /.well-known/matrix/*
+serve_server_wellknown: false
+
+listeners:
+  - port: {{ synapse_http_port }}
+    bind_addresses:
+      - "{{ synapse_http_bind_address }}"
+    type: http
+    tls: false
+    x_forwarded: true
+    resources:
+      - names: [client, federation]
+        compress: false
+
+database:
+  name: psycopg2
+  args:
+    user: {{ synapse_db_user | to_json }}
+    password: {{ synapse_db_password | to_json }}
+    dbname: {{ synapse_db_name | to_json }}
+    host: {{ synapse_db_host | to_json }}
+    port: {{ synapse_db_port | int }}
+    cp_min: {{ synapse_db_cp_min }}
+    cp_max: {{ synapse_db_cp_max }}
+
+log_config: "{{ synapse_log_config_file }}"
+
+enable_registration: {{ synapse_enable_registration | bool | lower }}
+registration_shared_secret: {{ synapse_registration_shared_secret | to_json }}
+
+media_store_path: "{{ synapse_media_store_path }}"
+max_upload_size: {{ synapse_max_upload_size }}
+url_preview_enabled: {{ synapse_url_preview_enabled | bool | lower }}
+
+presence:
+  enabled: {{ synapse_presence_enabled | bool | lower }}
+
+trusted_key_servers: {{ synapse_trusted_key_servers | to_json }}
+suppress_key_server_warning: true
+{% if synapse_extra_config | length > 0 %}
+
+{{ synapse_extra_config | to_nice_yaml(indent=2) | trim }}
+{% endif %}

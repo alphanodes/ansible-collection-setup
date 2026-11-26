@@ -1,0 +1,74 @@
+---
+
+- name: Gather installed packages
+  ansible.builtin.package_facts:
+    manager: apt
+
+# Disable before the purge, otherwise systemd keeps reporting the unit as
+# enabled and monitoring alerts about a service that is gone
+- name: Stop and disable Synapse
+  ansible.builtin.systemd_service:
+    name: '{{ synapse_service_name }}'
+    state: stopped
+    enabled: false
+  when: "'matrix-synapse-py3' in ansible_facts.packages"
+
+- name: Remove Synapse package
+  ansible.builtin.apt:
+    name: matrix-synapse-py3
+    purge: true
+    state: absent
+  notify: Reload systemd daemon
+
+# Also removes the key it downloaded for signed_by
+- name: Remove the matrix.org apt repository
+  ansible.builtin.deb822_repository:
+    name: matrix-org
+    state: absent
+
+# The postinst registers these, the package has no postrm to drop them and dpkg
+# complains about the unknown owner once the user is gone
+- name: Remove the dpkg ownership overrides of Synapse
+  ansible.builtin.command: dpkg-statoverride --remove {{ item }}
+  register: synapse_statoverride
+  changed_when: synapse_statoverride.rc == 0
+  failed_when: synapse_statoverride.rc not in [0, 2]
+  loop:
+    - /var/lib/matrix-synapse
+    - /var/log/matrix-synapse
+    - '{{ synapse_config_dir }}'
+
+# The database stays, drop it by hand once it is no longer needed
+- name: Remove Synapse files and directories
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - '{{ synapse_config_dir }}'
+    - /var/lib/matrix-synapse
+    - /var/log/matrix-synapse
+
+- name: Remove Synapse user
+  ansible.builtin.user:
+    name: '{{ synapse_service_user }}'
+    state: absent
+
+- name: Remove the Synapse vhost
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop:
+    - /etc/nginx/sites-available/synapse.conf
+    - /etc/nginx/sites-enabled/synapse.conf
+  register: synapse_vhost_removed
+
+- name: Reload nginx without the Synapse vhost
+  ansible.builtin.systemd_service:
+    name: nginx
+    state: reloaded
+  when:
+    - synapse_vhost_removed is changed
+    - "'nginx' in ansible_facts.packages"
+
+- name: Apply the removal
+  ansible.builtin.meta: flush_handlers

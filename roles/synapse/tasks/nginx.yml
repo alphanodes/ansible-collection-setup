@@ -1,0 +1,43 @@
+---
+
+- name: Setup nginx_mono and configure synapse vhost
+  tags: nginx
+  ansible.builtin.include_role:
+    name: alphanodes.setup.nginx_mono
+  vars:
+    nginx_mono_service_name: synapse
+    nginx_mono_service_enabled: true
+    nginx_mono_service_config:
+      server_name: "{{ synapse_server_name }}"
+      root: "{{ synapse_vhost_root | default(omit) }}"
+      upstream_name: synapse
+      upstream_servers:
+        - "{{ synapse_http_bind_address }}:{{ synapse_http_port }}"
+      # no path after the upstream, nginx would canonicalise the URI and
+      # break federation signatures
+      proxy_pass: "http://synapse"
+      proxy_location: "~ ^(/_matrix|/_synapse/client)"
+      proxy_host_header: "$host"
+      # Synapse responses may be chunked
+      proxy_http_version: "1.1"
+      # replaces the appending default of nginx_mono, see defaults
+      proxy_headers:
+        - "X-Forwarded-For {{ synapse_vhost_forwarded_for }}"
+      proxy_timeout: "600"
+      locations:
+        - name: "/.well-known/matrix/server"
+          actions:
+            - "default_type application/json"
+            - >-
+              return 200 '{ "m.server": "{{ synapse_server_name }}:443" }'
+        - name: "/.well-known/matrix/client"
+          actions:
+            - "default_type application/json"
+            - 'add_header "Access-Control-Allow-Origin" *'
+            - >-
+              return 200 '{ "m.homeserver": { "base_url": "{{ synapse_public_baseurl | regex_replace('/$', '') }}" } }'
+      redirects: "{{ synapse_redirects | default([]) }}"
+      vhost_includes: "{{ synapse_vhost_includes | default([]) }}"
+      vhost_for_zabbix: "{{ synapse_vhost_for_zabbix | default(false) }}"
+      letsencrypt: "{{ synapse_vhost_letsencrypt | default(false) }}"
+      vhost_ssl_cert: "{{ synapse_vhost_ssl_cert | default(omit) }}"

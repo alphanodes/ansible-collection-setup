@@ -1,0 +1,4 @@
+# {{ ansible_managed }}
+# The package rewrites this value from debconf on every upgrade, the role
+# preseeds debconf with the same value.
+report_stats: {{ synapse_report_stats | bool | lower }}

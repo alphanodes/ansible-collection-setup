@@ -7,7 +7,8 @@ name: "alphanodes.setup.matrix_room_cleaner"
     branches:
       - main
     paths:
-      - 'roles/dendrite/**'
+      - 'roles/matrix_room_cleaner/**'
+      - 'roles/golang/**'
       - 'roles/common/**'
       - 'roles/systemd_timer/**'
       - 'molecule/matrix_room_cleaner/**'

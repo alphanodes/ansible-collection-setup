@@ -1,0 +1,12 @@
+---
+
+synapse_config_dir: /etc/matrix-synapse
+# conf.d keeps our settings out of the packaged homeserver.yaml, so package
+# upgrades never ask about a changed configuration file
+synapse_config_file: '{{ synapse_config_dir }}/conf.d/alphanodes.yaml'
+synapse_log_config_file: '{{ synapse_config_dir }}/log_journald.yaml'
+synapse_service_name: matrix-synapse
+synapse_service_user: matrix-synapse
+# Written by the package from debconf, which it rewrites on every upgrade
+synapse_server_name_file: '{{ synapse_config_dir }}/conf.d/server_name.yaml'
+synapse_report_stats_file: '{{ synapse_config_dir }}/conf.d/report_stats.yaml'

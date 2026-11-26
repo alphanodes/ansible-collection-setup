@@ -1,0 +1,5 @@
+# {{ ansible_managed }}
+# The package rewrites this value from debconf on every upgrade, the role
+# preseeds debconf with the same value. It is the last part of every user ID
+# and can not be changed without starting over with a new database.
+server_name: {{ synapse_server_name }}

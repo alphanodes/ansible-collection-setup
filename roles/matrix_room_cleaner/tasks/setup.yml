@@ -1,0 +1,57 @@
+---
+
+- name: Include golang role
+  ansible.builtin.include_role:
+    name: alphanodes.setup.golang
+
+- name: Create source directory
+  ansible.builtin.file:
+    path: "{{ matrix_room_cleaner_src_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Go source
+  ansible.builtin.copy:
+    src: matrix_room_cleaner.go
+    dest: "{{ matrix_room_cleaner_src_dir }}/matrix_room_cleaner.go"
+    mode: "0644"
+
+- name: Check source and binary
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop:
+    - "{{ matrix_room_cleaner_src_dir }}/matrix_room_cleaner.go"
+    - "{{ matrix_room_cleaner_bin }}"
+  register: matrix_room_cleaner_files
+
+# Builds when the binary is missing or older than the source, so a failed
+# build is retried on the next run instead of keeping a stale binary
+- name: Build matrix room cleaner
+  ansible.builtin.command:
+    cmd: go build -trimpath -ldflags="-s -w" -o {{ matrix_room_cleaner_bin }} matrix_room_cleaner.go
+    chdir: "{{ matrix_room_cleaner_src_dir }}"
+  changed_when: true
+  when: >-
+    not matrix_room_cleaner_files.results[1].stat.exists
+    or matrix_room_cleaner_files.results[0].stat.mtime > matrix_room_cleaner_files.results[1].stat.mtime
+
+# Keeps the token out of the unit file, which every local user can read
+- name: Deploy the environment file
+  ansible.builtin.template:
+    src: matrix_room_cleaner.env.j2
+    dest: "{{ matrix_room_cleaner_env_file }}"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: "{{ hide_sensitive_data }}"
+
+- name: Install systemd timer
+  ansible.builtin.include_role:
+    name: alphanodes.setup.systemd_timer
+  vars:
+    timers:
+      matrix_room_cleaner:
+        exec_start: "{{ matrix_room_cleaner_bin }}"
+        service_extra: "EnvironmentFile={{ matrix_room_cleaner_env_file }}"
+        on_calendar: "{{ matrix_room_cleaner_on_calendar }}"
+        persistent: true

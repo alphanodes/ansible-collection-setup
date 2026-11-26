@@ -1,0 +1,21 @@
+---
+
+# Redacts events older than matrix_room_cleaner_max_age_days in one Matrix
+# room, weekly via a systemd timer. Works with any homeserver, it only uses
+# the client-server API.
+
+# Homeserver base URL, e.g. https://matrix.example.com
+matrix_room_cleaner_base: ''
+# Required, access token of a user allowed to redact messages in the room
+matrix_room_cleaner_token: ''
+# Required, ID of the room to clean
+matrix_room_cleaner_room_id: ''
+matrix_room_cleaner_max_age_days: 7
+matrix_room_cleaner_on_calendar: weekly
+
+matrix_room_cleaner_src_dir: /usr/local/src/matrix_room_cleaner
+matrix_room_cleaner_bin: /usr/local/bin/matrix_room_cleaner
+# Holds the token, readable by root only
+matrix_room_cleaner_env_file: /etc/matrix_room_cleaner.env
+
+matrix_room_cleaner_remove: false

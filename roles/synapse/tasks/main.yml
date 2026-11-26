@@ -1,0 +1,50 @@
+---
+
+- name: Ensure the Synapse registration shared secret is configured
+  ansible.builtin.assert:
+    that:
+      - synapse_registration_shared_secret | length > 0
+    fail_msg: synapse_registration_shared_secret is required, register_new_matrix_user needs it to create users
+    quiet: true
+  when: not synapse_remove | bool
+  tags:
+    - synapse
+    - matrix
+
+- name: Include PostgreSQL tasks
+  ansible.builtin.include_tasks: postgresql.yml
+  when: not synapse_remove | bool
+  tags:
+    - synapse
+    - matrix
+    - postgresql
+
+- name: Include setup tasks
+  ansible.builtin.include_tasks: setup.yml
+  when: not synapse_remove | bool
+  tags:
+    - synapse
+    - matrix
+
+- name: Include nginx tasks
+  ansible.builtin.include_tasks: nginx.yml
+  when: not synapse_remove | bool
+  tags:
+    - synapse
+    - matrix
+    - nginx
+
+- name: Include validation tasks
+  ansible.builtin.include_tasks: validation.yml
+  when: not synapse_remove | bool and synapse_with_validation | bool
+  tags:
+    - synapse
+    - matrix
+
+- name: Include remove tasks
+  ansible.builtin.include_tasks: remove.yml
+  when: synapse_remove | bool
+  tags:
+    - synapse
+    - matrix
+    - remove

@@ -1,0 +1,73 @@
+---
+
+# Synapse from the matrix.org Debian packages (amd64 only), see
+# https://element-hq.github.io/synapse/latest/setup/installation.html
+#
+# Create a user as root (admin with -a):
+# register_new_matrix_user -c /etc/matrix-synapse/conf.d/alphanodes.yaml -u alex http://127.0.0.1:8008
+
+synapse_apt_url: https://packages.matrix.org/debian/
+synapse_apt_signed_by: https://packages.matrix.org/debian/matrix-org-archive-keyring.gpg
+# add prerelease for release candidates
+synapse_apt_components: main
+
+synapse_packages:
+  - matrix-synapse-py3
+  # low-level postgres library, the package ships the python bindings
+  - libpq5
+
+# The Matrix domain of all user IDs (@user:server_name). It can not be changed
+# after the first start without starting over with a new database.
+synapse_server_name: '{{ ansible_host }}'
+synapse_public_baseurl: 'https://{{ synapse_server_name }}/'
+
+# nginx is the only client, Synapse listens on loopback only
+synapse_http_bind_address: 127.0.0.1
+synapse_http_port: 8008
+
+synapse_db_name: synapse
+synapse_db_user: synapse
+synapse_db_password: '{{ [ansible_facts["machine_id"], ansible_facts["hostname"], "synapse"] | join | hash("md5") }}'
+synapse_db_host: localhost
+synapse_db_port: '{{ postgresql_port | default(5432) }}'
+synapse_db_cp_min: 5
+synapse_db_cp_max: 10
+
+# Required, used by register_new_matrix_user. Create with: openssl rand -base64 45
+synapse_registration_shared_secret: ''
+synapse_enable_registration: false
+
+# keep in line with nginx_client_max_body_size (default 52M)
+synapse_max_upload_size: 50M
+synapse_media_store_path: /var/lib/matrix-synapse/media
+synapse_url_preview_enabled: false
+synapse_presence_enabled: true
+synapse_report_stats: false
+
+synapse_trusted_key_servers:
+  - server_name: matrix.org
+
+# Log to stdout, journald keeps the logs: journalctl -u matrix-synapse
+# Supported log levels are DEBUG, INFO, WARNING, ERROR
+synapse_log_level: INFO
+
+# Additional top-level settings, a key here replaces the same key of the
+# configuration above, e.g. experimental_features
+synapse_extra_config: {}
+
+synapse_with_validation: true
+# Base URL the validation queries, nginx with TLS on a real host
+synapse_validation_url: 'https://{{ synapse_server_name }}'
+
+# Synapse takes the first X-Forwarded-For entry as the client IP. Directly on
+# the internet $remote_addr keeps clients from choosing their own IP (rate
+# limits, admin API). Behind another proxy $remote_addr is that proxy, use
+# $proxy_add_x_forwarded_for there and make sure the proxy sets the header.
+synapse_vhost_forwarded_for: $remote_addr
+synapse_vhost_for_zabbix: false
+synapse_vhost_letsencrypt: false
+synapse_vhost_ssl_cert: '{{ ssl_certs[0].name | default(omit) }}'
+# Serve a web client like element-web at the root of the vhost, e.g.
+# synapse_vhost_root: /usr/share/element-web
+
+synapse_remove: false

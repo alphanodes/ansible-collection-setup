@@ -3,24 +3,18 @@
   hosts: all
   become: true
 
-  vars:
-    dendrite_cleaner_matrix_base: "https://dendrite.local"
-    dendrite_cleaner_matrix_token: "TEST_TOKEN"
-    dendrite_cleaner_matrix_room_id: "!room:example.org"
-    dendrite_cleaner_matrix_max_age_days: 7
-    dendrite_cleaner_src_dir: /usr/local/src/matrix_room_cleaner
-    dendrite_cleaner_bin: /usr/local/bin/matrix_room_cleaner
-
-  handlers:
-    - name: Rebuild matrix root cleaner
-      ansible.builtin.command: "/bin/true"
-
-  tasks:
+  pre_tasks:
     - name: Update apt cache
       ansible.builtin.apt:
         update_cache: true
         cache_valid_time: 600
       changed_when: false
 
-    - name: Include matrix room cleaner tasks only
-      ansible.builtin.include_tasks: ../../roles/dendrite/tasks/matrix_room_cleaner.yml
+  vars:
+    matrix_room_cleaner_base: "https://matrix.example.org"
+    matrix_room_cleaner_token: "TEST_TOKEN"
+    matrix_room_cleaner_room_id: "!room:example.org"
+    matrix_room_cleaner_max_age_days: 7
+
+  roles:
+    - role: alphanodes.setup.matrix_room_cleaner

@@ -1,0 +1,82 @@
+---
+
+- name: Add the matrix.org apt repository
+  ansible.builtin.deb822_repository:
+    name: matrix-org
+    uris: '{{ synapse_apt_url }}'
+    types: deb
+    suites: '{{ ansible_facts.distribution_release }}'
+    components: '{{ synapse_apt_components }}'
+    signed_by: '{{ synapse_apt_signed_by }}'
+    state: present
+  register: synapse_repo
+
+# The package writes conf.d/server_name.yaml and report_stats.yaml from these
+# answers and syncs them back on every upgrade
+- name: Preseed the Synapse server name
+  ansible.builtin.debconf:
+    name: matrix-synapse-py3
+    question: matrix-synapse/server-name
+    value: '{{ synapse_server_name }}'
+    vtype: string
+
+- name: Preseed the Synapse stats reporting
+  ansible.builtin.debconf:
+    name: matrix-synapse-py3
+    question: matrix-synapse/report-stats
+    value: '{{ synapse_report_stats | bool | lower }}'
+    vtype: boolean
+
+- name: Install Synapse packages
+  ansible.builtin.apt:
+    name: '{{ synapse_packages }}'
+    state: present
+    update_cache: '{{ synapse_repo.changed }}'
+
+- name: Deploy the Synapse configuration files kept in sync with debconf
+  ansible.builtin.template:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - src: server_name.yaml.j2
+      dest: '{{ synapse_server_name_file }}'
+    - src: report_stats.yaml.j2
+      dest: '{{ synapse_report_stats_file }}'
+  notify: Restart synapse
+
+- name: Deploy the Synapse log configuration
+  ansible.builtin.template:
+    src: log_journald.yaml.j2
+    dest: '{{ synapse_log_config_file }}'
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart synapse
+
+- name: Deploy the Synapse configuration
+  ansible.builtin.template:
+    src: alphanodes.yaml.j2
+    dest: '{{ synapse_config_file }}'
+    owner: root
+    group: '{{ synapse_service_user }}'
+    mode: '0640'
+  no_log: '{{ hide_sensitive_data }}'
+  notify: Restart synapse
+
+- name: Ensure Synapse is enabled and started
+  ansible.builtin.systemd_service:
+    name: '{{ synapse_service_name }}'
+    enabled: true
+    state: started
+
+- name: Apply configuration changes
+  ansible.builtin.meta: flush_handlers
+
+- name: Wait for Synapse to accept connections
+  ansible.builtin.wait_for:
+    host: '{{ synapse_http_bind_address }}'
+    port: '{{ synapse_http_port }}'
+    timeout: 120

@@ -11,7 +11,6 @@ name: "alphanodes.setup.dendrite"
       - 'roles/nginx_mono/**'
       - 'roles/systemd_timer/**'
       - 'molecule/dendrite/**'
-      - 'molecule/matrix_room_cleaner/**'
       - '.github/workflows/dendrite.yml'
 
 defaults:
@@ -51,6 +50,5 @@ jobs:
         run: |
           molecule --version
           molecule test -s dendrite
-          molecule test -s matrix_room_cleaner
         env:
           MOLECULE_DISTRO: ${{ matrix.distro }}

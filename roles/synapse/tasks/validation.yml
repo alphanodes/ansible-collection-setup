@@ -1,0 +1,34 @@
+---
+
+# Use this for a federation test: https://federationtester.matrix.org/
+
+- name: Get the client versions
+  ansible.builtin.uri:
+    url: '{{ synapse_validation_url }}/_matrix/client/versions'
+    return_content: true
+  register: synapse_client_versions
+  retries: 10
+  delay: 3
+  until: synapse_client_versions.status == 200
+
+# Element X refuses homeservers without it
+- name: Check Simplified Sliding Sync is available
+  ansible.builtin.assert:
+    that:
+      - synapse_client_versions.json.unstable_features['org.matrix.simplified_msc3575'] | default(false)
+    fail_msg: Synapse does not offer Simplified Sliding Sync (MSC4186), Element X can not log in
+    quiet: true
+
+- name: Get the federation version
+  ansible.builtin.uri:
+    url: '{{ synapse_validation_url }}/_matrix/federation/v1/version'
+    return_content: true
+  register: synapse_federation_version
+
+- name: Check the server answers as Synapse
+  ansible.builtin.assert:
+    that:
+      - synapse_federation_version.json.server.name == 'Synapse'
+      - synapse_federation_version.json.server.version | length > 0
+    fail_msg: "Unexpected federation version answer: {{ synapse_federation_version.json }}"
+    quiet: true
