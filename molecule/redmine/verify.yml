@@ -138,6 +138,20 @@
           - agile_shared_ws_check.rc == 0
         fail_msg: "Central /rup_cable WebSocket location not found in redmine_agile"
 
+    # rolevhost is built by the real nginx tasks of the role (converge.yml):
+    # @puma, /rup_cable and /rup_cable_agile all pass requests to puma
+    - name: Count locations of the role vhost hiding the Redmine user ID header
+      ansible.builtin.command: grep -cF "proxy_hide_header X-Redmine-User-Id;" /etc/nginx/sites-available/rolevhost.conf
+      register: hide_user_id_check
+      changed_when: false
+      failed_when: false
+
+    - name: Assert every location passed to puma hides the Redmine user ID header
+      ansible.builtin.assert:
+        that:
+          - hide_user_id_check.stdout == '3'
+        fail_msg: "X-Redmine-User-Id hidden in {{ hide_user_id_check.stdout }} instead of 3 puma locations of rolevhost"
+
     - name: Check redmine_agile contains WebSocket upgrade headers
       ansible.builtin.command: grep -q "Upgrade.*http_upgrade" /etc/nginx/sites-available/redmine_agile.conf
       register: upgrade_check

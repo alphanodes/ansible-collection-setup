@@ -1067,7 +1067,7 @@
       changed_when: false
       failed_when: forwarded_with_client_ip.stdout != 'forwarded=[for=192.0.2.10]'
 
-- name: Verify log retention and masking of query parameters
+- name: Verify log retention, masking of query parameters and Redmine user ID
   hosts: all
   become: true
   gather_facts: false
@@ -1096,6 +1096,24 @@
         - /mask-test?monkey=keepme1234567890
       changed_when: false
 
+    - name: Request a proxied URL whose upstream sends the Redmine user ID
+      ansible.builtin.command: >
+        curl -s -D - -o /dev/null -H 'Host: userid.local' http://127.0.0.1/user-id
+      register: user_id_response
+      changed_when: false
+
+    - name: Request a proxied URL without user ID (anonymous)
+      ansible.builtin.command: >
+        curl -s -o /dev/null -H 'Host: userid.local' http://127.0.0.1/user-id-anonymous
+      changed_when: false
+
+    - name: Verify the user ID header does not reach the client
+      ansible.builtin.assert:
+        that:
+          - user_id_response.stdout is search('^HTTP/1.1 200', multiline=True)
+          - user_id_response.stdout is not search('x-redmine-user-id', ignorecase=True)
+        fail_msg: "X-Redmine-User-Id reached the client: {{ user_id_response.stdout }}"
+
     # Reopening the logs flushes the access log buffer
     - name: Flush nginx access log buffer
       ansible.builtin.command: nginx -s reopen
@@ -1120,3 +1138,19 @@
           # Only exact parameter names are masked, not ones ending in "key"
           - "'/mask-test?monkey=keepme1234567890 ' in mask_log.stdout"
         fail_msg: "Query parameter masking failed: {{ mask_log.stdout }}"
+
+    - name: Read access log lines of the user ID test
+      ansible.builtin.shell: |
+        set -o pipefail
+        grep -E '"GET /user-id(-anonymous)? ' /var/log/nginx/access.log
+      args:
+        executable: /bin/bash
+      register: user_id_log
+      changed_when: false
+
+    - name: Verify the Redmine user ID is logged at the end of the line
+      ansible.builtin.assert:
+        that:
+          - user_id_log.stdout is search('"GET /user-id HTTP/1.1" 200 .* uid=42$', multiline=True)
+          - user_id_log.stdout is search('"GET /user-id-anonymous HTTP/1.1" 200 .* uid=-$', multiline=True)
+        fail_msg: "Redmine user ID not logged as expected: {{ user_id_log.stdout }}"

@@ -26,14 +26,16 @@ http {
     default_type application/octet-stream;
 
 {% set log_request = '$masked_request' if nginx_log_masked_query_params | length > 0 else '$request' %}
+{% set log_suffix = ' uid=$upstream_http_x_redmine_user_id' if nginx_log_redmine_user_id else '' %}
+    # With nginx_log_redmine_user_id every format ends with "uid=<Redmine user ID>".
     log_format  main  '$remote_addr - $remote_user [$time_local] "{{ log_request }}" '
                       '$status $body_bytes_sent "$http_referer" '
-                      '"$http_user_agent" "$http_x_forwarded_for"';
+                      '"$http_user_agent" "$http_x_forwarded_for"{{ log_suffix }}';
 
     log_format  app  '$remote_addr - $remote_user [$time_local] "{{ log_request }}" '
                      '$status $body_bytes_sent "$http_referer" '
                      '"$http_user_agent" "$http_x_forwarded_for" '
-                     '$request_time $upstream_response_time "$upstream_addr"';
+                     '$request_time $upstream_response_time "$upstream_addr"{{ log_suffix }}';
 
     # Same fields as "main" plus the requested host name, appended at the end.
     # Appending (never prepending) keeps the field positions of "main" intact,
@@ -43,7 +45,7 @@ http {
     log_format  vhost  '$remote_addr - $remote_user [$time_local] "{{ log_request }}" '
                        '$status $body_bytes_sent "$http_referer" '
                        '"$http_user_agent" "$http_x_forwarded_for" '
-                       '"$host"';
+                       '"$host"{{ log_suffix }}';
 
     ## Default log
     access_log {{ nginx_access_log }};

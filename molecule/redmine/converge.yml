@@ -60,6 +60,7 @@
     # Path to the real task file under test (kept in a var so ansible-lint
     # does not try to statically follow the dynamic include).
     redmine_set_instance_vars_file: "{{ playbook_dir }}/../../roles/redmine/tasks/set_instance_vars.yml"
+    redmine_nginx_file: "{{ playbook_dir }}/../../roles/redmine/tasks/nginx.yml"
 
     # Cases for the active_* feature-flag derivation in set_instance_vars.yml.
     # "expect" lists every fact so a regression in any branch fails the case.
@@ -368,6 +369,22 @@
       loop_control:
         loop_var: tc
         label: "{{ tc.name }}"
+
+    # --- vhost built by the real nginx tasks of the role, checked in verify.yml ---
+    - name: Derive facts for the role vhost test instance
+      ansible.builtin.include_tasks: "{{ redmine_set_instance_vars_file }}"
+      vars:
+        r_instance:
+          key: rolevhost
+          value:
+            server_name: rolevhost.local
+            plugins: [redmine_agile]
+            vhost_for_zabbix: false
+            letsencrypt: false
+            vhost_ssl_cert: redmine
+
+    - name: Build the vhost of the test instance with the role nginx tasks
+      ansible.builtin.include_tasks: "{{ redmine_nginx_file }}"
 
     # --- robots.txt template, checked in verify.yml ---
     - name: Render robots.txt per case

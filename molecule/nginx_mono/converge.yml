@@ -70,6 +70,8 @@
           server {
             listen 127.0.0.1:8099;
             default_type text/plain;
+            # Only the frontend requests matter for the access log tests
+            access_log off;
             location / {
               return 200 "forwarded=[$http_forwarded]";
             }
@@ -78,6 +80,11 @@
             }
             location = /xff {
               return 200 "xff=[$http_x_forwarded_for]";
+            }
+            # Answers like Redmine for a signed in user (alphanodes_enterprise_support)
+            location = /user-id {
+              add_header X-Redmine-User-Id 42 always;
+              return 200 "user";
             }
           }
         dest: /etc/nginx/conf.d/zz_forwarded_echo.conf
@@ -107,6 +114,8 @@
     nginx_log_masked_query_params:
       - key
       - token_auth
+    # Append the Redmine user ID of the upstream response to the access log
+    nginx_log_redmine_user_id: true
     # Rate limit zones for Test 9 (must be defined globally, written on first nginx_mono call)
     nginx_limit_req_zones:
       - "$binary_remote_addr zone=test_api:10m rate=10r/s"
@@ -261,6 +270,21 @@
             proxy_pass: "http://127.0.0.1:8099"
             proxy_location: "/"
             vhost_for_zabbix: false
+
+    # Redmine user ID: proxied like Redmine @puma, header hidden from clients
+    - role: alphanodes.setup.nginx_mono
+      vars:
+        nginx_mono_service_name: user_id_test
+        nginx_mono_service_enabled: true
+        nginx_mono_service_config:
+          server_name: userid.local
+          root: /srv/named_test
+          locations:
+            - name: "/"
+              proxy_pass: "http://127.0.0.1:8099"
+              proxy_hide_headers:
+                - X-Redmine-User-Id
+          vhost_for_zabbix: false
 
     # Test 7: Named location with proxy_pass (like Redmine @puma pattern)
     - role: alphanodes.setup.nginx_mono

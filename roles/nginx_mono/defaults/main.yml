@@ -37,6 +37,13 @@ nginx_access_log: '/var/log/nginx/access.log main buffer=16k flush=1m'
 nginx_log_masked_query_params:
   - key
 
+# Append the Redmine user ID as "uid=..." to all access log formats. Redmine
+# sends it in the response header X-Redmine-User-Id (alphanodes_enterprise_support,
+# on unless SKIP_USER_ID_HEADER is set), the redmine role hides that header from clients.
+# Requests without the header (anonymous, other applications) log "uid=-".
+# Appended at the end, so the position-based fail2ban filters still match.
+nginx_log_redmine_user_id: false
+
 # Number of days nginx logs are kept (logrotate "rotate" in
 # /etc/logrotate.d/nginx, the distribution rotates daily). 14 is the
 # distribution default.

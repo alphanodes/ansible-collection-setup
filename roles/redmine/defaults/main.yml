@@ -309,6 +309,12 @@ redmine_solid_queue_low_priority: false
 # used for creating redmine_home = redmine_base_dir/{{ redmine_instance_name }}
 redmine_base_dir: '{{ srv_path }}'
 
+# Response headers of puma never passed to the client. X-Redmine-User-Id is sent
+# by alphanodes_enterprise_support for the nginx access log (nginx_mono,
+# nginx_log_redmine_user_id) and must not reach browsers or API clients.
+redmine_proxy_hide_headers:
+  - X-Redmine-User-Id
+
 # nginx_mono locations for Redmine vhost
 # Base locations: root with try_files and @puma named location
 # NOTE: SSL-specific proxy headers (proxy_forwarded_proto, proxy_ssl_header) are

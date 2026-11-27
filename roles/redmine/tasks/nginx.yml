@@ -23,15 +23,19 @@
   ansible.builtin.set_fact:
     _ssl_headers: "{{ {'proxy_forwarded_proto': 'https', 'proxy_ssl_header': true} if (nginx_with_ssl | default(true)) else {} }}"
 
+- name: Define proxy settings for all locations passed to puma - {{ redmine_instance_name }}
+  ansible.builtin.set_fact:
+    _puma_proxy: "{{ _ssl_headers | combine({'proxy_hide_headers': redmine_proxy_hide_headers}) }}"
+
 - name: Build base locations with conditional SSL headers - {{ redmine_instance_name }}
   ansible.builtin.set_fact:
     redmine_locations:
       - "{{ redmine_base_locations[0] }}"
-      - "{{ redmine_base_locations[1] | combine(_ssl_headers) }}"
+      - "{{ redmine_base_locations[1] | combine(_puma_proxy) }}"
 
 - name: Add RedmineUP ActionCable websocket locations - {{ redmine_instance_name }}
   ansible.builtin.set_fact:
-    redmine_locations: "{{ redmine_locations + [item.location | combine(_ssl_headers)] }}"
+    redmine_locations: "{{ redmine_locations + [item.location | combine(_puma_proxy)] }}"
   loop: "{{ redmine_cable_locations }}"
   loop_control:
     label: "{{ item.location.name }}"
