@@ -27,6 +27,13 @@
     path: /etc/nginx/nginx.conf.dpkg-dist
     state: absent
 
+# Only the retention is changed, the rest of the distribution file stays as shipped
+- name: Set retention of nginx logs
+  ansible.builtin.lineinfile:
+    path: /etc/logrotate.d/nginx
+    regexp: '^\s*rotate\s+\d+\s*$'
+    line: "\trotate {{ nginx_log_rotate_days }}"
+
 # Protection maps are always installed - they define nginx map variables
 # ($bad_bot, $bad_locations, $not_allowed_method, $private_network,
 #  $trusted_proxy, $proxy_forwarded)

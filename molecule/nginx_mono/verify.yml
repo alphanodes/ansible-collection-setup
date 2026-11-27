@@ -118,6 +118,7 @@
         timeout: 10
       register: nginx_connection
 
+
     - name: Verify nginx_mono templates are self-contained
       ansible.builtin.find:
         paths: /etc/nginx/sites-available/
@@ -1065,3 +1066,57 @@
       register: forwarded_with_client_ip
       changed_when: false
       failed_when: forwarded_with_client_ip.stdout != 'forwarded=[for=192.0.2.10]'
+
+- name: Verify log retention and masking of query parameters
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Read logrotate configuration of nginx
+      ansible.builtin.slurp:
+        src: /etc/logrotate.d/nginx
+      register: nginx_logrotate_raw
+
+    - name: Verify nginx log retention is set and the distribution file is kept
+      ansible.builtin.assert:
+        that:
+          - nginx_logrotate_content is search('(?m)^\s+rotate 30$')
+          - nginx_logrotate_content is not search('rotate 14')
+          - "'postrotate' in nginx_logrotate_content"
+        fail_msg: "logrotate retention for nginx is not 30 days or the distribution file was replaced"
+      vars:
+        nginx_logrotate_content: "{{ nginx_logrotate_raw.content | b64decode }}"
+
+    - name: Request URLs with secrets in query parameters
+      ansible.builtin.command: "curl -s -o /dev/null http://127.0.0.1{{ item }}"
+      loop:
+        - /mask-test?key=0123456789abcdef0123&page=2
+        - /mask-test?a=1&token_auth=testvalue-not-a-secret
+        - /mask-test?monkey=keepme1234567890
+      changed_when: false
+
+    # Reopening the logs flushes the access log buffer
+    - name: Flush nginx access log buffer
+      ansible.builtin.command: nginx -s reopen
+      changed_when: false
+
+    - name: Read access log lines of the mask test
+      ansible.builtin.shell: |
+        set -o pipefail
+        grep 'mask-test' /var/log/nginx/access.log
+      args:
+        executable: /bin/bash
+      register: mask_log
+      changed_when: false
+
+    - name: Verify secrets are masked in the access log
+      ansible.builtin.assert:
+        that:
+          - "'/mask-test?key=012345***&page=2 ' in mask_log.stdout"
+          - "'/mask-test?a=1&token_auth=testva*** ' in mask_log.stdout"
+          - "'0123456789abcdef0123' not in mask_log.stdout"
+          - "'testvalue-not-a-secret' not in mask_log.stdout"
+          # Only exact parameter names are masked, not ones ending in "key"
+          - "'/mask-test?monkey=keepme1234567890 ' in mask_log.stdout"
+        fail_msg: "Query parameter masking failed: {{ mask_log.stdout }}"

@@ -28,6 +28,20 @@ nginx_error_log: 'stderr warn'
 # /var/log/nginx/*access.log, so anything else silently drops out of the jails.
 nginx_access_log: '/var/log/nginx/access.log main buffer=16k flush=1m'
 
+# Query parameters whose values are masked in all access log formats: only
+# the first 6 characters are logged, followed by "***". This keeps secrets
+# like Redmine API keys (?key=...) out of the logs, while the prefix still
+# allows to match a request to a key. Only the first matching parameter of a
+# request is masked, the referer is logged unchanged. Set to [] to log
+# requests unchanged.
+nginx_log_masked_query_params:
+  - key
+
+# Number of days nginx logs are kept (logrotate "rotate" in
+# /etc/logrotate.d/nginx, the distribution rotates daily). 14 is the
+# distribution default.
+nginx_log_rotate_days: 14
+
 nginx_types_hash_max_size: 2048
 nginx_map_hash_bucket_size: 128
 nginx_keepalive_timeout: 20

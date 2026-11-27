@@ -102,6 +102,11 @@
     nginx_with_websocket: true  # Enable WebSocket globally for testing
     nginx_resolver: ['8.8.8.8', '8.8.4.4']  # Fix undefined hoster variable
     hoster: 'local'  # Define hoster for testing
+    # Log retention and query parameter masking (default param "key" plus one more)
+    nginx_log_rotate_days: 30
+    nginx_log_masked_query_params:
+      - key
+      - token_auth
     # Rate limit zones for Test 9 (must be defined globally, written on first nginx_mono call)
     nginx_limit_req_zones:
       - "$binary_remote_addr zone=test_api:10m rate=10r/s"
