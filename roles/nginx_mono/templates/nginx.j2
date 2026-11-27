@@ -25,27 +25,25 @@ http {
     include /etc/nginx/mime.types;
     default_type application/octet-stream;
 
-{% set log_request = '$masked_request' if nginx_log_masked_query_params | length > 0 else '$request' %}
-{% set log_suffix = ' uid=$upstream_http_x_redmine_user_id' if nginx_log_redmine_user_id else '' %}
     # With nginx_log_redmine_user_id every format ends with "uid=<Redmine user ID>".
-    log_format  main  '$remote_addr - $remote_user [$time_local] "{{ log_request }}" '
+    log_format  main  '$remote_addr - $remote_user [$time_local] "{{ real_nginx_log_request }}" '
                       '$status $body_bytes_sent "$http_referer" '
-                      '"$http_user_agent" "$http_x_forwarded_for"{{ log_suffix }}';
+                      '"$http_user_agent" "$http_x_forwarded_for"{{ real_nginx_log_suffix }}';
 
-    log_format  app  '$remote_addr - $remote_user [$time_local] "{{ log_request }}" '
+    log_format  app  '$remote_addr - $remote_user [$time_local] "{{ real_nginx_log_request }}" '
                      '$status $body_bytes_sent "$http_referer" '
                      '"$http_user_agent" "$http_x_forwarded_for" '
-                     '$request_time $upstream_response_time "$upstream_addr"{{ log_suffix }}';
+                     '$request_time $upstream_response_time "$upstream_addr"{{ real_nginx_log_suffix }}';
 
     # Same fields as "main" plus the requested host name, appended at the end.
     # Appending (never prepending) keeps the field positions of "main" intact,
     # so the position-based fail2ban filters (nginx-scan, redmine-login) still
     # match. Useful on catch-all/default_server vhosts to find out which host
     # names actually reach them.
-    log_format  vhost  '$remote_addr - $remote_user [$time_local] "{{ log_request }}" '
+    log_format  vhost  '$remote_addr - $remote_user [$time_local] "{{ real_nginx_log_request }}" '
                        '$status $body_bytes_sent "$http_referer" '
                        '"$http_user_agent" "$http_x_forwarded_for" '
-                       '"$host"{{ log_suffix }}';
+                       '"$host"{{ real_nginx_log_suffix }}';
 
     ## Default log
     access_log {{ nginx_access_log }};
@@ -60,15 +58,20 @@ http {
 
     types_hash_max_size {{ nginx_types_hash_max_size }};
     map_hash_bucket_size {{ nginx_map_hash_bucket_size }};
-{% if nginx_log_masked_query_params | length > 0 %}
+{% if real_nginx_log_mask_maps | length > 0 %}
 
     # Keep secrets passed as query parameters out of the access log: only the
-    # first 6 characters of the first matching parameter value are logged.
+    # first 6 characters of a value are logged, followed by "***". Each
+    # parameter gets one map for its first and one for its last occurrence,
+    # chained from $request to $masked_request. The kept part never contains
+    # "*", so a value already masked by an earlier map stays unchanged.
     # Must follow map_hash_bucket_size, which nginx only accepts before any map.
-    map $request $masked_request {
-        "~^(?<mask_pre>.*?[?&](?:{{ nginx_log_masked_query_params | map('regex_escape') | join('|') }})=)(?<mask_keep>[^&# ]{0,6})[^&# ]*(?<mask_post>.*)$" "${mask_pre}${mask_keep}***${mask_post}";
-        default $request;
+{% for mask_map in real_nginx_log_mask_maps %}
+    map {{ mask_map.source }} {{ mask_map.target }} {
+        "~^(?<mp{{ mask_map.step }}>{{ mask_map.prefix }}[?&]{{ mask_map.param }}=)(?<mk{{ mask_map.step }}>[^&#* ]{0,6})[^&# ]*(?<ms{{ mask_map.step }}>.*)$" "${mp{{ mask_map.step }}}${mk{{ mask_map.step }}}***${ms{{ mask_map.step }}}";
+        default {{ mask_map.source }};
     }
+{% endfor %}
 {% endif %}
 
     ## Define a zone for limiting the number of simultaneous

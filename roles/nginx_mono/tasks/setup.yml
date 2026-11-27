@@ -4,6 +4,29 @@
   ansible.builtin.set_fact:
     real_nginx_worker_processes: "{{ 'auto' if nginx_worker_processes == '' else nginx_worker_processes }}"
 
+- name: Set variables of the access log formats
+  ansible.builtin.set_fact:
+    real_nginx_log_request: "{{ '$masked_request' if nginx_log_masked_query_params | length > 0 else '$request' }}"
+    real_nginx_log_suffix: "{{ ' uid=$upstream_http_x_redmine_user_id' if nginx_log_redmine_user_id else '' }}"
+    real_nginx_log_mask_maps: []
+
+# One map per parameter for its first and one for its last occurrence, chained
+# from $request to $masked_request (rendered in nginx.j2)
+- name: Build the maps masking secret query parameters in the access log
+  ansible.builtin.set_fact:
+    real_nginx_log_mask_maps: >-
+      {{ real_nginx_log_mask_maps + [{
+           'step': mask_step,
+           'source': '$request' if mask_step == 0 else '$mask_' ~ (mask_step - 1),
+           'target': '$masked_request' if mask_step == nginx_log_masked_query_params | length * 2 - 1 else '$mask_' ~ mask_step,
+           'param': item.0 | regex_escape,
+           'prefix': '.*?' if item.1 == 'first' else '.*'
+         }] }}
+  loop: "{{ nginx_log_masked_query_params | product(['first', 'last']) | list }}"
+  loop_control:
+    index_var: mask_step
+    label: "{{ item.0 }} ({{ item.1 }})"
+
 - name: Ensure nginx is installed
   ansible.builtin.apt:
     name: '{{ nginx_packages }}'
@@ -27,12 +50,14 @@
     path: /etc/nginx/nginx.conf.dpkg-dist
     state: absent
 
-# Only the retention is changed, the rest of the distribution file stays as shipped
+# Only the retention is changed, the rest of the distribution file stays as
+# shipped. replace (not lineinfile) never appends a line outside the block
+# when the distribution file has no rotate line.
 - name: Set retention of nginx logs
-  ansible.builtin.lineinfile:
+  ansible.builtin.replace:
     path: /etc/logrotate.d/nginx
-    regexp: '^\s*rotate\s+\d+\s*$'
-    line: "\trotate {{ nginx_log_rotate_days }}"
+    regexp: '^(\s*)rotate\s+\d+\s*$'
+    replace: '\1rotate {{ nginx_log_rotate_days }}'
 
 # Protection maps are always installed - they define nginx map variables
 # ($bad_bot, $bad_locations, $not_allowed_method, $private_network,

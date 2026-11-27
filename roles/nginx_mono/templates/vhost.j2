@@ -83,6 +83,7 @@ server {
 {% if instance.limit_req_status is defined %}
   limit_req_status {{ instance.limit_req_status }};
 {% endif %}
+  limit_req_log_level {{ nginx_limit_req_log_level }};
 
 {% endif %}
 {% if instance.block_hidden_files | default(false) %}

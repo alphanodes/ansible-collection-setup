@@ -1091,9 +1091,13 @@
     - name: Request URLs with secrets in query parameters
       ansible.builtin.command: "curl -s -o /dev/null http://127.0.0.1{{ item }}"
       loop:
-        - /mask-test?key=0123456789abcdef0123&page=2
+        - /mask-test?key=testvalue-key-not-a-secret&page=2
         - /mask-test?a=1&token_auth=testvalue-not-a-secret
-        - /mask-test?monkey=keepme1234567890
+        - /mask-test?monkey=keepme-not-a-secret
+        - /mask-test-two?token_auth=testvalue-first&key=testvalue-second
+        - /mask-test-twice?key=testvalue-one&page=2&key=testvalue-two
+        - /mask-test-short?key=abc
+        - /mask-test-reset?token=testvalue-reset-link
       changed_when: false
 
     - name: Request a proxied URL whose upstream sends the Redmine user ID
@@ -1131,13 +1135,27 @@
     - name: Verify secrets are masked in the access log
       ansible.builtin.assert:
         that:
-          - "'/mask-test?key=012345***&page=2 ' in mask_log.stdout"
+          - "'/mask-test?key=testva***&page=2 ' in mask_log.stdout"
           - "'/mask-test?a=1&token_auth=testva*** ' in mask_log.stdout"
-          - "'0123456789abcdef0123' not in mask_log.stdout"
-          - "'testvalue-not-a-secret' not in mask_log.stdout"
+          # Every listed parameter in one request, and a repeated one
+          - "'/mask-test-two?token_auth=testva***&key=testva*** ' in mask_log.stdout"
+          - "'/mask-test-twice?key=testva***&page=2&key=testva*** ' in mask_log.stdout"
+          # A short value is not masked twice by the chained maps
+          - "'/mask-test-short?key=abc*** ' in mask_log.stdout"
+          - "'/mask-test-reset?token=testva*** ' in mask_log.stdout"
+          - "'not-a-secret' not in mask_log.stdout | replace('keepme-not-a-secret', '')"
+          - "'testvalue-second' not in mask_log.stdout"
+          - "'testvalue-two' not in mask_log.stdout"
           # Only exact parameter names are masked, not ones ending in "key"
-          - "'/mask-test?monkey=keepme1234567890 ' in mask_log.stdout"
+          - "'/mask-test?monkey=keepme-not-a-secret ' in mask_log.stdout"
         fail_msg: "Query parameter masking failed: {{ mask_log.stdout }}"
+
+    # Rejected requests are logged with the full request line in the error log
+    - name: Check the rate limited vhost logs limit_req rejections below the error log level
+      ansible.builtin.command: grep -cF "limit_req_log_level info;" /etc/nginx/sites-available/ratelimit_test.conf
+      register: limit_req_log_level_check
+      changed_when: false
+      failed_when: limit_req_log_level_check.stdout != '1'
 
     - name: Read access log lines of the user ID test
       ansible.builtin.shell: |

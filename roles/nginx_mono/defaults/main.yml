@@ -29,13 +29,18 @@ nginx_error_log: 'stderr warn'
 nginx_access_log: '/var/log/nginx/access.log main buffer=16k flush=1m'
 
 # Query parameters whose values are masked in all access log formats: only
-# the first 6 characters are logged, followed by "***". This keeps secrets
-# like Redmine API keys (?key=...) out of the logs, while the prefix still
-# allows to match a request to a key. Only the first matching parameter of a
-# request is masked, the referer is logged unchanged. Set to [] to log
-# requests unchanged.
+# the first 6 characters are logged, followed by "***". This keeps secrets out
+# of the logs, while the prefix still allows to match a request to a key.
+# Each parameter is masked at its first and at its last occurrence (a third
+# one in the same request stays as is), the referer is logged unchanged.
+# Defaults: key (Redmine API key), token (Redmine password reset and account
+# activation links), token_auth (Matomo), access_token (Matrix/Synapse).
+# Set to [] to log requests unchanged.
 nginx_log_masked_query_params:
   - key
+  - token
+  - token_auth
+  - access_token
 
 # Append the Redmine user ID as "uid=..." to all access log formats. Redmine
 # sends it in the response header X-Redmine-User-Id (alphanodes_enterprise_support,
@@ -345,6 +350,13 @@ nginx_disable_modules: []
 # - 50 request per minute
 # ? https://www.nginx.com/blog/rate-limiting-nginx/
 nginx_limit_req_zones: []
+
+# Log level of requests rejected or delayed by limit_req. nginx logs them with
+# the full request line, including secrets in the query string (e.g. ?key=),
+# which the access log masking cannot reach. "info" is below the default
+# error_log level, so they are not logged; the rejected requests still show
+# up with their status in the (masked) access log.
+nginx_limit_req_log_level: info
 
 # nginx_mono include mode: Creates /etc/nginx/SERVICE.conf instead of sites-available/SERVICE.conf
 # Useful for path-based deployments that need to be included in existing vhosts
